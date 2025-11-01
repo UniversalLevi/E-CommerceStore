@@ -11,9 +11,10 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: 'user' | 'admin';
-  shopifyAccessToken?: string;
-  shopifyShop?: string;
-  stores: IStore[];
+  shopifyAccessToken?: string; // Deprecated - kept for backward compatibility
+  shopifyShop?: string; // Deprecated - kept for backward compatibility
+  connectedStores: mongoose.Types.ObjectId[]; // New multi-tenant stores
+  stores: IStore[]; // Legacy stores array
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,6 +66,10 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: undefined,
     },
+    connectedStores: [{
+      type: Schema.Types.ObjectId,
+      ref: 'ConnectedStore',
+    }],
     stores: [storeSchema],
   },
   {
@@ -72,8 +77,7 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Index for faster queries
-userSchema.index({ email: 1 });
+// Email index is automatically created by unique: true above, no need to duplicate
 
 export const User = mongoose.model<IUser>('User', userSchema);
 

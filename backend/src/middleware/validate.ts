@@ -9,8 +9,12 @@ export const validate = (schema: ZodSchema) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const messages = error.errors.map((err) => err.message).join(', ');
-        return next(createError(messages, 400));
+        const messages = error.errors.map((err) => {
+          const field = err.path.join('.');
+          return `${field ? field + ': ' : ''}${err.message}`;
+        }).join(', ');
+        console.error('Validation error:', messages, 'Body:', req.body);
+        return next(createError(`Validation failed: ${messages}`, 422));
       }
       next(error);
     }

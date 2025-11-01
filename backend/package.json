@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "ts-node src/scripts/seedProducts.ts",
-    "create-admin": "ts-node src/scripts/createAdmin.ts"
+    "create-admin": "ts-node src/scripts/createAdmin.ts",
+    "generate-key": "ts-node src/scripts/generateEncryptionKey.ts",
+    "migrate-legacy": "ts-node src/scripts/migrateLegacyStores.ts"
   },
   "keywords": ["shopify", "ecommerce", "store-builder"],
   "author": "",
