@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { config } from './config/env';
 import { connectDatabase } from './config/database';
 import { errorHandler } from './middleware/errorHandler';
+import { HealthCheckService } from './services/HealthCheckService';
 
 const app = express();
 
@@ -30,14 +31,12 @@ app.get('/api/health', (req: Request, res: Response) => {
 // Import routes
 import authRoutes from './routes/authRoutes';
 import productRoutes from './routes/productRoutes';
-import shopifyRoutes from './routes/shopifyRoutes';
 import storeRoutes from './routes/storeRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/shopify', shopifyRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
@@ -49,6 +48,9 @@ const startServer = async () => {
   try {
     await connectDatabase();
     
+    // Start health check service
+    HealthCheckService.start();
+    
     app.listen(config.port, () => {
       console.log(`🚀 Server running on http://localhost:${config.port}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -59,6 +61,19 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  HealthCheckService.stop();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  HealthCheckService.stop();
+  process.exit(0);
+});
 
 startServer();
 

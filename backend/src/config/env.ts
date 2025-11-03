@@ -8,6 +8,7 @@ export const config = {
   jwtSecret: (process.env.JWT_SECRET || 'your-secret-key') as string,
   jwtExpiresIn: (process.env.JWT_EXPIRES_IN || '1d') as string,
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  encryptionKey: process.env.ENCRYPTION_KEY || '',
   shopify: {
     apiKey: process.env.SHOPIFY_API_KEY || '',
     apiSecret: process.env.SHOPIFY_API_SECRET || '',

@@ -42,3 +42,42 @@ export const authenticateToken = async (
   }
 };
 
+/**
+ * Require specific role middleware
+ * @param role - Required role ('admin' or 'user')
+ */
+export const requireRole = (role: 'admin' | 'user') => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(createError('Authentication required', 401));
+    }
+
+    if (req.user.role !== role) {
+      return next(
+        createError(`Access denied. ${role} role required.`, 403)
+      );
+    }
+
+    next();
+  };
+};
+
+/**
+ * Require admin role middleware
+ */
+export const requireAdmin = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user) {
+    return next(createError('Authentication required', 401));
+  }
+
+  if (req.user.role !== 'admin') {
+    return next(createError('Access denied. Admin role required.', 403));
+  }
+
+  next();
+};
+

@@ -1,132 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { api } from '@/lib/api';
-import { User } from '@/types';
-
-function ShopifyConnectionCard({ user }: { user: User }) {
-  const [connecting, setConnecting] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
-  const [shopName, setShopName] = useState('');
-
-  const handleConnect = async () => {
-    if (!shopName.trim()) {
-      alert('Please enter your Shopify store name');
-      return;
-    }
-
-    setConnecting(true);
-    try {
-      // Get the token first
-      const token = localStorage.getItem('token');
-      // Redirect to backend OAuth initiation with token
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/shopify/auth?shop=${shopName}.myshopify.com&token=${token}`;
-    } catch (error) {
-      alert('Failed to connect to Shopify');
-      setConnecting(false);
-    }
-  };
-
-  const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect your Shopify account?')) {
-      return;
-    }
-
-    setDisconnecting(true);
-    try {
-      await api.post('/api/shopify/disconnect');
-      window.location.reload();
-    } catch (error) {
-      alert('Failed to disconnect Shopify account');
-    } finally {
-      setDisconnecting(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-      <h3 className="text-xl font-bold mb-4">Shopify Connection</h3>
-      {user.shopifyShop ? (
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-gray-700">
-              Connected to: <strong>{user.shopifyShop}</strong>
-            </span>
-          </div>
-          <button
-            onClick={handleDisconnect}
-            disabled={disconnecting}
-            className="bg-red-100 hover:bg-red-200 text-red-700 px-6 py-2 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {disconnecting ? 'Disconnecting...' : 'Disconnect Account'}
-          </button>
-        </div>
-      ) : (
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-            <span className="text-gray-700">Not connected</span>
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Shopify Store Name
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-                placeholder="your-store"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-              <span className="flex items-center text-gray-500 text-sm">
-                .myshopify.com
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={handleConnect}
-            disabled={connecting}
-            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {connecting ? 'Connecting...' : 'Connect Shopify Account'}
-          </button>
-          <p className="mt-3 text-sm text-gray-500">
-            💡 You'll be redirected to Shopify to authorize the connection
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function DashboardPage() {
-  const { user, loading, logout, isAuthenticated, refreshUser } = useAuth();
+  const { user, loading, logout, isAuthenticated } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
     }
   }, [loading, isAuthenticated, router]);
-
-  // Show notification if redirected from Shopify and refresh user data
-  useEffect(() => {
-    const shopifyStatus = searchParams.get('shopify');
-    if (shopifyStatus === 'connected') {
-      alert('✅ Shopify account connected successfully!');
-      refreshUser(); // Refresh user data to get updated Shopify info
-      router.replace('/dashboard');
-    } else if (shopifyStatus === 'error') {
-      alert('❌ Failed to connect Shopify account. Please try again.');
-      router.replace('/dashboard');
-    }
-  }, [searchParams, router, refreshUser]);
 
   if (loading) {
     return (
@@ -154,13 +41,27 @@ export default function DashboardPage() {
             </h1>
             <div className="flex items-center gap-4">
               <span className="text-gray-600">{user.email}</span>
+              <Link
+                href="/dashboard/stores"
+                className="text-primary-600 hover:text-primary-700 font-semibold"
+              >
+                My Stores
+              </Link>
               {user.role === 'admin' && (
-                <Link
-                  href="/admin/products"
-                  className="text-primary-600 hover:text-primary-700 font-semibold"
-                >
-                  Admin Panel
-                </Link>
+                <>
+                  <Link
+                    href="/admin/products"
+                    className="text-primary-600 hover:text-primary-700 font-semibold"
+                  >
+                    Admin Panel
+                  </Link>
+                  <Link
+                    href="/admin/stores"
+                    className="text-primary-600 hover:text-primary-700 font-semibold"
+                  >
+                    All Stores
+                  </Link>
+                </>
               )}
               <button
                 onClick={logout}
@@ -180,12 +81,39 @@ export default function DashboardPage() {
             Welcome back, {user.email}!
           </h2>
 
-          {/* Shopify Connection Status */}
-          <ShopifyConnectionCard user={user} />
+          {/* Store Connection Prompt */}
+          <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl p-6 mb-6 border-2 border-primary-200">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl">🏪</div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Connect Your Shopify Store
+                </h3>
+                <p className="text-gray-700 mb-4">
+                  Connect your Shopify store credentials to start creating and managing products.
+                  You can connect multiple stores and switch between them.
+                </p>
+                <div className="flex gap-3">
+                  <Link
+                    href="/dashboard/stores/connect"
+                    className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors font-medium"
+                  >
+                    Connect Store
+                  </Link>
+                  <Link
+                    href="/dashboard/stores"
+                    className="bg-white hover:bg-gray-50 text-primary-600 px-6 py-2 rounded-lg transition-colors font-medium border-2 border-primary-600"
+                  >
+                    View My Stores
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          {/* Stores */}
+          {/* Created Stores */}
           <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h3 className="text-xl font-bold mb-4">Your Stores</h3>
+            <h3 className="text-xl font-bold mb-4">Your Created Stores</h3>
             {user.stores && user.stores.length > 0 ? (
               <div className="space-y-4">
                 {user.stores.map((store, index) => (
@@ -240,7 +168,7 @@ export default function DashboardPage() {
           {/* Quick Actions */}
           <div className="bg-white rounded-xl shadow-md p-6">
             <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <Link
                 href="/products"
                 className="border-2 border-primary-200 hover:border-primary-400 rounded-lg p-4 transition-colors"
@@ -254,13 +182,26 @@ export default function DashboardPage() {
                 </p>
               </Link>
 
-              <div className="border-2 border-gray-200 hover:border-gray-300 rounded-lg p-4 transition-colors cursor-pointer">
+              <Link
+                href="/dashboard/stores"
+                className="border-2 border-primary-200 hover:border-primary-400 rounded-lg p-4 transition-colors"
+              >
+                <div className="text-2xl mb-2">🔗</div>
+                <h4 className="font-semibold text-gray-900 mb-1">
+                  Manage Stores
+                </h4>
+                <p className="text-sm text-gray-600">
+                  Connect and manage your Shopify stores
+                </p>
+              </Link>
+
+              <div className="border-2 border-gray-200 hover:border-gray-300 rounded-lg p-4 transition-colors cursor-pointer opacity-50">
                 <div className="text-2xl mb-2">📊</div>
                 <h4 className="font-semibold text-gray-900 mb-1">
                   View Analytics
                 </h4>
                 <p className="text-sm text-gray-600">
-                  Track your store performance
+                  Coming soon
                 </p>
               </div>
             </div>
@@ -270,4 +211,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

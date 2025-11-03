@@ -2,17 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
+
+interface StoreConnection {
+  _id: string;
+  storeName: string;
+  shopDomain: string;
+  isDefault: boolean;
+  status: string;
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
+  const [stores, setStores] = useState<StoreConnection[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [loadingStores, setLoadingStores] = useState(true);
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
   const [creating, setCreating] = useState(false);
@@ -24,6 +36,12 @@ export default function ProductDetailPage() {
       fetchProduct(params.id as string);
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchStores();
+    }
+  }, [isAuthenticated]);
 
   const fetchProduct = async (id: string) => {
     try {
@@ -38,15 +56,42 @@ export default function ProductDetailPage() {
     }
   };
 
+  const fetchStores = async () => {
+    try {
+      setLoadingStores(true);
+      const response = await api.get<{ success: boolean; data: StoreConnection[] }>(
+        '/api/stores'
+      );
+      setStores(response.data);
+      
+      // Auto-select default store
+      const defaultStore = response.data.find(s => s.isDefault);
+      if (defaultStore) {
+        setSelectedStoreId(defaultStore._id);
+      } else if (response.data.length > 0) {
+        setSelectedStoreId(response.data[0]._id);
+      }
+    } catch (err: any) {
+      console.error('Error fetching stores:', err);
+    } finally {
+      setLoadingStores(false);
+    }
+  };
+
   const handleCreateStore = async () => {
     if (!isAuthenticated) {
       router.push('/login');
       return;
     }
 
-    if (!user?.shopifyShop) {
-      alert('Please connect your Shopify account first from your dashboard');
-      router.push('/dashboard');
+    if (stores.length === 0) {
+      alert('Please connect a Shopify store first from your dashboard');
+      router.push('/dashboard/stores/connect');
+      return;
+    }
+
+    if (!selectedStoreId) {
+      alert('Please select a store');
       return;
     }
 
@@ -60,6 +105,7 @@ export default function ProductDetailPage() {
         data: any;
       }>('/api/stores/create', {
         productId: params.id,
+        storeId: selectedStoreId,
       });
 
       setStoreData(response.data);
@@ -67,6 +113,7 @@ export default function ProductDetailPage() {
     } catch (err: any) {
       setError(
         err.response?.data?.error ||
+          err.response?.data?.message ||
           'Failed to create store. Please try again.'
       );
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -86,7 +133,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (error || !product) {
+  if (error && !product) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
@@ -104,6 +151,8 @@ export default function ProductDetailPage() {
       </div>
     );
   }
+
+  if (!product) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -165,6 +214,14 @@ export default function ProductDetailPage() {
                   Manage Product
                 </a>
               </div>
+
+              {storeData.usedStore && (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Store Used:</strong> {storeData.usedStore.name}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -254,10 +311,48 @@ export default function ProductDetailPage() {
                   </div>
                 )}
 
+                {/* Store Selection */}
+                {isAuthenticated && !loadingStores && (
+                  <>
+                    {stores.length > 0 ? (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Select Store
+                        </label>
+                        <select
+                          value={selectedStoreId}
+                          onChange={(e) => setSelectedStoreId(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        >
+                          {stores.map((store) => (
+                            <option key={store._id} value={store._id}>
+                              {store.storeName} ({store.shopDomain})
+                              {store.isDefault ? ' - Default' : ''}
+                              {store.status !== 'active' ? ` [${store.status}]` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-yellow-800 text-sm mb-2">
+                          ⚠️ No stores connected yet
+                        </p>
+                        <Link
+                          href="/dashboard/stores/connect"
+                          className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                          Connect your first store →
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                )}
+
                 <div className="space-y-4">
                   <button
                     onClick={handleCreateStore}
-                    disabled={creating}
+                    disabled={creating || stores.length === 0}
                     className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {creating ? (
@@ -291,13 +386,7 @@ export default function ProductDetailPage() {
 
                   {!isAuthenticated && (
                     <p className="text-sm text-gray-500 text-center">
-                      You'll need to log in and connect Shopify to create a store
-                    </p>
-                  )}
-
-                  {isAuthenticated && !user?.shopifyShop && (
-                    <p className="text-sm text-orange-600 text-center">
-                      ⚠️ Connect your Shopify account first
+                      You'll need to log in and connect a store first
                     </p>
                   )}
                 </div>
@@ -307,11 +396,10 @@ export default function ProductDetailPage() {
                     ✨ What You'll Get
                   </h3>
                   <ul className="space-y-2 text-sm text-gray-600">
-                    <li>✓ Fully functional Shopify store</li>
-                    <li>✓ Product automatically added</li>
+                    <li>✓ Product added to your Shopify store</li>
                     <li>✓ Professional descriptions & images</li>
                     <li>✓ Ready to start selling immediately</li>
-                    <li>✓ AI-generated marketing tips</li>
+                    <li>✓ Full control in Shopify admin</li>
                   </ul>
                 </div>
               </div>
@@ -332,4 +420,3 @@ export default function ProductDetailPage() {
     </div>
   );
 }
-

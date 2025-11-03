@@ -2,9 +2,10 @@ import { Response, NextFunction } from 'express';
 import axios from 'axios';
 import { User } from '../models/User';
 import { Product } from '../models/Product';
+import { StoreConnection } from '../models/StoreConnection';
+import { decrypt } from '../utils/encryption';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
-import { config } from '../config/env';
 
 // Create a new Shopify store with selected product
 export const createStore = async (
@@ -17,28 +18,67 @@ export const createStore = async (
       throw createError('Authentication required', 401);
     }
 
-    const { productId } = req.body;
+    const { productId, storeId } = req.body;
 
     if (!productId || typeof productId !== 'string' || productId.trim() === '') {
       throw createError('Valid Product ID is required', 400);
     }
 
-    // Get Shopify credentials - prefer user's OAuth credentials, fallback to .env custom app
-    const shopifyAccessToken = req.user.shopifyAccessToken || config.shopify.accessToken;
-    const shopifyShop = req.user.shopifyShop || config.shopify.shop;
-
-    if (!shopifyAccessToken || !shopifyShop) {
-      throw createError('Please connect your Shopify account first or configure SHOPIFY_ACCESS_TOKEN in .env', 400);
-    }
-
     console.log('🛍️ Creating store with product:', productId);
-    console.log('📦 Using shop:', shopifyShop);
 
     // Fetch product details
     const product = await Product.findById(productId);
     if (!product) {
       throw createError('Product not found', 404);
     }
+
+    // Get store connection (either specified or default)
+    let storeConnection;
+
+    if (storeId) {
+      // Use specified store
+      storeConnection = await StoreConnection.findById(storeId);
+      
+      if (!storeConnection) {
+        throw createError('Store connection not found', 404);
+      }
+
+      // Verify ownership or admin
+      const isOwner = storeConnection.owner.toString() === (req.user as any)._id.toString();
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isOwner && !isAdmin) {
+        throw createError('You do not have access to this store', 403);
+      }
+    } else {
+      // Use user's default store
+      storeConnection = await StoreConnection.findOne({
+        owner: (req.user as any)._id,
+        isDefault: true,
+      });
+
+      if (!storeConnection) {
+        throw createError(
+          'No default store connected. Please connect a Shopify store first or specify a store ID.',
+          400
+        );
+      }
+    }
+
+    // Check store status
+    if (storeConnection.status !== 'active') {
+      throw createError(
+        `Store connection is ${storeConnection.status}. Please test and fix the connection first.`,
+        400
+      );
+    }
+
+    // Decrypt credentials
+    const shopifyAccessToken = decrypt(storeConnection.accessToken);
+    const shopifyShop = storeConnection.shopDomain;
+
+    console.log('📦 Using shop:', shopifyShop);
+    console.log('🔗 Store:', storeConnection.storeName);
 
     // Prepare product data for Shopify (without images initially for trial accounts)
     const shopifyProduct = {
@@ -63,8 +103,9 @@ export const createStore = async (
     console.log('📤 Sending product to Shopify...');
 
     // Add product to Shopify store using Admin API
+    const apiVersion = storeConnection.apiVersion || '2024-01';
     const shopifyResponse = await axios.post(
-      `https://${shopifyShop}/admin/api/2025-10/products.json`,
+      `https://${shopifyShop}/admin/api/${apiVersion}/products.json`,
       shopifyProduct,
       {
         headers: {
@@ -82,7 +123,7 @@ export const createStore = async (
       try {
         console.log('🖼️ Attempting to add images...');
         await axios.put(
-          `https://${shopifyShop}/admin/api/2025-10/products/${createdProduct.id}.json`,
+          `https://${shopifyShop}/admin/api/${apiVersion}/products/${createdProduct.id}.json`,
           {
             product: {
               id: createdProduct.id,
@@ -110,8 +151,8 @@ export const createStore = async (
     // Admin URL for the created product
     const adminUrl = `https://${shopifyShop}/admin/products/${createdProduct.id}`;
 
-    // Save store info to user record
-    await User.findByIdAndUpdate(req.user._id, {
+    // Save store info to user record (for backward compatibility)
+    await User.findByIdAndUpdate((req.user as any)._id, {
       $push: {
         stores: {
           storeUrl: storeUrl,
@@ -135,6 +176,11 @@ export const createStore = async (
           price: product.price,
           images: product.images,
         },
+        usedStore: {
+          id: storeConnection._id,
+          name: storeConnection.storeName,
+          domain: storeConnection.shopDomain,
+        },
       },
     });
   } catch (error: any) {
@@ -148,7 +194,7 @@ export const createStore = async (
     if (error.response?.status === 401) {
       return next(
         createError(
-          'Shopify authentication failed. Please check your credentials or reconnect your account.',
+          'Shopify authentication failed. Please check your store credentials or test the connection.',
           401
         )
       );
@@ -186,7 +232,7 @@ export const getUserStores = async (
       throw createError('Authentication required', 401);
     }
 
-    const user = await User.findById(req.user._id).populate(
+    const user = await User.findById((req.user as any)._id).populate(
       'stores.productId'
     );
 
@@ -199,4 +245,3 @@ export const getUserStores = async (
     next(error);
   }
 };
-
