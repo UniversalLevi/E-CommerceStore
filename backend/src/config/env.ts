@@ -13,6 +13,8 @@ export const config = {
     apiSecret: process.env.SHOPIFY_API_SECRET || '',
     redirectUri: process.env.SHOPIFY_REDIRECT_URI || 'http://localhost:5000/api/shopify/callback',
     scopes: process.env.SHOPIFY_SCOPES || 'write_products,read_products,write_themes,read_themes',
+    accessToken: process.env.SHOPIFY_ACCESS_TOKEN || '',
+    shop: process.env.SHOPIFY_SHOP || '',
   },
 };
 
