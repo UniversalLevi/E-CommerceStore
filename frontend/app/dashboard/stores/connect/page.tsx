@@ -31,7 +31,7 @@ export default function ConnectStorePage() {
         domain = `${domain}.myshopify.com`;
       }
 
-      const response = await api.post('/api/stores', {
+      const response = await api.post<{ success: boolean; data: any; shopInfo?: any }>('/api/stores', {
         ...formData,
         shopDomain: domain,
       });

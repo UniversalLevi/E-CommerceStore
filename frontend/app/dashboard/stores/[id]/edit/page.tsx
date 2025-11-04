@@ -30,7 +30,7 @@ export default function EditStorePage() {
   const fetchStoreData = async () => {
     try {
       setFetching(true);
-      const response = await api.get(`/api/stores/${storeId}`);
+      const response = await api.get<{ success: boolean; data: any }>(`/api/stores/${storeId}`);
       const store = response.data;
       
       setFormData({
