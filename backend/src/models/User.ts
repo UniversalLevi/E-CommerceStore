@@ -72,8 +72,8 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Index for faster queries
-userSchema.index({ email: 1 });
+// Index is already defined in schema with unique: true, removing duplicate
+// userSchema.index({ email: 1 }); // REMOVED - causing duplicate index warning
 
 export const User = mongoose.model<IUser>('User', userSchema);
 

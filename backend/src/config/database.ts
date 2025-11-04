@@ -1,11 +1,15 @@
 import mongoose from 'mongoose';
+import { config } from './env';
 
-export const connectDatabase = async (): Promise<void> => {
+export const connectDatabase = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/shopify-store-builder';
-    
-    await mongoose.connect(mongoUri);
-    
+    await mongoose.connect(config.mongoUri, {
+      // Connection pool settings for better performance
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 5000,
+    });
     console.log('✅ MongoDB connected successfully');
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
@@ -13,11 +17,17 @@ export const connectDatabase = async (): Promise<void> => {
   }
 };
 
+// Handle connection events
+mongoose.connection.on('error', (error) => {
+  console.error('MongoDB connection error:', error);
+});
+
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
 });
 
-mongoose.connection.on('error', (error) => {
-  console.error('MongoDB error:', error);
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  await mongoose.connection.close();
+  process.exit(0);
 });
-

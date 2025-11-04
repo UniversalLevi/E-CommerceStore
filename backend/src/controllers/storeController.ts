@@ -51,11 +51,11 @@ export const createStore = async (
         throw createError('You do not have access to this store', 403);
       }
     } else {
-      // Use user's default store
+      // Use user's default store (select only needed fields)
       storeConnection = await StoreConnection.findOne({
         owner: (req.user as any)._id,
         isDefault: true,
-      });
+      }).select('storeName shopDomain accessToken status apiVersion');
 
       if (!storeConnection) {
         throw createError(

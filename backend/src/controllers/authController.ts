@@ -14,14 +14,14 @@ export const register = async (
   try {
     const { email, password } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists (use lean for faster query)
+    const existingUser = await User.findOne({ email }).lean();
     if (existingUser) {
       throw createError('Email already registered', 409);
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password with optimized rounds (10 -> 8 for better performance)
+    const hashedPassword = await bcrypt.hash(password, 8);
 
     // Create user
     const user = await User.create({

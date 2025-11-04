@@ -34,11 +34,11 @@ export const createStoreConnection = async (
     // Normalize shop domain
     const normalizedDomain = normalizeShopDomain(shopDomain);
 
-    // Check if store already exists for this user
+    // Check if store already exists for this user (use lean for faster query)
     const existingStore = await StoreConnection.findOne({
       owner: (req.user as any)._id,
       shopDomain: normalizedDomain,
-    });
+    }).lean();
 
     if (existingStore) {
       throw createError(
@@ -165,7 +165,8 @@ export const listStoreConnections = async (
     const stores = await StoreConnection.find(query)
       .populate('owner', 'email role')
       .select('-accessToken -apiKey -apiSecret') // Never return encrypted credentials
-      .sort({ isDefault: -1, createdAt: -1 });
+      .sort({ isDefault: -1, createdAt: -1 })
+      .lean(); // Use lean for better performance
 
     res.json({
       success: true,

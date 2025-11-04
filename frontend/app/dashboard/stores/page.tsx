@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,13 +32,9 @@ export default function MyStoresPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchStores();
-    }
-  }, [isAuthenticated]);
-
-  const fetchStores = async () => {
+  const fetchStores = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
     try {
       setLoading(true);
       const response = await api.get<{ success: boolean; data: StoreConnection[] }>(
@@ -51,7 +47,11 @@ export default function MyStoresPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    fetchStores();
+  }, [fetchStores]);
 
   const handleTest = async (storeId: string) => {
     setTesting(storeId);
@@ -71,9 +71,15 @@ export default function MyStoresPage() {
   const handleSetDefault = async (storeId: string) => {
     try {
       await api.put(`/api/stores/${storeId}/default`);
-      await fetchStores();
+      
+      // Optimistic update
+      setStores(prevStores => prevStores.map(store => ({
+        ...store,
+        isDefault: store._id === storeId
+      })));
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to set default');
+      await fetchStores(); // Revert on error
     }
   };
 
@@ -84,9 +90,12 @@ export default function MyStoresPage() {
 
     try {
       await api.delete(`/api/stores/${storeId}`);
-      await fetchStores();
+      
+      // Optimistic update
+      setStores(prevStores => prevStores.filter(store => store._id !== storeId));
     } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to delete store');
+      await fetchStores(); // Revert on error
     }
   };
 
@@ -271,6 +280,3 @@ export default function MyStoresPage() {
     </div>
   );
 }
-
-
-
