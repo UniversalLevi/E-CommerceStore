@@ -1,19 +1,46 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/lib/api';
+import OnboardingModal from '@/components/OnboardingModal';
 
 export default function DashboardPage() {
   const { user, loading, logout, isAuthenticated } = useAuth();
   const router = useRouter();
+  const [stores, setStores] = useState<any[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
     }
   }, [loading, isAuthenticated, router]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      checkOnboarding();
+      fetchStores();
+    }
+  }, [isAuthenticated, user]);
+
+  const fetchStores = async () => {
+    try {
+      const response = await api.get<{ success: boolean; data: any[] }>('/api/stores');
+      setStores(response.data);
+    } catch (error) {
+      // Ignore errors
+    }
+  };
+
+  const checkOnboarding = () => {
+    const dismissed = localStorage.getItem('onboarding_dismissed');
+    if (!dismissed && stores.length === 0) {
+      setShowOnboarding(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -208,6 +235,17 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => {
+          setShowOnboarding(false);
+          localStorage.setItem('onboarding_dismissed', 'true');
+        }}
+        onComplete={() => {
+          setShowOnboarding(false);
+        }}
+      />
     </div>
   );
 }

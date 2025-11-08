@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { notify } from '@/lib/toast';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface StoreConnection {
   _id: string;
@@ -25,6 +27,11 @@ export default function MyStoresPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [testing, setTesting] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; storeId: string; storeName: string }>({
+    isOpen: false,
+    storeId: '',
+    storeName: '',
+  });
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -59,10 +66,10 @@ export default function MyStoresPage() {
       const response = await api.post<{ success: boolean; valid: boolean; message: string }>(
         `/api/stores/${storeId}/test`
       );
-      alert(response.message);
+      notify.success(response.message);
       await fetchStores(); // Refresh to get updated status
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to test connection');
+      notify.error(error.response?.data?.error || 'Failed to test connection');
     } finally {
       setTesting(null);
     }
@@ -77,24 +84,27 @@ export default function MyStoresPage() {
         ...store,
         isDefault: store._id === storeId
       })));
+      notify.success('Default store updated');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to set default');
+      notify.error(error.response?.data?.error || 'Failed to set default');
       await fetchStores(); // Revert on error
     }
   };
 
-  const handleDelete = async (storeId: string, storeName: string) => {
-    if (!confirm(`Are you sure you want to delete "${storeName}"?`)) {
-      return;
-    }
+  const handleDeleteClick = (storeId: string, storeName: string) => {
+    setDeleteModal({ isOpen: true, storeId, storeName });
+  };
 
+  const handleDeleteConfirm = async () => {
     try {
-      await api.delete(`/api/stores/${storeId}`);
+      await api.delete(`/api/stores/${deleteModal.storeId}`);
       
       // Optimistic update
-      setStores(prevStores => prevStores.filter(store => store._id !== storeId));
+      setStores(prevStores => prevStores.filter(store => store._id !== deleteModal.storeId));
+      notify.success('Store deleted successfully');
+      setDeleteModal({ isOpen: false, storeId: '', storeName: '' });
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete store');
+      notify.error(error.response?.data?.error || 'Failed to delete store');
       await fetchStores(); // Revert on error
     }
   };
@@ -264,7 +274,7 @@ export default function MyStoresPage() {
                       </Link>
 
                       <button
-                        onClick={() => handleDelete(store._id, store.storeName)}
+                        onClick={() => handleDeleteClick(store._id, store.storeName)}
                         className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
                       >
                         Delete
@@ -277,6 +287,17 @@ export default function MyStoresPage() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        title="Delete Store"
+        message={`Are you sure you want to delete "${deleteModal.storeName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteModal({ isOpen: false, storeId: '', storeName: '' })}
+      />
     </div>
   );
 }

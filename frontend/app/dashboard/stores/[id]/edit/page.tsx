@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { notify } from '@/lib/toast';
 
 export default function EditStorePage() {
   const router = useRouter();
@@ -87,7 +88,7 @@ export default function EditStorePage() {
 
       const response = await api.put(`/api/stores/${storeId}`, updateData);
 
-      alert(`✅ Store updated successfully!`);
+      notify.success('Store updated successfully!');
       router.push('/dashboard/stores');
     } catch (error: any) {
       console.error('Error updating store:', error);

@@ -13,13 +13,14 @@ import {
   testStoreConnection,
   setDefaultStore,
 } from '../controllers/storeConnectionController';
+import { storeCreateRateLimit, storeTestRateLimit, generalApiRateLimit } from '../middleware/rateLimit';
 
 // Legacy store creation
 import { createStore, getUserStores } from '../controllers/storeController';
 
 const router = Router();
 
-// Rate limiter for test endpoint (5 requests per minute per IP)
+// Rate limiter for test endpoint (5 requests per minute per IP) - keeping express-rate-limit for compatibility
 const testLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 5,
@@ -32,6 +33,7 @@ const testLimiter = rateLimit({
 router.post(
   '/',
   authenticateToken,
+  storeCreateRateLimit,
   validate(createStoreSchema),
   createStoreConnection
 );
@@ -39,6 +41,7 @@ router.post(
 router.get(
   '/',
   authenticateToken,
+  generalApiRateLimit,
   listStoreConnections
 );
 
@@ -68,7 +71,8 @@ router.post(
   '/:id/test',
   authenticateToken,
   requireStoreOwner,
-  testLimiter,
+  storeTestRateLimit,
+  testLimiter, // Keep both for compatibility
   testStoreConnection
 );
 
@@ -80,7 +84,7 @@ router.put(
 );
 
 // Legacy routes (for backward compatibility during migration)
-router.post('/create', authenticateToken, createStore);
-router.get('/user-stores', authenticateToken, getUserStores);
+router.post('/create', authenticateToken, storeCreateRateLimit, createStore);
+router.get('/user-stores', authenticateToken, generalApiRateLimit, getUserStores);
 
 export default router;

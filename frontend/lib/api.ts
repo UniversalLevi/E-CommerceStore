@@ -11,23 +11,8 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true, // Enable cookies (HttpOnly)
     });
-
-    // Request interceptor to add token
-    this.client.interceptors.request.use(
-      (config) => {
-        if (typeof window !== 'undefined') {
-          const token = localStorage.getItem('token');
-          if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-          }
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
 
     // Response interceptor to handle errors
     this.client.interceptors.response.use(
@@ -36,7 +21,6 @@ class ApiClient {
         if (error.response?.status === 401) {
           // Token expired or invalid
           if (typeof window !== 'undefined') {
-            localStorage.removeItem('token');
             window.location.href = '/login';
           }
         }
@@ -45,24 +29,56 @@ class ApiClient {
     );
   }
 
+  private async retryRequest<T>(
+    requestFn: () => Promise<T>,
+    retries = 3,
+    delay = 1000
+  ): Promise<T> {
+    try {
+      return await requestFn();
+    } catch (error: any) {
+      const isRetryable = 
+        error.response?.status >= 500 && 
+        error.response?.status < 600 &&
+        error.response?.data?.retryable !== false &&
+        retries > 0;
+
+      if (!isRetryable) {
+        throw error;
+      }
+
+      // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return this.retryRequest(requestFn, retries - 1, delay * 2);
+    }
+  }
+
   async get<T>(url: string) {
-    const response = await this.client.get<T>(url);
-    return response.data;
+    return this.retryRequest(async () => {
+      const response = await this.client.get<T>(url);
+      return response.data;
+    });
   }
 
   async post<T>(url: string, data?: any) {
-    const response = await this.client.post<T>(url, data);
-    return response.data;
+    return this.retryRequest(async () => {
+      const response = await this.client.post<T>(url, data);
+      return response.data;
+    });
   }
 
   async put<T>(url: string, data?: any) {
-    const response = await this.client.put<T>(url, data);
-    return response.data;
+    return this.retryRequest(async () => {
+      const response = await this.client.put<T>(url, data);
+      return response.data;
+    });
   }
 
   async delete<T>(url: string) {
-    const response = await this.client.delete<T>(url);
-    return response.data;
+    return this.retryRequest(async () => {
+      const response = await this.client.delete<T>(url);
+      return response.data;
+    });
   }
 }
 

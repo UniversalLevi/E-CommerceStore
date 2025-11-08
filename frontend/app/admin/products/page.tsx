@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Product } from '@/types';
 import Navbar from '@/components/Navbar';
+import { notify } from '@/lib/toast';
 
 export default function AdminProductsPage() {
   const { user, loading } = useAuth();
@@ -45,7 +46,7 @@ export default function AdminProductsPage() {
       await api.delete(`/api/products/${id}`);
       setProducts(products.filter((p) => p._id !== id));
     } catch (err: any) {
-      alert('Failed to delete product');
+      notify.error('Failed to delete product');
     }
   };
 

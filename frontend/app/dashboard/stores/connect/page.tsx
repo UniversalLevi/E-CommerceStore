@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { notify } from '@/lib/toast';
 
 export default function ConnectStorePage() {
   const router = useRouter();
@@ -36,7 +37,7 @@ export default function ConnectStorePage() {
         shopDomain: domain,
       });
 
-      alert(`✅ Store connected successfully! ${response.data?.shopInfo?.name || ''}`);
+      notify.success(`Store connected successfully! ${response.data?.shopInfo?.name || ''}`);
       router.push('/dashboard/stores');
     } catch (error: any) {
       console.error('Error connecting store:', error);

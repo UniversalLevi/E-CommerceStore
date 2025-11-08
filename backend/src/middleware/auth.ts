@@ -14,8 +14,13 @@ export const authenticateToken = async (
   next: NextFunction
 ) => {
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    // Check cookie first (HttpOnly), then Bearer token as fallback for API clients
+    let token = req.cookies?.auth_token;
+    
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    }
 
     if (!token) {
       throw createError('Access token required', 401);
@@ -23,13 +28,18 @@ export const authenticateToken = async (
 
     const decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
 
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId).select('-password').lean();
 
     if (!user) {
       throw createError('User not found', 404);
     }
 
-    req.user = user;
+    // Check if account is active
+    if (!user.isActive) {
+      throw createError('Account is disabled', 403);
+    }
+
+    req.user = user as IUser;
     next();
   } catch (error: any) {
     if (error.name === 'JsonWebTokenError') {
@@ -64,8 +74,9 @@ export const requireRole = (role: 'admin' | 'user') => {
 
 /**
  * Require admin role middleware
+ * CRITICAL: Verifies role from DB, not just JWT (prevents privilege escalation)
  */
-export const requireAdmin = (
+export const requireAdmin = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -74,7 +85,10 @@ export const requireAdmin = (
     return next(createError('Authentication required', 401));
   }
 
-  if (req.user.role !== 'admin') {
+  // CRITICAL: Verify role from DB, not just JWT (prevents privilege escalation)
+  const user = await User.findById((req.user as any)._id).select('role').lean();
+
+  if (!user || user.role !== 'admin') {
     return next(createError('Access denied. Admin role required.', 403));
   }
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { notify } from '@/lib/toast';
 
 interface StoreConnection {
   _id: string;
@@ -68,10 +69,10 @@ export default function AdminStoresPage() {
       const response = await api.post<{ success: boolean; valid: boolean; message: string }>(
         `/api/stores/${storeId}/test`
       );
-      alert(response.message);
+      notify.success(response.message);
       await fetchStores();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to test connection');
+      notify.error(error.response?.data?.error || 'Failed to test connection');
     } finally {
       setTesting(null);
     }
@@ -86,7 +87,7 @@ export default function AdminStoresPage() {
       await api.delete(`/api/stores/${storeId}`);
       await fetchStores();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to delete store');
+      notify.error(error.response?.data?.error || 'Failed to delete store');
     }
   };
 

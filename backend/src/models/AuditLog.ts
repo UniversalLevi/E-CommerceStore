@@ -28,6 +28,10 @@ const auditLogSchema = new Schema<IAuditLog>({
       'TEST_STORE',
       'SET_DEFAULT_STORE',
       'AUTO_HEALTH_CHECK',
+      'UPDATE_USER_ROLE',
+      'ENABLE_USER',
+      'DISABLE_USER',
+      'DELETE_USER',
     ],
     index: true,
   },
@@ -63,6 +67,8 @@ const auditLogSchema = new Schema<IAuditLog>({
 auditLogSchema.index({ userId: 1, timestamp: -1 });
 auditLogSchema.index({ storeId: 1, timestamp: -1 });
 auditLogSchema.index({ success: 1, timestamp: -1 });
+// Performance critical: supports sorting by date + filtering by user/action
+auditLogSchema.index({ timestamp: -1, userId: 1, action: 1 });
 
 export const AuditLog = mongoose.model<IAuditLog>('AuditLog', auditLogSchema);
 

@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
+import { notify } from '@/lib/toast';
 
 interface StoreConnection {
   _id: string;
@@ -85,13 +86,13 @@ export default function ProductDetailPage() {
     }
 
     if (stores.length === 0) {
-      alert('Please connect a Shopify store first from your dashboard');
+      notify.error('Please connect a Shopify store first from your dashboard');
       router.push('/dashboard/stores/connect');
       return;
     }
 
     if (!selectedStoreId) {
-      alert('Please select a store');
+      notify.error('Please select a store');
       return;
     }
 

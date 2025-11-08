@@ -14,6 +14,9 @@ export interface IUser extends Document {
   shopifyAccessToken?: string;
   shopifyShop?: string;
   stores: IStore[];
+  isActive: boolean;
+  lastLogin?: Date;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,6 +69,17 @@ const userSchema = new Schema<IUser>(
       default: undefined,
     },
     stores: [storeSchema],
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    lastLogin: {
+      type: Date,
+    },
+    deletedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

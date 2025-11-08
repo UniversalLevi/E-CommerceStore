@@ -27,16 +27,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Check if user is logged in on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await api.get<{ success: boolean; user: User }>(
-            '/api/auth/me'
-          );
-          setUser(response.user);
-        } catch (error) {
-          localStorage.removeItem('token');
-        }
+      try {
+        const response = await api.get<{ success: boolean; user: User }>(
+          '/api/auth/me'
+        );
+        setUser(response.user);
+      } catch (error) {
+        // Not authenticated - cookie not present or invalid
+        setUser(null);
       }
       setLoading(false);
     };
@@ -48,11 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const response = await api.post<{
         success: boolean;
-        token: string;
         user: User;
       }>('/api/auth/login', { email, password });
 
-      localStorage.setItem('token', response.token);
       setUser(response.user);
       router.push('/dashboard');
     } catch (error: any) {
@@ -66,11 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const response = await api.post<{
         success: boolean;
-        token: string;
         user: User;
       }>('/api/auth/register', { email, password });
 
-      localStorage.setItem('token', response.token);
       setUser(response.user);
       router.push('/dashboard');
     } catch (error: any) {
@@ -80,8 +74,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      await api.post('/api/auth/logout');
+    } catch (error) {
+      // Continue with logout even if API call fails
+    }
     setUser(null);
     router.push('/login');
   };

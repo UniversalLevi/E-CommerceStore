@@ -3,23 +3,41 @@
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { loginSchema } from '@/lib/validation';
+import Button from '@/components/Button';
+import { notify } from '@/lib/toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setErrors({});
+
+    // Validate with Zod
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      const fieldErrors: { email?: string; password?: string } = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as keyof typeof fieldErrors] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
     setLoading(true);
 
     try {
       await login(email, password);
+      notify.success('Login successful!');
     } catch (err: any) {
-      setError(err.message);
+      notify.error(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -36,12 +54,6 @@ export default function LoginPage() {
             <p className="text-gray-600">Sign in to your account</p>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
@@ -54,11 +66,25 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors({ ...errors, email: undefined });
+                }}
+                onBlur={() => {
+                  const result = loginSchema.safeParse({ email, password });
+                  if (!result.success) {
+                    const emailError = result.error.errors.find((e) => e.path[0] === 'email');
+                    if (emailError) setErrors({ ...errors, email: emailError.message });
+                  }
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  errors.email ? 'border-red-300' : 'border-gray-300'
+                }`}
                 placeholder="you@example.com"
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
             </div>
 
             <div>
@@ -72,21 +98,30 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors({ ...errors, password: undefined });
+                }}
+                onBlur={() => {
+                  const result = loginSchema.safeParse({ email, password });
+                  if (!result.success) {
+                    const passwordError = result.error.errors.find((e) => e.path[0] === 'password');
+                    if (passwordError) setErrors({ ...errors, password: passwordError.message });
+                  }
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  errors.password ? 'border-red-300' : 'border-gray-300'
+                }`}
                 placeholder="••••••••"
               />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
+            <Button type="submit" loading={loading} className="w-full">
+              Sign In
+            </Button>
           </form>
 
           <p className="mt-6 text-center text-gray-600">

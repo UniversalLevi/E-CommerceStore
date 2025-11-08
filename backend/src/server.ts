@@ -33,12 +33,14 @@ import authRoutes from './routes/authRoutes';
 import productRoutes from './routes/productRoutes';
 import storeRoutes from './routes/storeRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

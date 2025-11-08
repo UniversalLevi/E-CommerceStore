@@ -3,26 +3,37 @@
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { registerSchema } from '@/lib/validation';
+import Button from '@/components/Button';
+import { notify } from '@/lib/toast';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setErrors({});
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    // Validate with Zod
+    const result = registerSchema.safeParse({ email, password });
+    if (!result.success) {
+      const fieldErrors: { email?: string; password?: string } = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as keyof typeof fieldErrors] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password !== confirmPassword) {
+      setErrors({ confirmPassword: "Passwords don't match" });
       return;
     }
 
@@ -30,8 +41,9 @@ export default function RegisterPage() {
 
     try {
       await register(email, password);
+      notify.success('Account created successfully!');
     } catch (err: any) {
-      setError(err.message);
+      notify.error(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -48,12 +60,6 @@ export default function RegisterPage() {
             <p className="text-gray-600">Start building your store today</p>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
@@ -66,11 +72,25 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors({ ...errors, email: undefined });
+                }}
+                onBlur={() => {
+                  const result = registerSchema.safeParse({ email, password });
+                  if (!result.success) {
+                    const emailError = result.error.errors.find((e) => e.path[0] === 'email');
+                    if (emailError) setErrors({ ...errors, email: emailError.message });
+                  }
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  errors.email ? 'border-red-300' : 'border-gray-300'
+                }`}
                 placeholder="you@example.com"
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
             </div>
 
             <div>
@@ -84,12 +104,25 @@ export default function RegisterPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors({ ...errors, password: undefined });
+                }}
+                onBlur={() => {
+                  const result = registerSchema.safeParse({ email, password });
+                  if (!result.success) {
+                    const passwordError = result.error.errors.find((e) => e.path[0] === 'password');
+                    if (passwordError) setErrors({ ...errors, password: passwordError.message });
+                  }
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  errors.password ? 'border-red-300' : 'border-gray-300'
+                }`}
                 placeholder="••••••••"
               />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
             </div>
 
             <div>
@@ -103,21 +136,23 @@ export default function RegisterPage() {
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                }`}
                 placeholder="••••••••"
               />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+              )}
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
+            <Button type="submit" loading={loading} className="w-full">
+              Create Account
+            </Button>
           </form>
 
           <p className="mt-6 text-center text-gray-600">
