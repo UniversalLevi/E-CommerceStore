@@ -39,31 +39,31 @@ export default function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-900">
         <Navbar />
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900">
       <Navbar />
 
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-white mb-4">
             Product Catalog
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-gray-300">
             Choose a product to create your Shopify store
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
@@ -76,7 +76,7 @@ export default function ProductsPage() {
               className={`px-4 py-2 rounded-lg transition-colors ${
                 selectedCategory === 'all'
                   ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
               }`}
             >
               All Products
@@ -88,7 +88,7 @@ export default function ProductsPage() {
                 className={`px-4 py-2 rounded-lg transition-colors capitalize ${
                   selectedCategory === category
                     ? 'bg-primary-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                 }`}
               >
                 {category}
@@ -100,7 +100,7 @@ export default function ProductsPage() {
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-600 text-lg">
+            <p className="text-gray-400 text-lg">
               No products available at the moment
             </p>
           </div>
@@ -110,7 +110,7 @@ export default function ProductsPage() {
               <Link
                 key={product._id}
                 href={`/products/${product._id}`}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+                className="bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden hover:border-primary-500 hover:shadow-xl transition-all"
               >
                 <div className="aspect-square relative">
                   <img
@@ -121,21 +121,21 @@ export default function ProductsPage() {
                 </div>
                 <div className="p-6">
                   <div className="mb-2">
-                    <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+                    <span className="text-xs font-semibold text-primary-400 uppercase tracking-wide">
                       {product.category}
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-bold text-white mb-2">
                     {product.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-2">
+                  <p className="text-gray-400 mb-4 line-clamp-2">
                     {product.description}
                   </p>
                   <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-primary-600">
+                    <span className="text-2xl font-bold text-primary-400">
                       ${product.price.toFixed(2)}
                     </span>
-                    <span className="text-primary-600 font-semibold">
+                    <span className="text-primary-400 font-semibold">
                       View Details →
                     </span>
                   </div>

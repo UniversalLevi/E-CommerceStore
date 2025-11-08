@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import OnboardingModal from '@/components/OnboardingModal';
+import Navbar from '@/components/Navbar';
 
 export default function DashboardPage() {
   const { user, loading, logout, isAuthenticated } = useAuth();
@@ -44,10 +45,10 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <p className="mt-4 text-gray-300">Loading...</p>
         </div>
       </div>
     );
@@ -58,65 +59,25 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-primary-600">
-              Auto Shopify Store Builder
-            </h1>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-600">{user.email}</span>
-              <Link
-                href="/dashboard/stores"
-                className="text-primary-600 hover:text-primary-700 font-semibold"
-              >
-                My Stores
-              </Link>
-              {user.role === 'admin' && (
-                <>
-                  <Link
-                    href="/admin/products"
-                    className="text-primary-600 hover:text-primary-700 font-semibold"
-                  >
-                    Admin Panel
-                  </Link>
-                  <Link
-                    href="/admin/stores"
-                    className="text-primary-600 hover:text-primary-700 font-semibold"
-                  >
-                    All Stores
-                  </Link>
-                </>
-              )}
-              <button
-                onClick={logout}
-                className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-900">
+      <Navbar />
 
       {/* Dashboard Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl font-bold text-white mb-6">
             Welcome back, {user.email}!
           </h2>
 
           {/* Store Connection Prompt */}
-          <div className="bg-gradient-to-r from-primary-50 to-primary-100 rounded-xl p-6 mb-6 border-2 border-primary-200">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl p-6 mb-6 border-2 border-primary-600">
             <div className="flex items-start gap-4">
               <div className="text-4xl">🏪</div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <h3 className="text-xl font-bold text-white mb-2">
                   Connect Your Shopify Store
                 </h3>
-                <p className="text-gray-700 mb-4">
+                <p className="text-gray-300 mb-4">
                   Connect your Shopify store credentials to start creating and managing products.
                   You can connect multiple stores and switch between them.
                 </p>
@@ -129,7 +90,7 @@ export default function DashboardPage() {
                   </Link>
                   <Link
                     href="/dashboard/stores"
-                    className="bg-white hover:bg-gray-50 text-primary-600 px-6 py-2 rounded-lg transition-colors font-medium border-2 border-primary-600"
+                    className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors font-medium border-2 border-primary-600"
                   >
                     View My Stores
                   </Link>
@@ -139,29 +100,29 @@ export default function DashboardPage() {
           </div>
 
           {/* Created Stores */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h3 className="text-xl font-bold mb-4">Your Created Stores</h3>
+          <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-lg p-6 mb-6">
+            <h3 className="text-xl font-bold mb-4 text-white">Your Created Stores</h3>
             {user.stores && user.stores.length > 0 ? (
               <div className="space-y-4">
                 {user.stores.map((store, index) => (
                   <div
                     key={index}
-                    className="border border-gray-200 rounded-lg p-4"
+                    className="border border-gray-700 bg-gray-800 rounded-lg p-4"
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-semibold text-white">
                           {store.productName || 'Store'}
                         </h4>
                         <a
                           href={store.storeUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary-600 hover:text-primary-700 text-sm"
+                          className="text-primary-400 hover:text-primary-300 text-sm"
                         >
                           {store.storeUrl}
                         </a>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-400 mt-1">
                           Created: {new Date(store.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -169,7 +130,7 @@ export default function DashboardPage() {
                         href={store.storeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="bg-primary-100 text-primary-700 px-4 py-2 rounded-lg hover:bg-primary-200 transition-colors"
+                        className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
                       >
                         Visit Store
                       </a>
@@ -179,7 +140,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-300 mb-4">
                   You haven't created any stores yet
                 </p>
                 <Link
@@ -193,41 +154,41 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
+          <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-lg p-6">
+            <h3 className="text-xl font-bold mb-4 text-white">Quick Actions</h3>
             <div className="grid md:grid-cols-3 gap-4">
               <Link
                 href="/products"
-                className="border-2 border-primary-200 hover:border-primary-400 rounded-lg p-4 transition-colors"
+                className="border-2 border-gray-700 hover:border-primary-500 bg-gray-800 rounded-lg p-4 transition-colors"
               >
                 <div className="text-2xl mb-2">🛍️</div>
-                <h4 className="font-semibold text-gray-900 mb-1">
+                <h4 className="font-semibold text-white mb-1">
                   Browse Products
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-400">
                   Find products to add to your store
                 </p>
               </Link>
 
               <Link
                 href="/dashboard/stores"
-                className="border-2 border-primary-200 hover:border-primary-400 rounded-lg p-4 transition-colors"
+                className="border-2 border-gray-700 hover:border-primary-500 bg-gray-800 rounded-lg p-4 transition-colors"
               >
                 <div className="text-2xl mb-2">🔗</div>
-                <h4 className="font-semibold text-gray-900 mb-1">
+                <h4 className="font-semibold text-white mb-1">
                   Manage Stores
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-400">
                   Connect and manage your Shopify stores
                 </p>
               </Link>
 
-              <div className="border-2 border-gray-200 hover:border-gray-300 rounded-lg p-4 transition-colors cursor-pointer opacity-50">
+              <div className="border-2 border-gray-700 hover:border-gray-600 bg-gray-800 rounded-lg p-4 transition-colors cursor-pointer opacity-50">
                 <div className="text-2xl mb-2">📊</div>
-                <h4 className="font-semibold text-gray-900 mb-1">
+                <h4 className="font-semibold text-white mb-1">
                   View Analytics
                 </h4>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-400">
                   Coming soon
                 </p>
               </div>
