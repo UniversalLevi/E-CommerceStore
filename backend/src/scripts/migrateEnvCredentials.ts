@@ -59,7 +59,7 @@ async function migrateEnvCredentials() {
     const encryptedToken = encrypt(accessToken);
 
     // Create store connection
-    const scopes = config.shopify.scopes.split(',').map(s => s.trim());
+    const scopes = config.shopify.scopes.split(',').map((s: string) => s.trim());
 
     const store = await StoreConnection.create({
       owner: adminUser._id,

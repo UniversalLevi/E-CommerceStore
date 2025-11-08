@@ -75,7 +75,7 @@ export const createStoreConnection = async (
     const encryptedApiSecret = apiSecret ? encrypt(apiSecret) : undefined;
 
     // Auto-populate scopes from env
-    const scopes = config.shopify.scopes.split(',').map(s => s.trim());
+    const scopes = config.shopify.scopes.split(',').map((s: string) => s.trim());
 
     // If this should be default, unset other defaults
     if (isDefault) {

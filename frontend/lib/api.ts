@@ -19,8 +19,16 @@ class ApiClient {
       (response) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          // Token expired or invalid
-          if (typeof window !== 'undefined') {
+          // Don't redirect if we're checking auth status or already on login/register
+          const url = error.config?.url || '';
+          const isAuthCheck = url.includes('/api/auth/me');
+          const isPublicPage = typeof window !== 'undefined' && 
+            (window.location.pathname === '/login' || 
+             window.location.pathname === '/register' ||
+             window.location.pathname === '/');
+          
+          // Only redirect if not checking auth and not on public pages
+          if (!isAuthCheck && !isPublicPage && typeof window !== 'undefined') {
             window.location.href = '/login';
           }
         }

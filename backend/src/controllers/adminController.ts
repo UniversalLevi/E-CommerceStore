@@ -156,6 +156,9 @@ export const getSystemHealth = async (
 ) => {
   try {
     const startTime = Date.now();
+    if (!mongoose.connection.db) {
+      throw createError('Database not connected', 503);
+    }
     await mongoose.connection.db.command({ ping: 1 });
     const latency = Date.now() - startTime;
 

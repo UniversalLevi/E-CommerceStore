@@ -39,7 +39,7 @@ export const authenticateToken = async (
       throw createError('Account is disabled', 403);
     }
 
-    req.user = user as IUser;
+    req.user = user as unknown as IUser;
     next();
   } catch (error: any) {
     if (error.name === 'JsonWebTokenError') {
