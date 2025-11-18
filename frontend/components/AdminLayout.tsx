@@ -46,8 +46,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: '/admin/dashboard', label: 'Dashboard' },
     { href: '/admin/users', label: 'Users' },
     { href: '/admin/stores', label: 'Stores' },
-    { href: '/admin/audit', label: 'Audit Logs' },
+    { href: '/admin/niches', label: 'Niches' },
     { href: '/admin/products', label: 'Products' },
+    { href: '/admin/audit', label: 'Audit Logs' },
   ];
 
   return (

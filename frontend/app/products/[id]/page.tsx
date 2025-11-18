@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { Product } from '@/types';
+import { Product, Niche } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import { notify } from '@/lib/toast';
@@ -22,6 +22,7 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
+  const [niche, setNiche] = useState<Niche | null>(null);
   const [stores, setStores] = useState<StoreConnection[]>([]);
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,20 @@ export default function ProductDetailPage() {
         `/api/products/${id}`
       );
       setProduct(response.data);
+      
+      // Extract niche if populated
+      if (response.data.niche && typeof response.data.niche === 'object') {
+        setNiche(response.data.niche as Niche);
+      } else if (response.data.niche) {
+        // If niche is just an ID, fetch it
+        try {
+          const nicheId = response.data.niche as string;
+          // We'll need to fetch niche by ID or slug - for now, we'll skip this
+          // as the backend should populate it
+        } catch (err) {
+          console.error('Error fetching niche:', err);
+        }
+      }
     } catch (err: any) {
       setError('Product not found');
     } finally {
@@ -245,6 +260,30 @@ export default function ProductDetailPage() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
+          {/* Breadcrumb */}
+          {niche && (
+            <nav className="mb-6 text-sm">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Link href="/" className="hover:text-primary-600">
+                  Home
+                </Link>
+                <span>/</span>
+                <Link href="/products" className="hover:text-primary-600">
+                  Products
+                </Link>
+                <span>/</span>
+                <Link
+                  href={`/products/niches/${niche.slug}`}
+                  className="hover:text-primary-600"
+                >
+                  {niche.name}
+                </Link>
+                <span>/</span>
+                <span className="text-gray-900">{product.title}</span>
+              </div>
+            </nav>
+          )}
+
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="grid md:grid-cols-2 gap-8 p-8">
               {/* Images */}
@@ -281,10 +320,35 @@ export default function ProductDetailPage() {
 
               {/* Details */}
               <div>
-                <div className="mb-2">
-                  <span className="text-sm font-semibold text-primary-600 uppercase tracking-wide">
-                    {product.category}
-                  </span>
+                <div className="mb-4 flex items-center gap-3 flex-wrap">
+                  {/* Niche Badge */}
+                  {niche && (
+                    <Link
+                      href={`/products/niches/${niche.slug}`}
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
+                        niche.themeColor
+                          ? ''
+                          : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                      }`}
+                      style={
+                        niche.themeColor
+                          ? {
+                              backgroundColor: niche.themeColor,
+                              color: niche.textColor || '#FFFFFF',
+                            }
+                          : {}
+                      }
+                    >
+                      {niche.icon && <span>{niche.icon}</span>}
+                      <span>{niche.name}</span>
+                    </Link>
+                  )}
+                  {/* Category Badge */}
+                  {product.category && (
+                    <span className="text-sm font-semibold text-primary-600 uppercase tracking-wide">
+                      {product.category}
+                    </span>
+                  )}
                 </div>
 
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">
@@ -409,12 +473,21 @@ export default function ProductDetailPage() {
 
           {/* Back Button */}
           <div className="mt-6">
-            <button
-              onClick={() => router.push('/products')}
-              className="text-primary-600 hover:text-primary-700 font-semibold"
-            >
-              ← Back to Products
-            </button>
+            {niche ? (
+              <Link
+                href={`/products/niches/${niche.slug}`}
+                className="text-primary-600 hover:text-primary-700 font-semibold"
+              >
+                ← Back to {niche.name}
+              </Link>
+            ) : (
+              <button
+                onClick={() => router.push('/products')}
+                className="text-primary-600 hover:text-primary-700 font-semibold"
+              >
+                ← Back to Products
+              </button>
+            )}
           </div>
         </div>
       </div>

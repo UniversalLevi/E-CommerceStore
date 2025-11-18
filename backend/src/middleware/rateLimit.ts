@@ -47,4 +47,5 @@ export const authRateLimit = createRateLimit(5, 60 * 1000); // 5 per minute
 export const storeTestRateLimit = createRateLimit(5, 60 * 1000); // 5 per minute
 export const storeCreateRateLimit = createRateLimit(10, 60 * 60 * 1000); // 10 per hour
 export const generalApiRateLimit = createRateLimit(100, 60 * 1000); // 100 per minute
+export const nicheRateLimit = createRateLimit(100, 60 * 1000); // 100 per minute for public niche endpoints
 

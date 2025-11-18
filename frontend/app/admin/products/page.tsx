@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { Product } from '@/types';
+import { Product, Niche } from '@/types';
 import Navbar from '@/components/Navbar';
 import { notify } from '@/lib/toast';
 
@@ -13,7 +13,10 @@ export default function AdminProductsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
+  const [niches, setNiches] = useState<Niche[]>([]);
+  const [selectedNiche, setSelectedNiche] = useState<string>('all');
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingNiches, setLoadingNiches] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -23,13 +26,37 @@ export default function AdminProductsPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
+    fetchNiches();
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    fetchProducts();
+  }, [selectedNiche]);
+
+  const fetchNiches = async () => {
+    try {
+      const response = await api.get<{ success: boolean; data: Niche[] }>(
+        '/api/admin/niches?active=true'
+      );
+      setNiches(response.data);
+    } catch (err: any) {
+      console.error('Error fetching niches:', err);
+    } finally {
+      setLoadingNiches(false);
+    }
+  };
+
   const fetchProducts = async () => {
     try {
+      setLoadingProducts(true);
+      const params = new URLSearchParams();
+      if (selectedNiche && selectedNiche !== 'all') {
+        params.append('niche', selectedNiche);
+      }
+
       const response = await api.get<{ success: boolean; data: Product[] }>(
-        '/api/products'
+        `/api/products?${params.toString()}`
       );
       setProducts(response.data);
     } catch (err: any) {
@@ -82,6 +109,23 @@ export default function AdminProductsPage() {
           </Link>
         </div>
 
+        {/* Niche Filter */}
+        <div className="mb-6 flex items-center gap-4">
+          <label className="text-sm font-medium text-gray-700">Filter by Niche:</label>
+          <select
+            value={selectedNiche}
+            onChange={(e) => setSelectedNiche(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="all">All Niches</option>
+            {niches.map((niche) => (
+              <option key={niche._id} value={niche._id}>
+                {niche.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             {error}
@@ -105,6 +149,9 @@ export default function AdminProductsPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Product
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Niche
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Category
@@ -140,8 +187,21 @@ export default function AdminProductsPage() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+                      {product.niche && typeof product.niche === 'object' ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-primary-100 text-primary-800 cursor-pointer hover:bg-primary-200"
+                          onClick={() => setSelectedNiche(product.niche._id)}
+                        >
+                          {product.niche.icon && <span>{product.niche.icon}</span>}
+                          {product.niche.name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-500">Uncategorized</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-900 capitalize">
-                      {product.category}
+                      {product.category || '-'}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       ${product.price.toFixed(2)}

@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "ts-node src/scripts/seedProducts.ts",
+    "seed:niches": "ts-node src/scripts/seedNiches.ts",
+    "migrate:niches": "ts-node src/scripts/assignNichesToProducts.ts",
     "create-admin": "ts-node src/scripts/createAdmin.ts",
     "generate-key": "ts-node src/scripts/generateEncryptionKey.ts",
     "migrate-env": "ts-node src/scripts/migrateEnvCredentials.ts"
@@ -20,6 +22,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node-cache": "^4.1.3",
     "axios": "^1.6.2",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
@@ -31,6 +34,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
     "morgan": "^1.10.0",
+    "node-cache": "^5.1.2",
     "node-cron": "^4.2.1",
     "zod": "^3.22.4"
   },

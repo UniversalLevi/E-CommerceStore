@@ -4,7 +4,8 @@ export interface IProduct extends Document {
   title: string;
   description: string;
   price: number;
-  category: string;
+  category?: string; // Keep for backward compatibility
+  niche: mongoose.Types.ObjectId; // Required reference to Niche
   images: string[];
   active: boolean;
   createdAt: Date;
@@ -33,9 +34,14 @@ const productSchema = new Schema<IProduct>(
     },
     category: {
       type: String,
-      required: [true, 'Product category is required'],
       trim: true,
       lowercase: true,
+    },
+    niche: {
+      type: Schema.Types.ObjectId,
+      ref: 'Niche',
+      required: [true, 'Product niche is required'],
+      index: true,
     },
     images: {
       type: [String],
@@ -59,7 +65,79 @@ const productSchema = new Schema<IProduct>(
 
 // Indexes for faster queries
 productSchema.index({ category: 1, active: 1 });
+productSchema.index({ niche: 1, active: 1 }); // Compound index for niche filtering
 productSchema.index({ title: 'text', description: 'text' });
+
+// Pre-save hook: Validate niche exists and is not deleted
+productSchema.pre('save', async function (next) {
+  if (this.isModified('niche') || this.isNew) {
+    if (!this.niche) {
+      return next(new Error('Niche is required'));
+    }
+    
+    const Niche = mongoose.model('Niche');
+    const niche = await Niche.findById(this.niche).where({ deleted: false });
+    
+    if (!niche) {
+      return next(new Error('Niche not found or has been deleted'));
+    }
+    
+    if (!niche.active) {
+      // Allow inactive niches but log warning
+      console.warn(`Product assigned to inactive niche: ${niche.name}`);
+    }
+  }
+  next();
+});
+
+// Post-save hook: Update niche product counts
+productSchema.post('save', async function () {
+  if (this.niche) {
+    const Niche = mongoose.model('Niche');
+    const niche = await Niche.findById(this.niche);
+    if (niche) {
+      await (niche as any).updateProductCounts();
+    }
+  }
+});
+
+// Post-delete hook: Update niche product counts
+productSchema.post('findOneAndDelete', async function (doc) {
+  if (doc && doc.niche) {
+    const Niche = mongoose.model('Niche');
+    const niche = await Niche.findById(doc.niche);
+    if (niche) {
+      await (niche as any).updateProductCounts();
+    }
+  }
+});
+
+// Post-update hook: Update niche product counts (for niche changes)
+productSchema.post('findOneAndUpdate', async function (doc) {
+  if (doc) {
+    const update = this.getUpdate() as any;
+    const oldNiche = doc.niche;
+    const newNiche = update.niche || doc.niche;
+    
+    const Niche = mongoose.model('Niche');
+    
+    // Update old niche if niche changed
+    if (oldNiche && oldNiche.toString() !== newNiche?.toString()) {
+      const oldNicheDoc = await Niche.findById(oldNiche);
+      if (oldNicheDoc) {
+        await (oldNicheDoc as any).updateProductCounts();
+      }
+    }
+    
+    // Update new niche
+    if (newNiche) {
+      const newNicheDoc = await Niche.findById(newNiche);
+      if (newNicheDoc) {
+        await (newNicheDoc as any).updateProductCounts();
+      }
+    }
+  }
+});
 
 export const Product = mongoose.model<IProduct>('Product', productSchema);
 

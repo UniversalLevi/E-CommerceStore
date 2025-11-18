@@ -4,6 +4,7 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { Niche } from '@/types';
 import Navbar from '@/components/Navbar';
 
 export default function NewProductPage() {
@@ -14,9 +15,12 @@ export default function NewProductPage() {
     description: '',
     price: '',
     category: '',
+    niche: '',
     images: [''],
     active: true,
   });
+  const [niches, setNiches] = useState<Niche[]>([]);
+  const [loadingNiches, setLoadingNiches] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -25,6 +29,28 @@ export default function NewProductPage() {
       router.push('/dashboard');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    fetchNiches();
+  }, []);
+
+  const fetchNiches = async () => {
+    try {
+      const response = await api.get<{ success: boolean; data: Niche[] }>(
+        '/api/admin/niches?active=true'
+      );
+      setNiches(response.data);
+      // Auto-select default niche if exists
+      const defaultNiche = response.data.find((n) => n.isDefault);
+      if (defaultNiche) {
+        setFormData((prev) => ({ ...prev, niche: defaultNiche._id }));
+      }
+    } catch (err: any) {
+      console.error('Error fetching niches:', err);
+    } finally {
+      setLoadingNiches(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -155,7 +181,7 @@ export default function NewProductPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category *
+                  Category
                 </label>
                 <input
                   type="text"
@@ -163,11 +189,42 @@ export default function NewProductPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
-                  required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="electronics"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Niche *
+              </label>
+              {loadingNiches ? (
+                <div className="text-sm text-gray-500">Loading niches...</div>
+              ) : (
+                <select
+                  value={formData.niche}
+                  onChange={(e) =>
+                    setFormData({ ...formData, niche: e.target.value })
+                  }
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">Select a niche</option>
+                  {niches.map((niche) => (
+                    <option key={niche._id} value={niche._id}>
+                      {niche.icon && <span>{niche.icon} </span>}
+                      {niche.name}
+                      {niche.isDefault && ' (Default)'}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {!formData.niche && !loadingNiches && (
+                <p className="mt-1 text-sm text-red-600">
+                  Please select a niche for this product
+                </p>
+              )}
             </div>
 
             <div>
