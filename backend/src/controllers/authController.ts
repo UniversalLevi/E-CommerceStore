@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
+import crypto from 'crypto';
 import { User } from '../models/User';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
@@ -224,6 +225,104 @@ export const deleteAccount = async (
     res.status(200).json({
       success: true,
       message: 'Account deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      throw createError('Email is required', 400);
+    }
+
+    const user = await User.findOne({ email });
+    
+    // Always return success to prevent email enumeration
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    
+    // Set token and expiration (1 hour)
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+
+    // In production, send email with reset link
+    // For now, we'll return the token in development
+    const resetUrl = `${config.corsOrigin || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Password reset URL:', resetUrl);
+    }
+
+    // TODO: Send email with resetUrl
+    // await sendPasswordResetEmail(user.email, resetUrl);
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.',
+      // Only in development
+      ...(process.env.NODE_ENV === 'development' && { resetUrl }),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      throw createError('Token and password are required', 400);
+    }
+
+    if (password.length < 6) {
+      throw createError('Password must be at least 6 characters', 400);
+    }
+
+    // Hash the token to compare with stored hash
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      throw createError('Invalid or expired reset token', 400);
+    }
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(password, 8);
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully. Please log in with your new password.',
     });
   } catch (error) {
     next(error);

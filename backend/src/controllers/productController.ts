@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Product } from '../models/Product';
 import { Niche } from '../models/Niche';
+import { User } from '../models/User';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { updateNicheProductCounts } from './nicheController';
@@ -273,6 +274,102 @@ export const getCategories = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+// Get user's added products (protected)
+export const getUserProducts = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const userId = (req.user as any)._id;
+    const { storeUrl } = req.query;
+
+    // Get user with stores
+    const user = await User.findById(userId).lean();
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    // Filter stores if storeUrl is provided
+    let userStores = user.stores || [];
+    if (storeUrl) {
+      userStores = userStores.filter(
+        (store: any) => store.storeUrl === storeUrl
+      );
+    }
+
+    // Get unique product IDs
+    const productIds = Array.from(
+      new Set(
+        userStores
+          .map((store: any) => {
+            // Handle both ObjectId and string formats
+            const pid = store.productId;
+            return pid?.toString ? pid.toString() : pid;
+          })
+          .filter(Boolean)
+      )
+    );
+
+    if (productIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+      });
+    }
+
+    // Fetch products with niche populated
+    const products = await Product.find({
+      _id: { $in: productIds },
+    })
+      .populate('niche', 'name slug icon')
+      .lean();
+
+    // Map products with store information
+    const productsWithStores = products.map((product) => {
+      const productIdStr = product._id.toString();
+      const stores = userStores
+        .filter((store: any) => {
+          const storeProductId = store.productId?.toString
+            ? store.productId.toString()
+            : store.productId;
+          return storeProductId === productIdStr;
+        })
+        .map((store: any) => ({
+          storeUrl: store.storeUrl,
+          addedAt: store.createdAt || new Date(),
+        }));
+
+      return {
+        ...product,
+        stores,
+        addedAt: stores.length > 0 ? stores[0].addedAt : new Date(),
+      };
+    });
+
+    // Sort by most recently added
+    productsWithStores.sort((a, b) => {
+      const dateA = new Date(a.addedAt).getTime();
+      const dateB = new Date(b.addedAt).getTime();
+      return dateB - dateA;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: productsWithStores,
+    });
+  } catch (error: any) {
+    if (error.statusCode) {
+      return next(error);
+    }
+    next(createError(error.message || 'Failed to fetch user products', 500));
   }
 };
 

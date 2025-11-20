@@ -193,6 +193,28 @@ export const getStoreConnection = async (
     }
 
     const store = req.storeDoc;
+    const { User } = await import('../models/User');
+
+    // Get store URL
+    const cleanShop = store.shopDomain.replace('.myshopify.com', '');
+    const storeUrl = `https://${cleanShop}.myshopify.com`;
+
+    // Count products added to this store
+    const user = await User.findById(store.owner).lean();
+    const productsInStore = user?.stores?.filter(
+      (s: any) => s.storeUrl === storeUrl
+    ) || [];
+    const productCount = productsInStore.length;
+
+    // Get recent activity from audit logs
+    const { AuditLog } = await import('../models/AuditLog');
+    const recentActivity = await AuditLog.find({
+      storeId: store._id,
+    })
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .select('action success timestamp details')
+      .lean();
 
     // Return store info without decrypted credentials
     res.json({
@@ -201,6 +223,7 @@ export const getStoreConnection = async (
         id: store._id,
         storeName: store.storeName,
         shopDomain: store.shopDomain,
+        storeUrl,
         environment: store.environment,
         apiVersion: store.apiVersion,
         isDefault: store.isDefault,
@@ -212,6 +235,10 @@ export const getStoreConnection = async (
         createdAt: store.createdAt,
         updatedAt: store.updatedAt,
         owner: store.owner,
+        stats: {
+          productCount,
+        },
+        recentActivity,
       },
     });
   } catch (error) {

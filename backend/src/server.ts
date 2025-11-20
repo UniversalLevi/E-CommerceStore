@@ -36,6 +36,11 @@ import dashboardRoutes from './routes/dashboardRoutes';
 import adminRoutes from './routes/adminRoutes';
 import nicheRoutes from './routes/nicheRoutes';
 import nicheAdminRoutes from './routes/nicheAdminRoutes';
+import contactRoutes from './routes/contactRoutes';
+import activityRoutes from './routes/activityRoutes';
+import searchRoutes from './routes/searchRoutes';
+import notificationRoutes from './routes/notificationRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -44,6 +49,11 @@ app.use('/api/products', productRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/activity', activityRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/analytics', analyticsRoutes);
 // Niche routes (separate namespaces to prevent route overlap)
 app.use('/api/niches', nicheRoutes);
 app.use('/api/admin/niches', authenticateToken, requireAdmin, nicheAdminRoutes);

@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { Product, Niche } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
+import StoreSelectionModal from '@/components/StoreSelectionModal';
 import { notify } from '@/lib/toast';
 
 interface StoreConnection {
@@ -24,12 +25,14 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [niche, setNiche] = useState<Niche | null>(null);
   const [stores, setStores] = useState<StoreConnection[]>([]);
-  const [selectedStoreId, setSelectedStoreId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [loadingStores, setLoadingStores] = useState(true);
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState(0);
-  const [creating, setCreating] = useState(false);
+  const [showImageZoom, setShowImageZoom] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  const [showStoreModal, setShowStoreModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [storeData, setStoreData] = useState<any>(null);
 
@@ -54,13 +57,18 @@ export default function ProductDetailPage() {
       
       // Extract niche if populated
       if (response.data.niche && typeof response.data.niche === 'object') {
-        setNiche(response.data.niche as Niche);
+        const nicheData = response.data.niche as Niche;
+        setNiche(nicheData);
+        // Fetch related products from same niche
+        const nicheId = nicheData._id || (nicheData as any)._id;
+        if (nicheId) {
+          fetchRelatedProducts(nicheId, id);
+        }
       } else if (response.data.niche) {
         // If niche is just an ID, fetch it
         try {
           const nicheId = response.data.niche as string;
-          // We'll need to fetch niche by ID or slug - for now, we'll skip this
-          // as the backend should populate it
+          fetchRelatedProducts(nicheId, id);
         } catch (err) {
           console.error('Error fetching niche:', err);
         }
@@ -72,6 +80,46 @@ export default function ProductDetailPage() {
     }
   };
 
+  const fetchRelatedProducts = async (nicheId: string, excludeProductId: string) => {
+    try {
+      setLoadingRelated(true);
+      const response = await api.get<{ success: boolean; data: Product[] }>(
+        `/api/products?niche=${nicheId}&limit=4&active=true`
+      );
+      // Filter out current product
+      const related = response.data.filter((p) => p._id !== excludeProductId).slice(0, 4);
+      setRelatedProducts(related);
+    } catch (err: any) {
+      console.error('Error fetching related products:', err);
+    } finally {
+      setLoadingRelated(false);
+    }
+  };
+
+  const handleShare = (platform: string) => {
+    if (typeof window === 'undefined' || !product) return;
+
+    const url = window.location.href;
+    const title = product.title;
+    const text = product.description.substring(0, 200);
+    const shareUrls: Record<string, string> = {
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`,
+    };
+
+    if (shareUrls[platform]) {
+      window.open(shareUrls[platform], '_blank', 'width=600,height=400');
+    } else if (navigator.share) {
+      navigator.share({
+        title,
+        text,
+        url,
+      });
+    }
+  };
+
   const fetchStores = async () => {
     try {
       setLoadingStores(true);
@@ -79,14 +127,6 @@ export default function ProductDetailPage() {
         '/api/stores'
       );
       setStores(response.data);
-      
-      // Auto-select default store
-      const defaultStore = response.data.find(s => s.isDefault);
-      if (defaultStore) {
-        setSelectedStoreId(defaultStore._id);
-      } else if (response.data.length > 0) {
-        setSelectedStoreId(response.data[0]._id);
-      }
     } catch (err: any) {
       console.error('Error fetching stores:', err);
     } finally {
@@ -94,48 +134,9 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleCreateStore = async () => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
-    if (stores.length === 0) {
-      notify.error('Please connect a Shopify store first from your dashboard');
-      router.push('/dashboard/stores/connect');
-      return;
-    }
-
-    if (!selectedStoreId) {
-      notify.error('Please select a store');
-      return;
-    }
-
-    setCreating(true);
-    setError('');
-
-    try {
-      const response = await api.post<{
-        success: boolean;
-        message: string;
-        data: any;
-      }>('/api/stores/create', {
-        productId: params.id,
-        storeId: selectedStoreId,
-      });
-
-      setStoreData(response.data);
-      setShowSuccessModal(true);
-    } catch (err: any) {
-      setError(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          'Failed to create store. Please try again.'
-      );
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } finally {
-      setCreating(false);
-    }
+  const handleStoreSuccess = (data: any) => {
+    setStoreData(data);
+    setShowSuccessModal(true);
   };
 
   if (loading) {
@@ -288,12 +289,20 @@ export default function ProductDetailPage() {
             <div className="grid md:grid-cols-2 gap-8 p-8">
               {/* Images */}
               <div>
-                <div className="aspect-square rounded-lg overflow-hidden mb-4">
+                <div
+                  className="aspect-square rounded-lg overflow-hidden mb-4 cursor-zoom-in relative group"
+                  onClick={() => setShowImageZoom(true)}
+                >
                   <img
                     src={product.images[selectedImage]}
                     alt={product.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity flex items-center justify-center">
+                    <span className="text-white opacity-0 group-hover:opacity-100 text-sm font-medium">
+                      Click to zoom
+                    </span>
+                  </div>
                 </div>
                 {product.images.length > 1 && (
                   <div className="grid grid-cols-4 gap-2">
@@ -370,89 +379,80 @@ export default function ProductDetailPage() {
                   </p>
                 </div>
 
+                {/* Share Buttons */}
+                <div className="mb-8">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Share this product</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleShare('twitter')}
+                      className="p-2 bg-blue-400 hover:bg-blue-500 text-white rounded-lg transition-colors"
+                      aria-label="Share on Twitter"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleShare('facebook')}
+                      className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label="Share on Facebook"
+                      type="button"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleShare('linkedin')}
+                      className="p-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label="Share on LinkedIn"
+                      type="button"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                        <circle cx="4" cy="4" r="2" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleShare('whatsapp')}
+                      className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label="Share on WhatsApp"
+                      type="button"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
                 {error && (
                   <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                     {error}
                   </div>
                 )}
 
-                {/* Store Selection */}
-                {isAuthenticated && !loadingStores && (
-                  <>
-                    {stores.length > 0 ? (
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Select Store
-                        </label>
-                        <select
-                          value={selectedStoreId}
-                          onChange={(e) => setSelectedStoreId(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        >
-                          {stores.map((store) => (
-                            <option key={store._id} value={store._id}>
-                              {store.storeName} ({store.shopDomain})
-                              {store.isDefault ? ' - Default' : ''}
-                              {store.status !== 'active' ? ` [${store.status}]` : ''}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : (
-                      <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <p className="text-yellow-800 text-sm mb-2">
-                          ⚠️ No stores connected yet
-                        </p>
-                        <Link
-                          href="/dashboard/stores/connect"
-                          className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                        >
-                          Connect your first store →
-                        </Link>
-                      </div>
-                    )}
-                  </>
-                )}
-
                 <div className="space-y-4">
-                  <button
-                    onClick={handleCreateStore}
-                    disabled={creating || stores.length === 0}
-                    className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {creating ? (
-                      <span className="flex items-center justify-center">
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Creating Your Store...
-                      </span>
-                    ) : (
-                      '🚀 Create My Store with This Product'
-                    )}
-                  </button>
-
-                  {!isAuthenticated && (
-                    <p className="text-sm text-gray-500 text-center">
-                      You'll need to log in and connect a store first
-                    </p>
+                  {isAuthenticated ? (
+                    <button
+                      onClick={() => setShowStoreModal(true)}
+                      disabled={loadingStores}
+                      className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      🚀 Add to My Store
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => router.push('/login')}
+                        className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors"
+                      >
+                        🚀 Login to Add to Store
+                      </button>
+                      <p className="text-sm text-gray-500 text-center">
+                        You'll need to log in and connect a store first
+                      </p>
+                    </>
                   )}
                 </div>
 
@@ -490,7 +490,99 @@ export default function ProductDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <Link
+                  key={relatedProduct._id}
+                  href={`/products/${relatedProduct._id}`}
+                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  <div className="aspect-square relative">
+                    <img
+                      src={relatedProduct.images[0]}
+                      alt={relatedProduct.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {relatedProduct.title}
+                    </h3>
+                    <p className="text-2xl font-bold text-primary-600">
+                      ${relatedProduct.price.toFixed(2)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Image Zoom Modal */}
+      {showImageZoom && product && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowImageZoom(false)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white rounded"
+            onClick={() => setShowImageZoom(false)}
+            aria-label="Close zoom"
+            type="button"
+          >
+            ×
+          </button>
+          <div className="max-w-4xl max-h-full">
+            <img
+              src={product.images[selectedImage]}
+              alt={product.title}
+              className="max-w-full max-h-[90vh] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          {product.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+              {product.images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImage(index);
+                  }}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                    selectedImage === index
+                      ? 'border-white'
+                      : 'border-gray-600 opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`${product.title} ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Store Selection Modal */}
+      {isAuthenticated && (
+        <StoreSelectionModal
+          isOpen={showStoreModal}
+          onClose={() => setShowStoreModal(false)}
+          stores={stores}
+          productId={params.id as string}
+          onSuccess={handleStoreSuccess}
+        />
+      )}
     </div>
   );
 }

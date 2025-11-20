@@ -41,6 +41,8 @@ export default function Button({
       onClick={onClick}
       disabled={disabled || loading}
       className={`${baseStyles} ${variantStyles[variant]} ${className}`}
+      aria-busy={loading}
+      aria-disabled={disabled || loading}
     >
       {loading && (
         <svg

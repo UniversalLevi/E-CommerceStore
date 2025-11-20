@@ -17,6 +17,8 @@ export interface IUser extends Document {
   isActive: boolean;
   lastLogin?: Date;
   deletedAt?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -78,6 +80,12 @@ const userSchema = new Schema<IUser>(
       type: Date,
     },
     deletedAt: {
+      type: Date,
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpires: {
       type: Date,
     },
   },

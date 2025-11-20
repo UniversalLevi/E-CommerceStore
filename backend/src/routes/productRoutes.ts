@@ -6,6 +6,7 @@ import {
   updateProduct,
   deleteProduct,
   getCategories,
+  getUserProducts,
 } from '../controllers/productController';
 import { authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
@@ -20,6 +21,7 @@ const router = Router();
 // Public routes
 router.get('/', getAllProducts);
 router.get('/categories', getCategories);
+router.get('/user', authenticateToken, getUserProducts);
 router.get('/:id', getProductById);
 
 // Admin only routes

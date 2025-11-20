@@ -170,6 +170,8 @@ nicheSchema.index({ featured: 1, active: 1, deleted: 1 });
 nicheSchema.index({ showOnHomePage: 1, active: 1, deleted: 1 });
 nicheSchema.index({ priority: -1, active: 1, deleted: 1 });
 nicheSchema.index({ synonyms: 'text' });
+// Text index for search
+nicheSchema.index({ name: 'text', description: 'text', synonyms: 'text' });
 
 // Virtual fields (for backward compatibility)
 nicheSchema.virtual('productCount').get(function () {
@@ -185,7 +187,9 @@ nicheSchema.set('toJSON', {
   virtuals: true,
   transform: function (doc, ret) {
     // Exclude hiddenProductCount for non-admin users (handled in controller)
-    delete (ret as any).__v;
+    if ('__v' in ret) {
+      delete (ret as any).__v;
+    }
     return ret;
   },
 });
@@ -295,20 +299,27 @@ nicheSchema.pre('findOneAndUpdate', async function (next) {
   next();
 });
 
-// Query helpers
-(nicheSchema.query as any).findActive = function () {
+// Query helpers - properly typed
+interface NicheQueryHelpers {
+  findActive(): mongoose.Query<any, INiche>;
+  findFeatured(): mongoose.Query<any, INiche>;
+  findBySlug(slug: string): mongoose.Query<any, INiche>;
+  findDefault(): mongoose.Query<any, INiche>;
+}
+
+(nicheSchema.query as any).findActive = function (this: mongoose.Query<any, INiche>) {
   return this.where({ active: true, deleted: false });
 };
 
-(nicheSchema.query as any).findFeatured = function () {
+(nicheSchema.query as any).findFeatured = function (this: mongoose.Query<any, INiche>) {
   return this.where({ featured: true, active: true, deleted: false });
 };
 
-(nicheSchema.query as any).findBySlug = function (slug: string) {
+(nicheSchema.query as any).findBySlug = function (this: mongoose.Query<any, INiche>, slug: string) {
   return this.where({ slug: slug.toLowerCase(), active: true, deleted: false });
 };
 
-(nicheSchema.query as any).findDefault = function () {
+(nicheSchema.query as any).findDefault = function (this: mongoose.Query<any, INiche>) {
   return this.where({ isDefault: true });
 };
 

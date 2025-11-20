@@ -96,20 +96,21 @@ async function assignNichesToProducts() {
             deleted: false,
           });
           
-          if (mappedNiche) {
+          if (mappedNiche && mappedNiche._id) {
             targetNicheId = mappedNiche._id as mongoose.Types.ObjectId;
             assignedTo = mappedSlug;
           }
         }
       }
 
-      // Assign niche
-      product.niche = targetNicheId;
+      // Assign niche - ensure type safety
+      const nicheId: mongoose.Types.ObjectId = targetNicheId;
+      product.niche = nicheId;
       await product.save();
 
       // Track assignment
       assignments[assignedTo] = (assignments[assignedTo] || 0) + 1;
-      affectedNicheIds.add(targetNicheId.toString());
+      affectedNicheIds.add(nicheId.toString());
     }
 
     // Update product counts for all affected niches
