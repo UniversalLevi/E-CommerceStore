@@ -1,50 +1,77 @@
-// Theme tokens for dark Lemon-Squeezy style SaaS
+// Theme tokens for dark theme with custom color palette
 export const tokens = {
   colors: {
-    // Primary (green accent)
+    // Primary (Cyan - #1AC8ED)
     primary: {
-      50: '#f0fdf4',
-      100: '#dcfce7',
-      200: '#bbf7d0',
-      300: '#86efac',
-      400: '#4ade80',
-      500: '#22c55e',
-      600: '#16a34a',
-      700: '#15803d',
-      800: '#166534',
-      900: '#14532d',
+      50: '#e6f7fc',
+      100: '#cceff9',
+      200: '#99dff3',
+      300: '#66cfed',
+      400: '#33bfe7',
+      500: '#1AC8ED', // Cyan - main primary
+      600: '#17b4d5',
+      700: '#14a0bd',
+      800: '#118ca5',
+      900: '#0e788d',
     },
-    // Dark surface colors
+    // Secondary (Muted Teal - #87BBA2)
+    secondary: {
+      50: '#f0f7f4',
+      100: '#d4e8df',
+      200: '#b8d9ca',
+      300: '#9ccab5',
+      400: '#a0c5a8',
+      500: '#87BBA2', // Muted Teal - main secondary
+      600: '#79a892',
+      700: '#6b9582',
+      800: '#5d8272',
+      900: '#4f6f62',
+    },
+    // Accent (Blue Slate - #5D737E)
+    accent: {
+      50: '#f4f6f7',
+      100: '#d9e0e3',
+      200: '#becacf',
+      300: '#a3b4bb',
+      400: '#889ea7',
+      500: '#5D737E', // Blue Slate - main accent
+      600: '#546771',
+      700: '#4b5b64',
+      800: '#424f57',
+      900: '#39434a',
+    },
+    // Dark surface colors (Black base - #000000)
     surface: {
-      base: '#0a0e27',
-      elevated: '#111827',
-      raised: '#1f2937',
-      hover: '#374151',
+      base: '#000000', // Black
+      elevated: '#0a0a0a',
+      raised: '#1a1a1a',
+      hover: '#2a2a2a',
     },
-    // Text colors
+    // Text colors (Mint Cream - #F0F7EE)
     text: {
-      primary: '#f9fafb',
-      secondary: '#d1d5db',
-      tertiary: '#9ca3af',
-      muted: '#6b7280',
+      primary: '#F0F7EE', // Mint Cream - primary text
+      secondary: '#d1d9d4',
+      tertiary: '#b2baba',
+      muted: '#939ba0',
     },
     // Border colors
     border: {
-      default: '#374151',
-      muted: '#1f2937',
-      focus: '#22c55e',
+      default: '#5D737E', // Blue Slate
+      muted: '#3a4a52',
+      focus: '#1AC8ED', // Cyan
     },
     // Status colors
     status: {
-      success: '#10b981',
+      success: '#87BBA2', // Muted Teal
       error: '#ef4444',
-      warning: '#f59e0b',
-      info: '#3b82f6',
+      warning: '#1AC8ED', // Cyan
+      info: '#5D737E', // Blue Slate
     },
     // Background gradients
     gradient: {
-      primary: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-      surface: 'linear-gradient(180deg, #111827 0%, #0a0e27 100%)',
+      primary: 'linear-gradient(135deg, #1AC8ED 0%, #17b4d5 100%)',
+      surface: 'linear-gradient(180deg, #000000 0%, #0a0a0a 100%)',
+      accent: 'linear-gradient(135deg, #5D737E 0%, #87BBA2 100%)',
     },
   },
   spacing: {

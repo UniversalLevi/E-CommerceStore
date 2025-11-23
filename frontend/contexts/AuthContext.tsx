@@ -52,9 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(response.user);
       router.push('/dashboard');
     } catch (error: any) {
-      throw new Error(
-        error.response?.data?.error || 'Login failed. Please try again.'
-      );
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Login failed. Please try again.';
+      throw new Error(errorMessage);
     }
   };
 
@@ -68,9 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(response.user);
       router.push('/dashboard');
     } catch (error: any) {
-      throw new Error(
-        error.response?.data?.error || 'Registration failed. Please try again.'
-      );
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Registration failed. Please try again.';
+      throw new Error(errorMessage);
     }
   };
 
@@ -81,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // Continue with logout even if API call fails
     }
     setUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   const refreshUser = async () => {

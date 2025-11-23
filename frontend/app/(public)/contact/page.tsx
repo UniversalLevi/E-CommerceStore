@@ -63,21 +63,21 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-8 md:p-12">
-        <h1 className="text-4xl font-bold text-white mb-4">Contact Us</h1>
-        <p className="text-gray-300 mb-8">
+    <div className="container mx-auto px-4 py-12 max-w-4xl bg-black min-h-screen">
+      <div className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md p-8 md:p-12">
+        <h1 className="text-4xl font-bold text-[#F0F7EE] mb-4">Contact Us</h1>
+        <p className="text-[#d1d9d4] mb-8">
             Have a question or need help? We'd love to hear from you. Send us a message and we'll
             respond as soon as possible.
           </p>
 
         {success ? (
-          <div className="bg-green-900 border border-green-700 rounded-lg p-6 text-center">
+          <div className="bg-[#87BBA2] bg-opacity-20 border border-[#87BBA2] rounded-lg p-6 text-center">
             <div className="text-4xl mb-4">✓</div>
-            <h3 className="text-lg font-semibold text-green-200 mb-2">
+            <h3 className="text-lg font-semibold text-[#F0F7EE] mb-2">
               Message Sent Successfully
             </h3>
-            <p className="text-green-300 mb-4">
+            <p className="text-[#d1d9d4] mb-4">
                 Thank you for contacting us! We will get back to you soon.
               </p>
               <Button
@@ -91,7 +91,7 @@ export default function ContactPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="name" className="block text-sm font-medium text-[#d1d9d4] mb-2">
                     Name *
                   </label>
                   <input
@@ -100,9 +100,9 @@ export default function ContactPage() {
                     required
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
-                    className={`w-full px-4 py-2 bg-gray-700 border ${
-                      errors.name ? 'border-red-500' : 'border-gray-600'
-                    } text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                    className={`w-full px-4 py-2 bg-[#0a0a0a] border ${
+                      errors.name ? 'border-red-500' : 'border-[#5D737E]'
+                    } text-[#F0F7EE] rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED]`}
                     placeholder="Your name"
                   />
                 {errors.name && (
@@ -111,7 +111,7 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-[#d1d9d4] mb-2">
                   Email *
                 </label>
                 <input
@@ -120,9 +120,9 @@ export default function ContactPage() {
                   required
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
-                  className={`w-full px-4 py-2 bg-gray-700 border ${
-                    errors.email ? 'border-red-500' : 'border-gray-600'
-                  } text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                    className={`w-full px-4 py-2 bg-[#0a0a0a] border ${
+                      errors.email ? 'border-red-500' : 'border-[#5D737E]'
+                    } text-[#F0F7EE] rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED]`}
                   placeholder="your@email.com"
                 />
                 {errors.email && (
@@ -132,7 +132,7 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label htmlFor="subject" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="subject" className="block text-sm font-medium text-[#d1d9d4] mb-2">
                 Subject *
               </label>
               <input
@@ -141,9 +141,9 @@ export default function ContactPage() {
                 required
                 value={formData.subject}
                 onChange={(e) => handleChange('subject', e.target.value)}
-                className={`w-full px-4 py-2 bg-gray-700 border ${
-                  errors.subject ? 'border-red-500' : 'border-gray-600'
-                } text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                className={`w-full px-4 py-2 bg-[#0a0a0a] border ${
+                  errors.subject ? 'border-red-500' : 'border-[#5D737E]'
+                } text-[#F0F7EE] rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED]`}
                 placeholder="What is this regarding?"
               />
               {errors.subject && (
@@ -152,7 +152,7 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="message" className="block text-sm font-medium text-[#d1d9d4] mb-2">
                 Message *
               </label>
               <textarea
@@ -161,15 +161,15 @@ export default function ContactPage() {
                 rows={6}
                 value={formData.message}
                 onChange={(e) => handleChange('message', e.target.value)}
-                className={`w-full px-4 py-2 bg-gray-700 border ${
-                  errors.message ? 'border-red-500' : 'border-gray-600'
-                } text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                className={`w-full px-4 py-2 bg-[#0a0a0a] border ${
+                  errors.message ? 'border-red-500' : 'border-[#5D737E]'
+                } text-[#F0F7EE] rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED]`}
                 placeholder="Tell us how we can help..."
               />
               {errors.message && (
                 <p className="mt-1 text-sm text-red-400">{errors.message}</p>
               )}
-              <p className="mt-1 text-sm text-gray-400">
+              <p className="mt-1 text-sm text-[#939ba0]">
                 {formData.message.length}/5000 characters
               </p>
             </div>
@@ -185,15 +185,15 @@ export default function ContactPage() {
             </form>
           )}
 
-        <div className="mt-12 pt-8 border-t border-gray-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Support Hours</h3>
-          <p className="text-gray-300 mb-2">
+        <div className="mt-12 pt-8 border-t border-[#5D737E]">
+          <h3 className="text-lg font-semibold text-[#F0F7EE] mb-4">Support Hours</h3>
+          <p className="text-[#d1d9d4] mb-2">
             <strong>Monday - Friday:</strong> 9:00 AM - 6:00 PM EST
           </p>
-          <p className="text-gray-300 mb-2">
+          <p className="text-[#d1d9d4] mb-2">
             <strong>Saturday:</strong> 10:00 AM - 4:00 PM EST
           </p>
-          <p className="text-gray-300">
+          <p className="text-[#d1d9d4]">
             <strong>Sunday:</strong> Closed
           </p>
         </div>
@@ -201,7 +201,7 @@ export default function ContactPage() {
         <div className="mt-8">
           <Link
             href="/help"
-            className="text-primary-400 hover:text-primary-300 font-medium"
+            className="text-[#1AC8ED] hover:text-[#17b4d5] font-medium"
           >
             Visit our Help Center →
           </Link>

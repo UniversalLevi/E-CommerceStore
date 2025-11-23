@@ -3,43 +3,53 @@
 @tailwind utilities;
 
 :root {
-  /* Surface colors */
-  --surface-base: #0a0e27;
-  --surface-elevated: #111827;
-  --surface-raised: #1f2937;
-  --surface-hover: #374151;
+  /* Surface colors - Black base */
+  --surface-base: #000000;
+  --surface-elevated: #0a0a0a;
+  --surface-raised: #1a1a1a;
+  --surface-hover: #2a2a2a;
   
-  /* Text colors */
-  --text-primary: #f9fafb;
-  --text-secondary: #d1d5db;
-  --text-tertiary: #9ca3af;
-  --text-muted: #6b7280;
+  /* Text colors - Mint Cream */
+  --text-primary: #F0F7EE;
+  --text-secondary: #d1d9d4;
+  --text-tertiary: #b2baba;
+  --text-muted: #939ba0;
   
-  /* Border colors */
-  --border-default: #374151;
-  --border-muted: #1f2937;
-  --border-focus: #22c55e;
+  /* Border colors - Blue Slate */
+  --border-default: #5D737E;
+  --border-muted: #3a4a52;
+  --border-focus: #1AC8ED;
   
-  /* Primary colors */
-  --primary-500: #22c55e;
-  --primary-600: #16a34a;
-  --primary-700: #15803d;
+  /* Primary colors - Cyan */
+  --primary-500: #1AC8ED;
+  --primary-600: #17b4d5;
+  --primary-700: #14a0bd;
+  
+  /* Secondary colors - Muted Teal */
+  --secondary-500: #87BBA2;
+  --secondary-600: #79a892;
+  --secondary-700: #6b9582;
+  
+  /* Accent colors - Blue Slate */
+  --accent-500: #5D737E;
+  --accent-600: #546771;
+  --accent-700: #4b5b64;
   
   /* Legacy RGB vars */
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 17, 24, 39;
-  --background-end-rgb: 31, 41, 55;
+  --foreground-rgb: 240, 247, 238;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 10, 10, 10;
 }
 
 body {
-  @apply bg-gray-900 text-gray-100;
+  @apply bg-black text-[#F0F7EE];
   background-color: var(--surface-base);
   color: var(--text-primary);
 }
 
 /* Ensure all text is visible */
 * {
-  @apply text-gray-100;
+  @apply text-[#F0F7EE];
 }
 
 /* Input fields - dark theme */
@@ -50,7 +60,7 @@ input[type="number"],
 input[type="url"],
 textarea,
 select {
-  @apply bg-gray-800 text-gray-100 border-gray-700;
+  @apply bg-[#1a1a1a] text-[#F0F7EE] border-[#5D737E];
 }
 
 input[type="text"]:focus,
@@ -60,22 +70,22 @@ input[type="number"]:focus,
 input[type="url"]:focus,
 textarea:focus,
 select:focus {
-  @apply bg-gray-800 text-gray-100 border-primary-500;
+  @apply bg-[#1a1a1a] text-[#F0F7EE] border-[#1AC8ED];
 }
 
 input::placeholder,
 textarea::placeholder {
-  @apply text-gray-400;
+  @apply text-[#939ba0];
 }
 
 /* Links */
 a {
-  @apply text-primary-400 hover:text-primary-300;
+  @apply text-[#1AC8ED] hover:text-[#17b4d5];
 }
 
 /* Buttons */
 button {
-  @apply text-gray-100;
+  @apply text-[#F0F7EE];
 }
 
 @layer utilities {

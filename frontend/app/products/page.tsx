@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Niche } from '@/types';
+import Navbar from '@/components/Navbar';
 
 export default function ProductsPage() {
   const [featuredNiches, setFeaturedNiches] = useState<Niche[]>([]);
@@ -60,10 +61,10 @@ export default function ProductsPage() {
     return (
       <Link
         href={`/products/niches/${niche.slug}`}
-        className="bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden hover:border-primary-500 hover:shadow-xl transition-all group"
+        className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-lg overflow-hidden hover:border-[#1AC8ED] hover:shadow-xl transition-all group"
         style={cardStyle}
       >
-        <div className="aspect-square relative flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+        <div className="aspect-square relative flex items-center justify-center bg-gradient-to-br from-[#0a0a0a] to-[#1a1a1a]">
           {niche.image ? (
             <img
               src={niche.image}
@@ -73,37 +74,37 @@ export default function ProductsPage() {
           ) : niche.icon ? (
             <div className="text-8xl">{niche.icon}</div>
           ) : (
-            <div className="text-6xl text-gray-500">📦</div>
+            <div className="text-6xl text-[#939ba0]">📦</div>
           )}
         </div>
         <div className="p-6" style={cardStyle.color ? {} : {}}>
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2">
               {niche.featured && (
-                <span className="text-xs font-semibold bg-yellow-500 text-yellow-900 px-2 py-1 rounded uppercase">
+                <span className="text-xs font-semibold bg-[#1AC8ED] text-black px-2 py-1 rounded uppercase">
                   Featured
                 </span>
               )}
               {niche.isDefault && (
-                <span className="text-xs font-semibold bg-gray-600 text-gray-200 px-2 py-1 rounded uppercase">
+                <span className="text-xs font-semibold bg-[#5D737E] text-[#F0F7EE] px-2 py-1 rounded uppercase">
                   Default
                 </span>
               )}
             </div>
-            <span className="text-sm font-semibold bg-primary-600 text-white px-3 py-1 rounded-full">
+            <span className="text-sm font-semibold bg-[#87BBA2] text-black px-3 py-1 rounded-full">
               {productCount} {productCount === 1 ? 'Product' : 'Products'}
             </span>
           </div>
           <h3
             className={`text-xl font-bold mb-2 ${
-              niche.themeColor ? '' : 'text-white'
+              niche.themeColor ? '' : 'text-[#F0F7EE]'
             }`}
           >
             {niche.name}
           </h3>
           <p
             className={`mb-4 line-clamp-2 ${
-              niche.themeColor ? 'opacity-90' : 'text-gray-400'
+              niche.themeColor ? 'opacity-90' : 'text-[#d1d9d4]'
             }`}
           >
             {niche.description || 'Browse products in this niche'}
@@ -111,7 +112,7 @@ export default function ProductsPage() {
           <div className="flex items-center justify-between">
             <span
               className={`font-semibold ${
-                niche.themeColor ? '' : 'text-primary-400'
+                niche.themeColor ? '' : 'text-[#1AC8ED]'
               }`}
             >
               Browse Products →
@@ -123,10 +124,12 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-black">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-white mb-4">Product Catalog</h1>
-        <p className="text-xl text-gray-300">
+        <h1 className="text-4xl font-bold text-[#F0F7EE] mb-4">Product Catalog</h1>
+        <p className="text-xl text-[#d1d9d4]">
           Select a niche to browse products
         </p>
       </div>
@@ -140,7 +143,7 @@ export default function ProductsPage() {
       {/* Featured Niches Section */}
       {featuredNiches.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-6">Featured Niches</h2>
+          <h2 className="text-2xl font-bold text-[#F0F7EE] mb-6">Featured Niches</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredNiches.map((niche) => (
               <NicheCard key={niche._id} niche={niche} />
@@ -152,7 +155,7 @@ export default function ProductsPage() {
       {/* Homepage Niches Section */}
       {homepageFiltered.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-6">Popular Niches</h2>
+          <h2 className="text-2xl font-bold text-[#F0F7EE] mb-6">Popular Niches</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {homepageFiltered.map((niche) => (
               <NicheCard key={niche._id} niche={niche} />
@@ -164,7 +167,7 @@ export default function ProductsPage() {
       {/* All Niches Section */}
       {allFiltered.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-white mb-6">All Niches</h2>
+          <h2 className="text-2xl font-bold text-[#F0F7EE] mb-6">All Niches</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {allFiltered.map((niche) => (
               <NicheCard key={niche._id} niche={niche} />
@@ -178,11 +181,12 @@ export default function ProductsPage() {
         homepageFiltered.length === 0 &&
         allFiltered.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-gray-400 text-lg">
+            <p className="text-[#939ba0] text-lg">
               No niches available at the moment
             </p>
           </div>
         )}
+      </div>
     </div>
   );
 }

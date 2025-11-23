@@ -78,10 +78,10 @@ export default function MyProductsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-black">
         <Navbar />
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1AC8ED]"></div>
         </div>
       </div>
     );
@@ -92,14 +92,14 @@ export default function MyProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">My Added Products</h1>
+          <h1 className="text-3xl font-bold text-[#F0F7EE]">My Added Products</h1>
           <Link
             href="/products"
-            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
+            className="bg-[#1AC8ED] hover:bg-[#17b4d5] text-black px-6 py-3 rounded-lg transition-colors"
           >
             Browse Products
           </Link>
@@ -113,7 +113,7 @@ export default function MyProductsPage() {
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-2 bg-[#1a1a1a] border border-[#5D737E] text-[#F0F7EE] rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED]"
             />
           </div>
           {allStores.length > 0 && (
@@ -121,7 +121,7 @@ export default function MyProductsPage() {
               <select
                 value={selectedStore}
                 onChange={(e) => setSelectedStore(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-[#1a1a1a] border border-[#5D737E] text-[#F0F7EE] rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED]"
               >
                 <option value="all">All Stores</option>
                 {allStores.map((storeUrl) => (
@@ -135,25 +135,25 @@ export default function MyProductsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
 
         {filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-md p-12 text-center">
+          <div className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md p-12 text-center">
             <div className="text-6xl mb-4">📦</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-[#F0F7EE] mb-2">
               {searchQuery ? 'No products found' : 'No products added yet'}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-[#d1d9d4] mb-6">
               {searchQuery
                 ? 'Try adjusting your search query'
                 : 'Start by browsing our product catalog and adding products to your stores'}
             </p>
             <Link
               href="/products"
-              className="inline-block bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
+              className="inline-block bg-[#1AC8ED] hover:bg-[#17b4d5] text-black px-6 py-3 rounded-lg transition-colors"
             >
               Browse Products
             </Link>
@@ -163,7 +163,7 @@ export default function MyProductsPage() {
             {filteredProducts.map((product) => (
               <div
                 key={product._id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md overflow-hidden hover:border-[#1AC8ED] hover:shadow-lg transition-all"
               >
                 <Link href={`/products/${product._id}`}>
                   <div className="aspect-square relative">
@@ -177,26 +177,26 @@ export default function MyProductsPage() {
                 <div className="p-6">
                   <div className="mb-2">
                     {typeof product.niche === 'object' && product.niche && (
-                      <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-[#1AC8ED] uppercase tracking-wide">
                         {product.niche.name}
                       </span>
                     )}
                   </div>
                   <Link href={`/products/${product._id}`}>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-primary-600">
+                    <h3 className="text-xl font-bold text-[#F0F7EE] mb-2 hover:text-[#1AC8ED]">
                       {product.title}
                     </h3>
                   </Link>
-                  <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
+                  <p className="text-[#d1d9d4] mb-4 line-clamp-2">{product.description}</p>
                   <div className="mb-4">
-                    <span className="text-2xl font-bold text-primary-600">
+                    <span className="text-2xl font-bold text-[#1AC8ED]">
                       ${product.price.toFixed(2)}
                     </span>
                   </div>
 
                   {/* Stores */}
-                  <div className="border-t border-gray-200 pt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
+                  <div className="border-t border-[#5D737E] pt-4">
+                    <p className="text-sm font-medium text-[#F0F7EE] mb-2">
                       Added to {product.stores.length} {product.stores.length === 1 ? 'store' : 'stores'}:
                     </p>
                     <div className="space-y-2">
@@ -206,11 +206,11 @@ export default function MyProductsPage() {
                             href={store.storeUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm text-primary-600 hover:text-primary-700 truncate"
+                            className="text-sm text-[#1AC8ED] hover:text-[#17b4d5] truncate"
                           >
                             {store.storeUrl.replace('https://', '').replace('.myshopify.com', '')}
                           </a>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-[#939ba0]">
                             {new Date(store.addedAt).toLocaleDateString()}
                           </span>
                         </div>

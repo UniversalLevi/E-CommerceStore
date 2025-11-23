@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationBell from './NotificationBell';
@@ -9,8 +9,12 @@ import NotificationBell from './NotificationBell';
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Show search bar only on products page and search page
+  const showSearchBar = pathname?.startsWith('/products') || pathname?.startsWith('/search');
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -32,17 +36,19 @@ export default function Navbar() {
             Auto Shopify Store Builder
           </Link>
 
-          {/* Search Bar - Hidden on mobile */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products and niches..."
-              className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
-              aria-label="Search products and niches"
-            />
-          </form>
+          {/* Search Bar - Only visible on products and search pages */}
+          {showSearchBar && (
+            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products and niches..."
+                className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400"
+                aria-label="Search products and niches"
+              />
+            </form>
+          )}
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
@@ -145,17 +151,19 @@ export default function Navbar() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-gray-700">
-            {/* Mobile Search */}
-            <form onSubmit={handleSearch} className="mt-4 mb-4">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products and niches..."
-                className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 min-h-[44px]"
-                aria-label="Search products and niches"
-              />
-            </form>
+            {/* Mobile Search - Only visible on products and search pages */}
+            {showSearchBar && (
+              <form onSubmit={handleSearch} className="mt-4 mb-4">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search products and niches..."
+                  className="w-full px-4 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 min-h-[44px]"
+                  aria-label="Search products and niches"
+                />
+              </form>
+            )}
 
             <div className="flex flex-col gap-4">
               {isAuthenticated ? (

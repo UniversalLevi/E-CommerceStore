@@ -54,15 +54,15 @@ const comparisonFeatures = [
 
 export default function FeaturesPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       <Navbar />
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-5xl font-bold text-[#F0F7EE] mb-6">
             Powerful Features for Your Shopify Store
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-[#d1d9d4] max-w-3xl mx-auto">
             Everything you need to build and manage your Shopify store quickly and efficiently.
             No technical expertise required.
           </p>
@@ -73,36 +73,36 @@ export default function FeaturesPage() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
+              className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md p-6 hover:border-[#1AC8ED] hover:shadow-lg transition-all"
             >
               <div className="text-4xl mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-gray-600">{feature.description}</p>
+              <h3 className="text-xl font-semibold text-[#F0F7EE] mb-2">{feature.title}</h3>
+              <p className="text-[#d1d9d4]">{feature.description}</p>
             </div>
           ))}
         </div>
 
         {/* Detailed Features */}
-        <div className="bg-white rounded-xl shadow-md p-8 md:p-12 mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+        <div className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md p-8 md:p-12 mb-16">
+          <h2 className="text-3xl font-bold text-[#F0F7EE] mb-8 text-center">
             Everything You Need to Succeed
           </h2>
 
           <div className="space-y-12">
             <section>
               <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 w-16 h-16 bg-primary-100 rounded-lg flex items-center justify-center text-2xl">
+                <div className="flex-shrink-0 w-16 h-16 bg-[#87BBA2] bg-opacity-20 border border-[#87BBA2] rounded-lg flex items-center justify-center text-2xl">
                   🚀
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                  <h3 className="text-2xl font-semibold text-[#F0F7EE] mb-3">
                     Quick Setup & Launch
                   </h3>
-                  <p className="text-gray-700 leading-relaxed mb-4">
+                  <p className="text-[#d1d9d4] leading-relaxed mb-4">
                     Get your store up and running in minutes, not days. Our streamlined process
                     eliminates the technical complexity of setting up a Shopify store from scratch.
                   </p>
-                  <ul className="list-disc pl-6 text-gray-700 space-y-2">
+                  <ul className="list-disc pl-6 text-[#d1d9d4] space-y-2">
                     <li>Connect your store in under 5 minutes</li>
                     <li>No coding or technical knowledge required</li>
                     <li>Automatic theme and homepage setup</li>
@@ -114,18 +114,18 @@ export default function FeaturesPage() {
 
             <section>
               <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 w-16 h-16 bg-primary-100 rounded-lg flex items-center justify-center text-2xl">
+                <div className="flex-shrink-0 w-16 h-16 bg-[#87BBA2] bg-opacity-20 border border-[#87BBA2] rounded-lg flex items-center justify-center text-2xl">
                   📊
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                  <h3 className="text-2xl font-semibold text-[#F0F7EE] mb-3">
                     Comprehensive Product Catalog
                   </h3>
-                  <p className="text-gray-700 leading-relaxed mb-4">
+                  <p className="text-[#d1d9d4] leading-relaxed mb-4">
                     Access thousands of products organized by niches. Each product comes with
                     professional descriptions, high-quality images, and competitive pricing.
                   </p>
-                  <ul className="list-disc pl-6 text-gray-700 space-y-2">
+                  <ul className="list-disc pl-6 text-[#d1d9d4] space-y-2">
                     <li>Products organized by niches (Fitness, Home & Garden, Electronics, etc.)</li>
                     <li>Professional product descriptions</li>
                     <li>High-resolution product images</li>
@@ -138,18 +138,18 @@ export default function FeaturesPage() {
 
             <section>
               <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 w-16 h-16 bg-primary-100 rounded-lg flex items-center justify-center text-2xl">
+                <div className="flex-shrink-0 w-16 h-16 bg-[#87BBA2] bg-opacity-20 border border-[#87BBA2] rounded-lg flex items-center justify-center text-2xl">
                   🎨
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                  <h3 className="text-2xl font-semibold text-[#F0F7EE] mb-3">
                     Beautiful Store Design
                   </h3>
-                  <p className="text-gray-700 leading-relaxed mb-4">
+                  <p className="text-[#d1d9d4] leading-relaxed mb-4">
                     Your store automatically gets a professional look with optimized themes and
                     layouts. Focus on selling while we handle the design.
                   </p>
-                  <ul className="list-disc pl-6 text-gray-700 space-y-2">
+                  <ul className="list-disc pl-6 text-[#d1d9d4] space-y-2">
                     <li>Automatically configured themes</li>
                     <li>Mobile-responsive design</li>
                     <li>SEO-optimized pages</li>
@@ -161,18 +161,18 @@ export default function FeaturesPage() {
 
             <section>
               <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 w-16 h-16 bg-primary-100 rounded-lg flex items-center justify-center text-2xl">
+                <div className="flex-shrink-0 w-16 h-16 bg-[#87BBA2] bg-opacity-20 border border-[#87BBA2] rounded-lg flex items-center justify-center text-2xl">
                   🔐
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-3">
+                  <h3 className="text-2xl font-semibold text-[#F0F7EE] mb-3">
                     Enterprise-Grade Security
                   </h3>
-                  <p className="text-gray-700 leading-relaxed mb-4">
+                  <p className="text-[#d1d9d4] leading-relaxed mb-4">
                     Your data and store credentials are protected with industry-standard encryption.
                     We take security seriously.
                   </p>
-                  <ul className="list-disc pl-6 text-gray-700 space-y-2">
+                  <ul className="list-disc pl-6 text-[#d1d9d4] space-y-2">
                     <li>Encrypted credential storage</li>
                     <li>Secure API connections</li>
                     <li>Regular security audits</li>
@@ -186,27 +186,27 @@ export default function FeaturesPage() {
         </div>
 
         {/* Comparison Table */}
-        <div className="bg-white rounded-xl shadow-md p-8 md:p-12 mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+        <div className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md p-8 md:p-12 mb-16">
+          <h2 className="text-3xl font-bold text-[#F0F7EE] mb-8 text-center">
             Why Choose Us?
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b-2 border-gray-200">
-                  <th className="text-left py-4 px-4 font-semibold text-gray-900">Feature</th>
-                  <th className="text-center py-4 px-4 font-semibold text-primary-600">Our Platform</th>
-                  <th className="text-center py-4 px-4 font-semibold text-gray-600">Others</th>
+                <tr className="border-b-2 border-[#5D737E]">
+                  <th className="text-left py-4 px-4 font-semibold text-[#F0F7EE]">Feature</th>
+                  <th className="text-center py-4 px-4 font-semibold text-[#1AC8ED]">Our Platform</th>
+                  <th className="text-center py-4 px-4 font-semibold text-[#d1d9d4]">Others</th>
                 </tr>
               </thead>
               <tbody>
                 {comparisonFeatures.map((item, index) => (
-                  <tr key={index} className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium text-gray-900">{item.feature}</td>
-                    <td className="py-4 px-4 text-center text-primary-600 font-semibold">
+                  <tr key={index} className="border-b border-[#5D737E]">
+                    <td className="py-4 px-4 font-medium text-[#F0F7EE]">{item.feature}</td>
+                    <td className="py-4 px-4 text-center text-[#1AC8ED] font-semibold">
                       {item.us}
                     </td>
-                    <td className="py-4 px-4 text-center text-gray-600">{item.others}</td>
+                    <td className="py-4 px-4 text-center text-[#d1d9d4]">{item.others}</td>
                   </tr>
                 ))}
               </tbody>
@@ -215,31 +215,31 @@ export default function FeaturesPage() {
         </div>
 
         {/* Use Cases */}
-        <div className="bg-white rounded-xl shadow-md p-8 md:p-12 mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+        <div className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md p-8 md:p-12 mb-16">
+          <h2 className="text-3xl font-bold text-[#F0F7EE] mb-8 text-center">
             Perfect For
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-5xl mb-4">👨‍💼</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Entrepreneurs</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-[#F0F7EE] mb-2">Entrepreneurs</h3>
+              <p className="text-[#d1d9d4]">
                 Launch your online store quickly without technical barriers. Focus on marketing
                 and sales, not setup.
               </p>
             </div>
             <div className="text-center">
               <div className="text-5xl mb-4">🏢</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Small Businesses</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-[#F0F7EE] mb-2">Small Businesses</h3>
+              <p className="text-[#d1d9d4]">
                 Expand your business online with minimal investment. No need to hire developers
                 or designers.
               </p>
             </div>
             <div className="text-center">
               <div className="text-5xl mb-4">🛍️</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Dropshippers</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-[#F0F7EE] mb-2">Dropshippers</h3>
+              <p className="text-[#d1d9d4]">
                 Quickly test new products and niches. Add products to multiple stores and scale
                 your business.
               </p>
@@ -248,7 +248,7 @@ export default function FeaturesPage() {
         </div>
 
         {/* CTA Section */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl shadow-lg p-12 text-center text-white">
+        <div className="bg-gradient-to-r from-[#1AC8ED] to-[#17b4d5] rounded-xl shadow-lg p-12 text-center text-black">
           <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
           <p className="text-xl mb-8 opacity-90">
             Join thousands of store owners who are already using our platform
@@ -256,13 +256,13 @@ export default function FeaturesPage() {
           <div className="flex gap-4 justify-center flex-wrap">
             <Link
               href="/register"
-              className="bg-white text-primary-600 hover:bg-gray-100 px-8 py-3 rounded-lg font-semibold transition-colors"
+              className="bg-black text-[#1AC8ED] hover:bg-[#1a1a1a] px-8 py-3 rounded-lg font-semibold transition-colors"
             >
               Get Started Free
             </Link>
             <Link
               href="/contact"
-              className="bg-primary-500 hover:bg-primary-400 text-white px-8 py-3 rounded-lg font-semibold transition-colors border-2 border-white"
+              className="bg-[#87BBA2] hover:bg-[#79a892] text-black px-8 py-3 rounded-lg font-semibold transition-colors border-2 border-black"
             >
               Contact Sales
             </Link>
@@ -272,7 +272,7 @@ export default function FeaturesPage() {
         <div className="mt-12 text-center">
           <Link
             href="/"
-            className="text-gray-600 hover:text-gray-700 font-medium"
+            className="text-[#1AC8ED] hover:text-[#17b4d5] font-medium"
           >
             ← Back to Home
           </Link>

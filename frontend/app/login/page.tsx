@@ -44,21 +44,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-lg p-8">
+        <div className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-lg p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-[#F0F7EE] mb-2">
               Welcome Back
             </h1>
-            <p className="text-gray-300">Sign in to your account</p>
+            <p className="text-[#d1d9d4]">Sign in to your account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-[#d1d9d4] mb-2"
               >
                 Email Address
               </label>
@@ -77,8 +77,8 @@ export default function LoginPage() {
                     if (emailError) setErrors({ ...errors, email: emailError.message });
                   }
                 }}
-                className={`w-full px-4 py-2 bg-gray-700 text-white border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-600'
+                className={`w-full px-4 py-2 bg-[#0a0a0a] text-[#F0F7EE] border rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] ${
+                  errors.email ? 'border-red-500' : 'border-[#5D737E]'
                 }`}
                 placeholder="you@example.com"
               />
@@ -90,7 +90,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-[#d1d9d4] mb-2"
               >
                 Password
               </label>
@@ -109,8 +109,8 @@ export default function LoginPage() {
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }
                 }}
-                className={`w-full px-4 py-2 bg-gray-700 text-white border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.password ? 'border-red-500' : 'border-gray-600'
+                className={`w-full px-4 py-2 bg-[#0a0a0a] text-[#F0F7EE] border rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] ${
+                  errors.password ? 'border-red-500' : 'border-[#5D737E]'
                 }`}
                 placeholder="••••••••"
               />
@@ -122,7 +122,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-between">
               <Link
                 href="/forgot-password"
-                className="text-sm text-primary-400 hover:text-primary-300"
+                className="text-sm text-[#1AC8ED] hover:text-[#17b4d5]"
               >
                 Forgot password?
               </Link>
@@ -133,11 +133,11 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-gray-300">
+          <p className="mt-6 text-center text-[#d1d9d4]">
             Don't have an account?{' '}
             <Link
               href="/register"
-              className="text-primary-400 hover:text-primary-300 font-semibold"
+              className="text-[#1AC8ED] hover:text-[#17b4d5] font-semibold"
             >
               Sign up
             </Link>
@@ -146,7 +146,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <Link
               href="/"
-              className="text-sm text-gray-400 hover:text-gray-300"
+              className="text-sm text-[#939ba0] hover:text-[#d1d9d4]"
             >
               ← Back to home
             </Link>
