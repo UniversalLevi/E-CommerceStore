@@ -6,6 +6,7 @@ import { StoreConnection } from '../models/StoreConnection';
 import { decrypt } from '../utils/encryption';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
+import { requirePaidPlan, checkProductLimit } from '../middleware/subscription';
 
 // Create a new Shopify store with selected product
 export const createStore = async (
@@ -152,6 +153,7 @@ export const createStore = async (
     const adminUrl = `https://${shopifyShop}/admin/products/${createdProduct.id}`;
 
     // Save store info to user record (for backward compatibility)
+    // Also increment productsAdded counter
     await User.findByIdAndUpdate((req.user as any)._id, {
       $push: {
         stores: {
@@ -161,6 +163,7 @@ export const createStore = async (
           createdAt: new Date(),
         },
       },
+      $inc: { productsAdded: 1 }, // Increment product counter
     });
 
     res.status(201).json({

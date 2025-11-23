@@ -19,6 +19,11 @@ export interface IUser extends Document {
   deletedAt?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  // Subscription fields
+  plan: string | null;
+  planExpiresAt: Date | null;
+  isLifetime: boolean;
+  productsAdded: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -88,6 +93,26 @@ const userSchema = new Schema<IUser>(
     resetPasswordExpires: {
       type: Date,
     },
+    // Subscription fields
+    plan: {
+      type: String,
+      default: null,
+      enum: [null, 'starter_30', 'growth_90', 'lifetime'],
+    },
+    planExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    isLifetime: {
+      type: Boolean,
+      default: false,
+    },
+    productsAdded: {
+      type: Number,
+      default: 0,
+      min: 0,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -96,6 +121,13 @@ const userSchema = new Schema<IUser>(
 
 // Index is already defined in schema with unique: true, removing duplicate
 // userSchema.index({ email: 1 }); // REMOVED - causing duplicate index warning
+
+// Helper functions for subscription status
+export function getSubscriptionStatus(user: IUser): 'active' | 'expired' | 'none' {
+  if (user.isLifetime) return 'active';
+  if (!user.plan || !user.planExpiresAt) return 'none';
+  return user.planExpiresAt > new Date() ? 'active' : 'expired';
+}
 
 export const User = mongoose.model<IUser>('User', userSchema);
 

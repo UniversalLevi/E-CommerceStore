@@ -87,3 +87,45 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// Subscription types
+export type PlanCode = 'starter_30' | 'growth_90' | 'lifetime';
+export type SubscriptionStatus = 'active' | 'expired' | 'none';
+
+export interface Plan {
+  code: PlanCode;
+  name: string;
+  price: number; // in paise
+  durationDays: number | null;
+  isLifetime: boolean;
+  maxProducts: number | null; // null = unlimited
+  features: string[];
+}
+
+export interface Payment {
+  _id: string;
+  planCode: PlanCode;
+  amount: number;
+  status: 'created' | 'paid' | 'failed' | 'refunded';
+  createdAt: string;
+}
+
+export interface SubscriptionInfo {
+  plan: string | null;
+  planExpiresAt: string | null;
+  isLifetime: boolean;
+  status: SubscriptionStatus;
+  maxProducts: number | null;
+  productsAdded: number;
+  productsRemaining: number | null;
+}
+
+export interface PaymentOrderResponse {
+  success: boolean;
+  data: {
+    orderId: string;
+    amount: number;
+    currency: string;
+    keyId: string;
+  };
+}
+

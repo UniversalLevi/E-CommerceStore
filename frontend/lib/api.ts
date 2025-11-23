@@ -88,6 +88,38 @@ class ApiClient {
       return response.data;
     });
   }
+
+  // Payment API methods
+  async getPlans() {
+    return this.get<{ success: boolean; data: { plans: any[] } }>('/api/payments/plans');
+  }
+
+  async createPaymentOrder(planCode: string) {
+    return this.post<{ success: boolean; data: { orderId: string; amount: number; currency: string; keyId: string } }>(
+      '/api/payments/create-order',
+      { planCode }
+    );
+  }
+
+  async verifyPayment(paymentData: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    planCode: string;
+  }) {
+    return this.post<{ success: boolean; message: string; data: any }>(
+      '/api/payments/verify',
+      paymentData
+    );
+  }
+
+  async getPaymentHistory() {
+    return this.get<{ success: boolean; data: any[] }>('/api/payments/history');
+  }
+
+  async getCurrentPlan() {
+    return this.get<{ success: boolean; data: any }>('/api/payments/current-plan');
+  }
 }
 
 export const api = new ApiClient();

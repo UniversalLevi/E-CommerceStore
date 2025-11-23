@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import OnboardingModal from '@/components/OnboardingModal';
+import SubscriptionStatus from '@/components/SubscriptionStatus';
 
 export default function DashboardPage() {
   const { user, loading, logout, isAuthenticated } = useAuth();
@@ -64,6 +65,11 @@ export default function DashboardPage() {
           <h2 className="text-3xl font-bold text-white mb-6">
             Welcome back, {user.email}!
           </h2>
+
+          {/* Subscription Status */}
+          <div className="mb-6">
+            <SubscriptionStatus />
+          </div>
 
           {/* Store Connection Prompt */}
           <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl p-6 mb-6 border-2 border-primary-600">

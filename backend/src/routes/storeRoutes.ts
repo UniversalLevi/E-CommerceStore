@@ -14,6 +14,7 @@ import {
   setDefaultStore,
 } from '../controllers/storeConnectionController';
 import { storeCreateRateLimit, storeTestRateLimit, generalApiRateLimit } from '../middleware/rateLimit';
+import { requirePaidPlan, checkProductLimit } from '../middleware/subscription';
 
 // Legacy store creation
 import { createStore, getUserStores } from '../controllers/storeController';
@@ -84,7 +85,15 @@ router.put(
 );
 
 // Legacy routes (for backward compatibility during migration)
-router.post('/create', authenticateToken, storeCreateRateLimit, createStore);
+// Add product to store - requires subscription and checks product limit
+router.post(
+  '/create',
+  authenticateToken,
+  requirePaidPlan,
+  checkProductLimit,
+  storeCreateRateLimit,
+  createStore
+);
 router.get('/user-stores', authenticateToken, generalApiRateLimit, getUserStores);
 
 export default router;

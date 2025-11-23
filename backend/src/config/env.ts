@@ -27,6 +27,10 @@ const envSchema = Joi.object({
   SMTP_FROM_NAME: Joi.string().allow('').optional(),
   SMTP_IGNORE_TLS: Joi.string().valid('true', 'false').allow('').optional(),
   CONTACT_EMAIL: Joi.string().email().allow('').optional(),
+  // Razorpay configuration
+  RAZORPAY_KEY_ID: Joi.string().required(),
+  RAZORPAY_KEY_SECRET: Joi.string().required(),
+  RAZORPAY_WEBHOOK_SECRET: Joi.string().required(),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);
@@ -52,6 +56,11 @@ export const config = {
     scopes: value.SHOPIFY_SCOPES,
     accessToken: value.SHOPIFY_ACCESS_TOKEN || '',
     shop: value.SHOPIFY_SHOP || '',
+  },
+  razorpay: {
+    keyId: value.RAZORPAY_KEY_ID,
+    keySecret: value.RAZORPAY_KEY_SECRET,
+    webhookSecret: value.RAZORPAY_WEBHOOK_SECRET,
   },
 };
 

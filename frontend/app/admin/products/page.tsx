@@ -89,8 +89,8 @@ export default function AdminProductsPage() {
     <div>
       <div className="mb-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-white">
-          Product Management
-        </h1>
+            Product Management
+          </h1>
           <Link
             href="/admin/products/new"
             className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
@@ -163,11 +163,11 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         {product.images?.[0] && (
-                          <img
-                            src={product.images[0]}
-                            alt={product.title}
-                            className="w-12 h-12 object-cover rounded"
-                          />
+                        <img
+                          src={product.images[0]}
+                          alt={product.title}
+                          className="w-12 h-12 object-cover rounded"
+                        />
                         )}
                         <div className="ml-4">
                           <div className="text-sm font-medium text-white">
