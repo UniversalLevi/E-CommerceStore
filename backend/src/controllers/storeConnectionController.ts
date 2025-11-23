@@ -6,6 +6,7 @@ import { encrypt, decrypt } from '../utils/encryption';
 import { validateShopifyCredentials, normalizeShopDomain } from '../utils/shopify';
 import { createError } from '../middleware/errorHandler';
 import { config } from '../config/env';
+import { createNotification } from '../utils/notifications';
 
 /**
  * Create a new store connection
@@ -117,6 +118,20 @@ export const createStoreConnection = async (
         shopName: validation.shop?.name,
       },
       ipAddress: req.ip,
+    });
+
+    // Create notification
+    await createNotification({
+      userId: (req.user as any)._id,
+      type: 'store_connection',
+      title: 'Store Connected Successfully',
+      message: `Your Shopify store "${storeName}" has been connected successfully. You can now start adding products!`,
+      link: `/dashboard/stores/${(store as any)._id}`,
+      metadata: {
+        storeId: (store as any)._id.toString(),
+        storeName,
+        shopDomain: normalizedDomain,
+      },
     });
 
     // Return store info (without sensitive data)
@@ -495,6 +510,22 @@ export const testStoreConnection = async (
       },
       ipAddress: req.ip,
     });
+
+    // Create notification if test failed
+    if (!validation.ok) {
+      await createNotification({
+        userId: (req.user as any)._id,
+        type: 'store_test',
+        title: 'Store Connection Test Failed',
+        message: `Connection test failed for "${store.storeName}": ${validation.error || 'Unknown error'}. Please check your credentials.`,
+        link: `/dashboard/stores/${(store as any)._id}`,
+        metadata: {
+          storeId: (store as any)._id.toString(),
+          storeName: store.storeName,
+          error: validation.error,
+        },
+      });
+    }
 
     res.json({
       success: true,

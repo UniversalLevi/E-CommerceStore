@@ -7,6 +7,7 @@ import { decrypt } from '../utils/encryption';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { requirePaidPlan, checkProductLimit } from '../middleware/subscription';
+import { createNotification } from '../utils/notifications';
 
 // Create a new Shopify store with selected product
 export const createStore = async (
@@ -164,6 +165,22 @@ export const createStore = async (
         },
       },
       $inc: { productsAdded: 1 }, // Increment product counter
+    });
+
+    // Create notification
+    await createNotification({
+      userId: (req.user as any)._id,
+      type: 'product_added',
+      title: 'Product Added Successfully',
+      message: `"${product.title}" has been successfully added to your Shopify store "${storeConnection.storeName}".`,
+      link: `/products/${(product as any)._id}`,
+      metadata: {
+        productId: (product as any)._id.toString(),
+        productTitle: product.title,
+        storeId: (storeConnection as any)._id.toString(),
+        storeName: storeConnection.storeName,
+        shopifyProductId: createdProduct.id,
+      },
     });
 
     res.status(201).json({

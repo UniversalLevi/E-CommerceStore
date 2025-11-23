@@ -56,13 +56,13 @@ export default function NotificationDropdown({
       leaveFrom="transform opacity-100 scale-100"
       leaveTo="transform opacity-0 scale-95"
     >
-      <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Notifications</h3>
+      <div className="absolute right-0 mt-2 w-80 bg-[#1A1A1A] rounded-lg shadow-lg border border-[#5D737E] z-50 max-h-96 overflow-hidden flex flex-col">
+        <div className="p-4 border-b border-[#5D737E] flex items-center justify-between">
+          <h3 className="font-semibold text-[#F0F7EE]">Notifications</h3>
           {unreadCount > 0 && (
             <button
               onClick={onMarkAllAsRead}
-              className="text-sm text-primary-600 hover:text-primary-700"
+              className="text-sm text-[#1AC8ED] hover:text-[#1AC8ED]/80 transition-colors"
             >
               Mark all as read
             </button>
@@ -71,17 +71,17 @@ export default function NotificationDropdown({
 
         <div className="overflow-y-auto flex-1">
           {notifications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-[#5D737E]">
               <div className="text-4xl mb-2">🔔</div>
               <p>No notifications</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-[#5D737E]">
               {notifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                    !notification.read ? 'bg-primary-50' : ''
+                  className={`p-4 hover:bg-[#2A2A2A] cursor-pointer transition-colors ${
+                    !notification.read ? 'bg-[#1AC8ED]/10' : ''
                   }`}
                   onClick={() => {
                     if (!notification.read) {
@@ -96,17 +96,17 @@ export default function NotificationDropdown({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-semibold text-gray-900 text-sm">
+                        <h4 className="font-semibold text-[#F0F7EE] text-sm">
                           {notification.title}
                         </h4>
                         {!notification.read && (
-                          <div className="w-2 h-2 bg-primary-600 rounded-full flex-shrink-0 mt-1"></div>
+                          <div className="w-2 h-2 bg-[#1AC8ED] rounded-full flex-shrink-0 mt-1"></div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                      <p className="text-sm text-[#5D737E] mt-1 line-clamp-2">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-400 mt-2">
+                      <p className="text-xs text-[#5D737E]/70 mt-2">
                         {new Date(notification.createdAt).toLocaleString()}
                       </p>
                     </div>
@@ -118,13 +118,13 @@ export default function NotificationDropdown({
         </div>
 
         {notifications.length > 0 && (
-          <div className="p-4 border-t border-gray-200 text-center">
+          <div className="p-4 border-t border-[#5D737E] text-center">
             <button
               onClick={() => {
                 onClose();
                 // Navigate to notifications page if it exists
               }}
-              className="text-sm text-primary-600 hover:text-primary-700"
+              className="text-sm text-[#1AC8ED] hover:text-[#1AC8ED]/80 transition-colors"
             >
               View all notifications
             </button>

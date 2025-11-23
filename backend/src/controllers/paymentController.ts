@@ -5,6 +5,7 @@ import { Payment } from '../models/Payment';
 import { razorpayService } from '../services/RazorpayService';
 import { plans, isValidPlanCode, PlanCode } from '../config/plans';
 import { createError } from '../middleware/errorHandler';
+import { createNotification } from '../utils/notifications';
 
 /**
  * Create Razorpay order
@@ -202,6 +203,33 @@ export const verifyPayment = async (
 
     // Note: Do NOT reset productsAdded counter on upgrade/renewal
     await user.save();
+
+    // Create notification
+    const planName = plan.name;
+    const notificationMessage = plan.isLifetime
+      ? `Your ${planName} subscription has been activated! You now have lifetime access.`
+      : isUpgrade
+      ? `You've successfully upgraded to ${planName}! Your subscription expires on ${user.planExpiresAt?.toLocaleDateString()}.`
+      : isRenewal
+      ? `Your ${planName} subscription has been renewed! It now expires on ${user.planExpiresAt?.toLocaleDateString()}.`
+      : `Your ${planName} subscription has been activated! It expires on ${user.planExpiresAt?.toLocaleDateString()}.`;
+
+    await createNotification({
+      userId: (req.user as any)._id,
+      type: 'system_update',
+      title: 'Subscription Activated',
+      message: notificationMessage,
+      link: '/dashboard/billing',
+      metadata: {
+        planCode,
+        planName,
+        isLifetime: plan.isLifetime,
+        planExpiresAt: user.planExpiresAt?.toISOString(),
+        isUpgrade,
+        isRenewal,
+        paymentId: razorpay_payment_id,
+      },
+    });
 
     res.status(200).json({
       success: true,
