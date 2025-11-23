@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import { tokens } from './styles/tokens'
 
 const config: Config = {
   darkMode: 'class',
@@ -10,19 +11,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          800: '#166534',
-          900: '#14532d',
-        },
+        primary: tokens.colors.primary,
+        surface: tokens.colors.surface,
+        text: tokens.colors.text,
+        border: tokens.colors.border,
+        status: tokens.colors.status,
       },
+      spacing: tokens.spacing,
+      borderRadius: tokens.borderRadius,
+      boxShadow: tokens.shadows,
+      fontFamily: tokens.typography.fontFamily,
+      fontSize: tokens.typography.fontSize,
+      fontWeight: tokens.typography.fontWeight,
+      lineHeight: tokens.typography.lineHeight,
+      zIndex: tokens.zIndex,
+      transitionDuration: tokens.transitions,
     },
   },
   plugins: [],

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
-import AdminLayout from '@/components/AdminLayout';
+import LoadingScreen from '@/components/LoadingScreen';
 import {
   BarChart,
   Bar,
@@ -141,23 +141,18 @@ export default function AdminDashboardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
+      <LoadingScreen />
     );
   }
 
   if (!stats) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-16">
         <div className="text-center">
-          <p className="text-red-600">{error || 'Failed to load dashboard'}</p>
+          <p className="text-red-400">{error || 'Failed to load dashboard'}</p>
           <button
             onClick={fetchDashboardData}
-            className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg"
+            className="mt-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
           >
             Retry
           </button>
@@ -167,31 +162,31 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <AdminLayout>
+    <div>
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="mt-2 text-gray-600">System overview and statistics</p>
+            <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+            <p className="mt-2 text-gray-300">System overview and statistics</p>
           </div>
 
           {/* System Health */}
           {health && (
-            <div className="mb-6 bg-white rounded-xl shadow-md p-6">
+            <div className="mb-6 bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">System Health</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">System Health</h3>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${getHealthColor(health.status)}`}></div>
-                      <span className="text-sm text-gray-600 capitalize">{health.status}</span>
+                      <span className="text-sm text-gray-300 capitalize">{health.status}</span>
                     </div>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-300">
                       DB Latency: <span className="font-medium">{health.dbLatency}ms</span>
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-300">
                       Uptime: <span className="font-medium">{formatUptime(health.uptime)}</span>
                     </span>
                   </div>
@@ -202,12 +197,12 @@ export default function AdminDashboardPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Users</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{stats.users.total}</p>
-                  <p className="text-sm text-green-600 mt-1">
+                  <p className="text-sm text-gray-300">Total Users</p>
+                  <p className="text-3xl font-bold text-white mt-2">{stats.users.total}</p>
+                  <p className="text-sm text-green-400 mt-1">
                     {stats.users.active} active (last 7 days)
                   </p>
                 </div>
@@ -215,12 +210,12 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Stores</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{stats.stores.total}</p>
-                  <p className="text-sm text-green-600 mt-1">
+                  <p className="text-sm text-gray-300">Total Stores</p>
+                  <p className="text-3xl font-bold text-white mt-2">{stats.stores.total}</p>
+                  <p className="text-sm text-green-400 mt-1">
                     {stats.stores.active} active
                   </p>
                 </div>
@@ -228,12 +223,12 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Invalid Stores</p>
-                  <p className="text-3xl font-bold text-red-600 mt-2">{stats.stores.invalid}</p>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-300">Invalid Stores</p>
+                  <p className="text-3xl font-bold text-red-400 mt-2">{stats.stores.invalid}</p>
+                  <p className="text-sm text-gray-400 mt-1">
                     {stats.stores.revoked} revoked
                   </p>
                 </div>
@@ -241,11 +236,11 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Products</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{stats.products.total}</p>
+                  <p className="text-sm text-gray-300">Total Products</p>
+                  <p className="text-3xl font-bold text-white mt-2">{stats.products.total}</p>
                 </div>
                 <div className="text-4xl">📦</div>
               </div>
@@ -373,7 +368,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }
 

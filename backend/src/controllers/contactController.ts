@@ -20,7 +20,7 @@ export const submitContact = async (
       throw createError('Invalid email format', 400);
     }
 
-    // Log the contact submission (in production, send email here)
+    // Log the contact submission
     logger.info('Contact form submission', {
       name,
       email,
@@ -28,20 +28,9 @@ export const submitContact = async (
       message: message.substring(0, 100), // Log first 100 chars
     });
 
-    // TODO: In production, integrate with email service (nodemailer, SendGrid, etc.)
-    // Example:
-    // await sendEmail({
-    //   to: process.env.CONTACT_EMAIL || 'support@example.com',
-    //   subject: `Contact Form: ${subject}`,
-    //   html: `
-    //     <h2>New Contact Form Submission</h2>
-    //     <p><strong>Name:</strong> ${name}</p>
-    //     <p><strong>Email:</strong> ${email}</p>
-    //     <p><strong>Subject:</strong> ${subject}</p>
-    //     <p><strong>Message:</strong></p>
-    //     <p>${message}</p>
-    //   `,
-    // });
+    // Send email notification
+    const { sendContactFormEmail } = await import('../utils/email');
+    await sendContactFormEmail(name, email, subject, message);
 
     res.status(200).json({
       success: true,

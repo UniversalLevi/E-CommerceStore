@@ -262,16 +262,16 @@ export const forgotPassword = async (
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
-    // In production, send email with reset link
-    // For now, we'll return the token in development
+    // Send email with reset link
     const resetUrl = `${config.corsOrigin || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    
+    // Import email service
+    const { sendPasswordResetEmail } = await import('../utils/email');
+    await sendPasswordResetEmail(user.email, resetUrl);
     
     if (process.env.NODE_ENV === 'development') {
       console.log('Password reset URL:', resetUrl);
     }
-
-    // TODO: Send email with resetUrl
-    // await sendPasswordResetEmail(user.email, resetUrl);
 
     res.status(200).json({
       success: true,

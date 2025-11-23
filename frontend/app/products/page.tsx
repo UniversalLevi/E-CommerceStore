@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Niche } from '@/types';
-import Navbar from '@/components/Navbar';
 
 export default function ProductsPage() {
   const [featuredNiches, setFeaturedNiches] = useState<Niche[]>([]);
@@ -39,11 +38,8 @@ export default function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900">
-        <Navbar />
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
-        </div>
+      <div className="flex items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
       </div>
     );
   }
@@ -127,70 +123,66 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navbar />
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Product Catalog</h1>
-          <p className="text-xl text-gray-300">
-            Select a niche to browse products
-          </p>
-        </div>
-
-        {error && (
-          <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-
-        {/* Featured Niches Section */}
-        {featuredNiches.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6">Featured Niches</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredNiches.map((niche) => (
-                <NicheCard key={niche._id} niche={niche} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Homepage Niches Section */}
-        {homepageFiltered.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6">Popular Niches</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {homepageFiltered.map((niche) => (
-                <NicheCard key={niche._id} niche={niche} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All Niches Section */}
-        {allFiltered.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6">All Niches</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {allFiltered.map((niche) => (
-                <NicheCard key={niche._id} niche={niche} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {featuredNiches.length === 0 &&
-          homepageFiltered.length === 0 &&
-          allFiltered.length === 0 && (
-            <div className="text-center py-16">
-              <p className="text-gray-400 text-lg">
-                No niches available at the moment
-              </p>
-            </div>
-          )}
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-white mb-4">Product Catalog</h1>
+        <p className="text-xl text-gray-300">
+          Select a niche to browse products
+        </p>
       </div>
+
+      {error && (
+        <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6">
+          {error}
+        </div>
+      )}
+
+      {/* Featured Niches Section */}
+      {featuredNiches.length > 0 && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-white mb-6">Featured Niches</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredNiches.map((niche) => (
+              <NicheCard key={niche._id} niche={niche} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Homepage Niches Section */}
+      {homepageFiltered.length > 0 && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-white mb-6">Popular Niches</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {homepageFiltered.map((niche) => (
+              <NicheCard key={niche._id} niche={niche} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All Niches Section */}
+      {allFiltered.length > 0 && (
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-white mb-6">All Niches</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {allFiltered.map((niche) => (
+              <NicheCard key={niche._id} niche={niche} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {featuredNiches.length === 0 &&
+        homepageFiltered.length === 0 &&
+        allFiltered.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-gray-400 text-lg">
+              No niches available at the moment
+            </p>
+          </div>
+        )}
     </div>
   );
 }

@@ -17,6 +17,16 @@ const envSchema = Joi.object({
   SHOPIFY_REDIRECT_URI: Joi.string().uri().allow('').optional(),
   SHOPIFY_SHOP: Joi.string().allow('').optional(),
   SHOPIFY_ACCESS_TOKEN: Joi.string().allow('').optional(),
+  // Email configuration (optional - if not set, emails will be logged only)
+  SMTP_HOST: Joi.string().allow('').optional(),
+  SMTP_PORT: Joi.string().allow('').optional(),
+  SMTP_SECURE: Joi.string().valid('true', 'false').allow('').optional(),
+  SMTP_USER: Joi.string().allow('').optional(),
+  SMTP_PASS: Joi.string().allow('').optional(),
+  SMTP_FROM: Joi.string().email().allow('').optional(),
+  SMTP_FROM_NAME: Joi.string().allow('').optional(),
+  SMTP_IGNORE_TLS: Joi.string().valid('true', 'false').allow('').optional(),
+  CONTACT_EMAIL: Joi.string().email().allow('').optional(),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);

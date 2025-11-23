@@ -3,6 +3,29 @@
 @tailwind utilities;
 
 :root {
+  /* Surface colors */
+  --surface-base: #0a0e27;
+  --surface-elevated: #111827;
+  --surface-raised: #1f2937;
+  --surface-hover: #374151;
+  
+  /* Text colors */
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-muted: #6b7280;
+  
+  /* Border colors */
+  --border-default: #374151;
+  --border-muted: #1f2937;
+  --border-focus: #22c55e;
+  
+  /* Primary colors */
+  --primary-500: #22c55e;
+  --primary-600: #16a34a;
+  --primary-700: #15803d;
+  
+  /* Legacy RGB vars */
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 17, 24, 39;
   --background-end-rgb: 31, 41, 55;
@@ -10,13 +33,8 @@
 
 body {
   @apply bg-gray-900 text-gray-100;
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background-color: var(--surface-base);
+  color: var(--text-primary);
 }
 
 /* Ensure all text is visible */

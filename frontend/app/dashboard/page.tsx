@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import OnboardingModal from '@/components/OnboardingModal';
-import Navbar from '@/components/Navbar';
 
 export default function DashboardPage() {
   const { user, loading, logout, isAuthenticated } = useAuth();
@@ -59,11 +58,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navbar />
-
+    <div>
       {/* Dashboard Content */}
-      <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-6">
             Welcome back, {user.email}!
@@ -195,7 +191,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
 
       <OnboardingModal
         isOpen={showOnboarding}
