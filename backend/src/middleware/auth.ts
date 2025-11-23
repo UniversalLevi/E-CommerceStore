@@ -26,7 +26,10 @@ export const authenticateToken = async (
       throw createError('Access token required', 401);
     }
 
-    const decoded = jwt.verify(token, config.jwtSecret) as { userId: string };
+    const decoded = jwt.verify(token, config.jwtSecret) as { 
+      userId: string;
+      passwordChangedAt?: number;
+    };
 
     const user = await User.findById(decoded.userId).select('-password').lean();
 
@@ -37,6 +40,14 @@ export const authenticateToken = async (
     // Check if account is active
     if (!user.isActive) {
       throw createError('Account is disabled', 403);
+    }
+
+    // Check if password was changed after token was issued
+    const tokenPasswordChangedAt = decoded.passwordChangedAt || 0;
+    const userPasswordChangedAt = user.passwordChangedAt?.getTime() || 0;
+    
+    if (userPasswordChangedAt > tokenPasswordChangedAt) {
+      throw createError('Password has been changed. Please log in again.', 401);
     }
 
     req.user = user as unknown as IUser;

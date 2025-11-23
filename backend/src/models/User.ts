@@ -19,6 +19,7 @@ export interface IUser extends Document {
   deletedAt?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  passwordChangedAt?: Date;
   // Subscription fields
   plan: string | null;
   planExpiresAt: Date | null;
@@ -91,6 +92,9 @@ const userSchema = new Schema<IUser>(
       type: String,
     },
     resetPasswordExpires: {
+      type: Date,
+    },
+    passwordChangedAt: {
       type: Date,
     },
     // Subscription fields

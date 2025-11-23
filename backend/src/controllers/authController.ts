@@ -15,10 +15,17 @@ export const register = async (
   try {
     const { email, password } = req.body;
 
-    // Check if user already exists (use lean for faster query)
-    const existingUser = await User.findOne({ email }).lean();
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      throw createError('Email already registered', 409);
+      // If account is deleted, hard delete it to allow re-registration
+      if (existingUser.deletedAt) {
+        console.log('Found deleted account, hard deleting to allow re-registration:', email);
+        await User.findByIdAndDelete(existingUser._id);
+      } else {
+        // Account exists and is not deleted
+        throw createError('Email already registered', 409);
+      }
     }
 
     // Hash password with optimized rounds (10 -> 8 for better performance)
@@ -31,11 +38,18 @@ export const register = async (
       role: 'user',
     });
 
-    // Generate JWT token
+    // Generate JWT token with password change timestamp
     const jwtOptions: SignOptions = {
       expiresIn: config.jwtExpiresIn as any,
     };
-    const token = jwt.sign({ userId: user._id }, config.jwtSecret, jwtOptions);
+    const token = jwt.sign(
+      { 
+        userId: user._id,
+        passwordChangedAt: user.passwordChangedAt?.getTime() || 0
+      },
+      config.jwtSecret,
+      jwtOptions
+    );
 
     // Set HttpOnly cookie
     res.cookie('auth_token', token, {
@@ -68,32 +82,54 @@ export const login = async (
   try {
     const { email, password } = req.body;
 
-    // Find user
+    // Find user - ensure we get the password field
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('Login failed: User not found:', email);
       throw createError('Invalid email or password', 401);
     }
 
-    // Check if account is active
+    // Check if account is deleted
+    if (user.deletedAt) {
+      console.log('Login failed: Account deleted:', email);
+      throw createError('This account has been deleted.', 403);
+    }
+
+    // Check if account is active (but not deleted)
     if (!user.isActive) {
       throw createError('Account is disabled. Please contact support.', 403);
     }
 
     // Verify password
+    console.log('🔐 Login attempt for user:', email);
+    console.log('🔐 Stored password hash (first 20 chars):', user.password.substring(0, 20));
+    console.log('🔐 Password changed at:', user.passwordChangedAt);
+    
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log('❌ Login failed: Password mismatch for user:', email);
       throw createError('Invalid email or password', 401);
     }
+    
+    console.log('✅ Login successful for user:', email);
+    console.log('✅ Password changed at:', user.passwordChangedAt);
 
     // Update lastLogin
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate JWT token
+    // Generate JWT token with password change timestamp
     const jwtOptions: SignOptions = {
       expiresIn: config.jwtExpiresIn as any,
     };
-    const token = jwt.sign({ userId: user._id }, config.jwtSecret, jwtOptions);
+    const token = jwt.sign(
+      { 
+        userId: user._id,
+        passwordChangedAt: user.passwordChangedAt?.getTime() || 0
+      },
+      config.jwtSecret,
+      jwtOptions
+    );
 
     // Set HttpOnly cookie
     res.cookie('auth_token', token, {
@@ -187,6 +223,7 @@ export const changePassword = async (
     // Hash and update new password
     const hashedPassword = await bcrypt.hash(newPassword, 8);
     user.password = hashedPassword;
+    user.passwordChangedAt = new Date(); // Track password change to invalidate old tokens
     await user.save();
 
     // Clear cookie (force re-login)
@@ -302,6 +339,8 @@ export const resetPassword = async (
 
     // Hash the token to compare with stored hash
     const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    
+    console.log('🔐 Password reset attempt - Token hash:', resetTokenHash.substring(0, 20) + '...');
 
     // Find user with valid token
     const user = await User.findOne({
@@ -310,15 +349,57 @@ export const resetPassword = async (
     });
 
     if (!user) {
+      console.error('❌ Password reset failed - Invalid or expired token');
+      // Check if token exists but expired
+      const expiredUser = await User.findOne({ resetPasswordToken: resetTokenHash });
+      if (expiredUser) {
+        console.error('Token found but expired. Expires:', expiredUser.resetPasswordExpires);
+      } else {
+        console.error('Token not found in database');
+      }
       throw createError('Invalid or expired reset token', 400);
     }
+    
+    console.log('✅ Found user for password reset:', user.email);
 
     // Update password
     const hashedPassword = await bcrypt.hash(password, 8);
+    const oldPasswordHash = user.password; // Store for logging
     user.password = hashedPassword;
+    user.passwordChangedAt = new Date(); // Track password change to invalidate old tokens
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
+    
+    // Mark fields as modified to ensure they're saved
+    user.markModified('password');
+    user.markModified('passwordChangedAt');
+    
     await user.save();
+    
+    // Verify password was actually updated by re-fetching from DB
+    const updatedUser = await User.findById(user._id).select('password passwordChangedAt email');
+    if (!updatedUser) {
+      throw createError('Failed to verify password update', 500);
+    }
+    
+    // Verify the new password works with the updated hash
+    const isNewPasswordValid = await bcrypt.compare(password, updatedUser.password);
+    if (!isNewPasswordValid) {
+      console.error('CRITICAL: Password was not properly updated in database!');
+      console.error('User:', updatedUser.email);
+      throw createError('Password update failed. Please try again.', 500);
+    }
+    
+    // Verify password hash actually changed
+    if (oldPasswordHash === updatedUser.password) {
+      console.error('CRITICAL: Password hash did not change after reset!');
+      console.error('User:', updatedUser.email);
+      throw createError('Password was not updated. Please try again.', 500);
+    }
+    
+    console.log('✅ Password reset successful for user:', updatedUser.email);
+    console.log('✅ Password changed at:', updatedUser.passwordChangedAt);
+    console.log('✅ Password hash changed:', oldPasswordHash.substring(0, 20), '->', updatedUser.password.substring(0, 20));
 
     res.status(200).json({
       success: true,

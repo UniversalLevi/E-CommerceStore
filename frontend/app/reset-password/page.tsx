@@ -54,11 +54,7 @@ export default function ResetPasswordPage() {
       });
 
       setSuccess(true);
-      notify.success('Password reset successfully! Redirecting to login...');
-      
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      notify.success('Password reset successfully! You can now log in with your new password.');
     } catch (err: any) {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
@@ -101,7 +97,7 @@ export default function ResetPasswordPage() {
                 Password Reset Successful
               </h3>
               <p className="text-green-700 mb-4">
-                Your password has been reset. Redirecting to login...
+                Your password has been reset successfully. You can now log in with your new password.
               </p>
               <Link
                 href="/login"
