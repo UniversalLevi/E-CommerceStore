@@ -28,9 +28,9 @@ export default function SubscriptionStatus() {
 
   if (loading) {
     return (
-      <div className="bg-gray-800 rounded-lg p-4 animate-pulse">
-        <div className="h-4 bg-gray-700 rounded w-1/3 mb-2"></div>
-        <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+      <div className="bg-[#1a1a1a] rounded-lg p-4 animate-pulse">
+        <div className="h-4 bg-[#2a2a2a] rounded w-1/3 mb-2"></div>
+        <div className="h-4 bg-[#2a2a2a] rounded w-1/2"></div>
       </div>
     );
   }
@@ -42,11 +42,11 @@ export default function SubscriptionStatus() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-500/20 text-green-400 border-green-500/50';
+        return 'bg-[#2a2a2a] text-white border-[#808080]';
       case 'expired':
-        return 'bg-red-500/20 text-red-400 border-red-500/50';
+        return 'bg-[#2a2a2a] text-[#a0a0a0] border-[#606060]';
       default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+        return 'bg-[#2a2a2a] text-[#808080] border-[#505050]';
     }
   };
 
@@ -74,7 +74,7 @@ export default function SubscriptionStatus() {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+    <div className="bg-[#1a1a1a] rounded-lg p-6 border border-[#505050]">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-white">Subscription Status</h3>
         <span
@@ -90,13 +90,13 @@ export default function SubscriptionStatus() {
         <>
           <div className="mb-4">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-gray-400">Product Usage</span>
+              <span className="text-[#a0a0a0]">Product Usage</span>
               <span className="text-white font-medium">{formatProductUsage()}</span>
             </div>
             {subscription.maxProducts !== null && (
-              <div className="w-full bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-[#2a2a2a] rounded-full h-2">
                 <div
-                  className="bg-green-500 h-2 rounded-full transition-all"
+                  className="bg-white h-2 rounded-full transition-all"
                   style={{ width: `${getUsagePercentage()}%` }}
                 ></div>
               </div>
@@ -104,27 +104,27 @@ export default function SubscriptionStatus() {
           </div>
 
           {subscription.planExpiresAt && !subscription.isLifetime && (
-            <div className="text-sm text-gray-400 mb-4">
+            <div className="text-sm text-[#a0a0a0] mb-4">
               Expires: {new Date(subscription.planExpiresAt).toLocaleDateString()}
             </div>
           )}
 
           {subscription.isLifetime && (
-            <div className="text-sm text-green-400 mb-4">Lifetime Plan</div>
+            <div className="text-sm text-white mb-4">Lifetime Plan</div>
           )}
         </>
       )}
 
       {subscription.status !== 'active' && (
         <div className="mb-4">
-          <p className="text-gray-400 text-sm mb-3">
+          <p className="text-[#a0a0a0] text-sm mb-3">
             {subscription.status === 'expired'
               ? 'Your subscription has expired. Upgrade to continue adding products.'
               : 'No active subscription. Choose a plan to get started.'}
           </p>
           <Link
             href="/dashboard/billing"
-            className="inline-block bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+            className="inline-block bg-white hover:bg-[#e0e0e0] text-black px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
           >
             {subscription.status === 'expired' ? 'Renew Plan' : 'Choose Plan'}
           </Link>

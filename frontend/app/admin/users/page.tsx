@@ -142,41 +142,41 @@ export default function AdminUsersPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-base flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading users...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Loading users...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-base">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-surface-raised border-b border-border-default shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-600">
+            <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
               Auto Shopify Store Builder
             </Link>
             <div className="flex items-center gap-4">
-              <Link href="/admin/dashboard" className="text-gray-600 hover:text-gray-900">
+              <Link href="/admin/dashboard" className="text-text-secondary hover:text-primary-500">
                 Dashboard
               </Link>
-              <Link href="/admin/users" className="text-gray-900 font-medium">
+              <Link href="/admin/users" className="text-text-primary font-medium">
                 Users
               </Link>
-              <Link href="/admin/stores" className="text-gray-600 hover:text-gray-900">
+              <Link href="/admin/stores" className="text-text-secondary hover:text-primary-500">
                 Stores
               </Link>
-              <Link href="/admin/audit" className="text-gray-600 hover:text-gray-900">
+              <Link href="/admin/audit" className="text-text-secondary hover:text-primary-500">
                 Audit Logs
               </Link>
-              <Link href="/admin/products" className="text-gray-600 hover:text-gray-900">
+              <Link href="/admin/products" className="text-text-secondary hover:text-primary-500">
                 Products
               </Link>
-              <span className="text-gray-600">{user?.email}</span>
+              <span className="text-text-secondary">{user?.email}</span>
             </div>
           </div>
         </div>
@@ -187,15 +187,15 @@ export default function AdminUsersPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-            <p className="mt-2 text-gray-600">Manage all users and their permissions</p>
+            <h1 className="text-3xl font-bold text-text-primary">User Management</h1>
+            <p className="mt-2 text-text-secondary">Manage all users and their permissions</p>
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Search Email
                 </label>
                 <input
@@ -203,12 +203,12 @@ export default function AdminUsersPage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search by email..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Role
                 </label>
                 <select
@@ -217,7 +217,7 @@ export default function AdminUsersPage() {
                     setRoleFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="">All Roles</option>
                   <option value="admin">Admin</option>
@@ -226,7 +226,7 @@ export default function AdminUsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Status
                 </label>
                 <select
@@ -235,7 +235,7 @@ export default function AdminUsersPage() {
                     setStatusFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="">All Status</option>
                   <option value="active">Active</option>
@@ -251,7 +251,7 @@ export default function AdminUsersPage() {
                     setStatusFilter('');
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                  className="w-full px-4 py-2 bg-surface-elevated hover:bg-surface-hover text-text-primary rounded-lg font-medium transition-colors"
                 >
                   Clear Filters
                 </button>
@@ -260,50 +260,50 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Users Table */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border-default">
+                <thead className="bg-surface-elevated">
                   <tr>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-hover"
                       onClick={() => handleSort('email')}
                     >
                       Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-hover"
                       onClick={() => handleSort('role')}
                     >
                       Role {sortBy === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-hover"
                       onClick={() => handleSort('createdAt')}
                     >
                       Created {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Stores
                     </th>
                     <th
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-hover"
                       onClick={() => handleSort('lastLogin')}
                     >
                       Last Login {sortBy === 'lastLogin' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-surface-raised divide-y divide-border-default">
                   {users.map((userItem) => (
-                    <tr key={userItem._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <tr key={userItem._id} className="hover:bg-surface-hover">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
                         {userItem.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -312,19 +312,19 @@ export default function AdminUsersPage() {
                           onChange={(e) =>
                             handleRoleChange(userItem._id, e.target.value as 'admin' | 'user')
                           }
-                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500"
+                          className="text-sm bg-surface-elevated border border-border-default text-text-primary rounded px-2 py-1 focus:ring-2 focus:ring-primary-500"
                         >
                           <option value="user">User</option>
                           <option value="admin">Admin</option>
                         </select>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {new Date(userItem.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {userItem.storesCount}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {userItem.lastLogin
                           ? new Date(userItem.lastLogin).toLocaleString()
                           : 'Never'}
@@ -333,8 +333,8 @@ export default function AdminUsersPage() {
                         <span
                           className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             userItem.isActive
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-secondary-500/20 text-secondary-400 border border-secondary-500/50'
+                              : 'bg-red-500/20 text-red-400 border border-red-500/50'
                           }`}
                         >
                           {userItem.isActive ? 'Active' : 'Inactive'}
@@ -345,28 +345,28 @@ export default function AdminUsersPage() {
                           onClick={() => handleToggleStatus(userItem._id, userItem.isActive)}
                           className={`${
                             userItem.isActive
-                              ? 'text-red-600 hover:text-red-900'
-                              : 'text-green-600 hover:text-green-900'
+                              ? 'text-red-400 hover:text-red-300'
+                              : 'text-secondary-400 hover:text-secondary-300'
                           }`}
                         >
                           {userItem.isActive ? 'Disable' : 'Enable'}
                         </button>
                         <Link
                           href={`/admin/stores?userId=${userItem._id}`}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-primary-500 hover:text-primary-600"
                         >
                           Stores
                         </Link>
                         <Link
                           href={`/admin/audit?userId=${userItem._id}`}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-primary-500 hover:text-primary-600"
                         >
                           Logs
                         </Link>
                         {userItem._id !== user?._id && (
                           <button
                             onClick={() => handleDelete(userItem._id, userItem.email)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-400 hover:text-red-300"
                           >
                             Delete
                           </button>
@@ -380,8 +380,8 @@ export default function AdminUsersPage() {
 
             {/* Pagination */}
             {pagination && pagination.pages > 1 && (
-              <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-                <div className="text-sm text-gray-700">
+              <div className="bg-surface-elevated px-6 py-4 flex items-center justify-between">
+                <div className="text-sm text-text-secondary">
                   Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
                   {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
                   {pagination.total} users
@@ -390,14 +390,14 @@ export default function AdminUsersPage() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={pagination.page === 1}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-surface-raised border border-border-default text-text-primary rounded-lg text-sm font-medium hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(pagination.pages, p + 1))}
                     disabled={pagination.page === pagination.pages}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-surface-raised border border-border-default text-text-primary rounded-lg text-sm font-medium hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>

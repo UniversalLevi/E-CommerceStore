@@ -95,10 +95,10 @@ export default function NewProductPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-surface-base">
         <Navbar />
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
         </div>
       </div>
     );
@@ -109,24 +109,24 @@ export default function NewProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-base">
       <Navbar />
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">
+          <h1 className="text-3xl font-bold text-text-primary mb-6">
             Add New Product
           </h1>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Product Title *
               </label>
               <input
@@ -138,13 +138,13 @@ export default function NewProductPage() {
                 required
                 minLength={3}
                 maxLength={200}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Wireless Bluetooth Headphones"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Description *
               </label>
               <textarea
@@ -155,14 +155,14 @@ export default function NewProductPage() {
                 required
                 minLength={10}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Detailed product description..."
               />
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Price ($) *
                 </label>
                 <input
@@ -174,13 +174,13 @@ export default function NewProductPage() {
                     setFormData({ ...formData, price: e.target.value })
                   }
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="29.99"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Category
                 </label>
                 <input
@@ -189,18 +189,18 @@ export default function NewProductPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="electronics"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Niche *
               </label>
               {loadingNiches ? (
-                <div className="text-sm text-gray-500">Loading niches...</div>
+                <div className="text-sm text-text-muted">Loading niches...</div>
               ) : (
                 <select
                   value={formData.niche}
@@ -208,7 +208,7 @@ export default function NewProductPage() {
                     setFormData({ ...formData, niche: e.target.value })
                   }
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="">Select a niche</option>
                   {niches.map((niche) => (
@@ -221,14 +221,14 @@ export default function NewProductPage() {
                 </select>
               )}
               {!formData.niche && !loadingNiches && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-1 text-sm text-red-400">
                   Please select a niche for this product
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Product Images (URLs) *
               </label>
               {formData.images.map((image, index) => (
@@ -238,14 +238,14 @@ export default function NewProductPage() {
                     value={image}
                     onChange={(e) => updateImage(index, e.target.value)}
                     required
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="https://example.com/image.jpg"
                   />
                   {formData.images.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
                     >
                       Remove
                     </button>
@@ -255,7 +255,7 @@ export default function NewProductPage() {
               <button
                 type="button"
                 onClick={addImageField}
-                className="mt-2 text-primary-600 hover:text-primary-700 text-sm font-medium"
+                className="mt-2 text-primary-500 hover:text-primary-600 text-sm font-medium"
               >
                 + Add Another Image
               </button>
@@ -269,9 +269,9 @@ export default function NewProductPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, active: e.target.checked })
                 }
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                className="w-4 h-4 text-primary-500 border-border-default rounded focus:ring-primary-500 bg-surface-elevated"
               />
-              <label htmlFor="active" className="ml-2 text-sm text-gray-700">
+              <label htmlFor="active" className="ml-2 text-sm text-text-secondary">
                 Product is active and visible to users
               </label>
             </div>
@@ -280,14 +280,14 @@ export default function NewProductPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg transition-colors disabled:opacity-50"
+                className="flex-1 bg-primary-500 hover:bg-primary-600 text-black py-3 rounded-lg transition-colors disabled:opacity-50"
               >
                 {submitting ? 'Creating...' : 'Create Product'}
               </button>
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors"
+                className="px-6 py-3 bg-surface-elevated hover:bg-surface-hover text-text-primary rounded-lg transition-colors"
               >
                 Cancel
               </button>

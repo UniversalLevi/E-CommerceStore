@@ -87,10 +87,10 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-base">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Search</h1>
+        <h1 className="text-3xl font-bold text-text-primary mb-6">Search</h1>
 
         {/* Search Form */}
         <form onSubmit={handleSearch} className="mb-6">
@@ -100,12 +100,12 @@ export default function SearchPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products and niches..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="flex-1 px-4 py-3 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
             <select
               value={selectedType}
               onChange={(e) => handleTypeChange(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="px-4 py-3 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="all">All</option>
               <option value="products">Products</option>
@@ -113,7 +113,7 @@ export default function SearchPage() {
             </select>
             <button
               type="submit"
-              className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-lg transition-colors"
+              className="bg-primary-500 hover:bg-primary-600 text-black px-8 py-3 rounded-lg transition-colors"
             >
               Search
             </button>
@@ -121,26 +121,26 @@ export default function SearchPage() {
         </form>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
           </div>
         ) : query ? (
           <>
             {results.total === 0 ? (
-              <div className="bg-white rounded-xl shadow-md p-12 text-center">
+              <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center">
                 <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-text-primary mb-2">
                   No results found
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-text-secondary">
                   Try adjusting your search query or browse our{' '}
-                  <Link href="/products" className="text-primary-600 hover:text-primary-700">
+                  <Link href="/products" className="text-text-primary hover:text-primary-500">
                     product catalog
                   </Link>
                   .
@@ -149,31 +149,31 @@ export default function SearchPage() {
             ) : (
               <>
                 {/* Results Summary */}
-                <div className="mb-6 text-gray-600">
+                <div className="mb-6 text-text-secondary">
                   Found {results.total} result{results.total !== 1 ? 's' : ''} for "{query}"
                 </div>
 
                 {/* Niches Results */}
                 {results.niches.length > 0 && (
                   <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Niches</h2>
+                    <h2 className="text-2xl font-bold text-text-primary mb-4">Niches</h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {results.niches.map((niche) => (
                         <Link
                           key={niche._id}
                           href={`/products/niches/${niche.slug}`}
-                          className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
+                          className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:border-primary-500 hover:shadow-lg transition-all"
                         >
                           <div className="flex items-center gap-4 mb-4">
                             {niche.icon && <span className="text-4xl">{niche.icon}</span>}
-                            <h3 className="text-xl font-bold text-gray-900">{niche.name}</h3>
+                            <h3 className="text-xl font-bold text-text-primary">{niche.name}</h3>
                           </div>
                           {niche.description && (
-                            <p className="text-gray-600 mb-4 line-clamp-2">
+                            <p className="text-text-secondary mb-4 line-clamp-2">
                               {niche.description}
                             </p>
                           )}
-                          <div className="text-sm text-primary-600 font-medium">
+                          <div className="text-sm text-text-primary font-medium">
                             {niche.activeProductCount || niche.productCount || 0} products →
                           </div>
                         </Link>
@@ -185,13 +185,13 @@ export default function SearchPage() {
                 {/* Products Results */}
                 {results.products.length > 0 && (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">Products</h2>
+                    <h2 className="text-2xl font-bold text-text-primary mb-4">Products</h2>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {results.products.map((product) => (
                         <Link
                           key={product._id}
                           href={`/products/${product._id}`}
-                          className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                          className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden hover:border-primary-500 hover:shadow-lg transition-all"
                         >
                           <div className="aspect-square relative">
                             <img
@@ -202,17 +202,17 @@ export default function SearchPage() {
                           </div>
                           <div className="p-6">
                             {typeof product.niche === 'object' && product.niche && (
-                              <span className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+                              <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
                                 {product.niche.name}
                               </span>
                             )}
-                            <h3 className="text-xl font-bold text-gray-900 mb-2 mt-2">
+                            <h3 className="text-xl font-bold text-text-primary mb-2 mt-2">
                               {product.title}
                             </h3>
-                            <p className="text-gray-600 mb-4 line-clamp-2">
+                            <p className="text-text-secondary mb-4 line-clamp-2">
                               {product.description}
                             </p>
-                            <div className="text-2xl font-bold text-primary-600">
+                            <div className="text-2xl font-bold text-text-primary">
                               ${product.price.toFixed(2)}
                             </div>
                           </div>
@@ -240,17 +240,17 @@ export default function SearchPage() {
             )}
           </>
         ) : (
-          <div className="bg-white rounded-xl shadow-md p-12 text-center">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-text-primary mb-2">
               Start Searching
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-text-secondary mb-6">
               Enter a search query above to find products and niches
             </p>
             <Link
               href="/products"
-              className="inline-block bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
+              className="inline-block bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors"
             >
               Browse All Products
             </Link>

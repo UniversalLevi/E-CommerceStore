@@ -1,44 +1,44 @@
-// Theme tokens for dark theme with custom color palette
+// Theme tokens for black, grey, and white color palette
 export const tokens = {
   colors: {
-    // Primary (Cyan - #1AC8ED)
+    // Primary (White - #ffffff)
     primary: {
-      50: '#e6f7fc',
-      100: '#cceff9',
-      200: '#99dff3',
-      300: '#66cfed',
-      400: '#33bfe7',
-      500: '#1AC8ED', // Cyan - main primary
-      600: '#17b4d5',
-      700: '#14a0bd',
-      800: '#118ca5',
-      900: '#0e788d',
+      50: '#ffffff',
+      100: '#f5f5f5',
+      200: '#e0e0e0',
+      300: '#c0c0c0',
+      400: '#a0a0a0',
+      500: '#ffffff', // White - main primary
+      600: '#e0e0e0',
+      700: '#c0c0c0',
+      800: '#a0a0a0',
+      900: '#808080',
     },
-    // Secondary (Muted Teal - #87BBA2)
+    // Secondary (Light Grey - #e0e0e0)
     secondary: {
-      50: '#f0f7f4',
-      100: '#d4e8df',
-      200: '#b8d9ca',
-      300: '#9ccab5',
-      400: '#a0c5a8',
-      500: '#87BBA2', // Muted Teal - main secondary
-      600: '#79a892',
-      700: '#6b9582',
-      800: '#5d8272',
-      900: '#4f6f62',
+      50: '#f5f5f5',
+      100: '#e0e0e0',
+      200: '#c0c0c0',
+      300: '#a0a0a0',
+      400: '#808080',
+      500: '#e0e0e0', // Light Grey - main secondary
+      600: '#c0c0c0',
+      700: '#a0a0a0',
+      800: '#808080',
+      900: '#606060',
     },
-    // Accent (Blue Slate - #5D737E)
+    // Accent (Medium Grey - #808080)
     accent: {
-      50: '#f4f6f7',
-      100: '#d9e0e3',
-      200: '#becacf',
-      300: '#a3b4bb',
-      400: '#889ea7',
-      500: '#5D737E', // Blue Slate - main accent
-      600: '#546771',
-      700: '#4b5b64',
-      800: '#424f57',
-      900: '#39434a',
+      50: '#f5f5f5',
+      100: '#e0e0e0',
+      200: '#c0c0c0',
+      300: '#a0a0a0',
+      400: '#808080',
+      500: '#808080', // Medium Grey - main accent
+      600: '#606060',
+      700: '#505050',
+      800: '#404040',
+      900: '#2a2a2a',
     },
     // Dark surface colors (Black base - #000000)
     surface: {
@@ -47,31 +47,31 @@ export const tokens = {
       raised: '#1a1a1a',
       hover: '#2a2a2a',
     },
-    // Text colors (Mint Cream - #F0F7EE)
+    // Text colors (White and Grey scale)
     text: {
-      primary: '#F0F7EE', // Mint Cream - primary text
-      secondary: '#d1d9d4',
-      tertiary: '#b2baba',
-      muted: '#939ba0',
+      primary: '#ffffff', // White - primary text
+      secondary: '#a0a0a0', // Light grey - secondary text
+      tertiary: '#808080', // Medium grey - tertiary text
+      muted: '#606060', // Dark grey - muted text
     },
     // Border colors
     border: {
-      default: '#5D737E', // Blue Slate
-      muted: '#3a4a52',
-      focus: '#1AC8ED', // Cyan
+      default: '#505050', // Medium grey
+      muted: '#404040', // Dark grey
+      focus: '#808080', // Light grey
     },
-    // Status colors
+    // Status colors (using grey scale, keeping red for errors)
     status: {
-      success: '#87BBA2', // Muted Teal
-      error: '#ef4444',
-      warning: '#1AC8ED', // Cyan
-      info: '#5D737E', // Blue Slate
+      success: '#808080', // Medium grey
+      error: '#ef4444', // Keep red for errors
+      warning: '#a0a0a0', // Light grey
+      info: '#606060', // Dark grey
     },
     // Background gradients
     gradient: {
-      primary: 'linear-gradient(135deg, #1AC8ED 0%, #17b4d5 100%)',
+      primary: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)',
       surface: 'linear-gradient(180deg, #000000 0%, #0a0a0a 100%)',
-      accent: 'linear-gradient(135deg, #5D737E 0%, #87BBA2 100%)',
+      accent: 'linear-gradient(135deg, #808080 0%, #606060 100%)',
     },
   },
   spacing: {

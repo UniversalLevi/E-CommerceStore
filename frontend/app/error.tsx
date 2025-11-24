@@ -16,18 +16,18 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+    <div className="min-h-screen bg-surface-base flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-surface-raised border border-border-default rounded-xl shadow-lg p-8 text-center">
         <div className="text-6xl mb-4">⚠️</div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h1>
-        <p className="text-gray-600 mb-6">
+        <h1 className="text-2xl font-bold text-text-primary mb-2">Something went wrong</h1>
+        <p className="text-text-secondary mb-6">
           We encountered an unexpected error. Please try again or contact support if the problem
           persists.
         </p>
 
         {process.env.NODE_ENV === 'development' && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
-            <p className="text-sm font-mono text-red-800 break-all">{error.message}</p>
+          <div className="mb-6 p-4 bg-red-900 border border-red-700 rounded-lg text-left">
+            <p className="text-sm font-mono text-red-200 break-all">{error.message}</p>
           </div>
         )}
 

@@ -85,32 +85,32 @@ export default function SettingsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-base flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-base">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-surface-raised border-b border-border-default shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-600">
+            <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
               Auto Shopify Store Builder
             </Link>
             <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900">
+              <Link href="/dashboard" className="text-text-secondary hover:text-primary-500">
                 Dashboard
               </Link>
-              <Link href="/products" className="text-gray-600 hover:text-gray-900">
+              <Link href="/products" className="text-text-secondary hover:text-primary-500">
                 Products
               </Link>
-              <span className="text-gray-600">{user?.email}</span>
+              <span className="text-text-secondary">{user?.email}</span>
             </div>
           </div>
         </div>
@@ -119,38 +119,38 @@ export default function SettingsPage() {
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
+          <h1 className="text-3xl font-bold text-text-primary mb-8">Settings</h1>
 
           {/* Profile Info */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile Information</h2>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">Profile Information</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <p className="mt-1 text-sm text-gray-900">{user?.email}</p>
+                <label className="block text-sm font-medium text-text-secondary">Email</label>
+                <p className="mt-1 text-sm text-text-primary">{user?.email}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
+                <label className="block text-sm font-medium text-text-secondary">Role</label>
                 <span
                   className={`mt-1 inline-block px-3 py-1 rounded-full text-xs font-medium ${
                     user?.role === 'admin'
-                      ? 'bg-purple-100 text-purple-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-primary-500/20 text-primary-500 border border-primary-500/50'
+                      : 'bg-accent-500/20 text-accent-400 border border-accent-500/50'
                   }`}
                 >
                   {user?.role?.toUpperCase()}
                 </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Account Created</label>
-                <p className="mt-1 text-sm text-gray-900">
+                <label className="block text-sm font-medium text-text-secondary">Account Created</label>
+                <p className="mt-1 text-sm text-text-primary">
                   {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                 </p>
               </div>
               {user?.lastLogin && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Last Login</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-sm font-medium text-text-secondary">Last Login</label>
+                  <p className="mt-1 text-sm text-text-primary">
                     {new Date(user.lastLogin).toLocaleString()}
                   </p>
                 </div>
@@ -159,13 +159,13 @@ export default function SettingsPage() {
           </div>
 
           {/* Change Password */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Change Password</h2>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">Change Password</h2>
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
                 <label
                   htmlFor="currentPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-text-secondary mb-2"
                 >
                   Current Password
                 </label>
@@ -178,19 +178,19 @@ export default function SettingsPage() {
                     if (passwordErrors.currentPassword)
                       setPasswordErrors({ ...passwordErrors, currentPassword: undefined });
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'
+                  className={`w-full px-4 py-2 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    passwordErrors.currentPassword ? 'border-red-500' : 'border-border-default'
                   }`}
                 />
                 {passwordErrors.currentPassword && (
-                  <p className="mt-1 text-sm text-red-600">{passwordErrors.currentPassword}</p>
+                  <p className="mt-1 text-sm text-red-400">{passwordErrors.currentPassword}</p>
                 )}
               </div>
 
               <div>
                 <label
                   htmlFor="newPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-text-secondary mb-2"
                 >
                   New Password
                 </label>
@@ -203,19 +203,19 @@ export default function SettingsPage() {
                     if (passwordErrors.newPassword)
                       setPasswordErrors({ ...passwordErrors, newPassword: undefined });
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'
+                  className={`w-full px-4 py-2 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    passwordErrors.newPassword ? 'border-red-500' : 'border-border-default'
                   }`}
                 />
                 {passwordErrors.newPassword && (
-                  <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword}</p>
+                  <p className="mt-1 text-sm text-red-400">{passwordErrors.newPassword}</p>
                 )}
               </div>
 
               <div>
                 <label
                   htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-text-secondary mb-2"
                 >
                   Confirm New Password
                 </label>
@@ -228,12 +228,12 @@ export default function SettingsPage() {
                     if (passwordErrors.confirmPassword)
                       setPasswordErrors({ ...passwordErrors, confirmPassword: undefined });
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                    passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                  className={`w-full px-4 py-2 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    passwordErrors.confirmPassword ? 'border-red-500' : 'border-border-default'
                   }`}
                 />
                 {passwordErrors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword}</p>
+                  <p className="mt-1 text-sm text-red-400">{passwordErrors.confirmPassword}</p>
                 )}
               </div>
 
@@ -244,10 +244,10 @@ export default function SettingsPage() {
           </div>
 
           {/* Account Deletion */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Danger Zone</h2>
-            <div className="border-t border-gray-200 pt-4">
-              <p className="text-sm text-gray-600 mb-4">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">Danger Zone</h2>
+            <div className="border-t border-border-default pt-4">
+              <p className="text-sm text-text-secondary mb-4">
                 Once you delete your account, there is no going back. Please be certain.
               </p>
               <Button

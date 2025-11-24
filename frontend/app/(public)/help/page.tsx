@@ -106,8 +106,8 @@ export default function HelpPage() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl bg-black min-h-screen">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-[#F0F7EE] mb-4">Help & Support</h1>
-        <p className="text-xl text-[#d1d9d4]">
+        <h1 className="text-4xl font-bold text-white mb-4">Help & Support</h1>
+        <p className="text-xl text-[#a0a0a0]">
             Find answers to common questions and learn how to get the most out of our platform
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function HelpPage() {
           placeholder="Search for help..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full max-w-2xl mx-auto block px-4 py-3 bg-[#1a1a1a] border border-[#5D737E] text-[#F0F7EE] rounded-lg focus:ring-2 focus:ring-[#FFF07C] focus:border-[#FFF07C]"
+          className="w-full max-w-2xl mx-auto block px-4 py-3 bg-[#1a1a1a] border border-[#505050] text-white rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080]"
         />
       </div>
 
@@ -131,8 +131,8 @@ export default function HelpPage() {
             onClick={() => setSelectedCategory(category)}
             className={`px-4 py-2 rounded-lg transition-colors ${
               selectedCategory === category
-                ? 'bg-[#FFF07C] text-black'
-                : 'bg-[#1a1a1a] text-[#d1d9d4] border border-[#5D737E] hover:bg-[#2a2a2a]'
+                ? 'bg-white text-black'
+                : 'bg-[#1a1a1a] text-[#a0a0a0] border border-[#505050] hover:bg-[#2a2a2a]'
             }`}
           >
             {category}
@@ -141,31 +141,31 @@ export default function HelpPage() {
       </div>
 
       {/* FAQ Section */}
-      <div className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md p-8 mb-12">
-        <h2 className="text-2xl font-bold text-[#F0F7EE] mb-6">Frequently Asked Questions</h2>
+      <div className="bg-[#1a1a1a] border border-[#505050] rounded-xl shadow-md p-8 mb-12">
+        <h2 className="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
           <div className="space-y-4">
         {filteredFAQs.length === 0 ? (
-          <p className="text-[#d1d9d4] text-center py-8">
+          <p className="text-[#a0a0a0] text-center py-8">
             No FAQs found matching your search. Try a different query or category.
           </p>
         ) : (
           filteredFAQs.map((faq, index) => (
             <div
               key={index}
-              className="border border-[#5D737E] rounded-lg overflow-hidden"
+              className="border border-[#505050] rounded-lg overflow-hidden"
             >
               <button
                 onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
                 className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-[#2a2a2a] transition-colors"
               >
                 <div className="flex-1">
-                  <div className="text-sm text-[#FFF07C] font-medium mb-1">
+                  <div className="text-sm text-[#808080] font-medium mb-1">
                     {faq.category}
                   </div>
-                  <h3 className="font-semibold text-[#F0F7EE]">{faq.question}</h3>
+                  <h3 className="font-semibold text-white">{faq.question}</h3>
                 </div>
                 <svg
-                  className={`w-5 h-5 text-[#939ba0] transition-transform ${
+                  className={`w-5 h-5 text-[#808080] transition-transform ${
                     expandedFAQ === index ? 'transform rotate-180' : ''
                   }`}
                   fill="none"
@@ -181,8 +181,8 @@ export default function HelpPage() {
                 </svg>
               </button>
               {expandedFAQ === index && (
-                <div className="px-6 py-4 bg-[#2a2a2a] border-t border-[#5D737E]">
-                  <p className="text-[#d1d9d4] leading-relaxed">{faq.answer}</p>
+                <div className="px-6 py-4 bg-[#2a2a2a] border-t border-[#505050]">
+                  <p className="text-[#a0a0a0] leading-relaxed">{faq.answer}</p>
                 </div>
               )}
             </div>
@@ -192,57 +192,57 @@ export default function HelpPage() {
       </div>
 
       {/* Tutorials Section */}
-      <div className="bg-[#1a1a1a] border border-[#5D737E] rounded-xl shadow-md p-8 mb-12">
-        <h2 className="text-2xl font-bold text-[#F0F7EE] mb-6">Video Tutorials</h2>
+      <div className="bg-[#1a1a1a] border border-[#505050] rounded-xl shadow-md p-8 mb-12">
+        <h2 className="text-2xl font-bold text-white mb-6">Video Tutorials</h2>
         <div className="grid md:grid-cols-2 gap-6">
-            <div className="border border-[#5D737E] rounded-lg p-6">
-              <h3 className="font-semibold text-[#F0F7EE] mb-2">Getting Started</h3>
-              <p className="text-[#d1d9d4] mb-4">
+            <div className="border border-[#505050] rounded-lg p-6">
+              <h3 className="font-semibold text-white mb-2">Getting Started</h3>
+              <p className="text-[#a0a0a0] mb-4">
                 Learn how to create an account, connect your first store, and add your first product.
               </p>
-              <div className="aspect-video bg-[#0a0a0a] border border-[#5D737E] rounded-lg flex items-center justify-center">
-                <span className="text-[#939ba0]">Video Coming Soon</span>
+              <div className="aspect-video bg-[#0a0a0a] border border-[#505050] rounded-lg flex items-center justify-center">
+                <span className="text-[#808080]">Video Coming Soon</span>
               </div>
             </div>
-            <div className="border border-[#5D737E] rounded-lg p-6">
-              <h3 className="font-semibold text-[#F0F7EE] mb-2">Store Connection</h3>
-              <p className="text-[#d1d9d4] mb-4">
+            <div className="border border-[#505050] rounded-lg p-6">
+              <h3 className="font-semibold text-white mb-2">Store Connection</h3>
+              <p className="text-[#a0a0a0] mb-4">
                 Step-by-step guide to connecting your Shopify store and generating access tokens.
               </p>
-              <div className="aspect-video bg-[#0a0a0a] border border-[#5D737E] rounded-lg flex items-center justify-center">
-                <span className="text-[#939ba0]">Video Coming Soon</span>
+              <div className="aspect-video bg-[#0a0a0a] border border-[#505050] rounded-lg flex items-center justify-center">
+                <span className="text-[#808080]">Video Coming Soon</span>
               </div>
             </div>
-            <div className="border border-[#5D737E] rounded-lg p-6">
-              <h3 className="font-semibold text-[#F0F7EE] mb-2">Adding Products</h3>
-              <p className="text-[#d1d9d4] mb-4">
+            <div className="border border-[#505050] rounded-lg p-6">
+              <h3 className="font-semibold text-white mb-2">Adding Products</h3>
+              <p className="text-[#a0a0a0] mb-4">
                 Discover how to browse niches, select products, and add them to your store.
               </p>
-              <div className="aspect-video bg-[#0a0a0a] border border-[#5D737E] rounded-lg flex items-center justify-center">
-                <span className="text-[#939ba0]">Video Coming Soon</span>
+              <div className="aspect-video bg-[#0a0a0a] border border-[#505050] rounded-lg flex items-center justify-center">
+                <span className="text-[#808080]">Video Coming Soon</span>
               </div>
             </div>
-            <div className="border border-[#5D737E] rounded-lg p-6">
-              <h3 className="font-semibold text-[#F0F7EE] mb-2">Managing Multiple Stores</h3>
-              <p className="text-[#d1d9d4] mb-4">
+            <div className="border border-[#505050] rounded-lg p-6">
+              <h3 className="font-semibold text-white mb-2">Managing Multiple Stores</h3>
+              <p className="text-[#a0a0a0] mb-4">
                 Learn how to connect and manage multiple Shopify stores from one account.
               </p>
-              <div className="aspect-video bg-[#0a0a0a] border border-[#5D737E] rounded-lg flex items-center justify-center">
-                <span className="text-[#939ba0]">Video Coming Soon</span>
+              <div className="aspect-video bg-[#0a0a0a] border border-[#505050] rounded-lg flex items-center justify-center">
+                <span className="text-[#808080]">Video Coming Soon</span>
               </div>
             </div>
           </div>
       </div>
 
       {/* Contact Support */}
-      <div className="bg-[#1a1a1a] border border-[#87BBA2] rounded-xl p-8 text-center">
-        <h2 className="text-2xl font-bold text-[#F0F7EE] mb-4">Still Need Help?</h2>
-        <p className="text-[#d1d9d4] mb-6">
+      <div className="bg-[#1a1a1a] border border-[#808080] rounded-xl p-8 text-center">
+        <h2 className="text-2xl font-bold text-white mb-4">Still Need Help?</h2>
+        <p className="text-[#a0a0a0] mb-6">
           Can't find what you're looking for? Our support team is here to help.
         </p>
         <Link
           href="/contact"
-          className="inline-block bg-[#FFF07C] hover:bg-[#e6d870] text-black px-6 py-3 rounded-lg font-semibold transition-colors"
+          className="inline-block bg-white hover:bg-[#e0e0e0] text-black px-6 py-3 rounded-lg font-semibold transition-colors"
         >
           Contact Support
         </Link>
@@ -251,7 +251,7 @@ export default function HelpPage() {
       <div className="mt-8 text-center">
         <Link
           href="/"
-          className="text-[#FFF07C] hover:text-[#e6d870] font-medium"
+          className="text-white hover:text-[#e0e0e0] font-medium"
         >
           ← Back to Home
         </Link>

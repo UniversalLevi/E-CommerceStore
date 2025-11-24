@@ -141,10 +141,10 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-surface-base">
         <Navbar />
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
         </div>
       </div>
     );
@@ -152,15 +152,15 @@ export default function ProductDetailPage() {
 
   if (error && !product) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-surface-base">
         <Navbar />
         <div className="container mx-auto px-4 py-16 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-text-primary mb-4">
             Product Not Found
           </h2>
           <button
             onClick={() => router.push('/products')}
-            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
+            className="bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors"
           >
             Browse Products
           </button>
@@ -172,69 +172,69 @@ export default function ProductDetailPage() {
   if (!product) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-base">
       <Navbar />
 
       {/* Success Modal */}
       {showSuccessModal && storeData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-8">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-2xl max-w-lg w-full p-8">
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">🎉</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              <h2 className="text-3xl font-bold text-text-primary mb-2">
                 Store Created Successfully!
               </h2>
-              <p className="text-gray-600">
+              <p className="text-text-secondary">
                 Your Shopify store is now live with the selected product
               </p>
             </div>
 
             <div className="space-y-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="bg-surface-elevated border border-border-default rounded-lg p-4">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Store URL
                 </label>
                 <a
                   href={storeData.storeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 break-all"
+                  className="text-text-primary hover:text-primary-500 break-all"
                 >
                   {storeData.storeUrl}
                 </a>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="bg-surface-elevated border border-border-default rounded-lg p-4">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Product URL
                 </label>
                 <a
                   href={storeData.productUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 break-all"
+                  className="text-text-primary hover:text-primary-500 break-all"
                 >
                   {storeData.productUrl}
                 </a>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="bg-surface-elevated border border-border-default rounded-lg p-4">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   Admin Panel
                 </label>
                 <a
                   href={storeData.adminUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 break-all"
+                  className="text-text-primary hover:text-primary-500 break-all"
                 >
                   Manage Product
                 </a>
               </div>
 
               {storeData.usedStore && (
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-surface-hover border border-border-default rounded-lg p-4">
+                  <p className="text-sm text-text-secondary">
                     <strong>Store Used:</strong> {storeData.usedStore.name}
                   </p>
                 </div>
@@ -244,13 +244,13 @@ export default function ProductDetailPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg font-semibold transition-colors"
+                className="flex-1 bg-primary-500 hover:bg-primary-600 text-black py-3 rounded-lg font-semibold transition-colors"
               >
                 Go to Dashboard
               </button>
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold transition-colors"
+                className="flex-1 bg-surface-hover hover:bg-surface-elevated text-text-primary py-3 rounded-lg font-semibold transition-colors"
               >
                 Close
               </button>
@@ -264,28 +264,28 @@ export default function ProductDetailPage() {
           {/* Breadcrumb */}
           {niche && (
             <nav className="mb-6 text-sm">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Link href="/" className="hover:text-primary-600">
+              <div className="flex items-center gap-2 text-text-secondary">
+                <Link href="/" className="hover:text-text-primary">
                   Home
                 </Link>
                 <span>/</span>
-                <Link href="/products" className="hover:text-primary-600">
+                <Link href="/products" className="hover:text-text-primary">
                   Products
                 </Link>
                 <span>/</span>
                 <Link
                   href={`/products/niches/${niche.slug}`}
-                  className="hover:text-primary-600"
+                  className="hover:text-text-primary"
                 >
                   {niche.name}
                 </Link>
                 <span>/</span>
-                <span className="text-gray-900">{product.title}</span>
+                <span className="text-text-primary">{product.title}</span>
               </div>
             </nav>
           )}
 
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden">
             <div className="grid md:grid-cols-2 gap-8 p-8">
               {/* Images */}
               <div>
@@ -299,7 +299,7 @@ export default function ProductDetailPage() {
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity flex items-center justify-center">
-                    <span className="text-white opacity-0 group-hover:opacity-100 text-sm font-medium">
+                    <span className="text-text-primary opacity-0 group-hover:opacity-100 text-sm font-medium">
                       Click to zoom
                     </span>
                   </div>
@@ -312,8 +312,8 @@ export default function ProductDetailPage() {
                         onClick={() => setSelectedImage(index)}
                         className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
                           selectedImage === index
-                            ? 'border-primary-600'
-                            : 'border-gray-200 hover:border-gray-300'
+                            ? 'border-primary-500'
+                            : 'border-border-default hover:border-primary-500'
                         }`}
                       >
                         <img
@@ -331,57 +331,68 @@ export default function ProductDetailPage() {
               <div>
                 <div className="mb-4 flex items-center gap-3 flex-wrap">
                   {/* Niche Badge */}
-                  {niche && (
-                    <Link
-                      href={`/products/niches/${niche.slug}`}
-                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
-                        niche.themeColor
-                          ? ''
-                          : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
-                      }`}
-                      style={
-                        niche.themeColor
-                          ? {
-                              backgroundColor: niche.themeColor,
-                              color: niche.textColor || '#FFFFFF',
-                            }
-                          : {}
-                      }
-                    >
-                      {niche.icon && <span>{niche.icon}</span>}
-                      <span>{niche.name}</span>
-                    </Link>
-                  )}
+                  {niche && (() => {
+                    const themeColor = niche.themeColor;
+                    const isCyanTeal = themeColor && (
+                      themeColor.toLowerCase().includes('#1ac8ed') ||
+                      themeColor.toLowerCase().includes('#17b4d5') ||
+                      themeColor.toLowerCase().includes('#5d737e') ||
+                      themeColor.toLowerCase().includes('#87bba2') ||
+                      themeColor.toLowerCase().includes('cyan') ||
+                      themeColor.toLowerCase().includes('teal')
+                    );
+                    return (
+                      <Link
+                        href={`/products/niches/${niche.slug}`}
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
+                          themeColor && !isCyanTeal
+                            ? ''
+                            : 'bg-surface-hover text-text-primary hover:bg-surface-elevated border border-border-default'
+                        }`}
+                        style={
+                          themeColor && !isCyanTeal
+                            ? {
+                                backgroundColor: themeColor,
+                                color: niche.textColor || '#FFFFFF',
+                              }
+                            : {}
+                        }
+                      >
+                        {niche.icon && <span>{niche.icon}</span>}
+                        <span>{niche.name}</span>
+                      </Link>
+                    );
+                  })()}
                   {/* Category Badge */}
                   {product.category && (
-                    <span className="text-sm font-semibold text-primary-600 uppercase tracking-wide">
+                    <span className="text-sm font-semibold text-text-primary uppercase tracking-wide">
                       {product.category}
                     </span>
                   )}
                 </div>
 
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                <h1 className="text-3xl font-bold text-text-primary mb-4">
                   {product.title}
                 </h1>
 
                 <div className="mb-6">
-                  <span className="text-4xl font-bold text-primary-600">
+                  <span className="text-4xl font-bold text-text-primary">
                     ${product.price.toFixed(2)}
                   </span>
                 </div>
 
                 <div className="mb-8">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h2 className="text-lg font-semibold text-text-primary mb-2">
                     Description
                   </h2>
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="text-text-secondary leading-relaxed">
                     {product.description}
                   </p>
                 </div>
 
                 {/* Share Buttons */}
                 <div className="mb-8">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Share this product</h3>
+                  <h3 className="text-sm font-medium text-text-secondary mb-2">Share this product</h3>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleShare('twitter')}
@@ -427,7 +438,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 {error && (
-                  <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  <div className="mb-4 bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg text-sm">
                     {error}
                   </div>
                 )}
@@ -437,7 +448,7 @@ export default function ProductDetailPage() {
                     <button
                       onClick={() => setShowStoreModal(true)}
                       disabled={loadingStores}
-                      className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       🚀 Add to My Store
                     </button>
@@ -445,22 +456,22 @@ export default function ProductDetailPage() {
                     <>
                       <button
                         onClick={() => router.push('/login')}
-                        className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors"
+                        className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors"
                       >
                         🚀 Login to Add to Store
                       </button>
-                      <p className="text-sm text-gray-500 text-center">
+                      <p className="text-sm text-text-muted text-center">
                         You'll need to log in and connect a store first
                       </p>
                     </>
                   )}
                 </div>
 
-                <div className="mt-8 p-4 bg-primary-50 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-2">
+                <div className="mt-8 p-4 bg-surface-hover border border-border-default rounded-lg">
+                  <h3 className="font-semibold text-text-primary mb-2">
                     ✨ What You'll Get
                   </h3>
-                  <ul className="space-y-2 text-sm text-gray-600">
+                  <ul className="space-y-2 text-sm text-text-secondary">
                     <li>✓ Product added to your Shopify store</li>
                     <li>✓ Professional descriptions & images</li>
                     <li>✓ Ready to start selling immediately</li>
@@ -476,14 +487,14 @@ export default function ProductDetailPage() {
             {niche ? (
               <Link
                 href={`/products/niches/${niche.slug}`}
-                className="text-primary-600 hover:text-primary-700 font-semibold"
+                className="text-text-primary hover:text-primary-500 font-semibold"
               >
                 ← Back to {niche.name}
               </Link>
             ) : (
               <button
                 onClick={() => router.push('/products')}
-                className="text-primary-600 hover:text-primary-700 font-semibold"
+                className="text-text-primary hover:text-primary-500 font-semibold"
               >
                 ← Back to Products
               </button>
@@ -494,13 +505,13 @@ export default function ProductDetailPage() {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
+            <h2 className="text-2xl font-bold text-text-primary mb-6">Related Products</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
                 <Link
                   key={relatedProduct._id}
                   href={`/products/${relatedProduct._id}`}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                  className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden hover:border-primary-500 hover:shadow-lg transition-all"
                 >
                   <div className="aspect-square relative">
                     <img
@@ -510,10 +521,10 @@ export default function ProductDetailPage() {
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="font-semibold text-text-primary mb-2 line-clamp-2">
                       {relatedProduct.title}
                     </h3>
-                    <p className="text-2xl font-bold text-primary-600">
+                    <p className="text-2xl font-bold text-text-primary">
                       ${relatedProduct.price.toFixed(2)}
                     </p>
                   </div>
@@ -531,7 +542,7 @@ export default function ProductDetailPage() {
           onClick={() => setShowImageZoom(false)}
         >
           <button
-            className="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white rounded"
+            className="absolute top-4 right-4 text-text-primary hover:text-text-secondary text-2xl min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
             onClick={() => setShowImageZoom(false)}
             aria-label="Close zoom"
             type="button"
@@ -557,8 +568,8 @@ export default function ProductDetailPage() {
                   }}
                   className={`w-16 h-16 rounded-lg overflow-hidden border-2 ${
                     selectedImage === index
-                      ? 'border-white'
-                      : 'border-gray-600 opacity-60 hover:opacity-100'
+                      ? 'border-primary-500'
+                      : 'border-border-default opacity-60 hover:opacity-100'
                   }`}
                 >
                   <img

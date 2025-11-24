@@ -44,7 +44,7 @@ const defaultNiches = [
     synonyms: ['fitness gear', 'gym', 'wellness', 'exercise', 'workout'],
     metaTitle: 'Fitness & Health Products',
     metaDescription: 'Shop the best fitness equipment, supplements, and wellness products',
-    themeColor: '#FF6B6B',
+    themeColor: '#1AC8ED',
     textColor: '#FFFFFF',
     defaultSortMode: 'popularity',
   },
@@ -63,7 +63,7 @@ const defaultNiches = [
     synonyms: ['furniture', 'decor', 'garden tools', 'outdoor', 'home improvement'],
     metaTitle: 'Home & Garden Products',
     metaDescription: 'Shop furniture, decor, tools, and outdoor products for your home',
-    themeColor: '#4ECDC4',
+    themeColor: '#0FA8C7',
     textColor: '#FFFFFF',
     defaultSortMode: 'newest',
   },
@@ -82,7 +82,7 @@ const defaultNiches = [
     synonyms: ['gadgets', 'tech', 'devices', 'accessories', 'smartphones'],
     metaTitle: 'Electronics & Tech Products',
     metaDescription: 'Shop the latest electronics, gadgets, and tech accessories',
-    themeColor: '#45B7D1',
+    themeColor: '#2DD4F0',
     textColor: '#FFFFFF',
     defaultSortMode: 'newest',
   },
@@ -190,6 +190,14 @@ async function seedNiches() {
         }
         if (existing.isDefault !== nicheData.isDefault) {
           updates.isDefault = nicheData.isDefault;
+          needsUpdate = true;
+        }
+        if (nicheData.themeColor && existing.themeColor !== nicheData.themeColor) {
+          updates.themeColor = nicheData.themeColor;
+          needsUpdate = true;
+        }
+        if (nicheData.textColor && existing.textColor !== nicheData.textColor) {
+          updates.textColor = nicheData.textColor;
           needsUpdate = true;
         }
 

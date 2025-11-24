@@ -31,10 +31,10 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <div className="min-h-screen bg-surface-base flex">
       <AdminSidebar />
       <div className="flex-1 ml-64 flex flex-col">
-        <main className="flex-1 overflow-y-auto bg-gray-900 p-6">
+        <main className="flex-1 overflow-y-auto bg-surface-base p-6">
           {children}
         </main>
       </div>

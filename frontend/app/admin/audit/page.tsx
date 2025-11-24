@@ -133,41 +133,41 @@ export default function AdminAuditPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-base flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading audit logs...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Loading audit logs...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-base">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-surface-raised border-b border-border-default shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-600">
+            <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
               Auto Shopify Store Builder
             </Link>
             <div className="flex items-center gap-4">
-              <Link href="/admin/dashboard" className="text-gray-600 hover:text-gray-900">
+              <Link href="/admin/dashboard" className="text-text-secondary hover:text-primary-500">
                 Dashboard
               </Link>
-              <Link href="/admin/users" className="text-gray-600 hover:text-gray-900">
+              <Link href="/admin/users" className="text-text-secondary hover:text-primary-500">
                 Users
               </Link>
-              <Link href="/admin/stores" className="text-gray-600 hover:text-gray-900">
+              <Link href="/admin/stores" className="text-text-secondary hover:text-primary-500">
                 Stores
               </Link>
-              <Link href="/admin/audit" className="text-gray-900 font-medium">
+              <Link href="/admin/audit" className="text-text-primary font-medium">
                 Audit Logs
               </Link>
-              <Link href="/admin/products" className="text-gray-600 hover:text-gray-900">
+              <Link href="/admin/products" className="text-text-secondary hover:text-primary-500">
                 Products
               </Link>
-              <span className="text-gray-600">{user?.email}</span>
+              <span className="text-text-secondary">{user?.email}</span>
             </div>
           </div>
         </div>
@@ -179,22 +179,22 @@ export default function AdminAuditPage() {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Audit Logs</h1>
-              <p className="mt-2 text-gray-600">System activity and user actions</p>
+              <h1 className="text-3xl font-bold text-text-primary">Audit Logs</h1>
+              <p className="mt-2 text-text-secondary">System activity and user actions</p>
             </div>
             <button
               onClick={handleExport}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              className="px-6 py-3 bg-secondary-500 hover:bg-secondary-600 text-black rounded-lg font-medium transition-colors"
             >
               Export CSV
             </button>
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   User ID
                 </label>
                 <input
@@ -205,12 +205,12 @@ export default function AdminAuditPage() {
                     setCurrentPage(1);
                   }}
                   placeholder="Filter by user ID..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Action
                 </label>
                 <select
@@ -219,7 +219,7 @@ export default function AdminAuditPage() {
                     setAction(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="">All Actions</option>
                   <option value="CREATE_STORE">Create Store</option>
@@ -235,7 +235,7 @@ export default function AdminAuditPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Success
                 </label>
                 <select
@@ -244,7 +244,7 @@ export default function AdminAuditPage() {
                     setSuccess(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="">All</option>
                   <option value="true">Success</option>
@@ -253,7 +253,7 @@ export default function AdminAuditPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Start Date
                 </label>
                 <input
@@ -263,12 +263,12 @@ export default function AdminAuditPage() {
                     setStartDate(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   End Date
                 </label>
                 <input
@@ -278,14 +278,14 @@ export default function AdminAuditPage() {
                     setEndDate(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
 
               <div className="flex items-end">
                 <button
                   onClick={clearFilters}
-                  className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                  className="w-full px-4 py-2 bg-surface-elevated hover:bg-surface-hover text-text-primary rounded-lg font-medium transition-colors"
                 >
                   Clear Filters
                 </button>
@@ -294,67 +294,67 @@ export default function AdminAuditPage() {
           </div>
 
           {/* Logs Table */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border-default">
+                <thead className="bg-surface-elevated">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Date/Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       User Email
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Action
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Target
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Success
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       IP Address
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-surface-raised divide-y divide-border-default">
                   {logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <tr key={log.id} className="hover:bg-surface-hover">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {new Date(log.timestamp).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {log.userEmail}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {log.action.replace(/_/g, ' ')}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {log.target}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             log.success
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-secondary-500/20 text-secondary-400 border border-secondary-500/50'
+                              : 'bg-red-500/20 text-red-400 border border-red-500/50'
                           }`}
                         >
                           {log.success ? 'Success' : 'Failed'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {log.ipAddress || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => setSelectedLog(log)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-primary-500 hover:text-primary-600"
                         >
                           View Details
                         </button>
@@ -367,8 +367,8 @@ export default function AdminAuditPage() {
 
             {/* Pagination */}
             {pagination && pagination.pages > 1 && (
-              <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-                <div className="text-sm text-gray-700">
+              <div className="bg-surface-elevated px-6 py-4 flex items-center justify-between">
+                <div className="text-sm text-text-secondary">
                   Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
                   {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
                   {pagination.total} logs
@@ -377,14 +377,14 @@ export default function AdminAuditPage() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={pagination.page === 1}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-surface-raised border border-border-default text-text-primary rounded-lg text-sm font-medium hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(pagination.pages, p + 1))}
                     disabled={pagination.page === pagination.pages}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-surface-raised border border-border-default text-text-primary rounded-lg text-sm font-medium hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>
@@ -398,13 +398,13 @@ export default function AdminAuditPage() {
       {/* Details Modal */}
       {selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-gray-900">Log Details</h3>
+                <h3 className="text-xl font-bold text-text-primary">Log Details</h3>
                 <button
                   onClick={() => setSelectedLog(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-text-muted hover:text-text-primary"
                 >
                   ✕
                 </button>
@@ -412,53 +412,53 @@ export default function AdminAuditPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Timestamp</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-sm font-medium text-text-secondary">Timestamp</label>
+                  <p className="mt-1 text-sm text-text-primary">
                     {new Date(selectedLog.timestamp).toLocaleString()}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">User Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedLog.userEmail}</p>
+                  <label className="block text-sm font-medium text-text-secondary">User Email</label>
+                  <p className="mt-1 text-sm text-text-primary">{selectedLog.userEmail}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Action</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedLog.action}</p>
+                  <label className="block text-sm font-medium text-text-secondary">Action</label>
+                  <p className="mt-1 text-sm text-text-primary">{selectedLog.action}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Target</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedLog.target}</p>
+                  <label className="block text-sm font-medium text-text-secondary">Target</label>
+                  <p className="mt-1 text-sm text-text-primary">{selectedLog.target}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Success</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="block text-sm font-medium text-text-secondary">Success</label>
+                  <p className="mt-1 text-sm text-text-primary">
                     {selectedLog.success ? 'Yes' : 'No'}
                   </p>
                 </div>
 
                 {selectedLog.errorMessage && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Error Message</label>
-                    <p className="mt-1 text-sm text-red-600">{selectedLog.errorMessage}</p>
+                    <label className="block text-sm font-medium text-text-secondary">Error Message</label>
+                    <p className="mt-1 text-sm text-red-400">{selectedLog.errorMessage}</p>
                   </div>
                 )}
 
                 {selectedLog.ipAddress && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">IP Address</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedLog.ipAddress}</p>
+                    <label className="block text-sm font-medium text-text-secondary">IP Address</label>
+                    <p className="mt-1 text-sm text-text-primary">{selectedLog.ipAddress}</p>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
                     Raw JSON Details
                   </label>
-                  <pre className="bg-gray-50 p-4 rounded-lg text-xs overflow-x-auto">
+                  <pre className="bg-surface-elevated p-4 rounded-lg text-xs overflow-x-auto text-text-primary">
                     {JSON.stringify(selectedLog.details, null, 2)}
                   </pre>
                 </div>

@@ -63,7 +63,7 @@ export default function BillingPage() {
           description: `Subscription: ${plans.find(p => p.code === planCode)?.name || planCode}`,
           order_id: orderId,
           theme: {
-            color: '#22c55e',
+            color: '#ffffff',
           },
         },
         async (response) => {
@@ -120,45 +120,45 @@ export default function BillingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-[#F0F7EE]">Loading plans...</div>
+      <div className="min-h-screen bg-surface-base flex items-center justify-center">
+        <div className="text-text-primary">Loading plans...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-surface-base py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-[#F0F7EE] mb-4">Choose Your Plan</h1>
-          <p className="text-[#d1d9d4] text-lg">
+          <h1 className="text-4xl font-bold text-text-primary mb-4">Choose Your Plan</h1>
+          <p className="text-text-secondary text-lg">
             Select a subscription plan that fits your needs
           </p>
         </div>
 
         {currentPlan && currentPlan.status === 'active' && (
-          <div className="mb-8 bg-[#1AC8ED]/20 border border-[#1AC8ED]/50 rounded-lg p-4">
+          <div className="mb-8 bg-secondary-500/20 border border-secondary-500/50 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#1AC8ED] font-semibold">Current Plan</p>
-                <p className="text-[#F0F7EE]">
+                <p className="text-secondary-400 font-semibold">Current Plan</p>
+                <p className="text-text-primary">
                   {plans.find(p => p.code === currentPlan.plan)?.name || 'Active Plan'}
                 </p>
                 {currentPlan.maxProducts !== null && (
-                  <p className="text-[#d1d9d4] text-sm mt-1">
+                  <p className="text-text-muted text-sm mt-1">
                     {currentPlan.productsAdded} / {currentPlan.maxProducts} products used
                   </p>
                 )}
                 {currentPlan.maxProducts === null && (
-                  <p className="text-[#d1d9d4] text-sm mt-1">
+                  <p className="text-text-muted text-sm mt-1">
                     {currentPlan.productsAdded} products added (Unlimited)
                   </p>
                 )}
               </div>
               {currentPlan.planExpiresAt && !currentPlan.isLifetime && (
                 <div className="text-right">
-                  <p className="text-[#d1d9d4] text-sm">Expires on</p>
-                  <p className="text-[#F0F7EE]">
+                  <p className="text-text-muted text-sm">Expires on</p>
+                  <p className="text-text-primary">
                     {new Date(currentPlan.planExpiresAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -175,26 +175,26 @@ export default function BillingPage() {
             return (
               <div
                 key={plan.code}
-                className={`bg-[#1a1a1a] rounded-lg p-8 border-2 ${
+                className={`bg-surface-raised rounded-lg p-8 border-2 ${
                   isCurrentPlan
-                    ? 'border-[#1AC8ED]'
-                    : 'border-[#5D737E] hover:border-[#1AC8ED]'
+                    ? 'border-primary-500'
+                    : 'border-border-default hover:border-primary-500'
                 } transition-all`}
               >
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-[#F0F7EE] mb-2">{plan.name}</h3>
-                  <div className="text-4xl font-bold text-[#1AC8ED] mb-2">
+                  <h3 className="text-2xl font-bold text-text-primary mb-2">{plan.name}</h3>
+                  <div className="text-4xl font-bold text-primary-500 mb-2">
                     {formatAmount(plan.price)}
                   </div>
-                  <p className="text-[#d1d9d4]">{formatDuration(plan.durationDays)}</p>
-                  <p className="text-[#d1d9d4] mt-2">{formatProductLimit(plan.maxProducts)}</p>
+                  <p className="text-text-secondary">{formatDuration(plan.durationDays)}</p>
+                  <p className="text-text-secondary mt-2">{formatProductLimit(plan.maxProducts)}</p>
                 </div>
 
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
                       <svg
-                        className="w-5 h-5 text-[#1AC8ED] mr-2 mt-0.5 flex-shrink-0"
+                        className="w-5 h-5 text-primary-500 mr-2 mt-0.5 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -206,7 +206,7 @@ export default function BillingPage() {
                           d="M5 13l4 4L19 7"
                         />
                       </svg>
-                      <span className="text-[#F0F7EE]">{feature}</span>
+                      <span className="text-text-primary">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -216,10 +216,10 @@ export default function BillingPage() {
                   disabled={isCurrentPlan || isProcessing}
                   className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
                     isCurrentPlan
-                      ? 'bg-[#1a1a1a] text-[#d1d9d4] cursor-not-allowed border border-[#5D737E]'
+                      ? 'bg-surface-raised text-text-muted cursor-not-allowed border border-border-default'
                       : isProcessing
-                      ? 'bg-[#1AC8ED] text-white cursor-wait opacity-75'
-                      : 'bg-[#1AC8ED] text-white hover:bg-[#17b4d5]'
+                      ? 'bg-primary-500 text-black cursor-wait opacity-75'
+                      : 'bg-primary-500 text-black hover:bg-primary-600'
                   }`}
                 >
                   {isProcessing

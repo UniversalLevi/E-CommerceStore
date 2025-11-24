@@ -24,12 +24,12 @@ export default function AdminSidebar() {
   const { user } = useAuth();
 
   return (
-    <aside className="w-64 bg-gray-800 border-r border-gray-700 h-screen fixed left-0 top-0 overflow-y-auto">
+    <aside className="w-64 bg-[#1a1a1a] border-r border-[#505050] h-screen fixed left-0 top-0 overflow-y-auto">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-700">
+      <div className="p-6 border-b border-[#505050]">
         <Link 
           href="/admin/dashboard" 
-          className="text-xl font-bold text-primary-400 hover:text-primary-300 transition-colors"
+          className="text-xl font-bold text-white hover:text-[#e0e0e0] transition-colors"
         >
           Admin Panel
         </Link>
@@ -45,8 +45,8 @@ export default function AdminSidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
-                  ? 'bg-primary-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  ? 'bg-white text-black'
+                  : 'text-[#a0a0a0] hover:bg-[#2a2a2a] hover:text-white'
               }`}
             >
               <span className="text-xl">{item.icon}</span>
@@ -57,10 +57,10 @@ export default function AdminSidebar() {
       </nav>
 
       {/* Back to Dashboard */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700 bg-gray-800">
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#505050] bg-[#1a1a1a]">
         <Link
           href="/dashboard"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-[#a0a0a0] hover:bg-[#2a2a2a] hover:text-white transition-colors"
         >
           <span className="text-xl">←</span>
           <span className="font-medium">Back to Dashboard</span>

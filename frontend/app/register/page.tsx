@@ -50,21 +50,21 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-lg p-8">
+        <div className="bg-[#1a1a1a] border border-[#505050] rounded-xl shadow-lg p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">
               Create Account
             </h1>
-            <p className="text-gray-300">Start building your store today</p>
+            <p className="text-[#a0a0a0]">Start building your store today</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-[#a0a0a0] mb-2"
               >
                 Email Address
               </label>
@@ -83,8 +83,8 @@ export default function RegisterPage() {
                     if (emailError) setErrors({ ...errors, email: emailError.message });
                   }
                 }}
-                className={`w-full px-4 py-2 bg-gray-700 text-white border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-600'
+                className={`w-full px-4 py-2 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] ${
+                  errors.email ? 'border-red-500' : 'border-[#505050]'
                 }`}
                 placeholder="you@example.com"
               />
@@ -96,7 +96,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-[#a0a0a0] mb-2"
               >
                 Password
               </label>
@@ -115,8 +115,8 @@ export default function RegisterPage() {
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }
                 }}
-                className={`w-full px-4 py-2 bg-gray-700 text-white border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.password ? 'border-red-500' : 'border-gray-600'
+                className={`w-full px-4 py-2 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] ${
+                  errors.password ? 'border-red-500' : 'border-[#505050]'
                 }`}
                 placeholder="••••••••"
               />
@@ -128,7 +128,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="block text-sm font-medium text-[#a0a0a0] mb-2"
               >
                 Confirm Password
               </label>
@@ -140,8 +140,8 @@ export default function RegisterPage() {
                   setConfirmPassword(e.target.value);
                   if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
                 }}
-                className={`w-full px-4 py-2 bg-gray-700 text-white border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
+                className={`w-full px-4 py-2 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] ${
+                  errors.confirmPassword ? 'border-red-500' : 'border-[#505050]'
                 }`}
                 placeholder="••••••••"
               />
@@ -155,11 +155,11 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-gray-300">
+          <p className="mt-6 text-center text-[#a0a0a0]">
             Already have an account?{' '}
             <Link
               href="/login"
-              className="text-primary-400 hover:text-primary-300 font-semibold"
+              className="text-white hover:text-[#e0e0e0] font-semibold"
             >
               Sign in
             </Link>
@@ -168,7 +168,7 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <Link
               href="/"
-              className="text-sm text-gray-400 hover:text-gray-300"
+              className="text-sm text-[#808080] hover:text-[#a0a0a0]"
             >
               ← Back to home
             </Link>

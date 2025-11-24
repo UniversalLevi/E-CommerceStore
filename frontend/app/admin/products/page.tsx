@@ -88,12 +88,12 @@ export default function AdminProductsPage() {
   return (
     <div>
       <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-3xl font-bold text-text-primary">
             Product Management
           </h1>
           <Link
             href="/admin/products/new"
-            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
+            className="bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors"
           >
             + Add Product
           </Link>
@@ -101,11 +101,11 @@ export default function AdminProductsPage() {
 
         {/* Niche Filter */}
         <div className="mb-6 flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-300">Filter by Niche:</label>
+          <label className="text-sm font-medium text-text-secondary">Filter by Niche:</label>
           <select
             value={selectedNiche}
             onChange={(e) => setSelectedNiche(e.target.value)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="all">All Niches</option>
             {niches.map((niche) => (
@@ -123,43 +123,43 @@ export default function AdminProductsPage() {
         )}
 
         {products.length === 0 ? (
-          <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-12 text-center">
-            <p className="text-gray-300 mb-4">No products yet</p>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center">
+            <p className="text-text-secondary mb-4">No products yet</p>
             <Link
               href="/admin/products/new"
-              className="inline-block bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
+              className="inline-block bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors"
             >
               Add Your First Product
             </Link>
           </div>
         ) : (
-          <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md overflow-hidden">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-700 border-b border-gray-600">
+              <thead className="bg-surface-elevated border-b border-border-default">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Product
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Niche
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Price
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-border-default">
                 {products.map((product) => (
-                  <tr key={product._id} className="hover:bg-gray-750">
+                  <tr key={product._id} className="hover:bg-surface-hover">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         {product.images?.[0] && (
@@ -170,10 +170,10 @@ export default function AdminProductsPage() {
                         />
                         )}
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-white">
+                          <div className="text-sm font-medium text-text-primary">
                             {product.title}
                           </div>
-                          <div className="text-sm text-gray-400">
+                          <div className="text-sm text-text-muted">
                             {product.description?.substring(0, 50)}...
                           </div>
                         </div>
@@ -182,28 +182,28 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4">
                       {product.niche && typeof product.niche === 'object' ? (
                         <span
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-primary-600 text-white cursor-pointer hover:bg-primary-700"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-primary-500 text-black cursor-pointer hover:bg-primary-600"
                           onClick={() => setSelectedNiche((product.niche as any)._id)}
                         >
                           {(product.niche as any).icon && <span>{(product.niche as any).icon}</span>}
                           {(product.niche as any).name}
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-400">Uncategorized</span>
+                        <span className="text-xs text-text-muted">Uncategorized</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-300 capitalize">
+                    <td className="px-6 py-4 text-sm text-text-secondary capitalize">
                       {product.category || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-white">
+                    <td className="px-6 py-4 text-sm text-text-primary">
                       ${product.price.toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           product.active
-                            ? 'bg-green-900 text-green-200'
-                            : 'bg-gray-700 text-gray-300'
+                            ? 'bg-secondary-500/20 text-secondary-400 border border-secondary-500/50'
+                            : 'bg-accent-500/20 text-accent-400 border border-accent-500/50'
                         }`}
                       >
                         {product.active ? 'Active' : 'Inactive'}
@@ -212,7 +212,7 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4 text-right text-sm font-medium">
                       <Link
                         href={`/admin/products/${product._id}/edit`}
-                        className="text-primary-400 hover:text-primary-300 mr-4"
+                        className="text-primary-500 hover:text-primary-600 mr-4"
                       >
                         Edit
                       </Link>

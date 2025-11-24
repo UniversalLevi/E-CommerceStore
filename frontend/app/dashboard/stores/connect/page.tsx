@@ -52,16 +52,16 @@ export default function ConnectStorePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-base">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-surface-raised border-b border-border-default shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-600">
+            <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
               Auto Shopify Store Builder
             </Link>
             <div className="flex items-center gap-4">
-              <Link href="/dashboard/stores" className="text-gray-600 hover:text-gray-900">
+              <Link href="/dashboard/stores" className="text-text-secondary hover:text-text-primary">
                 ← Back to Stores
               </Link>
             </div>
@@ -72,10 +72,10 @@ export default function ConnectStorePage() {
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-text-primary mb-2">
             Connect Your Shopify Store
           </h1>
-          <p className="text-gray-600 mb-8">
+          <p className="text-text-secondary mb-8">
             Enter your custom Shopify app credentials to connect your store
           </p>
 
@@ -107,9 +107,9 @@ export default function ConnectStorePage() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Store Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -118,15 +118,15 @@ export default function ConnectStorePage() {
                 value={formData.storeName}
                 onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
                 placeholder="My Awesome Store"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-text-muted">
                 A friendly name to identify this store
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Shop Domain <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-2 items-center">
@@ -136,17 +136,17 @@ export default function ConnectStorePage() {
                   value={formData.shopDomain}
                   onChange={(e) => setFormData({ ...formData, shopDomain: e.target.value })}
                   placeholder="your-store"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
-                <span className="text-gray-600 text-sm">.myshopify.com</span>
+                <span className="text-text-secondary text-sm">.myshopify.com</span>
               </div>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-text-muted">
                 Your Shopify store domain (without https://)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Access Token <span className="text-red-500">*</span>
               </label>
               <input
@@ -155,15 +155,15 @@ export default function ConnectStorePage() {
                 value={formData.accessToken}
                 onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
                 placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxx"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
               />
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-text-muted">
                 Admin API access token from your custom app
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 API Key (optional)
               </label>
               <input
@@ -171,12 +171,12 @@ export default function ConnectStorePage() {
                 value={formData.apiKey}
                 onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                 placeholder="API Key"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 API Secret (optional)
               </label>
               <input
@@ -184,18 +184,18 @@ export default function ConnectStorePage() {
                 value={formData.apiSecret}
                 onChange={(e) => setFormData({ ...formData, apiSecret: e.target.value })}
                 placeholder="API Secret"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Environment
               </label>
               <select
                 value={formData.environment}
                 onChange={(e) => setFormData({ ...formData, environment: e.target.value as any })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               >
                 <option value="production">Production</option>
                 <option value="development">Development</option>
@@ -208,9 +208,9 @@ export default function ConnectStorePage() {
                 id="isDefault"
                 checked={formData.isDefault}
                 onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary-500 focus:ring-primary-500 border-border-default rounded"
               />
-              <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-700">
+              <label htmlFor="isDefault" className="ml-2 block text-sm text-text-secondary">
                 Set as default store
               </label>
             </div>
@@ -252,7 +252,7 @@ export default function ConnectStorePage() {
 
               <Link
                 href="/dashboard/stores"
-                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors text-center"
+                className="px-6 py-3 bg-surface-elevated hover:bg-surface-hover text-text-secondary rounded-lg font-medium transition-colors text-center"
               >
                 Cancel
               </Link>
@@ -260,8 +260,8 @@ export default function ConnectStorePage() {
           </form>
 
           {/* Security Note */}
-          <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <p className="text-sm text-gray-600">
+          <div className="mt-6 bg-surface-base border border-border-default rounded-lg p-4">
+            <p className="text-sm text-text-secondary">
               🔒 <strong>Security:</strong> Your credentials are encrypted using AES-256-GCM before storage.
               They are only decrypted when needed to perform operations on your behalf.
             </p>

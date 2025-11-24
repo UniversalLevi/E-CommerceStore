@@ -50,31 +50,31 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       <Navbar />
       <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
               Forgot Password
             </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
+            <p className="mt-2 text-center text-sm text-[#a0a0a0]">
               Enter your email address and we'll send you a link to reset your password.
             </p>
           </div>
 
           {success ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-              <div className="text-4xl mb-4">✓</div>
-              <h3 className="text-lg font-semibold text-green-900 mb-2">
+            <div className="bg-[#1a1a1a] border border-[#505050] rounded-lg p-6 text-center">
+              <div className="text-4xl mb-4 text-white">✓</div>
+              <h3 className="text-lg font-semibold text-white mb-2">
                 Check Your Email
               </h3>
-              <p className="text-green-700 mb-4">
+              <p className="text-[#a0a0a0] mb-4">
                 If an account with that email exists, we've sent a password reset link.
               </p>
               <Link
                 href="/login"
-                className="text-primary-600 hover:text-primary-700 font-medium"
+                className="text-white hover:text-[#e0e0e0] font-medium"
               >
                 Back to Login
               </Link>
@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
           ) : (
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-[#a0a0a0] mb-2">
                   Email Address
                 </label>
                 <input
@@ -98,13 +98,13 @@ export default function ForgotPasswordPage() {
                       setErrors({ ...errors, email: '' });
                     }
                   }}
-                  className={`appearance-none relative block w-full px-3 py-2 border ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
+                  className={`appearance-none relative block w-full px-3 py-2 bg-[#0a0a0a] text-white border ${
+                    errors.email ? 'border-red-500' : 'border-[#505050]'
+                  } placeholder-[#808080] rounded-lg focus:outline-none focus:ring-[#808080] focus:border-[#808080] focus:z-10 sm:text-sm`}
                   placeholder="you@example.com"
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  <p className="mt-1 text-sm text-red-400">{errors.email}</p>
                 )}
               </div>
 
@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
               <div className="text-center">
                 <Link
                   href="/login"
-                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  className="text-sm text-white hover:text-[#e0e0e0] font-medium"
                 >
                   ← Back to Login
                 </Link>

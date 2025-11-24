@@ -58,7 +58,7 @@ interface SystemHealth {
   uptime: number;
 }
 
-const COLORS = ['#10b981', '#ef4444', '#6b7280'];
+const COLORS = ['#a0a0a0', '#ef4444', '#808080'];
 
 export default function AdminDashboardPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -129,13 +129,13 @@ export default function AdminDashboardPage() {
   const getHealthColor = (status: string) => {
     switch (status) {
       case 'healthy':
-        return 'bg-green-500';
+        return 'bg-secondary-500';
       case 'degraded':
-        return 'bg-yellow-500';
+        return 'bg-accent-500';
       case 'unhealthy':
         return 'bg-red-500';
       default:
-        return 'bg-gray-500';
+        return 'bg-accent-500';
     }
   };
 
@@ -152,7 +152,7 @@ export default function AdminDashboardPage() {
           <p className="text-red-400">{error || 'Failed to load dashboard'}</p>
           <button
             onClick={fetchDashboardData}
-            className="mt-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+            className="mt-4 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-black rounded-lg transition-colors"
           >
             Retry
           </button>
@@ -168,25 +168,25 @@ export default function AdminDashboardPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-            <p className="mt-2 text-gray-300">System overview and statistics</p>
+            <h1 className="text-3xl font-bold text-text-primary">Admin Dashboard</h1>
+            <p className="mt-2 text-text-secondary">System overview and statistics</p>
           </div>
 
           {/* System Health */}
           {health && (
-            <div className="mb-6 bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
+            <div className="mb-6 bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">System Health</h3>
+                  <h3 className="text-lg font-semibold text-text-primary mb-2">System Health</h3>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${getHealthColor(health.status)}`}></div>
-                      <span className="text-sm text-gray-300 capitalize">{health.status}</span>
+                      <span className="text-sm text-text-secondary capitalize">{health.status}</span>
                     </div>
-                    <span className="text-sm text-gray-300">
+                    <span className="text-sm text-text-secondary">
                       DB Latency: <span className="font-medium">{health.dbLatency}ms</span>
                     </span>
-                    <span className="text-sm text-gray-300">
+                    <span className="text-sm text-text-secondary">
                       Uptime: <span className="font-medium">{formatUptime(health.uptime)}</span>
                     </span>
                   </div>
@@ -197,12 +197,12 @@ export default function AdminDashboardPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Total Users</p>
-                  <p className="text-3xl font-bold text-white mt-2">{stats.users.total}</p>
-                  <p className="text-sm text-green-400 mt-1">
+                  <p className="text-sm text-text-secondary">Total Users</p>
+                  <p className="text-3xl font-bold text-text-primary mt-2">{stats.users.total}</p>
+                  <p className="text-sm text-secondary-400 mt-1">
                     {stats.users.active} active (last 7 days)
                   </p>
                 </div>
@@ -210,12 +210,12 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Total Stores</p>
-                  <p className="text-3xl font-bold text-white mt-2">{stats.stores.total}</p>
-                  <p className="text-sm text-green-400 mt-1">
+                  <p className="text-sm text-text-secondary">Total Stores</p>
+                  <p className="text-3xl font-bold text-text-primary mt-2">{stats.stores.total}</p>
+                  <p className="text-sm text-secondary-400 mt-1">
                     {stats.stores.active} active
                   </p>
                 </div>
@@ -223,12 +223,12 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Invalid Stores</p>
+                  <p className="text-sm text-text-secondary">Invalid Stores</p>
                   <p className="text-3xl font-bold text-red-400 mt-2">{stats.stores.invalid}</p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-text-muted mt-1">
                     {stats.stores.revoked} revoked
                   </p>
                 </div>
@@ -236,11 +236,11 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">Total Products</p>
-                  <p className="text-3xl font-bold text-white mt-2">{stats.products.total}</p>
+                  <p className="text-sm text-text-secondary">Total Products</p>
+                  <p className="text-3xl font-bold text-text-primary mt-2">{stats.products.total}</p>
                 </div>
                 <div className="text-4xl">📦</div>
               </div>
@@ -250,43 +250,43 @@ export default function AdminDashboardPage() {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* User Registrations */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+              <h3 className="text-lg font-semibold text-text-primary mb-4">
                 User Registrations (Last 30 Days)
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={stats.trends.registrations}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="_id" />
-                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#505050" />
+                  <XAxis dataKey="_id" stroke="#a0a0a0" />
+                  <YAxis stroke="#a0a0a0" />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="count" fill="#3b82f6" />
+                  <Bar dataKey="count" fill="#ffffff" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             {/* Store Connections */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+              <h3 className="text-lg font-semibold text-text-primary mb-4">
                 Store Connections (Last 30 Days)
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={stats.trends.storeConnections}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="_id" />
-                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#505050" />
+                  <XAxis dataKey="_id" stroke="#a0a0a0" />
+                  <YAxis stroke="#a0a0a0" />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="count" stroke="#10b981" strokeWidth={2} />
+                  <Line type="monotone" dataKey="count" stroke="#a0a0a0" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Store Status Distribution */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-8">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">
               Store Status Distribution
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -311,50 +311,50 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Recent Activity</h3>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-border-default">
+                <thead className="bg-surface-elevated">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       User
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Action
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Target
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Status
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-surface-raised divide-y divide-border-default">
                   {stats.recentActivity.map((activity) => (
                     <tr key={activity.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {new Date(activity.timestamp).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {activity.userEmail}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {activity.action.replace(/_/g, ' ')}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {activity.target}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             activity.success
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-secondary-500/20 text-secondary-400 border border-secondary-500/50'
+                              : 'bg-red-500/20 text-red-400 border border-red-500/50'
                           }`}
                         >
                           {activity.success ? 'Success' : 'Failed'}
