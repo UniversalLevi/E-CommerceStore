@@ -9,6 +9,11 @@ import {
   deleteUser,
   getAuditLogs,
   exportAuditLogs,
+  getContacts,
+  getContact,
+  replyToContact,
+  updateContactStatus,
+  deleteContact,
 } from '../controllers/adminController';
 
 const router = Router();
@@ -29,6 +34,13 @@ router.delete('/users/:id', deleteUser);
 // Audit log routes
 router.get('/audit', getAuditLogs);
 router.get('/audit/export', exportAuditLogs);
+
+// Contact management routes
+router.get('/contacts', getContacts);
+router.get('/contacts/:id', getContact);
+router.post('/contacts/:id/reply', replyToContact);
+router.put('/contacts/:id/status', updateContactStatus);
+router.delete('/contacts/:id', deleteContact);
 
 export default router;
 

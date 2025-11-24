@@ -4,8 +4,10 @@ import { User } from '../models/User';
 import { StoreConnection } from '../models/StoreConnection';
 import { AuditLog } from '../models/AuditLog';
 import { Product } from '../models/Product';
+import { Contact } from '../models/Contact';
 import mongoose from 'mongoose';
 import { createError } from '../middleware/errorHandler';
+import { createNotification } from '../utils/notifications';
 
 // In-memory cache for dashboard stats
 let statsCache: any = null;
@@ -525,6 +527,303 @@ export const exportAuditLogs = async (
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="audit-logs-${Date.now()}.csv"`);
     res.status(200).send(csvContent);
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get all contact submissions with pagination and filters
+ * GET /api/admin/contacts
+ */
+export const getContacts = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string;
+    const search = req.query.search as string;
+
+    const query: any = {};
+
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { subject: { $regex: search, $options: 'i' } },
+        { message: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [contacts, total] = await Promise.all([
+      Contact.find(query)
+        .populate('userId', 'email')
+        .populate('repliedBy', 'email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Contact.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        contacts,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get a single contact submission
+ * GET /api/admin/contacts/:id
+ */
+export const getContact = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw createError('Invalid contact ID', 400);
+    }
+
+    const contact = await Contact.findById(id)
+      .populate('userId', 'email')
+      .populate('repliedBy', 'email')
+      .lean();
+
+    if (!contact) {
+      throw createError('Contact not found', 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: contact,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Reply to a contact submission
+ * POST /api/admin/contacts/:id/reply
+ */
+export const replyToContact = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { reply } = req.body;
+
+    if (!reply || reply.trim().length === 0) {
+      throw createError('Reply message is required', 400);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw createError('Invalid contact ID', 400);
+    }
+
+    const contact = await Contact.findById(id);
+
+    if (!contact) {
+      throw createError('Contact not found', 404);
+    }
+
+    // Update contact with reply
+    contact.adminReply = reply.trim();
+    contact.repliedBy = (req.user as any)._id;
+    contact.repliedAt = new Date();
+    contact.status = 'replied';
+    await contact.save();
+
+    // Send email notification to user
+    try {
+      const { sendEmail } = await import('../utils/email');
+      await sendEmail({
+        to: contact.email,
+        subject: `Re: ${contact.subject}`,
+        html: `
+          <h2>Hello ${contact.name},</h2>
+          <p>Thank you for contacting us. Here is our response:</p>
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            ${reply.replace(/\n/g, '<br>')}
+          </div>
+          <p>If you have any further questions, please don't hesitate to contact us again.</p>
+          <p>Best regards,<br>Support Team</p>
+        `,
+        text: `Hello ${contact.name},\n\nThank you for contacting us. Here is our response:\n\n${reply}\n\nIf you have any further questions, please don't hesitate to contact us again.\n\nBest regards,\nSupport Team`,
+      });
+    } catch (emailError) {
+      // Log but don't fail if email fails
+      console.error('Failed to send reply email:', emailError);
+    }
+
+    // Create notification for user if they have an account
+    // Try to find user by email if userId is not set
+    let userIdToNotify: mongoose.Types.ObjectId | string | undefined = contact.userId;
+    
+    // If userId is not set, try to find user by email
+    if (!userIdToNotify) {
+      try {
+        const userByEmail = await User.findOne({ email: contact.email.toLowerCase() }).select('_id').lean();
+        if (userByEmail && userByEmail._id) {
+          userIdToNotify = userByEmail._id as mongoose.Types.ObjectId;
+          console.log(`Found user by email for notification: ${userByEmail._id}`);
+        }
+      } catch (userLookupError) {
+        console.error('Failed to lookup user by email:', userLookupError);
+      }
+    }
+
+    if (userIdToNotify) {
+      try {
+        console.log(`Creating notification for user: ${userIdToNotify}, contact: ${contact.email}`);
+        await createNotification({
+          userId: userIdToNotify,
+          type: 'system_update',
+          title: 'Response to Your Contact Request',
+          message: `We've replied to your contact request: "${contact.subject}". Check your email for details.`,
+          link: `/contact`,
+        });
+        console.log(`Notification created successfully for user: ${userIdToNotify}`);
+      } catch (notifError) {
+        // Log but don't fail
+        console.error('Failed to create notification:', notifError);
+      }
+    } else {
+      console.log(`No user found for contact email: ${contact.email}, notification not created`);
+    }
+
+    // Audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      action: 'REPLY_TO_CONTACT',
+      success: true,
+      details: {
+        contactId: contact._id,
+        contactEmail: contact.email,
+        contactSubject: contact.subject,
+      },
+      ipAddress: req.ip,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Reply sent successfully',
+      data: contact,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Update contact status
+ * PUT /api/admin/contacts/:id/status
+ */
+export const updateContactStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['pending', 'replied', 'resolved', 'archived'].includes(status)) {
+      throw createError('Invalid status', 400);
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw createError('Invalid contact ID', 400);
+    }
+
+    const contact = await Contact.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    )
+      .populate('userId', 'email')
+      .populate('repliedBy', 'email')
+      .lean();
+
+    if (!contact) {
+      throw createError('Contact not found', 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Contact status updated successfully',
+      data: contact,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Delete a contact submission
+ * DELETE /api/admin/contacts/:id
+ */
+export const deleteContact = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw createError('Invalid contact ID', 400);
+    }
+
+    const contact = await Contact.findByIdAndDelete(id);
+
+    if (!contact) {
+      throw createError('Contact not found', 404);
+    }
+
+    // Audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      action: 'DELETE_CONTACT',
+      success: true,
+      details: {
+        contactId: id,
+        contactEmail: contact.email,
+        contactSubject: contact.subject,
+      },
+      ipAddress: req.ip,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Contact deleted successfully',
+    });
   } catch (error: any) {
     next(error);
   }

@@ -36,6 +36,8 @@ const auditLogSchema = new Schema<IAuditLog>({
       'UPDATE_NICHE',
       'DELETE_NICHE',
       'RESTORE_NICHE',
+      'REPLY_TO_CONTACT',
+      'DELETE_CONTACT',
     ],
     index: true,
   },
