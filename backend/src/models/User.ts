@@ -25,6 +25,12 @@ export interface IUser extends Document {
   planExpiresAt: Date | null;
   isLifetime: boolean;
   productsAdded: number;
+  // Onboarding fields for AI features
+  onboarding?: {
+    nicheId: mongoose.Types.ObjectId;
+    goal: 'dropship' | 'brand' | 'start_small';
+    answeredAt: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -116,6 +122,20 @@ const userSchema = new Schema<IUser>(
       default: 0,
       min: 0,
       index: true,
+    },
+    // Onboarding fields for AI features
+    onboarding: {
+      nicheId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Niche',
+      },
+      goal: {
+        type: String,
+        enum: ['dropship', 'brand', 'start_small'],
+      },
+      answeredAt: {
+        type: Date,
+      },
     },
   },
   {

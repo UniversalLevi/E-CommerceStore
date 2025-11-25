@@ -31,6 +31,10 @@ const envSchema = Joi.object({
   RAZORPAY_KEY_ID: Joi.string().required(),
   RAZORPAY_KEY_SECRET: Joi.string().required(),
   RAZORPAY_WEBHOOK_SECRET: Joi.string().required(),
+  // OpenAI configuration (optional - fallback will be used if not set)
+  OPENAI_API_KEY: Joi.string().allow('').optional(),
+  OPENAI_MODEL: Joi.string().default('gpt-3.5-turbo'),
+  AI_CACHE_TTL: Joi.string().default('3600'),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);
@@ -61,6 +65,11 @@ export const config = {
     keyId: value.RAZORPAY_KEY_ID,
     keySecret: value.RAZORPAY_KEY_SECRET,
     webhookSecret: value.RAZORPAY_WEBHOOK_SECRET,
+  },
+  openai: {
+    apiKey: value.OPENAI_API_KEY || '',
+    model: value.OPENAI_MODEL || 'gpt-3.5-turbo',
+    cacheTtl: parseInt(value.AI_CACHE_TTL || '3600', 10),
   },
 };
 

@@ -42,6 +42,7 @@ import searchRoutes from './routes/searchRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import aiRoutes from './routes/aiRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -56,6 +57,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/ai', aiRoutes);
 // Niche routes (separate namespaces to prevent route overlap)
 app.use('/api/niches', nicheRoutes);
 app.use('/api/admin/niches', authenticateToken, requireAdmin, nicheAdminRoutes);

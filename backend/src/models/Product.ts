@@ -8,6 +8,20 @@ export interface IProduct extends Document {
   niche: mongoose.Types.ObjectId; // Required reference to Niche
   images: string[];
   active: boolean;
+  // AI features fields
+  costPrice?: number;
+  tags?: string[];
+  supplierLink?: string;
+  rating?: number;
+  trendScore?: number; // Reserved for future use
+  llmCacheVersion?: number; // Used for invalidating cached outputs
+  analytics?: {
+    views?: number;
+    imports?: number;
+    conversions?: number;
+  };
+  beginnerFriendly?: boolean;
+  qualityScore?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,6 +71,59 @@ const productSchema = new Schema<IProduct>(
       type: Boolean,
       default: true,
     },
+    // AI features fields (all optional)
+    costPrice: {
+      type: Number,
+      min: [0, 'Cost price cannot be negative'],
+    },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    supplierLink: {
+      type: String,
+      trim: true,
+    },
+    rating: {
+      type: Number,
+      min: [0, 'Rating cannot be negative'],
+      max: [5, 'Rating cannot exceed 5'],
+    },
+    trendScore: {
+      type: Number,
+      min: [0, 'Trend score cannot be negative'],
+      max: [100, 'Trend score cannot exceed 100'],
+    },
+    llmCacheVersion: {
+      type: Number,
+      default: 1,
+    },
+    analytics: {
+      views: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      imports: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      conversions: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+    },
+    beginnerFriendly: {
+      type: Boolean,
+      default: false,
+    },
+    qualityScore: {
+      type: Number,
+      min: [0, 'Quality score cannot be negative'],
+      max: [100, 'Quality score cannot exceed 100'],
+    },
   },
   {
     timestamps: true,
@@ -67,6 +134,10 @@ const productSchema = new Schema<IProduct>(
 productSchema.index({ category: 1, active: 1 });
 productSchema.index({ niche: 1, active: 1 }); // Compound index for niche filtering
 productSchema.index({ title: 'text', description: 'text' });
+// AI features indexes
+productSchema.index({ tags: 1 });
+productSchema.index({ beginnerFriendly: 1 });
+productSchema.index({ qualityScore: -1 }); // Descending for top products
 
 // Pre-save hook: Validate niche exists and is not deleted
 productSchema.pre('save', async function (next) {

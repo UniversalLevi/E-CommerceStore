@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import { User } from '../models/User';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
@@ -406,6 +407,66 @@ export const resetPassword = async (
       message: 'Password reset successfully. Please log in with your new password.',
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update user onboarding data
+ * PUT /api/user/onboarding
+ */
+export const updateOnboarding = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { nicheId, goal } = req.body;
+
+    if (!nicheId) {
+      throw createError('Niche ID is required', 400);
+    }
+
+    if (!goal || !['dropship', 'brand', 'start_small'].includes(goal)) {
+      throw createError('Valid goal is required (dropship, brand, or start_small)', 400);
+    }
+
+    // Validate niche exists
+    const { Niche } = await import('../models/Niche');
+    const niche = await Niche.findById(nicheId).where({ deleted: false, active: true });
+    if (!niche) {
+      throw createError('Niche not found or inactive', 404);
+    }
+
+    // Update user onboarding
+    const user = await User.findByIdAndUpdate(
+      (req.user as any)._id,
+      {
+        onboarding: {
+          nicheId: new mongoose.Types.ObjectId(nicheId),
+          goal,
+          answeredAt: new Date(),
+        },
+      },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Onboarding data saved successfully',
+      data: {
+        onboarding: user.onboarding,
+      },
+    });
+  } catch (error: any) {
     next(error);
   }
 };

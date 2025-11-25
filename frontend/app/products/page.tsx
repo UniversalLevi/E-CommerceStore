@@ -5,13 +5,17 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Niche } from '@/types';
 import Navbar from '@/components/Navbar';
+import FindWinningProductModal from '@/components/FindWinningProductModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProductsPage() {
+  const { isAuthenticated } = useAuth();
   const [featuredNiches, setFeaturedNiches] = useState<Niche[]>([]);
   const [homepageNiches, setHomepageNiches] = useState<Niche[]>([]);
   const [allNiches, setAllNiches] = useState<Niche[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showFindProduct, setShowFindProduct] = useState(false);
 
   useEffect(() => {
     fetchNiches();
@@ -197,6 +201,23 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
+
+      {/* Floating Action Button - Find Winning Product */}
+      {isAuthenticated && (
+        <button
+          onClick={() => setShowFindProduct(true)}
+          className="fixed bottom-8 right-8 bg-primary-500 hover:bg-primary-600 text-black p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 font-semibold"
+          aria-label="Find Winning Product"
+        >
+          <span className="text-2xl">🎯</span>
+          <span className="hidden md:inline">Find Winning Product</span>
+        </button>
+      )}
+
+      <FindWinningProductModal
+        isOpen={showFindProduct}
+        onClose={() => setShowFindProduct(false)}
+      />
     </div>
   );
 }

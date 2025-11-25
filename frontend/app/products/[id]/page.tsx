@@ -8,6 +8,7 @@ import { Product, Niche } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import StoreSelectionModal from '@/components/StoreSelectionModal';
+import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
 import { notify } from '@/lib/toast';
 
 interface StoreConnection {
@@ -34,6 +35,7 @@ export default function ProductDetailPage() {
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showWriteDescription, setShowWriteDescription] = useState(false);
   const [storeData, setStoreData] = useState<any>(null);
 
   useEffect(() => {
@@ -54,6 +56,16 @@ export default function ProductDetailPage() {
         `/api/products/${id}`
       );
       setProduct(response.data);
+      
+      // Track product view
+      if (isAuthenticated) {
+        try {
+          await api.post('/api/analytics/product-view', { productId: id });
+        } catch (err) {
+          // Ignore tracking errors
+          console.error('Failed to track product view:', err);
+        }
+      }
       
       // Extract niche if populated
       if (response.data.niche && typeof response.data.niche === 'object') {
@@ -139,6 +151,7 @@ export default function ProductDetailPage() {
     setShowSuccessModal(true);
   };
 
+  // Render loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-surface-base">
@@ -150,6 +163,7 @@ export default function ProductDetailPage() {
     );
   }
 
+  // Render error state
   if (error && !product) {
     return (
       <div className="min-h-screen bg-surface-base">
@@ -169,7 +183,10 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) return null;
+  // Render nothing if no product
+  if (!product) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-surface-base">
@@ -331,38 +348,41 @@ export default function ProductDetailPage() {
               <div>
                 <div className="mb-4 flex items-center gap-3 flex-wrap">
                   {/* Niche Badge */}
-                  {niche && (() => {
-                    const themeColor = niche.themeColor;
-                    const isCyanTeal = themeColor && (
-                      themeColor.toLowerCase().includes('#1ac8ed') ||
-                      themeColor.toLowerCase().includes('#17b4d5') ||
-                      themeColor.toLowerCase().includes('#5d737e') ||
-                      themeColor.toLowerCase().includes('#87bba2') ||
-                      themeColor.toLowerCase().includes('cyan') ||
-                      themeColor.toLowerCase().includes('teal')
-                    );
-                    return (
-                      <Link
-                        href={`/products/niches/${niche.slug}`}
-                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
-                          themeColor && !isCyanTeal
-                            ? ''
-                            : 'bg-surface-hover text-text-primary hover:bg-surface-elevated border border-border-default'
-                        }`}
-                        style={
-                          themeColor && !isCyanTeal
-                            ? {
-                                backgroundColor: themeColor,
-                                color: niche.textColor || '#FFFFFF',
-                              }
-                            : {}
-                        }
-                      >
-                        {niche.icon && <span>{niche.icon}</span>}
-                        <span>{niche.name}</span>
-                      </Link>
-                    );
-                  })()}
+                  {niche && (
+                    <Link
+                      href={`/products/niches/${niche.slug}`}
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold transition-colors ${
+                        niche.themeColor && !(
+                          niche.themeColor.toLowerCase().includes('#1ac8ed') ||
+                          niche.themeColor.toLowerCase().includes('#17b4d5') ||
+                          niche.themeColor.toLowerCase().includes('#5d737e') ||
+                          niche.themeColor.toLowerCase().includes('#87bba2') ||
+                          niche.themeColor.toLowerCase().includes('cyan') ||
+                          niche.themeColor.toLowerCase().includes('teal')
+                        )
+                          ? ''
+                          : 'bg-surface-hover text-text-primary hover:bg-surface-elevated border border-border-default'
+                      }`}
+                      style={
+                        niche.themeColor && !(
+                          niche.themeColor.toLowerCase().includes('#1ac8ed') ||
+                          niche.themeColor.toLowerCase().includes('#17b4d5') ||
+                          niche.themeColor.toLowerCase().includes('#5d737e') ||
+                          niche.themeColor.toLowerCase().includes('#87bba2') ||
+                          niche.themeColor.toLowerCase().includes('cyan') ||
+                          niche.themeColor.toLowerCase().includes('teal')
+                        )
+                          ? {
+                              backgroundColor: niche.themeColor,
+                              color: niche.textColor || '#FFFFFF',
+                            }
+                          : {}
+                      }
+                    >
+                      {niche.icon && <span>{niche.icon}</span>}
+                      <span>{niche.name}</span>
+                    </Link>
+                  )}
                   {/* Category Badge */}
                   {product.category && (
                     <span className="text-sm font-semibold text-text-primary uppercase tracking-wide">
@@ -377,7 +397,7 @@ export default function ProductDetailPage() {
 
                 <div className="mb-6">
                   <span className="text-4xl font-bold text-text-primary">
-                    ${product.price.toFixed(2)}
+                    ₹{product.price.toFixed(2)}
                   </span>
                 </div>
 
@@ -445,13 +465,21 @@ export default function ProductDetailPage() {
 
                 <div className="space-y-4">
                   {isAuthenticated ? (
-                    <button
-                      onClick={() => setShowStoreModal(true)}
-                      disabled={loadingStores}
-                      className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      🚀 Add to My Store
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setShowStoreModal(true)}
+                        disabled={loadingStores}
+                        className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        🚀 Add to My Store
+                      </button>
+                      <button
+                        onClick={() => setShowWriteDescription(true)}
+                        className="w-full bg-surface-raised hover:bg-surface-hover border-2 border-primary-500 text-text-primary py-4 rounded-lg font-semibold text-lg transition-colors"
+                      >
+                        ✍️ Write Product Description (AI)
+                      </button>
+                    </>
                   ) : (
                     <>
                       <button
@@ -586,13 +614,22 @@ export default function ProductDetailPage() {
 
       {/* Store Selection Modal */}
       {isAuthenticated && (
-        <StoreSelectionModal
-          isOpen={showStoreModal}
-          onClose={() => setShowStoreModal(false)}
-          stores={stores}
-          productId={params.id as string}
-          onSuccess={handleStoreSuccess}
-        />
+        <>
+          <StoreSelectionModal
+            isOpen={showStoreModal}
+            onClose={() => setShowStoreModal(false)}
+            stores={stores}
+            productId={params.id as string}
+            onSuccess={handleStoreSuccess}
+          />
+
+          <WriteProductDescriptionModal
+            isOpen={showWriteDescription}
+            onClose={() => setShowWriteDescription(false)}
+            productId={params.id as string}
+            productTitle={product?.title}
+          />
+        </>
       )}
     </div>
   );

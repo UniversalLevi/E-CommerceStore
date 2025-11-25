@@ -42,19 +42,50 @@ src/
 
 ## 🔧 Environment Variables
 
-Create a `.env` file with:
+Create a `.env` file with the following variables:
 
+### Required Variables
 ```env
 PORT=5000
+NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/shopify-store-builder
-JWT_SECRET=your-secret-key
+JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
 JWT_EXPIRES_IN=1d
 CORS_ORIGIN=http://localhost:3000
+ENCRYPTION_KEY=your-base64-encoded-32-byte-encryption-key-here-44-chars
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+RAZORPAY_WEBHOOK_SECRET=your-razorpay-webhook-secret
+```
+
+### Optional Variables
+```env
+# Shopify Configuration
 SHOPIFY_API_KEY=your-shopify-api-key
 SHOPIFY_API_SECRET=your-shopify-api-secret
 SHOPIFY_REDIRECT_URI=http://localhost:5000/api/shopify/callback
 SHOPIFY_SCOPES=write_products,read_products,write_themes,read_themes
+SHOPIFY_SHOP=
+SHOPIFY_ACCESS_TOKEN=
+
+# Email Configuration (if not set, emails will be logged only)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_SECURE=true
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+SMTP_FROM_NAME=Auto Shopify Store Builder
+SMTP_IGNORE_TLS=false
+CONTACT_EMAIL=
+
+# OpenAI Configuration (optional - fallback will be used if not set)
+OPENAI_API_KEY=your-openai-api-key-here
+OPENAI_MODEL=gpt-3.5-turbo
+AI_CACHE_TTL=3600
 ```
+
+**Note:** Create a `.env.example` file in the backend directory with these placeholders. The OpenAI API key is optional - if not provided, the system will use fallback responses.
 
 ## 📚 Dependencies
 
@@ -75,6 +106,9 @@ SHOPIFY_SCOPES=write_products,read_products,write_themes,read_themes
 - `ts-node` - TypeScript execution
 - `nodemon` - Auto-restart on changes
 - `@types/*` - TypeScript definitions
+- `jest` - Testing framework
+- `ts-jest` - TypeScript support for Jest
+- `supertest` - HTTP assertion library
 
 ## 🛣️ API Routes
 
@@ -106,6 +140,15 @@ All routes are prefixed with `/api`
 ### Dashboard (`/dashboard`)
 - `GET /stats` - User statistics (protected)
 
+### AI Features (`/ai`)
+- `POST /find-winning-product` - Get AI-powered product recommendations (protected, rate limited)
+- `POST /write-product-description` - Generate AI product descriptions (protected, rate limited)
+
+### Analytics (`/analytics`)
+- `GET /` - Get user analytics (protected)
+- `POST /product-view` - Track product view (protected)
+- `POST /product-import` - Track product import (protected)
+
 ## 🔐 Authentication
 
 JWT tokens are issued on login and must be included in protected routes:
@@ -115,6 +158,25 @@ Authorization: Bearer <token>
 ```
 
 Tokens expire after 1 day (configurable via `JWT_EXPIRES_IN`).
+
+## 🧪 Testing
+
+### Running Tests
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Test Structure
+- Unit tests: `src/__tests__/services/` - Test individual services
+- Integration tests: `src/__tests__/integration/` - Test API endpoints
+- Test setup: `src/__tests__/setup.ts` - Test environment configuration
 
 ## 🧪 Testing Endpoints
 

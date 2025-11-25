@@ -373,3 +373,75 @@ export const getUserProducts = async (
   }
 };
 
+/**
+ * Update product metadata (admin only)
+ * PUT /api/products/:id/metadata
+ */
+export const updateProductMetadata = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    // Check if user is admin
+    if ((req.user as any).role !== 'admin') {
+      throw createError('Admin access required', 403);
+    }
+
+    const { id } = req.params;
+    const { costPrice, tags, supplierLink, beginnerFriendly } = req.body;
+
+    // Validate product exists
+    const product = await Product.findById(id);
+    if (!product) {
+      throw createError('Product not found', 404);
+    }
+
+    // Build update object
+    const update: any = {};
+
+    if (costPrice !== undefined) {
+      if (typeof costPrice !== 'number' || costPrice < 0) {
+        throw createError('Cost price must be a non-negative number', 400);
+      }
+      update.costPrice = costPrice;
+    }
+
+    if (tags !== undefined) {
+      if (!Array.isArray(tags) || !tags.every((t) => typeof t === 'string')) {
+        throw createError('Tags must be an array of strings', 400);
+      }
+      update.tags = tags;
+    }
+
+    if (supplierLink !== undefined) {
+      if (typeof supplierLink !== 'string') {
+        throw createError('Supplier link must be a string', 400);
+      }
+      update.supplierLink = supplierLink.trim() || undefined;
+    }
+
+    if (beginnerFriendly !== undefined) {
+      if (typeof beginnerFriendly !== 'boolean') {
+        throw createError('Beginner friendly must be a boolean', 400);
+      }
+      update.beginnerFriendly = beginnerFriendly;
+    }
+
+    // Update product
+    const updatedProduct = await Product.findByIdAndUpdate(id, update, { new: true });
+
+    res.status(200).json({
+      success: true,
+      message: 'Product metadata updated successfully',
+      data: updatedProduct,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+

@@ -52,16 +52,16 @@ export default function ConnectStorePage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-base">
+    <div className="min-h-screen bg-black">
       {/* Navigation */}
-      <nav className="bg-surface-raised border-b border-border-default shadow-sm">
+      <nav className="bg-gray-800 border-b border-gray-700 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
+            <Link href="/dashboard" className="text-2xl font-bold text-[#1AC8ED]">
               Auto Shopify Store Builder
             </Link>
             <div className="flex items-center gap-4">
-              <Link href="/dashboard/stores" className="text-text-secondary hover:text-text-primary">
+              <Link href="/dashboard/stores" className="text-gray-300 hover:text-white">
                 ← Back to Stores
               </Link>
             </div>
@@ -80,17 +80,17 @@ export default function ConnectStorePage() {
           </p>
 
           {/* Instructions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-            <h3 className="font-semibold text-blue-900 mb-3">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-8">
+            <h3 className="font-semibold text-white mb-3">
               📚 How to get your credentials:
             </h3>
-            <ol className="list-decimal list-inside space-y-2 text-blue-800 text-sm">
+            <ol className="list-decimal list-inside space-y-2 text-gray-300 text-sm">
               <li>
                 Go to your Shopify admin → Settings → Apps and sales channels → Develop apps
               </li>
               <li>Click "Create an app" and give it a name</li>
               <li>
-                Configure Admin API scopes: <code className="bg-blue-100 px-1 py-0.5 rounded">
+                Configure Admin API scopes: <code className="bg-[#1AC8ED] bg-opacity-20 text-[#1AC8ED] px-2 py-1 rounded font-mono text-xs">
                   write_products, read_products, write_themes, read_themes
                 </code>
               </li>
@@ -101,16 +101,16 @@ export default function ConnectStorePage() {
           </div>
 
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="mb-6 bg-red-900 bg-opacity-20 border border-red-700 text-red-300 px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
-                Store Name <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Store Name <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -118,16 +118,16 @@ export default function ConnectStorePage() {
                 value={formData.storeName}
                 onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
                 placeholder="My Awesome Store"
-                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] placeholder-gray-500"
               />
-              <p className="mt-1 text-sm text-text-muted">
+              <p className="mt-1 text-sm text-gray-400">
                 A friendly name to identify this store
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
-                Shop Domain <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Shop Domain <span className="text-red-400">*</span>
               </label>
               <div className="flex gap-2 items-center">
                 <input
@@ -136,18 +136,18 @@ export default function ConnectStorePage() {
                   value={formData.shopDomain}
                   onChange={(e) => setFormData({ ...formData, shopDomain: e.target.value })}
                   placeholder="your-store"
-                  className="flex-1 px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] placeholder-gray-500"
                 />
-                <span className="text-text-secondary text-sm">.myshopify.com</span>
+                <span className="text-gray-400 text-sm">.myshopify.com</span>
               </div>
-              <p className="mt-1 text-sm text-text-muted">
+              <p className="mt-1 text-sm text-gray-400">
                 Your Shopify store domain (without https://)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
-                Access Token <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Access Token <span className="text-red-400">*</span>
               </label>
               <input
                 type="password"
@@ -155,15 +155,15 @@ export default function ConnectStorePage() {
                 value={formData.accessToken}
                 onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
                 placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxx"
-                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] font-mono text-sm placeholder-gray-500"
               />
-              <p className="mt-1 text-sm text-text-muted">
+              <p className="mt-1 text-sm text-gray-400">
                 Admin API access token from your custom app
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 API Key (optional)
               </label>
               <input
@@ -171,12 +171,12 @@ export default function ConnectStorePage() {
                 value={formData.apiKey}
                 onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                 placeholder="API Key"
-                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] font-mono text-sm placeholder-gray-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 API Secret (optional)
               </label>
               <input
@@ -184,18 +184,18 @@ export default function ConnectStorePage() {
                 value={formData.apiSecret}
                 onChange={(e) => setFormData({ ...formData, apiSecret: e.target.value })}
                 placeholder="API Secret"
-                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] font-mono text-sm placeholder-gray-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Environment
               </label>
               <select
                 value={formData.environment}
                 onChange={(e) => setFormData({ ...formData, environment: e.target.value as any })}
-                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED]"
               >
                 <option value="production">Production</option>
                 <option value="development">Development</option>
@@ -208,9 +208,9 @@ export default function ConnectStorePage() {
                 id="isDefault"
                 checked={formData.isDefault}
                 onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                className="h-4 w-4 text-primary-500 focus:ring-primary-500 border-border-default rounded"
+                className="h-4 w-4 text-[#1AC8ED] focus:ring-[#1AC8ED] border-gray-700 rounded bg-gray-900"
               />
-              <label htmlFor="isDefault" className="ml-2 block text-sm text-text-secondary">
+              <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-300">
                 Set as default store
               </label>
             </div>
@@ -219,7 +219,7 @@ export default function ConnectStorePage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#1AC8ED] hover:bg-[#0FA8C7] text-black py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
@@ -252,7 +252,7 @@ export default function ConnectStorePage() {
 
               <Link
                 href="/dashboard/stores"
-                className="px-6 py-3 bg-surface-elevated hover:bg-surface-hover text-text-secondary rounded-lg font-medium transition-colors text-center"
+                className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors text-center"
               >
                 Cancel
               </Link>
@@ -260,8 +260,8 @@ export default function ConnectStorePage() {
           </form>
 
           {/* Security Note */}
-          <div className="mt-6 bg-surface-base border border-border-default rounded-lg p-4">
-            <p className="text-sm text-text-secondary">
+          <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <p className="text-sm text-gray-300">
               🔒 <strong>Security:</strong> Your credentials are encrypted using AES-256-GCM before storage.
               They are only decrypted when needed to perform operations on your behalf.
             </p>

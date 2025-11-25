@@ -7,6 +7,7 @@ import {
   deleteProduct,
   getCategories,
   getUserProducts,
+  updateProductMetadata,
 } from '../controllers/productController';
 import { authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
@@ -40,6 +41,7 @@ router.put(
   updateProduct
 );
 router.delete('/:id', authenticateToken, requireAdmin, deleteProduct);
+router.put('/:id/metadata', authenticateToken, requireAdmin, updateProductMetadata);
 
 export default router;
 

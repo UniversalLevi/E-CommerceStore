@@ -8,6 +8,9 @@ import { Niche, Product, PaginatedResponse } from '@/types';
 import Navbar from '@/components/Navbar';
 import Pagination from '@/components/Pagination';
 import SortDropdown from '@/components/SortDropdown';
+import FindWinningProductModal from '@/components/FindWinningProductModal';
+import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function NicheProductsPage() {
   const params = useParams();
@@ -25,6 +28,11 @@ export default function NicheProductsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { isAuthenticated } = useAuth();
+  const [showFindProduct, setShowFindProduct] = useState(false);
+  const [showWriteDescription, setShowWriteDescription] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [selectedProductTitle, setSelectedProductTitle] = useState<string>('');
 
   const page = parseInt(searchParams.get('page') || '1', 10);
   const sort = (searchParams.get('sort') as any) || niche?.defaultSortMode || 'newest';
@@ -242,42 +250,58 @@ export default function NicheProductsPage() {
                   typeof product.niche === 'object' ? product.niche : null;
 
                 return (
-                  <Link
+                  <div
                     key={product._id}
-                    href={`/products/${product._id}`}
-                    className="bg-surface-raised border border-border-default rounded-xl shadow-lg overflow-hidden hover:border-primary-500 hover:shadow-xl transition-all"
+                    className="bg-surface-raised border border-border-default rounded-xl shadow-lg overflow-hidden hover:border-primary-500 hover:shadow-xl transition-all group relative"
                   >
-                    <div className="aspect-square relative">
-                      <img
-                        src={product.images[0]}
-                        alt={product.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-6">
-                      {product.category && (
-                        <div className="mb-2">
-                          <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
-                            {product.category}
+                    <Link href={`/products/${product._id}`}>
+                      <div className="aspect-square relative">
+                        <img
+                          src={product.images[0]}
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="p-6">
+                        {product.category && (
+                          <div className="mb-2">
+                            <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+                              {product.category}
+                            </span>
+                          </div>
+                        )}
+                        <h3 className="text-xl font-bold text-text-primary mb-2">
+                          {product.title}
+                        </h3>
+                        <p className="text-text-secondary mb-4 line-clamp-2">
+                          {product.description}
+                        </p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-2xl font-bold text-text-primary">
+                            ₹{product.price.toFixed(2)}
+                          </span>
+                          <span className="text-text-primary font-semibold">
+                            View Details →
                           </span>
                         </div>
-                      )}
-                      <h3 className="text-xl font-bold text-text-primary mb-2">
-                        {product.title}
-                      </h3>
-                      <p className="text-text-secondary mb-4 line-clamp-2">
-                        {product.description}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-2xl font-bold text-text-primary">
-                          ${product.price.toFixed(2)}
-                        </span>
-                        <span className="text-text-primary font-semibold">
-                          View Details →
-                        </span>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+                    {isAuthenticated && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedProductId(product._id);
+                          setSelectedProductTitle(product.title);
+                          setShowWriteDescription(true);
+                        }}
+                        className="absolute top-2 right-2 bg-primary-500 hover:bg-primary-600 text-black px-3 py-1.5 rounded-lg text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
+                        title="Write Product Description (AI)"
+                      >
+                        ✍️ Write
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -291,7 +315,35 @@ export default function NicheProductsPage() {
             />
           </>
         )}
+
+        {/* Floating Action Button - Find Winning Product */}
+        {isAuthenticated && (
+          <button
+            onClick={() => setShowFindProduct(true)}
+            className="fixed bottom-8 right-8 bg-primary-500 hover:bg-primary-600 text-black p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 font-semibold"
+            aria-label="Find Winning Product"
+          >
+            <span className="text-2xl">🎯</span>
+            <span className="hidden md:inline">Find Winning Product</span>
+          </button>
+        )}
       </div>
+
+      <FindWinningProductModal
+        isOpen={showFindProduct}
+        onClose={() => setShowFindProduct(false)}
+      />
+
+      <WriteProductDescriptionModal
+        isOpen={showWriteDescription}
+        onClose={() => {
+          setShowWriteDescription(false);
+          setSelectedProductId('');
+          setSelectedProductTitle('');
+        }}
+        productId={selectedProductId}
+        productTitle={selectedProductTitle}
+      />
     </div>
   );
 }

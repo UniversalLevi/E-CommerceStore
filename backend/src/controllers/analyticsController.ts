@@ -130,3 +130,83 @@ export const getUserAnalytics = async (
   }
 };
 
+/**
+ * Track product view
+ * POST /api/analytics/product-view
+ */
+export const trackProductView = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { productId } = req.body;
+
+    if (!productId) {
+      throw createError('Product ID is required', 400);
+    }
+
+    // Validate product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw createError('Product not found', 404);
+    }
+
+    // Increment view count
+    await Product.findByIdAndUpdate(productId, {
+      $inc: { 'analytics.views': 1 },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Product view tracked',
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Track product import
+ * POST /api/analytics/product-import
+ */
+export const trackProductImport = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { productId } = req.body;
+
+    if (!productId) {
+      throw createError('Product ID is required', 400);
+    }
+
+    // Validate product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      throw createError('Product not found', 404);
+    }
+
+    // Increment import count
+    await Product.findByIdAndUpdate(productId, {
+      $inc: { 'analytics.imports': 1 },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Product import tracked',
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+

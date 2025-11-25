@@ -7,12 +7,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import OnboardingModal from '@/components/OnboardingModal';
 import SubscriptionStatus from '@/components/SubscriptionStatus';
+import FindWinningProductModal from '@/components/FindWinningProductModal';
+import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
 
 export default function DashboardPage() {
   const { user, loading, logout, isAuthenticated } = useAuth();
   const router = useRouter();
   const [stores, setStores] = useState<any[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showFindProduct, setShowFindProduct] = useState(false);
+  const [showWriteDescription, setShowWriteDescription] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -155,6 +160,41 @@ export default function DashboardPage() {
             )}
           </div>
 
+          {/* AI Quick Actions */}
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 mb-6">
+            <h3 className="text-xl font-bold mb-4 text-text-primary">AI-Powered Features</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <button
+                onClick={() => setShowFindProduct(true)}
+                className="border-2 border-primary-500 hover:bg-primary-500 hover:text-black bg-surface-elevated rounded-xl p-6 transition-all text-left group"
+              >
+                <div className="text-4xl mb-3">🎯</div>
+                <h4 className="font-bold text-xl text-text-primary group-hover:text-black mb-2">
+                  Find Winning Product
+                </h4>
+                <p className="text-sm text-text-secondary group-hover:text-gray-800">
+                  Get AI-powered product recommendations tailored to your niche and goals
+                </p>
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedProductId('');
+                  setShowWriteDescription(true);
+                }}
+                className="border-2 border-border-default hover:border-primary-500 bg-surface-elevated rounded-xl p-6 transition-all text-left"
+              >
+                <div className="text-4xl mb-3">✍️</div>
+                <h4 className="font-bold text-xl text-text-primary mb-2">
+                  Write Product Description (AI)
+                </h4>
+                <p className="text-sm text-text-secondary">
+                  Generate SEO-optimized product descriptions with AI
+                </p>
+              </button>
+            </div>
+          </div>
+
           {/* Quick Actions */}
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6">
             <h3 className="text-xl font-bold mb-4 text-text-primary">Quick Actions</h3>
@@ -207,6 +247,20 @@ export default function DashboardPage() {
         onComplete={() => {
           setShowOnboarding(false);
         }}
+      />
+
+      <FindWinningProductModal
+        isOpen={showFindProduct}
+        onClose={() => setShowFindProduct(false)}
+      />
+
+      <WriteProductDescriptionModal
+        isOpen={showWriteDescription}
+        onClose={() => {
+          setShowWriteDescription(false);
+          setSelectedProductId('');
+        }}
+        productId={selectedProductId}
       />
     </div>
   );
