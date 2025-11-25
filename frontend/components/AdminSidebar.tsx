@@ -29,7 +29,7 @@ export default function AdminSidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-border-default">
         <Link 
-          href="/admin/dashboard" 
+          href="/" 
           className="text-xl font-bold text-text-primary hover:text-text-secondary transition-colors"
         >
           Admin Panel

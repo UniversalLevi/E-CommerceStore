@@ -94,3 +94,24 @@ button {
   }
 }
 
+/* Hero Video Background Styles */
+video {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Ensure video covers full area on all devices */
+video[autoplay] {
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+/* Mobile optimization for video */
+@media (max-width: 768px) {
+  video {
+    object-position: center;
+  }
+}
+
