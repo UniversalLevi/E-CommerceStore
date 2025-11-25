@@ -190,30 +190,6 @@ export default function MyProductsPage() {
                       ${product.price.toFixed(2)}
                     </span>
                   </div>
-
-                  {/* Stores */}
-                  <div className="border-t border-border-default pt-4">
-                    <p className="text-sm font-medium text-text-primary mb-2">
-                      Added to {product.stores.length} {product.stores.length === 1 ? 'store' : 'stores'}:
-                    </p>
-                    <div className="space-y-2">
-                      {product.stores.map((store, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <a
-                            href={store.storeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-primary-500 hover:text-primary-600 truncate"
-                          >
-                            {store.storeUrl.replace('https://', '').replace('.myshopify.com', '')}
-                          </a>
-                          <span className="text-xs text-text-muted">
-                            {new Date(store.addedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
             ))}

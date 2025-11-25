@@ -212,61 +212,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-
-          {/* Comparison Table */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-8 md:p-12 mb-16 max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-text-primary mb-8 text-center">
-              Why Choose Us?
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b-2 border-border-default">
-                    <th className="text-left py-4 px-4 font-semibold text-text-primary">Feature</th>
-                    <th className="text-center py-4 px-4 font-semibold text-text-primary">Our Platform</th>
-                    <th className="text-center py-4 px-4 font-semibold text-text-secondary">Others</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { feature: 'Setup Time', us: '5 minutes', others: 'Hours or days' },
-                    { feature: 'Technical Skills Required', us: 'None', others: 'High' },
-                    { feature: 'Product Catalog', us: 'Thousands', others: 'Limited' },
-                    { feature: 'Multiple Stores', us: 'Unlimited', others: 'Single store' },
-                    { feature: 'Support', us: '24/7', others: 'Business hours' },
-                  ].map((item, index) => (
-                    <tr key={index} className="border-b border-border-default">
-                      <td className="py-4 px-4 font-medium text-text-primary">{item.feature}</td>
-                      <td className="py-4 px-4 text-center text-text-primary font-semibold">
-                        {item.us}
-                      </td>
-                      <td className="py-4 px-4 text-center text-text-secondary">{item.others}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-surface-elevated border-t border-border-default">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-6">
-              Ready to Get Started?
-            </h2>
-            <p className="text-xl text-text-secondary mb-8">
-              Join thousands of entrepreneurs who have launched their stores with us.
-            </p>
-            <Link
-              href="/register"
-              className="inline-block bg-primary-500 hover:bg-primary-600 text-black px-12 py-4 rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              Start Your Store Now
-            </Link>
-          </div>
         </div>
       </section>
     </div>

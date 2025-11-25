@@ -66,7 +66,11 @@ export default function MyStoresPage() {
       const response = await api.post<{ success: boolean; valid: boolean; message: string }>(
         `/api/stores/${storeId}/test`
       );
-      notify.success(response.message);
+      if (response.valid) {
+        notify.success(response.message);
+      } else {
+        notify.error(response.message || 'Connection test failed');
+      }
       await fetchStores(); // Refresh to get updated status
     } catch (error: any) {
       notify.error(error.response?.data?.error || 'Failed to test connection');

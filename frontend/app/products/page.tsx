@@ -206,7 +206,7 @@ export default function ProductsPage() {
       {isAuthenticated && (
         <button
           onClick={() => setShowFindProduct(true)}
-          className="fixed bottom-8 right-8 bg-primary-500 hover:bg-primary-600 text-black p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 font-semibold"
+          className="fixed bottom-8 right-8 bg-black hover:bg-gray-700 text-white p-4 rounded-full shadow-2xl hover:shadow-2xl transition-all z-50 flex items-center gap-2 font-semibold border-4 border-gray-600 ring-4 ring-gray-500/30"
           aria-label="Find Winning Product"
         >
           <span className="text-2xl">🎯</span>

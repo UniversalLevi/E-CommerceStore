@@ -36,13 +36,6 @@ export default function Navbar() {
             >
               Auto Shopify Store Builder
             </Link>
-            <Link
-              href="/"
-              className="text-[#a0a0a0] hover:text-white transition-colors text-sm font-medium"
-              aria-label="Home"
-            >
-              Home
-            </Link>
           </div>
 
           {/* Search Bar - Only visible on products and search pages */}
@@ -175,14 +168,6 @@ export default function Navbar() {
             )}
 
             <div className="flex flex-col gap-4">
-              <Link
-                href="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-[#a0a0a0] hover:text-white transition-colors py-2 min-h-[44px] flex items-center"
-                aria-label="Home"
-              >
-                Home
-              </Link>
               {isAuthenticated ? (
                 <>
                   <Link

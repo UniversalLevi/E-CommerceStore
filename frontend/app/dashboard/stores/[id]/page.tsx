@@ -204,7 +204,11 @@ export default function StoreDetailsPage() {
                   : 'Never'}
               </div>
               {store.lastTestResult && (
-                <div className="text-xs text-text-muted mt-1">
+                <div className={`text-xs mt-1 ${
+                  store.lastTestResult === 'success' 
+                    ? 'text-secondary-400' 
+                    : 'text-red-400'
+                }`}>
                   {store.lastTestResult}
                 </div>
               )}

@@ -29,10 +29,10 @@ export default function Button({
     'inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variantStyles = {
-    primary: 'bg-white hover:bg-[#e0e0e0] text-black focus:ring-[#808080]',
-    secondary: 'bg-[#2a2a2a] hover:bg-[#404040] text-white focus:ring-[#808080] border border-[#505050]',
+    primary: 'bg-primary-500 hover:bg-primary-600 text-black focus:ring-primary-500',
+    secondary: 'bg-surface-hover hover:bg-surface-elevated text-text-primary focus:ring-primary-500 border border-border-default',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
-    ghost: 'bg-transparent hover:bg-[#2a2a2a] text-white focus:ring-[#808080]',
+    ghost: 'bg-transparent hover:bg-surface-hover text-text-primary focus:ring-primary-500',
   };
 
   return (
