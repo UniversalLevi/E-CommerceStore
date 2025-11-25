@@ -225,15 +225,18 @@ export default function DashboardPage() {
                 </p>
               </Link>
 
-              <div className="border-2 border-border-default hover:border-border-default bg-surface-elevated rounded-lg p-4 transition-colors cursor-pointer opacity-50">
+              <Link
+                href="/dashboard/analytics"
+                className="border-2 border-border-default hover:border-primary-500 bg-surface-elevated rounded-lg p-4 transition-colors"
+              >
                 <div className="text-2xl mb-2">📊</div>
                 <h4 className="font-semibold text-text-primary mb-1">
                   View Analytics
                 </h4>
                 <p className="text-sm text-text-secondary">
-                  Coming soon
+                  Track your store performance
                 </p>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -252,6 +255,10 @@ export default function DashboardPage() {
       <FindWinningProductModal
         isOpen={showFindProduct}
         onClose={() => setShowFindProduct(false)}
+        onShowOnboarding={() => {
+          setShowFindProduct(false);
+          setShowOnboarding(true);
+        }}
       />
 
       <WriteProductDescriptionModal

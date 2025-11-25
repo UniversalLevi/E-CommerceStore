@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Product } from '@/types';
-import Navbar from '@/components/Navbar';
 import { notify } from '@/lib/toast';
 
 interface UserProduct extends Product {
@@ -79,7 +78,6 @@ export default function MyProductsPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-surface-base">
-        <Navbar />
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
         </div>
@@ -93,7 +91,6 @@ export default function MyProductsPage() {
 
   return (
     <div className="min-h-screen bg-surface-base">
-      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-text-primary">My Added Products</h1>

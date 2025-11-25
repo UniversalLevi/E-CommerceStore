@@ -190,7 +190,10 @@ export default function WriteProductDescriptionModal({
                 </div>
 
                 {productTitle && (
-                  <p className="text-text-secondary mb-6">For: {productTitle}</p>
+                  <div className="bg-primary-500/20 border-2 border-primary-500 rounded-lg p-4 mb-6">
+                    <p className="text-sm font-semibold text-primary-400 mb-1">Writing description for:</p>
+                    <p className="text-lg font-bold text-text-primary">{productTitle}</p>
+                  </div>
                 )}
 
                 {!description && !loading && (

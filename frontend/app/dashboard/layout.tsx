@@ -19,14 +19,16 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
+    } else if (!loading && user?.role === 'admin') {
+      router.push('/admin/dashboard');
     }
-  }, [loading, isAuthenticated, router]);
+  }, [loading, isAuthenticated, user, router]);
 
   if (loading) {
     return <LoadingScreen />;
   }
 
-  if (!user || !isAuthenticated) {
+  if (!user || !isAuthenticated || user.role === 'admin') {
     return null;
   }
 

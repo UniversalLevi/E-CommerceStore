@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
-import Navbar from '@/components/Navbar';
 import Pagination from '@/components/Pagination';
 
 interface Activity {
@@ -99,10 +98,39 @@ export default function ActivityPage() {
       .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
+  const formatDetails = (details: any): string => {
+    if (!details || typeof details !== 'object') {
+      return String(details || '');
+    }
+
+    const formatValue = (value: any, indent = 0): string => {
+      const prefix = '  '.repeat(indent);
+      if (value === null) return 'null';
+      if (value === undefined) return 'undefined';
+      if (typeof value === 'string') return value;
+      if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+      if (Array.isArray(value)) {
+        if (value.length === 0) return '[]';
+        return value.map((item, idx) => 
+          `${prefix}  ${idx + 1}. ${formatValue(item, indent + 1)}`
+        ).join('\n');
+      }
+      if (typeof value === 'object') {
+        const entries = Object.entries(value);
+        if (entries.length === 0) return '{}';
+        return entries.map(([key, val]) => 
+          `${prefix}${key}: ${formatValue(val, indent + 1)}`
+        ).join('\n');
+      }
+      return String(value);
+    };
+
+    return formatValue(details, 0);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-surface-base">
-        <Navbar />
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
         </div>
@@ -116,7 +144,6 @@ export default function ActivityPage() {
 
   return (
     <div className="min-h-screen bg-surface-base">
-      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-text-primary mb-6">Activity Feed</h1>
 
@@ -240,9 +267,9 @@ export default function ActivityPage() {
                               <summary className="cursor-pointer text-primary-500 hover:text-primary-600">
                                 View Details
                               </summary>
-                              <pre className="mt-2 p-3 bg-surface-elevated rounded text-xs overflow-auto text-text-primary">
-                                {JSON.stringify(activity.details, null, 2)}
-                              </pre>
+                              <div className="mt-2 p-3 bg-surface-elevated rounded text-xs overflow-auto text-text-primary whitespace-pre-wrap font-mono">
+                                {formatDetails(activity.details)}
+                              </div>
                             </details>
                           </div>
                         )}

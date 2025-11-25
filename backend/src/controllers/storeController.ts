@@ -20,7 +20,7 @@ export const createStore = async (
       throw createError('Authentication required', 401);
     }
 
-    const { productId, storeId } = req.body;
+    const { productId, storeId, customDescription } = req.body;
 
     if (!productId || typeof productId !== 'string' || productId.trim() === '') {
       throw createError('Valid Product ID is required', 400);
@@ -82,11 +82,14 @@ export const createStore = async (
     console.log('📦 Using shop:', shopifyShop);
     console.log('🔗 Store:', storeConnection.storeName);
 
+    // Use custom description if provided, otherwise use product description
+    const productDescription = customDescription || product.description;
+    
     // Prepare product data for Shopify (without images initially for trial accounts)
     const shopifyProduct = {
       product: {
         title: product.title,
-        body_html: product.description,
+        body_html: productDescription,
         vendor: 'Auto Store Builder',
         product_type: product.category,
         variants: [

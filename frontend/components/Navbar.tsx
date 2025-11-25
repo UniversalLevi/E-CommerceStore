@@ -28,13 +28,22 @@ export default function Navbar() {
     <nav className="bg-[#1a1a1a] border-b border-[#505050] shadow-lg sticky top-0 z-50" role="navigation" aria-label="Main navigation">
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center gap-4">
-          <Link 
-            href="/" 
-            className="text-xl md:text-2xl font-bold text-white hover:text-[#e0e0e0] transition-colors"
-            aria-label="Home"
-          >
-            Auto Shopify Store Builder
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/" 
+              className="text-xl md:text-2xl font-bold text-white hover:text-[#e0e0e0] transition-colors"
+              aria-label="Home"
+            >
+              Auto Shopify Store Builder
+            </Link>
+            <Link
+              href="/"
+              className="text-[#a0a0a0] hover:text-white transition-colors text-sm font-medium"
+              aria-label="Home"
+            >
+              Home
+            </Link>
+          </div>
 
           {/* Search Bar - Only visible on products and search pages */}
           {showSearchBar && (
@@ -166,6 +175,14 @@ export default function Navbar() {
             )}
 
             <div className="flex flex-col gap-4">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-[#a0a0a0] hover:text-white transition-colors py-2 min-h-[44px] flex items-center"
+                aria-label="Home"
+              >
+                Home
+              </Link>
               {isAuthenticated ? (
                 <>
                   <Link

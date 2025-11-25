@@ -165,8 +165,9 @@ export const verifyPayment = async (
     // Upgrade Logic: If upgrading, override with new plan (don't extend)
     // Extension Logic: If renewing same plan or expired, extend from now or current expiry
     if (isUpgrade) {
-      // Upgrading - override with new plan
+      // Upgrading - override with new plan and reset productsAdded to give full benefit of new plan
       user.plan = planCode;
+      user.productsAdded = 0; // Reset to 0 so user gets full benefit of new plan limit
       if (plan.isLifetime) {
         user.planExpiresAt = null;
         user.isLifetime = true;
@@ -201,7 +202,7 @@ export const verifyPayment = async (
       }
     }
 
-    // Note: Do NOT reset productsAdded counter on upgrade/renewal
+    // Note: productsAdded is reset to 0 on upgrade to give full benefit of new plan
     await user.save();
 
     // Create notification
@@ -324,6 +325,7 @@ export const handleWebhook = async (
 
         if (isUpgrade) {
           user.plan = paymentRecord.planCode;
+          user.productsAdded = 0; // Reset to 0 so user gets full benefit of new plan limit
           if (plan.isLifetime) {
             user.planExpiresAt = null;
             user.isLifetime = true;

@@ -36,6 +36,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       notify.success('Login successful!');
+      // Redirect is handled by AuthContext
     } catch (err: any) {
       notify.error(err.message || 'Login failed');
     } finally {
@@ -72,7 +73,7 @@ export default function LoginPage() {
                 }}
                 onBlur={() => {
                   const result = loginSchema.safeParse({ email, password });
-                  if (!result.success) {
+                  if (!result.success && result.error?.errors) {
                     const emailError = result.error.errors.find((e) => e.path[0] === 'email');
                     if (emailError) setErrors({ ...errors, email: emailError.message });
                   }
@@ -104,7 +105,7 @@ export default function LoginPage() {
                 }}
                 onBlur={() => {
                   const result = loginSchema.safeParse({ email, password });
-                  if (!result.success) {
+                  if (!result.success && result.error?.errors) {
                     const passwordError = result.error.errors.find((e) => e.path[0] === 'password');
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }

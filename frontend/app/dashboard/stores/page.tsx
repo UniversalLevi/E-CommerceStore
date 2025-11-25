@@ -111,9 +111,9 @@ export default function MyStoresPage() {
 
   const getStatusBadge = (status: string) => {
     const colors = {
-      active: 'bg-green-100 text-green-800',
-      invalid: 'bg-red-100 text-red-800',
-      revoked: 'bg-gray-100 text-gray-800',
+      active: 'bg-green-900 text-green-200',
+      invalid: 'bg-red-900 text-red-200',
+      revoked: 'bg-gray-700 text-gray-300',
     };
 
     return (
@@ -127,8 +127,8 @@ export default function MyStoresPage() {
     return (
       <div className="min-h-screen bg-surface-base flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Loading...</p>
         </div>
       </div>
     );
@@ -136,64 +136,44 @@ export default function MyStoresPage() {
 
   return (
     <div className="min-h-screen bg-surface-base">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-600">
-              Auto Shopify Store Builder
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900">
-                Dashboard
-              </Link>
-              <Link href="/products" className="text-gray-600 hover:text-gray-900">
-                Products
-              </Link>
-              <span className="text-gray-600">{user?.email}</span>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Stores</h1>
-              <p className="mt-2 text-gray-600">
+              <h1 className="text-3xl font-bold text-text-primary">My Stores</h1>
+              <p className="mt-2 text-text-secondary">
                 Manage your connected Shopify stores
               </p>
             </div>
             <Link
               href="/dashboard/stores/connect"
-              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+              className="bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors font-medium"
             >
               + Connect New Store
             </Link>
           </div>
 
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="mb-6 bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
 
           {/* Stores Grid */}
           {stores.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center">
               <div className="text-6xl mb-4">🏪</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-text-primary mb-2">
                 No stores connected yet
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-text-secondary mb-6">
                 Connect your first Shopify store to start creating products
               </p>
               <Link
                 href="/dashboard/stores/connect"
-                className="inline-block bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+                className="inline-block bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors font-medium"
               >
                 Connect Your First Store
               </Link>
@@ -203,30 +183,30 @@ export default function MyStoresPage() {
               {stores.map((store) => (
                 <div
                   key={store._id}
-                  className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
+                  className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-xl font-semibold text-gray-900">
+                        <h3 className="text-xl font-semibold text-text-primary">
                           {store.storeName}
                         </h3>
                         {getStatusBadge(store.status)}
                         {store.isDefault && (
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-500 text-black">
                             Default
                           </span>
                         )}
                       </div>
 
-                      <div className="space-y-2 text-sm text-gray-600">
+                      <div className="space-y-2 text-sm text-text-secondary">
                         <p>
                           <span className="font-medium">Domain:</span>{' '}
                           <a
                             href={`https://${store.shopDomain}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary-600 hover:underline"
+                            className="text-primary-500 hover:underline"
                           >
                             {store.shopDomain}
                           </a>
@@ -252,7 +232,7 @@ export default function MyStoresPage() {
                       <button
                         onClick={() => handleTest(store._id)}
                         disabled={testing === store._id}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                        className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-black rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                       >
                         {testing === store._id ? 'Testing...' : 'Test Connection'}
                       </button>
@@ -260,7 +240,7 @@ export default function MyStoresPage() {
                       {!store.isDefault && (
                         <button
                           onClick={() => handleSetDefault(store._id)}
-                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                          className="px-4 py-2 bg-surface-hover hover:bg-surface-elevated text-text-primary rounded-lg text-sm font-medium transition-colors"
                         >
                           Set as Default
                         </button>
@@ -268,7 +248,7 @@ export default function MyStoresPage() {
 
                       <Link
                         href={`/dashboard/stores/${store._id}/edit`}
-                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium text-center transition-colors"
+                        className="px-4 py-2 bg-surface-hover hover:bg-surface-elevated text-text-primary rounded-lg text-sm font-medium text-center transition-colors"
                       >
                         Edit
                       </Link>

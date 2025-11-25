@@ -663,19 +663,36 @@ export const replyToContact = async (
     // Send email notification to user
     try {
       const { sendEmail } = await import('../utils/email');
+      const originalMessage = contact.message || 'No message provided';
       await sendEmail({
         to: contact.email,
         subject: `Re: ${contact.subject}`,
         html: `
-          <h2>Hello ${contact.name},</h2>
-          <p>Thank you for contacting us. Here is our response:</p>
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-            ${reply.replace(/\n/g, '<br>')}
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #1a1a1a; color: #e0e0e0;">
+            <h2 style="color: #ffffff; margin-bottom: 20px;">Hello ${contact.name},</h2>
+            
+            <p style="color: #a0a0a0; margin-bottom: 20px;">Thank you for contacting us. We've received your message and here is our response:</p>
+            
+            <div style="background-color: #2a2a2a; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #1ac8ed;">
+              <h3 style="color: #1ac8ed; margin-top: 0; margin-bottom: 10px;">Your Original Message:</h3>
+              <p style="color: #c0c0c0; white-space: pre-wrap; margin: 0;">${originalMessage.replace(/\n/g, '<br>')}</p>
+            </div>
+            
+            <div style="background-color: #2a2a2a; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #10b981;">
+              <h3 style="color: #10b981; margin-top: 0; margin-bottom: 10px;">Our Response:</h3>
+              <p style="color: #c0c0c0; white-space: pre-wrap; margin: 0;">${reply.replace(/\n/g, '<br>')}</p>
+            </div>
+            
+            <p style="color: #a0a0a0; margin-top: 20px;">If you have any further questions, please don't hesitate to contact us again.</p>
+            
+            <p style="color: #808080; margin-top: 30px; border-top: 1px solid #404040; padding-top: 20px;">
+              Best regards,<br>
+              <strong style="color: #e0e0e0;">Support Team</strong><br>
+              Auto Shopify Store Builder
+            </p>
           </div>
-          <p>If you have any further questions, please don't hesitate to contact us again.</p>
-          <p>Best regards,<br>Support Team</p>
         `,
-        text: `Hello ${contact.name},\n\nThank you for contacting us. Here is our response:\n\n${reply}\n\nIf you have any further questions, please don't hesitate to contact us again.\n\nBest regards,\nSupport Team`,
+        text: `Hello ${contact.name},\n\nThank you for contacting us. We've received your message and here is our response:\n\n--- Your Original Message ---\n${originalMessage}\n\n--- Our Response ---\n${reply}\n\nIf you have any further questions, please don't hesitate to contact us again.\n\nBest regards,\nSupport Team\nAuto Shopify Store Builder`,
       });
     } catch (emailError) {
       // Log but don't fail if email fails

@@ -47,7 +47,7 @@ export default function DashboardSidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 isActive
-                  ? 'bg-primary-500 text-black font-semibold'
+                  ? 'bg-primary-500 text-black font-semibold shadow-lg'
                   : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
               }`}
             >

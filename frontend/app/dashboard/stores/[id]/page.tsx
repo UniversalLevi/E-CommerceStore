@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
-import Navbar from '@/components/Navbar';
 import Button from '@/components/Button';
 import ConfirmModal from '@/components/ConfirmModal';
 
@@ -115,7 +114,6 @@ export default function StoreDetailsPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-surface-base">
-        <Navbar />
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
         </div>
@@ -129,7 +127,6 @@ export default function StoreDetailsPage() {
 
   return (
     <div className="min-h-screen bg-surface-base">
-      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Link

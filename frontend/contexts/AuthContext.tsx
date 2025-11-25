@@ -50,7 +50,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }>('/api/auth/login', { email, password });
 
       setUser(response.user);
-      router.push('/dashboard');
+      // Redirect based on user role
+      if (response.user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Login failed. Please try again.';
       throw new Error(errorMessage);

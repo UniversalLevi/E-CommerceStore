@@ -9,10 +9,12 @@ import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from './Button';
+import StoreSelectionModal from './StoreSelectionModal';
 
 interface FindWinningProductModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onShowOnboarding?: () => void;
 }
 
 interface Product {
@@ -55,6 +57,7 @@ interface Recommendation {
 export default function FindWinningProductModal({
   isOpen,
   onClose,
+  onShowOnboarding,
 }: FindWinningProductModalProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -63,6 +66,9 @@ export default function FindWinningProductModal({
   const [top3, setTop3] = useState<Recommendation[]>([]);
   const [showTop3, setShowTop3] = useState(false);
   const [error, setError] = useState('');
+  const [showStoreModal, setShowStoreModal] = useState(false);
+  const [stores, setStores] = useState<any[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
 
   const handleFindProduct = async (mode: 'single' | 'top3' = 'single') => {
     try {
@@ -100,19 +106,61 @@ export default function FindWinningProductModal({
 
   const handleImport = async (productId: string) => {
     try {
+      // Check subscription status and product credits
+      const [planResponse, storesResponse] = await Promise.all([
+        api.getCurrentPlan().catch(() => ({ data: { plan: null, productsAdded: 0, productLimit: 0 } })),
+        api.get<{ success: boolean; data: any[] }>('/api/stores').catch(() => ({ data: [] })),
+      ]);
+
+      const planData = planResponse.data || {};
+      const userStores = storesResponse.data || [];
+
+      // Check if user has active plan and credits
+      const hasActivePlan = planData.plan && planData.plan !== 'free';
+      const hasCredits = hasActivePlan && planData.productsAdded < planData.productLimit;
+
+      if (!hasActivePlan) {
+        notify.error('Please subscribe to a plan to add products to your store');
+        router.push('/dashboard/billing');
+        onClose();
+        return;
+      }
+
+      if (!hasCredits) {
+        notify.error('You have reached your product limit. Please upgrade your plan.');
+        router.push('/dashboard/billing');
+        onClose();
+        return;
+      }
+
+      if (userStores.length === 0) {
+        notify.error('Please connect a Shopify store first');
+        router.push('/dashboard/stores/connect');
+        onClose();
+        return;
+      }
+
       // Track import
       await api.post('/api/analytics/product-import', { productId });
-      
-      // Navigate to import flow (you may need to adjust this based on your import flow)
-      router.push(`/dashboard/products?import=${productId}`);
-      notify.success('Product import initiated');
-      onClose();
+
+      // Open store selection modal
+      setStores(userStores);
+      setSelectedProductId(productId);
+      setShowStoreModal(true);
     } catch (error: any) {
-      notify.error('Failed to import product');
+      console.error('Failed to import product:', error);
+      notify.error('Failed to import product. Please try again.');
     }
   };
 
+  const handleStoreSuccess = (data: any) => {
+    notify.success('Product added to store successfully!');
+    setShowStoreModal(false);
+    onClose();
+  };
+
   return (
+    <>
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         <Transition.Child
@@ -179,9 +227,19 @@ export default function FindWinningProductModal({
                     <p className="font-semibold mb-2">Unable to find product</p>
                     <p className="text-sm">{error}</p>
                     {error.includes('niche') && (
-                      <Link href="/dashboard" className="text-sm underline mt-2 inline-block">
+                      <button
+                        onClick={() => {
+                          onClose();
+                          if (onShowOnboarding) {
+                            onShowOnboarding();
+                          } else {
+                            router.push('/dashboard');
+                          }
+                        }}
+                        className="text-sm underline mt-2 inline-block text-primary-500 hover:text-primary-400"
+                      >
                         Complete onboarding →
-                      </Link>
+                      </button>
                     )}
                   </div>
                 )}
@@ -371,6 +429,19 @@ export default function FindWinningProductModal({
         </div>
       </Dialog>
     </Transition>
+    {showStoreModal && selectedProductId && (
+      <StoreSelectionModal
+        isOpen={showStoreModal}
+        onClose={() => {
+          setShowStoreModal(false);
+          setSelectedProductId('');
+        }}
+        stores={stores}
+        productId={selectedProductId}
+        onSuccess={handleStoreSuccess}
+      />
+    )}
+    </>
   );
 }
 

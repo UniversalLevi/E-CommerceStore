@@ -77,26 +77,6 @@ export default function Footer() {
           <p className="text-[#a0a0a0] text-sm">
             © {currentYear} Auto Shopify Store Builder. All rights reserved.
           </p>
-          <div className="flex gap-4 mt-4 md:mt-0">
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#a0a0a0] hover:text-white transition-colors text-sm"
-              aria-label="Twitter"
-            >
-              Twitter
-            </a>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#a0a0a0] hover:text-white transition-colors text-sm"
-              aria-label="GitHub"
-            >
-              GitHub
-            </a>
-          </div>
         </div>
       </div>
     </footer>

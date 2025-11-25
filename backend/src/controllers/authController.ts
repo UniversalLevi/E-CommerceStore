@@ -7,6 +7,7 @@ import { User } from '../models/User';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
+import { logAuditWithRequest, logAudit } from '../utils/auditLogger';
 
 export const register = async (
   req: Request,
@@ -65,6 +66,19 @@ export const register = async (
     const userResponse = user.toObject();
     delete (userResponse as any).password;
 
+    // Log registration (no user context yet, so use direct logAudit)
+    await logAudit({
+      userId: user._id as mongoose.Types.ObjectId,
+      action: 'USER_REGISTER',
+      success: true,
+      details: {
+        email: user.email,
+        role: user.role,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -118,6 +132,20 @@ export const login = async (
     // Update lastLogin
     user.lastLogin = new Date();
     await user.save();
+
+    // Log successful login
+    await logAudit({
+      userId: user._id as mongoose.Types.ObjectId,
+      action: 'USER_LOGIN',
+      success: true,
+      details: {
+        email: user.email,
+        role: user.role,
+        lastLogin: user.lastLogin,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
 
     // Generate JWT token with password change timestamp
     const jwtOptions: SignOptions = {
@@ -227,6 +255,17 @@ export const changePassword = async (
     user.passwordChangedAt = new Date(); // Track password change to invalidate old tokens
     await user.save();
 
+    // Log password change
+    await logAuditWithRequest(req, {
+      userId: (req.user as any)._id,
+      action: 'CHANGE_PASSWORD',
+      success: true,
+      details: {
+        email: user.email,
+        passwordChangedAt: user.passwordChangedAt,
+      },
+    });
+
     // Clear cookie (force re-login)
     res.clearCookie('auth_token', { path: '/' });
 
@@ -250,11 +289,23 @@ export const deleteAccount = async (
     }
 
     const userId = (req.user as any)._id;
+    const user = await User.findById(userId);
 
     // Soft delete: set deletedAt field
     await User.findByIdAndUpdate(userId, {
       deletedAt: new Date(),
       isActive: false,
+    });
+
+    // Log account deletion
+    await logAuditWithRequest(req, {
+      userId: userId,
+      action: 'DELETE_ACCOUNT',
+      success: true,
+      details: {
+        email: user?.email,
+        deletedAt: new Date(),
+      },
     });
 
     // Clear cookie
@@ -306,6 +357,19 @@ export const forgotPassword = async (
     // Import email service
     const { sendPasswordResetEmail } = await import('../utils/email');
     await sendPasswordResetEmail(user.email, resetUrl);
+    
+    // Log password reset request
+    await logAudit({
+      userId: user._id as mongoose.Types.ObjectId,
+      action: 'FORGOT_PASSWORD',
+      success: true,
+      details: {
+        email: user.email,
+        resetTokenExpires: user.resetPasswordExpires,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
     
     if (process.env.NODE_ENV === 'development') {
       console.log('Password reset URL:', resetUrl);
@@ -376,6 +440,19 @@ export const resetPassword = async (
     user.markModified('passwordChangedAt');
     
     await user.save();
+
+    // Log password reset completion
+    await logAudit({
+      userId: user._id as mongoose.Types.ObjectId,
+      action: 'RESET_PASSWORD',
+      success: true,
+      details: {
+        email: user.email,
+        passwordChangedAt: user.passwordChangedAt,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
     
     // Verify password was actually updated by re-fetching from DB
     const updatedUser = await User.findById(user._id).select('password passwordChangedAt email');

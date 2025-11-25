@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="w-64 bg-surface-raised border-r border-border-default h-screen fixed left-0 top-0 overflow-y-auto">
@@ -57,8 +57,15 @@ export default function AdminSidebar() {
         })}
       </nav>
 
-      {/* Back to Dashboard */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border-default bg-surface-raised">
+      {/* Bottom Actions */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border-default bg-surface-raised space-y-2">
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors text-left"
+        >
+          <span className="text-xl">🚪</span>
+          <span className="font-medium">Logout</span>
+        </button>
         <Link
           href="/dashboard"
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"

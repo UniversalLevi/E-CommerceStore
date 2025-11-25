@@ -19,6 +19,45 @@ interface AuditLog {
   ipAddress?: string;
 }
 
+// Helper function to format details for display
+function formatDetailsForDisplay(details: any): JSX.Element {
+  if (!details || typeof details !== 'object') {
+    return <span className="text-text-muted">No details available</span>;
+  }
+
+  const entries = Object.entries(details);
+  if (entries.length === 0) {
+    return <span className="text-text-muted">No details available</span>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {entries.map(([key, value]) => {
+        const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
+        const isArray = Array.isArray(value);
+        const isComplex = isObject || isArray;
+
+        return (
+          <div key={key} className="border-l-2 border-border-default pl-3">
+            <div className="text-sm font-medium text-text-secondary mb-1">
+              {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+            </div>
+            {isComplex ? (
+              <pre className="bg-surface-elevated p-3 rounded text-xs text-text-primary overflow-x-auto mt-1">
+                {JSON.stringify(value, null, 2)}
+              </pre>
+            ) : (
+              <div className="text-sm text-text-primary mt-1">
+                {String(value)}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -222,10 +261,20 @@ export default function AdminAuditPage() {
                   className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="">All Actions</option>
+                  <option value="USER_REGISTER">User Register</option>
+                  <option value="USER_LOGIN">User Login</option>
+                  <option value="CHANGE_PASSWORD">Change Password</option>
+                  <option value="RESET_PASSWORD">Reset Password</option>
+                  <option value="FORGOT_PASSWORD">Forgot Password</option>
+                  <option value="DELETE_ACCOUNT">Delete Account</option>
                   <option value="CREATE_STORE">Create Store</option>
                   <option value="UPDATE_STORE">Update Store</option>
                   <option value="DELETE_STORE">Delete Store</option>
                   <option value="TEST_STORE">Test Store</option>
+                  <option value="ADD_PRODUCT_TO_STORE">Add Product to Store</option>
+                  <option value="PAYMENT_CREATE_ORDER">Payment Create Order</option>
+                  <option value="PAYMENT_VERIFY">Payment Verify</option>
+                  <option value="PAYMENT_WEBHOOK">Payment Webhook</option>
                   <option value="UPDATE_USER_ROLE">Update User Role</option>
                   <option value="ENABLE_USER">Enable User</option>
                   <option value="DISABLE_USER">Disable User</option>
@@ -398,70 +447,94 @@ export default function AdminAuditPage() {
       {/* Details Modal */}
       {selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-bold text-text-primary">Log Details</h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-text-primary">Audit Log Details</h3>
                 <button
                   onClick={() => setSelectedLog(null)}
-                  className="text-text-muted hover:text-text-primary"
+                  className="text-text-muted hover:text-text-primary text-2xl font-bold w-8 h-8 flex items-center justify-center rounded hover:bg-surface-hover transition-colors"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary">Timestamp</label>
-                  <p className="mt-1 text-sm text-text-primary">
-                    {new Date(selectedLog.timestamp).toLocaleString()}
-                  </p>
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="bg-surface-elevated p-4 rounded-lg border border-border-default">
+                  <h4 className="text-lg font-semibold text-text-primary mb-4">Basic Information</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">Timestamp</label>
+                      <p className="text-sm text-text-primary">
+                        {new Date(selectedLog.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">User Email</label>
+                      <p className="text-sm text-text-primary">{selectedLog.userEmail}</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">Action</label>
+                      <p className="text-sm text-text-primary font-mono">
+                        {selectedLog.action.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">Target</label>
+                      <p className="text-sm text-text-primary">{selectedLog.target || 'N/A'}</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">Status</label>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          selectedLog.success
+                            ? 'bg-secondary-500/20 text-secondary-400 border border-secondary-500/50'
+                            : 'bg-red-500/20 text-red-400 border border-red-500/50'
+                        }`}
+                      >
+                        {selectedLog.success ? 'Success' : 'Failed'}
+                      </span>
+                    </div>
+
+                    {selectedLog.ipAddress && (
+                      <div>
+                        <label className="block text-sm font-medium text-text-secondary mb-1">IP Address</label>
+                        <p className="text-sm text-text-primary font-mono">{selectedLog.ipAddress}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary">User Email</label>
-                  <p className="mt-1 text-sm text-text-primary">{selectedLog.userEmail}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary">Action</label>
-                  <p className="mt-1 text-sm text-text-primary">{selectedLog.action}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary">Target</label>
-                  <p className="mt-1 text-sm text-text-primary">{selectedLog.target}</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary">Success</label>
-                  <p className="mt-1 text-sm text-text-primary">
-                    {selectedLog.success ? 'Yes' : 'No'}
-                  </p>
-                </div>
-
+                {/* Error Message */}
                 {selectedLog.errorMessage && (
-                  <div>
-                    <label className="block text-sm font-medium text-text-secondary">Error Message</label>
-                    <p className="mt-1 text-sm text-red-400">{selectedLog.errorMessage}</p>
+                  <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-lg">
+                    <label className="block text-sm font-medium text-red-400 mb-2">Error Message</label>
+                    <p className="text-sm text-red-300">{selectedLog.errorMessage}</p>
                   </div>
                 )}
 
-                {selectedLog.ipAddress && (
-                  <div>
-                    <label className="block text-sm font-medium text-text-secondary">IP Address</label>
-                    <p className="mt-1 text-sm text-text-primary">{selectedLog.ipAddress}</p>
+                {/* Context Information */}
+                {selectedLog.details && (
+                  <div className="bg-surface-elevated p-4 rounded-lg border border-border-default">
+                    <h4 className="text-lg font-semibold text-text-primary mb-4">Context & Details</h4>
+                    {formatDetailsForDisplay(selectedLog.details)}
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-2">
-                    Raw JSON Details
-                  </label>
-                  <pre className="bg-surface-elevated p-4 rounded-lg text-xs overflow-x-auto text-text-primary">
+                {/* Raw JSON (Collapsible) */}
+                <details className="bg-surface-elevated p-4 rounded-lg border border-border-default">
+                  <summary className="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary mb-2">
+                    View Raw JSON
+                  </summary>
+                  <pre className="bg-surface-base p-4 rounded text-xs overflow-x-auto text-text-primary mt-2 border border-border-default">
                     {JSON.stringify(selectedLog.details, null, 2)}
                   </pre>
-                </div>
+                </details>
               </div>
             </div>
           </div>

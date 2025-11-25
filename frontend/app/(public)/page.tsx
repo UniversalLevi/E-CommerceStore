@@ -146,6 +146,110 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Detailed Features Section */}
+      <section className="py-20 bg-surface-base">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-4">
+              Powerful Features
+            </h2>
+            <p className="text-xl text-text-secondary max-w-3xl mx-auto">
+              Everything you need to build and manage your Shopify store quickly and efficiently.
+            </p>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 max-w-7xl mx-auto">
+            {[
+              {
+                title: 'Easy Store Connection',
+                description: 'Connect your Shopify store in minutes with just your access token. No complex setup required.',
+                icon: '🔗',
+              },
+              {
+                title: 'Curated Product Catalog',
+                description: 'Browse thousands of products organized by niches. Find exactly what you need for your store.',
+                icon: '📦',
+              },
+              {
+                title: 'One-Click Product Addition',
+                description: 'Add products to your Shopify store with a single click. All details, images, and pricing included.',
+                icon: '⚡',
+              },
+              {
+                title: 'Multiple Store Management',
+                description: 'Manage multiple Shopify stores from one account. Switch between stores effortlessly.',
+                icon: '🏪',
+              },
+              {
+                title: 'Niche-Based Organization',
+                description: 'Products organized by niches make it easy to find relevant items for your target market.',
+                icon: '🎯',
+              },
+              {
+                title: 'Automatic Store Setup',
+                description: 'Products are automatically added to your store with professional descriptions and images.',
+                icon: '🤖',
+              },
+              {
+                title: 'Secure Credential Storage',
+                description: 'Your Shopify credentials are encrypted and stored securely. We never share your data.',
+                icon: '🔒',
+              },
+              {
+                title: 'Real-Time Sync',
+                description: 'See your products appear in Shopify instantly. No waiting, no delays.',
+                icon: '🔄',
+              },
+            ].map((feature, index) => (
+              <div
+                key={index}
+                className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:border-primary-500 hover:shadow-lg transition-all"
+              >
+                <div className="text-4xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-semibold text-text-primary mb-2">{feature.title}</h3>
+                <p className="text-text-secondary text-sm">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Comparison Table */}
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-8 md:p-12 mb-16 max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold text-text-primary mb-8 text-center">
+              Why Choose Us?
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-border-default">
+                    <th className="text-left py-4 px-4 font-semibold text-text-primary">Feature</th>
+                    <th className="text-center py-4 px-4 font-semibold text-text-primary">Our Platform</th>
+                    <th className="text-center py-4 px-4 font-semibold text-text-secondary">Others</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { feature: 'Setup Time', us: '5 minutes', others: 'Hours or days' },
+                    { feature: 'Technical Skills Required', us: 'None', others: 'High' },
+                    { feature: 'Product Catalog', us: 'Thousands', others: 'Limited' },
+                    { feature: 'Multiple Stores', us: 'Unlimited', others: 'Single store' },
+                    { feature: 'Support', us: '24/7', others: 'Business hours' },
+                  ].map((item, index) => (
+                    <tr key={index} className="border-b border-border-default">
+                      <td className="py-4 px-4 font-medium text-text-primary">{item.feature}</td>
+                      <td className="py-4 px-4 text-center text-text-primary font-semibold">
+                        {item.us}
+                      </td>
+                      <td className="py-4 px-4 text-center text-text-secondary">{item.others}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-surface-elevated border-t border-border-default">
         <div className="container mx-auto px-4">

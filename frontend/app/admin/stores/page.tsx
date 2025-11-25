@@ -110,7 +110,7 @@ export default function AdminStoresPage() {
     const matchesSearch =
       store.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       store.shopDomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      store.owner.email.toLowerCase().includes(searchTerm.toLowerCase());
+      store.owner?.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || store.status === statusFilter;
 
@@ -262,8 +262,8 @@ export default function AdminStoresPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-text-primary">{store.owner.email}</div>
-                          <div className="text-xs text-text-muted">Role: {store.owner.role}</div>
+                          <div className="text-sm text-text-primary">{store.owner?.email || 'N/A'}</div>
+                          <div className="text-xs text-text-muted">Role: {store.owner?.role || 'N/A'}</div>
                         </td>
                         <td className="px-6 py-4">
                           {getStatusBadge(store.status)}
@@ -283,7 +283,7 @@ export default function AdminStoresPage() {
                               {testing === store._id ? 'Testing...' : 'Test'}
                             </button>
                             <button
-                              onClick={() => handleDelete(store._id, store.storeName, store.owner.email)}
+                              onClick={() => handleDelete(store._id, store.storeName, store.owner?.email || 'Unknown')}
                               className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
                             >
                               Delete
