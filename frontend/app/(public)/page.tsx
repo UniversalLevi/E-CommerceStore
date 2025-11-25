@@ -1,38 +1,34 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import VideoIntro from '@/components/VideoIntro';
 
 export default function Home() {
+  const [showContent, setShowContent] = useState(false);
+
+  const handleIntroComplete = () => {
+    setShowContent(true);
+  };
+
   return (
-    <div className="min-h-screen bg-surface-base">
+    <>
+      {!showContent && <VideoIntro onComplete={handleIntroComplete} />}
+      
+      <div 
+        className={`min-h-screen bg-surface-base transition-opacity duration-1000 ${
+          showContent ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-[90vh] flex items-center">
-        {/* Video Background */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover z-0"
-          aria-label="Background video"
-        >
-          <source src="/shopify_bg.mp4" type="video/mp4" />
-          {/* Fallback for browsers that don't support video */}
-          <div className="absolute inset-0 bg-gradient-to-b from-surface-base via-surface-elevated to-surface-base"></div>
-        </video>
-        
-        {/* Dark Overlay for Text Readability */}
-        <div className="absolute inset-0 bg-black/60 z-10"></div>
-        
-        {/* Gradient Overlay for Better Visual Appeal */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70 z-10"></div>
-        
-        {/* Content */}
-        <div className="relative z-20 container mx-auto px-4 py-24 md:py-32 w-full">
+      <section className="relative overflow-hidden min-h-[90vh] flex items-center bg-gradient-to-b from-surface-base via-surface-elevated to-surface-base">
+        <div className="relative container mx-auto px-4 py-24 md:py-32 w-full">
           <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-5xl md:text-7xl font-bold text-text-primary mb-6 leading-tight drop-shadow-2xl">
+            <h1 className="text-5xl md:text-7xl font-bold text-text-primary mb-6 leading-tight">
               Launch Your Shopify Store
               <span className="block mt-2">in Minutes</span>
             </h1>
-            <p className="text-xl md:text-2xl text-text-secondary mb-12 max-w-3xl mx-auto leading-relaxed drop-shadow-lg">
+            <p className="text-xl md:text-2xl text-text-secondary mb-12 max-w-3xl mx-auto leading-relaxed">
               No technical skills needed. Browse products, connect your Shopify account,
               and get a fully functional store automatically.
             </p>
@@ -46,7 +42,7 @@ export default function Home() {
               </Link>
               <Link
                 href="/login"
-                className="bg-transparent hover:bg-surface-hover text-text-primary border-2 border-primary-500 px-10 py-4 rounded-lg font-semibold text-lg transition-all backdrop-blur-sm"
+                className="bg-transparent hover:bg-surface-hover text-text-primary border-2 border-primary-500 px-10 py-4 rounded-lg font-semibold text-lg transition-all"
               >
                 Login
               </Link>
@@ -54,16 +50,16 @@ export default function Home() {
 
             {/* Stats Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
-              <div className="text-center backdrop-blur-sm bg-black/30 rounded-lg p-6 border border-white/10">
-                <div className="text-4xl font-bold text-text-primary mb-2 drop-shadow-lg">1000+</div>
+              <div className="text-center bg-surface-raised border border-border-default rounded-lg p-6">
+                <div className="text-4xl font-bold text-text-primary mb-2">1000+</div>
                 <div className="text-text-secondary">Products Available</div>
               </div>
-              <div className="text-center backdrop-blur-sm bg-black/30 rounded-lg p-6 border border-white/10">
-                <div className="text-4xl font-bold text-text-primary mb-2 drop-shadow-lg">5 Min</div>
+              <div className="text-center bg-surface-raised border border-border-default rounded-lg p-6">
+                <div className="text-4xl font-bold text-text-primary mb-2">5 Min</div>
                 <div className="text-text-secondary">Setup Time</div>
               </div>
-              <div className="text-center backdrop-blur-sm bg-black/30 rounded-lg p-6 border border-white/10">
-                <div className="text-4xl font-bold text-text-primary mb-2 drop-shadow-lg">24/7</div>
+              <div className="text-center bg-surface-raised border border-border-default rounded-lg p-6">
+                <div className="text-4xl font-bold text-text-primary mb-2">24/7</div>
                 <div className="text-text-secondary">Support</div>
               </div>
             </div>
@@ -234,7 +230,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }
 
