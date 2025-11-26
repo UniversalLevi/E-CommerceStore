@@ -23,7 +23,7 @@ export default function RegisterPage() {
     const result = registerSchema.safeParse({ email, password });
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         if (err.path[0]) {
           fieldErrors[err.path[0] as keyof typeof fieldErrors] = err.message;
         }
@@ -79,7 +79,7 @@ export default function RegisterPage() {
                 onBlur={() => {
                   const result = registerSchema.safeParse({ email, password });
                   if (!result.success) {
-                    const emailError = result.error.errors.find((e) => e.path[0] === 'email');
+                    const emailError = result.error.issues.find((e) => e.path[0] === 'email');
                     if (emailError) setErrors({ ...errors, email: emailError.message });
                   }
                 }}
@@ -111,7 +111,7 @@ export default function RegisterPage() {
                 onBlur={() => {
                   const result = registerSchema.safeParse({ email, password });
                   if (!result.success) {
-                    const passwordError = result.error.errors.find((e) => e.path[0] === 'password');
+                    const passwordError = result.error.issues.find((e) => e.path[0] === 'password');
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }
                 }}

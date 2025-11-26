@@ -5,8 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
-  total: number;
-  limit: number;
+  total?: number;
+  limit?: number;
+  /** Optional callback; if provided, caller is responsible for handling page changes */
+  onPageChange?: (page: number) => void;
 }
 
 export default function Pagination({
@@ -14,18 +16,25 @@ export default function Pagination({
   totalPages,
   total,
   limit,
+  onPageChange,
 }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const updatePage = (page: number) => {
+    if (onPageChange) {
+      onPageChange(page);
+      return;
+    }
+
     const params = new URLSearchParams(searchParams.toString());
     params.set('page', page.toString());
     router.push(`?${params.toString()}`);
   };
 
-  const startItem = (currentPage - 1) * limit + 1;
-  const endItem = Math.min(currentPage * limit, total);
+  const hasSummary = typeof total === 'number' && typeof limit === 'number' && limit > 0;
+  const startItem = hasSummary ? (currentPage - 1) * (limit as number) + 1 : 0;
+  const endItem = hasSummary ? Math.min(currentPage * (limit as number), total as number) : 0;
 
   // Generate page numbers (max 10 visible)
   const getPageNumbers = () => {
@@ -70,9 +79,11 @@ export default function Pagination({
 
   return (
     <div className="flex flex-col items-center gap-4 mt-8">
-      <div className="text-gray-400 text-sm">
-        Showing {startItem}-{endItem} of {total} products
-      </div>
+      {hasSummary && (
+        <div className="text-gray-400 text-sm">
+          Showing {startItem}-{endItem} of {total} products
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         {/* Previous Button */}

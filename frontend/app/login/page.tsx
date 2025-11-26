@@ -22,7 +22,7 @@ export default function LoginPage() {
     const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         if (err.path[0]) {
           fieldErrors[err.path[0] as keyof typeof fieldErrors] = err.message;
         }
@@ -73,8 +73,8 @@ export default function LoginPage() {
                 }}
                 onBlur={() => {
                   const result = loginSchema.safeParse({ email, password });
-                  if (!result.success && result.error?.errors) {
-                    const emailError = result.error.errors.find((e) => e.path[0] === 'email');
+                  if (!result.success && result.error?.issues) {
+                    const emailError = result.error.issues.find((e) => e.path[0] === 'email');
                     if (emailError) setErrors({ ...errors, email: emailError.message });
                   }
                 }}
@@ -105,8 +105,8 @@ export default function LoginPage() {
                 }}
                 onBlur={() => {
                   const result = loginSchema.safeParse({ email, password });
-                  if (!result.success && result.error?.errors) {
-                    const passwordError = result.error.errors.find((e) => e.path[0] === 'password');
+                  if (!result.success && result.error?.issues) {
+                    const passwordError = result.error.issues.find((e) => e.path[0] === 'password');
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }
                 }}

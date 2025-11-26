@@ -32,17 +32,18 @@ export default function ForgotPasswordPage() {
 
       setSuccess(true);
       notify.success('If an account with that email exists, a password reset link has been sent.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        err.errors.forEach((error) => {
-          if (error.path[0]) {
-            fieldErrors[error.path[0].toString()] = error.message;
+        err.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            fieldErrors[issue.path[0].toString()] = issue.message;
           }
         });
         setErrors(fieldErrors);
       } else {
-        notify.error(err.response?.data?.error || 'Failed to send reset email');
+        const anyErr = err as { response?: { data?: { error?: string } } };
+        notify.error(anyErr.response?.data?.error || 'Failed to send reset email');
       }
     } finally {
       setSubmitting(false);

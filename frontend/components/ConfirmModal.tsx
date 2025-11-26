@@ -1,18 +1,28 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, ReactNode } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 
 interface ConfirmModalProps {
   isOpen: boolean;
   title: string;
-  message: string;
+  message?: string;
   confirmText: string;
   cancelText?: string;
+  /** Visual style for the confirm button (backwards-compatible) */
   variant?: 'danger' | 'warning' | 'info';
+  /** Alias for `variant` used in some callers */
+  confirmVariant?: 'danger' | 'warning' | 'info';
   onConfirm: () => void | Promise<void>;
-  onCancel: () => void;
+  /** Preferred close handler; falls back to `onCancel` for older callers */
+  onClose?: () => void;
+  /** Backwards-compatible cancel handler */
+  onCancel?: () => void;
   loading?: boolean;
+  /** When true, disables the confirm button (used by some admin flows) */
+  disabled?: boolean;
+  /** Optional extra content (e.g. reason textarea) */
+  children?: ReactNode;
 }
 
 export default function ConfirmModal({
@@ -22,10 +32,17 @@ export default function ConfirmModal({
   confirmText,
   cancelText = 'Cancel',
   variant = 'info',
+  confirmVariant,
   onConfirm,
+  onClose,
   onCancel,
   loading = false,
+  disabled = false,
+  children,
 }: ConfirmModalProps) {
+  const effectiveVariant = confirmVariant || variant || 'info';
+  const handleClose = onClose || onCancel || (() => {});
+
   const variantStyles = {
     danger: {
       button: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
@@ -41,11 +58,11 @@ export default function ConfirmModal({
     },
   };
 
-  const styles = variantStyles[variant];
+  const styles = variantStyles[effectiveVariant];
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onCancel}>
+      <Dialog as="div" className="relative z-50" onClose={handleClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -73,15 +90,19 @@ export default function ConfirmModal({
                 <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                   {title}
                 </Dialog.Title>
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">{message}</p>
-                </div>
+                {message && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">{message}</p>
+                  </div>
+                )}
+
+                {children && <div className="mt-4">{children}</div>}
 
                 <div className="mt-4 flex gap-3 justify-end">
                   <button
                     type="button"
                     className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                    onClick={onCancel}
+                    onClick={handleClose}
                     disabled={loading}
                   >
                     {cancelText}
@@ -90,7 +111,7 @@ export default function ConfirmModal({
                     type="button"
                     className={`inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${styles.button}`}
                     onClick={onConfirm}
-                    disabled={loading}
+                    disabled={loading || disabled}
                   >
                     {loading ? 'Processing...' : confirmText}
                   </button>

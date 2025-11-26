@@ -22,7 +22,7 @@ export default function AdminNichesPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedNiche, setSelectedNiche] = useState<Niche | null>(null);
-  const [formData, setFormData] = useState<Partial<Niche>>({});
+  const [formData, setFormData] = useState<Partial<Niche> & { deletedReason?: string }>({});
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -378,7 +378,7 @@ export default function AdminNichesPage() {
             }
             confirmText="Delete"
             confirmVariant="danger"
-            disabled={selectedNiche.totalProductCount && selectedNiche.totalProductCount > 0}
+            disabled={!!selectedNiche.totalProductCount && selectedNiche.totalProductCount > 0}
           >
             {selectedNiche.totalProductCount === 0 && (
               <div className="mt-4">
@@ -411,8 +411,8 @@ function NicheModal({
   isDefault = false,
 }: {
   title: string;
-  formData: Partial<Niche>;
-  setFormData: (data: Partial<Niche>) => void;
+  formData: Partial<Niche> & { deletedReason?: string };
+  setFormData: (data: Partial<Niche> & { deletedReason?: string }) => void;
   onSave: () => void;
   onClose: () => void;
   isDefault?: boolean;

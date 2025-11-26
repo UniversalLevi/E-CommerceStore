@@ -55,17 +55,18 @@ export default function ResetPasswordPage() {
 
       setSuccess(true);
       notify.success('Password reset successfully! You can now log in with your new password.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        err.errors.forEach((error) => {
-          if (error.path[0]) {
-            fieldErrors[error.path[0].toString()] = error.message;
+        err.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            fieldErrors[issue.path[0].toString()] = issue.message;
           }
         });
         setErrors(fieldErrors);
       } else {
-        notify.error(err.response?.data?.error || 'Failed to reset password');
+        const anyErr = err as { response?: { data?: { error?: string } } };
+        notify.error(anyErr.response?.data?.error || 'Failed to reset password');
       }
     } finally {
       setSubmitting(false);

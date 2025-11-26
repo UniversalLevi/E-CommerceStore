@@ -5,6 +5,8 @@ export interface User {
   shopifyConnected?: boolean;
   shopifyShop?: string;
   stores: Store[];
+  createdAt?: string;
+  lastLogin?: string;
 }
 
 export interface Niche {

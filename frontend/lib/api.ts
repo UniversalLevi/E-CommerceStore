@@ -82,9 +82,9 @@ class ApiClient {
     });
   }
 
-  async delete<T>(url: string) {
+  async delete<T>(url: string, data?: any) {
     return this.retryRequest(async () => {
-      const response = await this.client.delete<T>(url);
+      const response = await this.client.delete<T>(url, data ? { data } : undefined);
       return response.data;
     });
   }
