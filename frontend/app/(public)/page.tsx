@@ -6,14 +6,19 @@ import VideoIntro from '@/components/VideoIntro';
 
 export default function Home() {
   const [showContent, setShowContent] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const handleIntroComplete = () => {
     setShowContent(true);
   };
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <>
-      {!showContent && <VideoIntro onComplete={handleIntroComplete} />}
+      {mounted && !showContent && <VideoIntro onComplete={handleIntroComplete} />}
       
       <div 
         className={`min-h-screen bg-surface-base transition-opacity duration-1000 ${
