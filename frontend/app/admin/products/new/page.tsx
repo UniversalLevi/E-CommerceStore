@@ -67,7 +67,7 @@ export default function NewProductPage() {
       await api.post('/api/products', productData);
       router.push('/admin/products');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create product');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to create product');
     } finally {
       setSubmitting(false);
     }

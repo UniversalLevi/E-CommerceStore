@@ -91,7 +91,7 @@ export default function EditProductPage() {
       await api.put(`/api/products/${params.id}`, productData);
       router.push('/admin/products');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update product');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to update product');
     } finally {
       setSubmitting(false);
     }
