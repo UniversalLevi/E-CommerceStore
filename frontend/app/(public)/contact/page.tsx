@@ -48,7 +48,8 @@ export default function ContactPage() {
         });
         setErrors(fieldErrors);
       } else {
-        notify.error(err.response?.data?.error || 'Failed to send message');
+        const anyErr = err as { response?: { data?: { error?: string } } };
+        notify.error(anyErr.response?.data?.error || 'Failed to send message');
       }
     } finally {
       setSubmitting(false);
