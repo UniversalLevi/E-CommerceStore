@@ -38,12 +38,12 @@ export default function ContactPage() {
       setSuccess(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
       notify.success('Thank you for contacting us! We will get back to you soon.');
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        err.errors.forEach((error) => {
-          if (error.path[0]) {
-            fieldErrors[error.path[0].toString()] = error.message;
+        err.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            fieldErrors[issue.path[0].toString()] = issue.message;
           }
         });
         setErrors(fieldErrors);
