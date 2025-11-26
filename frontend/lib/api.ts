@@ -1,6 +1,8 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = RAW_API_URL.replace(/\/+$/, '');
+const BASE_HAS_API_SUFFIX = API_URL.endsWith('/api');
 
 class ApiClient {
   private client: AxiosInstance;
@@ -37,6 +39,14 @@ class ApiClient {
     );
   }
 
+  /** Normalize path to avoid duplicated `/api` when baseURL already includes it */
+  private buildPath(path: string) {
+    if (BASE_HAS_API_SUFFIX && path.startsWith('/api/')) {
+      return path.replace(/^\/api/, '');
+    }
+    return path;
+  }
+
   private async retryRequest<T>(
     requestFn: () => Promise<T>,
     retries = 3,
@@ -63,28 +73,28 @@ class ApiClient {
 
   async get<T>(url: string) {
     return this.retryRequest(async () => {
-      const response = await this.client.get<T>(url);
+      const response = await this.client.get<T>(this.buildPath(url));
       return response.data;
     });
   }
 
   async post<T>(url: string, data?: any) {
     return this.retryRequest(async () => {
-      const response = await this.client.post<T>(url, data);
+      const response = await this.client.post<T>(this.buildPath(url), data);
       return response.data;
     });
   }
 
   async put<T>(url: string, data?: any) {
     return this.retryRequest(async () => {
-      const response = await this.client.put<T>(url, data);
+      const response = await this.client.put<T>(this.buildPath(url), data);
       return response.data;
     });
   }
 
   async delete<T>(url: string, data?: any) {
     return this.retryRequest(async () => {
-      const response = await this.client.delete<T>(url, data ? { data } : undefined);
+      const response = await this.client.delete<T>(this.buildPath(url), data ? { data } : undefined);
       return response.data;
     });
   }
