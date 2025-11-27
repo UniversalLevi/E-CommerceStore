@@ -10,6 +10,8 @@ export interface IPayment extends Document {
   amount: number;
   currency: string;
   razorpayOrderId: string;
+  subscriptionId?: mongoose.Types.ObjectId;
+  planName?: string;
   metadata?: object;
   createdAt: Date;
   updatedAt: Date;
@@ -66,6 +68,14 @@ const paymentSchema = new Schema<IPayment>(
       type: String,
       required: true,
     },
+    subscriptionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Subscription',
+      index: true,
+    },
+    planName: {
+      type: String,
+    },
     metadata: {
       type: Schema.Types.Mixed,
       default: {},
@@ -79,6 +89,7 @@ const paymentSchema = new Schema<IPayment>(
 // Compound indexes for common queries
 paymentSchema.index({ userId: 1, createdAt: -1 });
 paymentSchema.index({ status: 1, createdAt: -1 });
+// subscriptionId index is already defined in schema with index: true
 
 export const Payment = mongoose.model<IPayment>('Payment', paymentSchema);
 

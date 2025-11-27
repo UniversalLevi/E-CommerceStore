@@ -1,0 +1,560 @@
+import { Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth';
+import { User } from '../models/User';
+import { Subscription } from '../models/Subscription';
+import { Payment } from '../models/Payment';
+import { AuditLog } from '../models/AuditLog';
+import { createError } from '../middleware/errorHandler';
+import { plans, isValidPlanCode, PlanCode } from '../config/plans';
+import mongoose from 'mongoose';
+import { razorpayService } from '../services/RazorpayService';
+import {
+  grantSubscriptionSchema,
+  revokeSubscriptionSchema,
+  updateSubscriptionSchema,
+} from '../validators/subscriptionValidator';
+
+/**
+ * List all subscriptions with pagination and filters
+ * GET /admin/subscriptions
+ */
+export const listSubscriptions = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    // Build filter
+    const filter: any = {};
+
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+
+    if (req.query.planCode) {
+      filter.planCode = req.query.planCode;
+    }
+
+    if (req.query.userId) {
+      filter.userId = new mongoose.Types.ObjectId(req.query.userId as string);
+    }
+
+    // Date range filter
+    if (req.query.startDate || req.query.endDate) {
+      filter.createdAt = {};
+      if (req.query.startDate) {
+        filter.createdAt.$gte = new Date(req.query.startDate as string);
+      }
+      if (req.query.endDate) {
+        filter.createdAt.$lte = new Date(req.query.endDate as string);
+      }
+    }
+
+    // Get subscriptions
+    const subscriptions = await Subscription.find(filter)
+      .populate('userId', 'email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Format subscriptions
+    const formattedSubscriptions = subscriptions.map((sub: any) => ({
+      id: sub._id,
+      userId: sub.userId?._id || sub.userId,
+      userEmail: sub.userId?.email || 'Unknown',
+      planCode: sub.planCode,
+      planName: plans[sub.planCode as keyof typeof plans]?.name || sub.planCode,
+      status: sub.status,
+      startDate: sub.startDate,
+      endDate: sub.endDate,
+      renewalDate: sub.renewalDate,
+      amountPaid: sub.amountPaid,
+      source: sub.source,
+      adminNote: sub.adminNote,
+      razorpaySubscriptionId: sub.razorpaySubscriptionId,
+      razorpayPaymentId: sub.razorpayPaymentId,
+      history: sub.history,
+      createdAt: sub.createdAt,
+      updatedAt: sub.updatedAt,
+    }));
+
+    const total = await Subscription.countDocuments(filter);
+
+    res.json({
+      success: true,
+      data: {
+        subscriptions: formattedSubscriptions,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get single subscription details
+ * GET /admin/subscriptions/:subscriptionId
+ */
+export const getSubscription = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { subscriptionId } = req.params;
+
+    const subscription = await Subscription.findById(subscriptionId)
+      .populate('userId', 'email')
+      .lean();
+
+    if (!subscription) {
+      throw createError('Subscription not found', 404);
+    }
+
+    // Get linked payments
+    const payments = await Payment.find({ subscriptionId: subscriptionId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: {
+        subscription: {
+          ...subscription,
+          planName: plans[subscription.planCode as keyof typeof plans]?.name || subscription.planCode,
+          userEmail: (subscription.userId as any)?.email || 'Unknown',
+        },
+        payments: payments.map((p: any) => ({
+          id: p._id,
+          amount: p.amount,
+          status: p.status,
+          paymentId: p.paymentId,
+          orderId: p.orderId,
+          createdAt: p.createdAt,
+        })),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get subscription history for a user
+ * GET /admin/subscriptions/user/:userId/history
+ */
+export const getUserSubscriptionHistory = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { userId } = req.params;
+
+    const subscriptions = await Subscription.find({ userId })
+      .populate('userId', 'email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: {
+        subscriptions: subscriptions.map((sub: any) => ({
+          id: sub._id,
+          planCode: sub.planCode,
+          planName: plans[sub.planCode as keyof typeof plans]?.name || sub.planCode,
+          status: sub.status,
+          startDate: sub.startDate,
+          endDate: sub.endDate,
+          source: sub.source,
+          history: sub.history,
+          createdAt: sub.createdAt,
+        })),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Manually grant a subscription
+ * POST /admin/subscriptions/grant
+ */
+export const grantSubscription = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    // Validate request body
+    const validationResult = grantSubscriptionSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      throw createError(
+        validationResult.error.errors.map((e) => e.message).join(', '),
+        400
+      );
+    }
+
+    const { userId, planCode, daysValid, endDate, adminNote } = validationResult.data;
+
+    if (!userId || !planCode) {
+      throw createError('userId and planCode are required', 400);
+    }
+
+    if (!isValidPlanCode(planCode)) {
+      throw createError('Invalid plan code', 400);
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    const plan = plans[planCode];
+    const now = new Date();
+
+    // Calculate end date
+    let calculatedEndDate: Date | null = null;
+    if (plan.isLifetime) {
+      calculatedEndDate = null;
+    } else if (endDate) {
+      calculatedEndDate = new Date(endDate);
+    } else if (daysValid) {
+      calculatedEndDate = new Date(now.getTime() + daysValid * 24 * 60 * 60 * 1000);
+    } else {
+      // Default to plan duration
+      calculatedEndDate = plan.durationDays
+        ? new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000)
+        : null;
+    }
+
+    // Cancel any existing active subscription
+    await Subscription.updateMany(
+      { userId, status: 'active' },
+      { status: 'cancelled' }
+    );
+
+    // Create new subscription
+    const subscription = await Subscription.create({
+      userId,
+      planCode: planCode as PlanCode,
+      status: 'manually_granted',
+      startDate: now,
+      endDate: calculatedEndDate,
+      amountPaid: plan.price,
+      source: 'manual',
+      adminNote,
+      history: [
+        {
+          action: 'manual_granted',
+          timestamp: now,
+          adminId: (req.user as any)._id,
+          notes: adminNote || 'Manually granted by admin',
+        },
+      ],
+    });
+
+    // Update user model
+    user.plan = planCode;
+    user.planExpiresAt = calculatedEndDate;
+    user.isLifetime = plan.isLifetime;
+    user.productsAdded = 0; // Reset on new grant
+
+    await user.save();
+
+    // Create audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      action: 'SUBSCRIPTION_GRANTED',
+      success: true,
+      details: {
+        targetUserId: userId,
+        planCode,
+        subscriptionId: subscription._id,
+        endDate: calculatedEndDate,
+        adminNote,
+      },
+      ipAddress: req.ip,
+    });
+
+    res.json({
+      success: true,
+      message: 'Subscription granted successfully',
+      data: {
+        subscription: {
+          id: subscription._id,
+          planCode: subscription.planCode,
+          planName: plan.name,
+          status: subscription.status,
+          startDate: subscription.startDate,
+          endDate: subscription.endDate,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Manually revoke a subscription
+ * POST /admin/subscriptions/revoke
+ */
+export const revokeSubscription = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    // Validate request body
+    const validationResult = revokeSubscriptionSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      throw createError(
+        validationResult.error.errors.map((e) => e.message).join(', '),
+        400
+      );
+    }
+
+    const { userId, reason } = validationResult.data;
+
+    if (!userId) {
+      throw createError('userId is required', 400);
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    // Find active subscription
+    const subscription = await Subscription.findOne({
+      userId,
+      status: { $in: ['active', 'manually_granted'] },
+    });
+
+    if (!subscription) {
+      throw createError('No active subscription found for this user', 404);
+    }
+
+    // Cancel Razorpay subscription if exists
+    if (subscription.razorpaySubscriptionId) {
+      try {
+        await razorpayService.cancelSubscription(subscription.razorpaySubscriptionId);
+      } catch (error) {
+        console.error('Error cancelling Razorpay subscription:', error);
+        // Continue even if Razorpay cancellation fails
+      }
+    }
+
+    // Update subscription
+    subscription.status = 'cancelled';
+    subscription.history.push({
+      action: 'manual_revoke',
+      timestamp: new Date(),
+      adminId: (req.user as any)._id,
+      notes: reason || 'Manually revoked by admin',
+    });
+    await subscription.save();
+
+    // Update user model
+    user.plan = null;
+    user.planExpiresAt = null;
+    user.isLifetime = false;
+    await user.save();
+
+    // Create audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      action: 'SUBSCRIPTION_REVOKED',
+      success: true,
+      details: {
+        targetUserId: userId,
+        subscriptionId: subscription._id,
+        reason,
+      },
+      ipAddress: req.ip,
+    });
+
+    res.json({
+      success: true,
+      message: 'Subscription revoked successfully',
+      data: {
+        subscriptionId: subscription._id,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update subscription (upgrade or extend)
+ * POST /admin/subscriptions/update
+ */
+export const updateSubscription = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    // Validate request body
+    const validationResult = updateSubscriptionSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      throw createError(
+        validationResult.error.errors.map((e) => e.message).join(', '),
+        400
+      );
+    }
+
+    const { userId, planCode, extendDays, adminNote } = validationResult.data;
+
+    if (!userId) {
+      throw createError('userId is required', 400);
+    }
+
+    if (!planCode && !extendDays) {
+      throw createError('Either planCode or extendDays must be provided', 400);
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    // Find active subscription
+    const subscription = await Subscription.findOne({
+      userId,
+      status: { $in: ['active', 'manually_granted'] },
+    });
+
+    if (!subscription) {
+      throw createError('No active subscription found for this user', 404);
+    }
+
+    const now = new Date();
+    let actionType: 'manual_upgrade' | 'manual_extension' = 'manual_extension';
+
+    // Handle upgrade
+    if (planCode) {
+      if (!isValidPlanCode(planCode)) {
+        throw createError('Invalid plan code', 400);
+      }
+
+      const newPlan = plans[planCode];
+      const isUpgrade = subscription.planCode !== planCode;
+
+      if (isUpgrade) {
+        actionType = 'manual_upgrade';
+        subscription.planCode = planCode as PlanCode;
+        subscription.amountPaid = newPlan.price;
+
+        // Reset end date based on new plan
+        if (newPlan.isLifetime) {
+          subscription.endDate = null;
+        } else if (newPlan.durationDays) {
+          subscription.endDate = new Date(now.getTime() + newPlan.durationDays * 24 * 60 * 60 * 1000);
+        }
+
+        // Update user model
+        user.plan = planCode;
+        user.planExpiresAt = subscription.endDate || null;
+        user.isLifetime = newPlan.isLifetime;
+        user.productsAdded = 0; // Reset on upgrade
+      }
+    }
+
+    // Handle extension
+    if (extendDays) {
+      if (subscription.endDate) {
+        subscription.endDate = new Date(
+          subscription.endDate.getTime() + extendDays * 24 * 60 * 60 * 1000
+        );
+      } else {
+        // If no end date (lifetime), can't extend
+        throw createError('Cannot extend a lifetime subscription', 400);
+      }
+
+      // Update user model
+      user.planExpiresAt = subscription.endDate;
+    }
+
+    // Add history entry
+    subscription.history.push({
+      action: actionType,
+      timestamp: now,
+      adminId: (req.user as any)._id,
+      notes: adminNote || (actionType === 'manual_upgrade' ? 'Plan upgraded by admin' : 'Plan extended by admin'),
+    });
+
+    await subscription.save();
+    await user.save();
+
+    // Create audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      action: actionType === 'manual_upgrade' ? 'SUBSCRIPTION_UPGRADED' : 'SUBSCRIPTION_EXTENDED',
+      success: true,
+      details: {
+        targetUserId: userId,
+        subscriptionId: subscription._id,
+        planCode: planCode || subscription.planCode,
+        extendDays,
+        adminNote,
+      },
+      ipAddress: req.ip,
+    });
+
+    res.json({
+      success: true,
+      message: actionType === 'manual_upgrade' ? 'Subscription upgraded successfully' : 'Subscription extended successfully',
+      data: {
+        subscription: {
+          id: subscription._id,
+          planCode: subscription.planCode,
+          planName: plans[subscription.planCode as keyof typeof plans]?.name || subscription.planCode,
+          status: subscription.status,
+          endDate: subscription.endDate,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

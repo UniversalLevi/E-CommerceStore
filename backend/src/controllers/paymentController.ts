@@ -1,7 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { User, getSubscriptionStatus } from '../models/User';
 import { Payment } from '../models/Payment';
+import { Subscription } from '../models/Subscription';
 import { razorpayService } from '../services/RazorpayService';
 import { plans, isValidPlanCode, PlanCode } from '../config/plans';
 import { createError } from '../middleware/errorHandler';
@@ -150,6 +152,9 @@ export const verifyPayment = async (
     payment.paymentId = razorpay_payment_id;
     payment.signature = razorpay_signature;
     payment.status = 'paid';
+    
+    // Set planName for easy queries
+    payment.planName = plan.name;
     await payment.save();
 
     // Update user subscription with upgrade/extension rules
@@ -162,6 +167,20 @@ export const verifyPayment = async (
     const isUpgrade = user.plan && user.plan !== planCode;
     const isRenewal = user.plan === planCode;
 
+    // Calculate end date
+    let endDate: Date | null = null;
+    if (plan.isLifetime) {
+      endDate = null;
+    } else if (isRenewal && user.planExpiresAt && user.planExpiresAt > now) {
+      // Extend from current expiry
+      endDate = new Date(user.planExpiresAt.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
+    } else {
+      // New subscription or expired - start from now
+      endDate = plan.durationDays
+        ? new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000)
+        : null;
+    }
+
     // Upgrade Logic: If upgrading, override with new plan (don't extend)
     // Extension Logic: If renewing same plan or expired, extend from now or current expiry
     if (isUpgrade) {
@@ -172,38 +191,75 @@ export const verifyPayment = async (
         user.planExpiresAt = null;
         user.isLifetime = true;
       } else {
-        user.planExpiresAt = new Date(now.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
+        user.planExpiresAt = endDate;
         user.isLifetime = false;
       }
     } else if (isRenewal) {
       // Renewing same plan - extend from current expiry if active, otherwise from now
-      if (user.planExpiresAt && user.planExpiresAt > now) {
-        // Extend from current expiry
-        user.planExpiresAt = new Date(user.planExpiresAt.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
-      } else {
-        // Expired or no expiry - start from now
-        if (plan.isLifetime) {
-          user.planExpiresAt = null;
-          user.isLifetime = true;
-        } else {
-          user.planExpiresAt = new Date(now.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
-          user.isLifetime = false;
-        }
-      }
+      user.planExpiresAt = endDate;
+      user.isLifetime = plan.isLifetime;
     } else {
       // New subscription
       user.plan = planCode;
-      if (plan.isLifetime) {
-        user.planExpiresAt = null;
-        user.isLifetime = true;
-      } else {
-        user.planExpiresAt = new Date(now.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
-        user.isLifetime = false;
-      }
+      user.planExpiresAt = endDate;
+      user.isLifetime = plan.isLifetime;
     }
 
     // Note: productsAdded is reset to 0 on upgrade to give full benefit of new plan
     await user.save();
+
+    // Create or update Subscription record
+    let subscription = await Subscription.findOne({
+      userId: (req.user as any)._id,
+      status: { $in: ['active', 'manually_granted'] },
+    });
+
+    if (subscription) {
+      // Update existing subscription
+      if (isUpgrade) {
+        subscription.planCode = planCode as PlanCode;
+        subscription.amountPaid = plan.price;
+        subscription.history.push({
+          action: 'payment_received',
+          timestamp: now,
+          notes: `Payment received - plan upgraded to ${plan.name}`,
+        });
+      } else {
+        subscription.history.push({
+          action: isRenewal ? 'auto_renewal' : 'payment_received',
+          timestamp: now,
+          notes: isRenewal
+            ? `Payment received - subscription renewed`
+            : `Payment received - new subscription`,
+        });
+      }
+      subscription.endDate = endDate;
+      subscription.razorpayPaymentId = razorpay_payment_id;
+      await subscription.save();
+    } else {
+      // Create new subscription
+      subscription = await Subscription.create({
+        userId: (req.user as any)._id,
+        planCode: planCode as PlanCode,
+        status: 'active',
+        startDate: now,
+        endDate: endDate,
+        amountPaid: plan.price,
+        source: 'razorpay',
+        razorpayPaymentId: razorpay_payment_id,
+        history: [
+          {
+            action: 'subscription_activated',
+            timestamp: now,
+            notes: `Subscription activated via payment`,
+          },
+        ],
+      });
+    }
+
+    // Link payment to subscription
+    payment.subscriptionId = subscription._id as mongoose.Types.ObjectId;
+    await payment.save();
 
     // Create notification
     const planName = plan.name;
@@ -314,6 +370,7 @@ export const handleWebhook = async (
       // Update payment status
       paymentRecord.paymentId = payment.id;
       paymentRecord.status = 'paid';
+      paymentRecord.planName = plan.name;
       await paymentRecord.save();
 
       // Update user subscription (same logic as verify endpoint)
@@ -323,40 +380,89 @@ export const handleWebhook = async (
         const isUpgrade = user.plan && user.plan !== paymentRecord.planCode;
         const isRenewal = user.plan === paymentRecord.planCode;
 
+        // Calculate end date
+        let endDate: Date | null = null;
+        if (plan.isLifetime) {
+          endDate = null;
+        } else if (isRenewal && user.planExpiresAt && user.planExpiresAt > now) {
+          endDate = new Date(user.planExpiresAt.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
+        } else {
+          endDate = plan.durationDays
+            ? new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000)
+            : null;
+        }
+
         if (isUpgrade) {
           user.plan = paymentRecord.planCode;
-          user.productsAdded = 0; // Reset to 0 so user gets full benefit of new plan limit
+          user.productsAdded = 0;
           if (plan.isLifetime) {
             user.planExpiresAt = null;
             user.isLifetime = true;
           } else {
-            user.planExpiresAt = new Date(now.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
+            user.planExpiresAt = endDate;
             user.isLifetime = false;
           }
         } else if (isRenewal) {
-          if (user.planExpiresAt && user.planExpiresAt > now) {
-            user.planExpiresAt = new Date(user.planExpiresAt.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
-          } else {
-            if (plan.isLifetime) {
-              user.planExpiresAt = null;
-              user.isLifetime = true;
-            } else {
-              user.planExpiresAt = new Date(now.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
-              user.isLifetime = false;
-            }
-          }
+          user.planExpiresAt = endDate;
+          user.isLifetime = plan.isLifetime;
         } else {
           user.plan = paymentRecord.planCode;
-          if (plan.isLifetime) {
-            user.planExpiresAt = null;
-            user.isLifetime = true;
-          } else {
-            user.planExpiresAt = new Date(now.getTime() + plan.durationDays! * 24 * 60 * 60 * 1000);
-            user.isLifetime = false;
-          }
+          user.planExpiresAt = endDate;
+          user.isLifetime = plan.isLifetime;
         }
 
         await user.save();
+
+        // Create or update Subscription record
+        let subscription = await Subscription.findOne({
+          userId: paymentRecord.userId,
+          status: { $in: ['active', 'manually_granted'] },
+        });
+
+        if (subscription) {
+          if (isUpgrade) {
+            subscription.planCode = paymentRecord.planCode as PlanCode;
+            subscription.amountPaid = plan.price;
+            subscription.history.push({
+              action: 'payment_received',
+              timestamp: now,
+              notes: `Payment received via webhook - plan upgraded to ${plan.name}`,
+            });
+          } else {
+            subscription.history.push({
+              action: isRenewal ? 'auto_renewal' : 'payment_received',
+              timestamp: now,
+              notes: isRenewal
+                ? `Payment received via webhook - subscription renewed`
+                : `Payment received via webhook - new subscription`,
+            });
+          }
+          subscription.endDate = endDate;
+          subscription.razorpayPaymentId = payment.id;
+          await subscription.save();
+        } else {
+          subscription = await Subscription.create({
+            userId: paymentRecord.userId,
+            planCode: paymentRecord.planCode as PlanCode,
+            status: 'active',
+            startDate: now,
+            endDate: endDate,
+            amountPaid: plan.price,
+            source: 'razorpay',
+            razorpayPaymentId: payment.id,
+            history: [
+              {
+                action: 'subscription_activated',
+                timestamp: now,
+                notes: `Subscription activated via webhook`,
+              },
+            ],
+          });
+        }
+
+        // Link payment to subscription
+        paymentRecord.subscriptionId = subscription._id as mongoose.Types.ObjectId;
+        await paymentRecord.save();
       }
     }
 
@@ -370,6 +476,58 @@ export const handleWebhook = async (
         paymentRecord.status = 'failed';
         paymentRecord.paymentId = payment.id;
         await paymentRecord.save();
+      }
+    }
+
+    // Handle subscription events
+    if (eventType === 'subscription.activated') {
+      const subscription = payload.subscription.entity;
+      // Update subscription record if exists
+      const subRecord = await Subscription.findOne({
+        razorpaySubscriptionId: subscription.id,
+      });
+      if (subRecord) {
+        subRecord.status = 'active';
+        subRecord.history.push({
+          action: 'subscription_activated',
+          timestamp: new Date(),
+          notes: 'Subscription activated via Razorpay',
+        });
+        await subRecord.save();
+      }
+    }
+
+    if (eventType === 'subscription.charged') {
+      const subscription = payload.subscription.entity;
+      const payment = payload.payment.entity;
+      
+      const subRecord = await Subscription.findOne({
+        razorpaySubscriptionId: subscription.id,
+      });
+      if (subRecord) {
+        subRecord.razorpayPaymentId = payment.id;
+        subRecord.history.push({
+          action: 'auto_renewal',
+          timestamp: new Date(),
+          notes: `Auto-renewal payment received`,
+        });
+        await subRecord.save();
+      }
+    }
+
+    if (eventType === 'subscription.cancelled') {
+      const subscription = payload.subscription.entity;
+      const subRecord = await Subscription.findOne({
+        razorpaySubscriptionId: subscription.id,
+      });
+      if (subRecord) {
+        subRecord.status = 'cancelled';
+        subRecord.history.push({
+          action: 'subscription_cancelled',
+          timestamp: new Date(),
+          notes: 'Subscription cancelled via Razorpay',
+        });
+        await subRecord.save();
       }
     }
 

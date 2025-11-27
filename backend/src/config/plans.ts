@@ -23,7 +23,7 @@ export const plans = {
     ],
   },
   lifetime: {
-    price: 499900, // in paise (₹4999)
+    price: 999900, // in paise (₹9999)
     durationDays: null,
     isLifetime: true,
     maxProducts: null, // null = unlimited

@@ -15,6 +15,8 @@ import {
   updateContactStatus,
   deleteContact,
 } from '../controllers/adminController';
+import revenueRoutes from './revenueRoutes';
+import subscriptionRoutes from './subscriptionRoutes';
 
 const router = Router();
 
@@ -41,6 +43,12 @@ router.get('/contacts/:id', getContact);
 router.post('/contacts/:id/reply', replyToContact);
 router.put('/contacts/:id/status', updateContactStatus);
 router.delete('/contacts/:id', deleteContact);
+
+// Revenue routes
+router.use('/revenue', revenueRoutes);
+
+// Subscription management routes
+router.use('/subscriptions', subscriptionRoutes);
 
 export default router;
 

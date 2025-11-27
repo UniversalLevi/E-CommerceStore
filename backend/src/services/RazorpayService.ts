@@ -112,6 +112,22 @@ class RazorpayService {
   }
 
   /**
+   * Cancel a Razorpay subscription
+   */
+  async cancelSubscription(subscriptionId: string) {
+    try {
+      if (!this.razorpay) {
+        throw new Error('Razorpay client not initialized');
+      }
+
+      const subscription = await this.razorpay.subscriptions.cancel(subscriptionId);
+      return subscription;
+    } catch (error: any) {
+      throw new Error(`Failed to cancel Razorpay subscription: ${error.message || error.error?.description || 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Get Razorpay key ID for frontend
    */
   getKeyId(): string {
