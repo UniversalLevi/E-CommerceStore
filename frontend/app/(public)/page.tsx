@@ -2,11 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import VideoIntro from '@/components/VideoIntro';
+import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface Plan {
+  code: string;
+  name: string;
+  price: number;
+  durationDays: number | null;
+  isLifetime: boolean;
+  maxProducts: number | null;
+  features: string[];
+}
 
 export default function Home() {
   const [showContent, setShowContent] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const handleIntroComplete = () => {
     setShowContent(true);
@@ -15,6 +32,36 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const response = await api.getPlans();
+        if (response.success && response.data?.plans) {
+          setPlans(response.data.plans);
+        }
+      } catch (error) {
+        console.error('Failed to fetch plans:', error);
+      } finally {
+        setLoadingPlans(false);
+      }
+    };
+
+    fetchPlans();
+  }, []);
+
+  const formatPrice = (priceInPaise: number) => {
+    return `₹${(priceInPaise / 100).toLocaleString('en-IN')}`;
+  };
+
+  const handleGetStarted = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isAuthenticated) {
+      router.push('/dashboard/billing');
+    } else {
+      router.push('/login');
+    }
+  };
 
   return (
     <>
@@ -39,12 +86,12 @@ export default function Home() {
             </p>
             
             <div className="flex gap-4 justify-center flex-wrap mb-16">
-              <Link
-                href="/register"
+              <button
+                onClick={handleGetStarted}
                 className="bg-primary-500 hover:bg-primary-600 text-black px-10 py-4 rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 Get Started Free
-              </Link>
+              </button>
               <Link
                 href="/login"
                 className="bg-transparent hover:bg-surface-hover text-text-primary border-2 border-primary-500 px-10 py-4 rounded-lg font-semibold text-lg transition-all"
@@ -164,6 +211,110 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="py-20 bg-surface-elevated">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-4">
+              Choose Your Plan
+            </h2>
+            <p className="text-xl text-text-secondary max-w-2xl mx-auto">
+              Select the perfect plan for your business needs. All plans include full access to our product catalog.
+            </p>
+          </div>
+
+          {loadingPlans ? (
+            <div className="text-center py-12">
+              <div className="text-text-secondary">Loading plans...</div>
+            </div>
+          ) : plans.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {plans.map((plan, index) => {
+                const isPopular = index === 1; // Middle plan is popular
+                const isLifetime = plan.isLifetime;
+                
+                return (
+                  <div
+                    key={plan.code}
+                    className={`relative bg-surface-raised border rounded-xl p-8 transition-all duration-300 hover:shadow-2xl ${
+                      isPopular
+                        ? 'border-primary-500 border-2 shadow-lg scale-105'
+                        : 'border-border-default hover:border-primary-500'
+                    }`}
+                  >
+                    {isPopular && (
+                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span className="bg-primary-500 text-black px-4 py-1 rounded-full text-sm font-bold">
+                          Most Popular
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="text-center mb-6">
+                      <h3 className="text-2xl font-bold text-text-primary mb-2">{plan.name}</h3>
+                      <div className="mb-4">
+                        <span className="text-4xl font-bold text-text-primary">
+                          {formatPrice(plan.price)}
+                        </span>
+                        {!isLifetime && plan.durationDays && (
+                          <span className="text-text-secondary ml-2">
+                            / {plan.durationDays === 30 ? 'month' : plan.durationDays === 90 ? 'quarter' : `${plan.durationDays} days`}
+                          </span>
+                        )}
+                      </div>
+                      {isLifetime && (
+                        <div className="text-sm text-primary-500 font-semibold mb-2">
+                          One-time payment
+                        </div>
+                      )}
+                    </div>
+
+                    <ul className="space-y-3 mb-8">
+                      {plan.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <span className="text-primary-500 mt-1">✓</span>
+                          <span className="text-text-secondary">{feature}</span>
+                        </li>
+                      ))}
+                      {plan.maxProducts !== null ? (
+                        <li className="flex items-start gap-3">
+                          <span className="text-primary-500 mt-1">✓</span>
+                          <span className="text-text-secondary">
+                            Up to {plan.maxProducts} products
+                          </span>
+                        </li>
+                      ) : (
+                        <li className="flex items-start gap-3">
+                          <span className="text-primary-500 mt-1">✓</span>
+                          <span className="text-text-secondary font-semibold">
+                            Unlimited products
+                          </span>
+                        </li>
+                      )}
+                    </ul>
+
+                    <button
+                      onClick={handleGetStarted}
+                      className={`block w-full text-center py-3 px-6 rounded-lg font-semibold transition-all ${
+                        isPopular
+                          ? 'bg-primary-500 hover:bg-primary-600 text-black'
+                          : 'bg-surface-hover hover:bg-surface-hover/80 text-text-primary border border-border-default'
+                      }`}
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-text-secondary">No plans available at the moment.</div>
+            </div>
+          )}
         </div>
       </section>
 
