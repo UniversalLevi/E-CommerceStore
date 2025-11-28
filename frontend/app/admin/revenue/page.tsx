@@ -11,9 +11,6 @@ import {
   Bar,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -37,6 +34,11 @@ interface RevenueSummary {
   }>;
   activeSubscriptions: number;
   newPaymentsThisMonth: number;
+  paymentsByDate: Array<{
+    date: string;
+    count: number;
+    amount: number;
+  }>;
 }
 
 interface Payment {
@@ -64,7 +66,6 @@ interface PaymentsResponse {
   };
 }
 
-const COLORS = ['#ffffff', '#a0a0a0', '#ef4444', '#808080'];
 
 export default function AdminRevenuePage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -196,10 +197,13 @@ export default function AdminRevenuePage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
+    return new Date(dateString).toLocaleString('en-IN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
     });
   };
 
@@ -233,22 +237,16 @@ export default function AdminRevenuePage() {
     count: item.count,
   })) || [];
 
-  // Mock data for revenue over time (last 12 months)
-  // In a real implementation, you'd fetch this from the backend
-  const revenueOverTimeData = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - (11 - i));
+  // Payments by date data
+  const paymentsByDateData = summary?.paymentsByDate?.map((item) => {
+    const date = new Date(item.date);
     return {
-      month: date.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
-      revenue: Math.floor(Math.random() * 100000) + 50000, // Mock data
+      date: date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+      payments: item.count,
+      fullDate: item.date,
     };
-  });
+  }) || [];
 
-  // Subscription status data
-  const subscriptionStatusData = [
-    { name: 'Active', value: summary?.activeSubscriptions || 0 },
-    { name: 'Expired', value: (summary?.paymentsCount || 0) - (summary?.activeSubscriptions || 0) },
-  ];
 
   return (
     <div className="space-y-6">
@@ -315,15 +313,21 @@ export default function AdminRevenuePage() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Over Time */}
+        {/* Payments Over Time */}
         <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
           <h3 className="text-lg font-semibold text-text-primary mb-4">
-            Revenue Over Time (Last 12 Months)
+            Payments vs Date (Last 30 Days)
           </h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={revenueOverTimeData}>
+            <LineChart data={paymentsByDateData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#505050" />
-              <XAxis dataKey="month" stroke="#a0a0a0" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#a0a0a0"
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
               <YAxis stroke="#a0a0a0" />
               <Tooltip
                 contentStyle={{
@@ -332,14 +336,21 @@ export default function AdminRevenuePage() {
                   color: '#ffffff',
                   borderRadius: '8px',
                 }}
+                labelFormatter={(value, payload) => {
+                  if (payload && payload[0]) {
+                    return `Date: ${payload[0].payload.fullDate}`;
+                  }
+                  return `Date: ${value}`;
+                }}
               />
               <Legend />
               <Line
                 type="monotone"
-                dataKey="revenue"
+                dataKey="payments"
                 stroke="#ffffff"
                 strokeWidth={2}
-                name="Revenue (₹)"
+                name="Payments"
+                dot={{ fill: '#ffffff', r: 4 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -368,42 +379,6 @@ export default function AdminRevenuePage() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
-
-      {/* Subscription Status Pie Chart */}
-      <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-        <h3 className="text-lg font-semibold text-text-primary mb-4">
-          Subscription Status Distribution
-        </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={subscriptionStatusData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => {
-                const p = typeof percent === 'number' ? percent : 0;
-                return `${name}: ${(p * 100).toFixed(0)}%`;
-              }}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {subscriptionStatusData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#1a1a1a',
-                border: '1px solid #505050',
-                color: '#ffffff',
-                borderRadius: '8px',
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
       </div>
 
       {/* Payments Table */}

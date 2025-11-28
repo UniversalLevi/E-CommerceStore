@@ -11,9 +11,6 @@ import {
   Bar,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -58,7 +55,6 @@ interface SystemHealth {
   uptime: number;
 }
 
-const COLORS = ['#a0a0a0', '#ef4444', '#808080'];
 
 export default function AdminDashboardPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -282,35 +278,6 @@ export default function AdminDashboardPage() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
-
-          {/* Store Status Distribution */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-8">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">
-              Store Status Distribution
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={stats.storeStatusDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ _id, percent }) => {
-                    const p = typeof percent === 'number' ? percent : 0;
-                    return `${_id}: ${(p * 100).toFixed(0)}%`;
-                  }}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {stats.storeStatusDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
           </div>
 
           {/* Recent Activity */}

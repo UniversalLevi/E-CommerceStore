@@ -94,6 +94,28 @@ export const listSubscriptions = async (
 
     const total = await Subscription.countDocuments(filter);
 
+    // Log audit
+    try {
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: 'SUBSCRIPTION_LIST_VIEWED',
+        success: true,
+        details: {
+          filters: {
+            status: req.query.status,
+            planCode: req.query.planCode,
+            userId: req.query.userId,
+            page,
+            limit,
+          },
+          totalResults: total,
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log subscription list view:', auditError);
+    }
+
     res.json({
       success: true,
       data: {
@@ -140,6 +162,24 @@ export const getSubscription = async (
       .sort({ createdAt: -1 })
       .lean();
 
+    // Log audit
+    try {
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: 'SUBSCRIPTION_VIEWED',
+        success: true,
+        details: {
+          subscriptionId: subscriptionId,
+          userId: (subscription.userId as any)?._id || subscription.userId,
+          planCode: subscription.planCode,
+          status: subscription.status,
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log subscription view:', auditError);
+    }
+
     res.json({
       success: true,
       data: {
@@ -183,6 +223,22 @@ export const getUserSubscriptionHistory = async (
       .populate('userId', 'email')
       .sort({ createdAt: -1 })
       .lean();
+
+    // Log audit
+    try {
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: 'SUBSCRIPTION_HISTORY_VIEWED',
+        success: true,
+        details: {
+          targetUserId: userId,
+          subscriptionCount: subscriptions.length,
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log subscription history view:', auditError);
+    }
 
     res.json({
       success: true,
@@ -296,19 +352,23 @@ export const grantSubscription = async (
     await user.save();
 
     // Create audit log
-    await AuditLog.create({
-      userId: (req.user as any)._id,
-      action: 'SUBSCRIPTION_GRANTED',
-      success: true,
-      details: {
-        targetUserId: userId,
-        planCode,
-        subscriptionId: subscription._id,
-        endDate: calculatedEndDate,
-        adminNote,
-      },
-      ipAddress: req.ip,
-    });
+    try {
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: 'SUBSCRIPTION_GRANTED',
+        success: true,
+        details: {
+          targetUserId: userId,
+          planCode,
+          subscriptionId: subscription._id,
+          endDate: calculatedEndDate,
+          adminNote,
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log subscription grant:', auditError);
+    }
 
     res.json({
       success: true,
@@ -400,17 +460,21 @@ export const revokeSubscription = async (
     await user.save();
 
     // Create audit log
-    await AuditLog.create({
-      userId: (req.user as any)._id,
-      action: 'SUBSCRIPTION_REVOKED',
-      success: true,
-      details: {
-        targetUserId: userId,
-        subscriptionId: subscription._id,
-        reason,
-      },
-      ipAddress: req.ip,
-    });
+    try {
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: 'SUBSCRIPTION_REVOKED',
+        success: true,
+        details: {
+          targetUserId: userId,
+          subscriptionId: subscription._id,
+          reason,
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log subscription revoke:', auditError);
+    }
 
     res.json({
       success: true,
@@ -549,26 +613,33 @@ export const updateSubscription = async (
     await user.save();
 
     // Create audit log
-    const auditAction = actionType === 'manual_upgrade' 
-      ? 'SUBSCRIPTION_UPGRADED' 
-      : actionType === 'note_added'
-      ? 'SUBSCRIPTION_EXTENDED' // Use existing action type
-      : 'SUBSCRIPTION_EXTENDED';
-    
-    await AuditLog.create({
-      userId: (req.user as any)._id,
-      action: auditAction,
-      success: true,
-      details: {
-        targetUserId: userId,
-        subscriptionId: subscription._id,
-        planCode: planCode || subscription.planCode,
-        extendDays,
-        adminNote,
-        actionType: actionType,
-      },
-      ipAddress: req.ip,
-    });
+    try {
+      let auditAction: string;
+      if (actionType === 'manual_upgrade') {
+        auditAction = 'SUBSCRIPTION_UPGRADED';
+      } else if (actionType === 'note_added') {
+        auditAction = 'SUBSCRIPTION_NOTE_ADDED';
+      } else {
+        auditAction = 'SUBSCRIPTION_EXTENDED';
+      }
+      
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: auditAction,
+        success: true,
+        details: {
+          targetUserId: userId,
+          subscriptionId: subscription._id,
+          planCode: planCode || subscription.planCode,
+          extendDays,
+          adminNote,
+          actionType: actionType,
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log subscription update:', auditError);
+    }
 
     const successMessage = actionType === 'manual_upgrade' 
       ? 'Subscription upgraded successfully' 

@@ -53,6 +53,16 @@ export default function AdminSubscriptionsPage() {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  
+  // All subscriptions list
+  const [allSubscriptions, setAllSubscriptions] = useState<Subscription[]>([]);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(false);
+  const [subscriptionsPagination, setSubscriptionsPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    pages: 0,
+  });
 
   // Modal states
   const [grantModalOpen, setGrantModalOpen] = useState(false);
@@ -80,8 +90,54 @@ export default function AdminSubscriptionsPage() {
       router.push('/login');
     } else if (!authLoading && user?.role !== 'admin') {
       router.push('/dashboard');
+    } else if (isAuthenticated && user?.role === 'admin') {
+      fetchAllSubscriptions();
     }
-  }, [authLoading, isAuthenticated, user, router]);
+  }, [authLoading, isAuthenticated, user, router, subscriptionsPagination.page]);
+
+  const fetchAllSubscriptions = async () => {
+    try {
+      setLoadingSubscriptions(true);
+      const response = await api.get<{
+        success: boolean;
+        data: { subscriptions: Subscription[]; pagination: any };
+      }>(`/api/admin/subscriptions?page=${subscriptionsPagination.page}&limit=${subscriptionsPagination.limit}&status=active`);
+
+      if (response.data) {
+        setAllSubscriptions(response.data.subscriptions);
+        setSubscriptionsPagination(response.data.pagination);
+      }
+    } catch (error: any) {
+      console.error('Error fetching subscriptions:', error);
+      notify.error('Failed to load subscriptions');
+    } finally {
+      setLoadingSubscriptions(false);
+    }
+  };
+
+  const handleUserClick = async (userId: string, userEmail: string) => {
+    try {
+      // Find user details
+      const userResponse = await api.get<{
+        success: boolean;
+        data: { users: User[]; pagination: any };
+      }>(`/api/admin/users?search=${encodeURIComponent(userEmail)}&limit=1`);
+
+      if (userResponse.data.users && userResponse.data.users.length > 0) {
+        const foundUser = userResponse.data.users[0];
+        setSearchedUser(foundUser);
+        setSearchQuery(userEmail);
+        await fetchUserSubscription(foundUser._id);
+        await fetchSubscriptionHistory(foundUser._id);
+        
+        // Scroll to search section
+        document.getElementById('search-section')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (error: any) {
+      console.error('Error loading user:', error);
+      notify.error('Failed to load user details');
+    }
+  };
 
   const searchUser = async () => {
     if (!searchQuery.trim()) {
@@ -205,6 +261,7 @@ export default function AdminSubscriptionsPage() {
       setGrantForm({ planCode: 'starter_30', daysValid: '', endDate: '', adminNote: '' });
       await fetchUserSubscription(searchedUser._id);
       await fetchSubscriptionHistory(searchedUser._id);
+      await fetchAllSubscriptions(); // Refresh the list
     } catch (error: any) {
       console.error('Error granting subscription:', error);
       notify.error(error.response?.data?.message || 'Failed to grant subscription');
@@ -224,6 +281,7 @@ export default function AdminSubscriptionsPage() {
       setRevokeForm({ reason: '' });
       await fetchUserSubscription(searchedUser._id);
       await fetchSubscriptionHistory(searchedUser._id);
+      await fetchAllSubscriptions(); // Refresh the list
     } catch (error: any) {
       console.error('Error revoking subscription:', error);
       notify.error(error.response?.data?.message || 'Failed to revoke subscription');
@@ -260,6 +318,7 @@ export default function AdminSubscriptionsPage() {
       setUpdateForm({ planCode: '', extendDays: '', adminNote: '' });
       await fetchUserSubscription(searchedUser._id);
       await fetchSubscriptionHistory(searchedUser._id);
+      await fetchAllSubscriptions(); // Refresh the list
     } catch (error: any) {
       console.error('Error updating subscription:', error);
       notify.error(error.response?.data?.message || 'Failed to update subscription');
@@ -328,8 +387,118 @@ export default function AdminSubscriptionsPage() {
     <div className="space-y-6" style={{ position: 'relative', zIndex: 1 }}>
       <h1 className="text-3xl font-bold text-text-primary">Subscription Management</h1>
 
-      {/* Search Section */}
+      {/* All Subscriptions List */}
       <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+        <h2 className="text-lg font-semibold text-text-primary mb-4">All Active Subscriptions</h2>
+        {loadingSubscriptions ? (
+          <div className="text-center py-8">
+            <p className="text-text-secondary">Loading subscriptions...</p>
+          </div>
+        ) : allSubscriptions.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-text-secondary">No active subscriptions found</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-border-default">
+                <thead className="bg-surface-base">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      User Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Plan
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Start Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      End Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Source
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-surface-raised divide-y divide-border-default">
+                  {allSubscriptions.map((sub) => (
+                    <tr
+                      key={sub.id}
+                      className="hover:bg-surface-hover cursor-pointer"
+                      onClick={() => handleUserClick(sub.userId, sub.userEmail)}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
+                        {sub.userEmail}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
+                        {sub.planName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {getStatusBadge(sub.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
+                        {formatDate(sub.startDate)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
+                        {sub.endDate ? formatDate(sub.endDate) : 'Lifetime'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary capitalize">
+                        {sub.source}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUserClick(sub.userId, sub.userEmail);
+                          }}
+                          className="text-primary-500 hover:text-primary-600"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {subscriptionsPagination.pages > 1 && (
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-sm text-text-secondary">
+                  Showing {(subscriptionsPagination.page - 1) * subscriptionsPagination.limit + 1} to{' '}
+                  {Math.min(subscriptionsPagination.page * subscriptionsPagination.limit, subscriptionsPagination.total)} of{' '}
+                  {subscriptionsPagination.total} subscriptions
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSubscriptionsPagination({ ...subscriptionsPagination, page: subscriptionsPagination.page - 1 })}
+                    disabled={subscriptionsPagination.page === 1}
+                    className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setSubscriptionsPagination({ ...subscriptionsPagination, page: subscriptionsPagination.page + 1 })}
+                    disabled={subscriptionsPagination.page >= subscriptionsPagination.pages}
+                    className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Search Section */}
+      <div id="search-section" className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
         <h2 className="text-lg font-semibold text-text-primary mb-4">Search User</h2>
         <div className="flex gap-4">
           <input

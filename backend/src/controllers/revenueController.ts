@@ -81,9 +81,9 @@ export const getRevenueSummary = async (
       amount: item.amount,
     }));
 
-    // Active subscriptions count
+    // Active subscriptions count (include both 'active' and 'manually_granted')
     const activeSubscriptions = await Subscription.countDocuments({
-      status: 'active',
+      status: { $in: ['active', 'manually_granted'] },
     });
 
     // New payments this month
@@ -92,16 +92,43 @@ export const getRevenueSummary = async (
       createdAt: { $gte: startOfMonth },
     });
 
-    // Log audit
-    await AuditLog.create({
-      userId: (req.user as any)._id,
-      action: 'REVENUE_VIEWED',
-      success: true,
-      details: {
-        summary: 'Revenue summary viewed',
+    // Get payments by date (last 30 days)
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const paymentsByDate = await Payment.aggregate([
+      {
+        $match: {
+          status: 'paid',
+          createdAt: { $gte: thirtyDaysAgo },
+        },
       },
-      ipAddress: req.ip,
-    });
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+          },
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$amount' },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
+
+    // Log audit
+    try {
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: 'REVENUE_VIEWED',
+        success: true,
+        details: {
+          summary: 'Revenue summary viewed',
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log revenue view:', auditError);
+    }
 
     res.json({
       success: true,
@@ -115,6 +142,11 @@ export const getRevenueSummary = async (
         revenueByPlan,
         activeSubscriptions,
         newPaymentsThisMonth,
+        paymentsByDate: paymentsByDate.map((item) => ({
+          date: item._id,
+          count: item.count,
+          amount: item.totalAmount,
+        })),
       },
     });
   } catch (error) {
@@ -214,6 +246,30 @@ export const getPayments = async (
     // Get total count
     const total = await Payment.countDocuments(filter);
 
+    // Log audit
+    try {
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: 'REVENUE_PAYMENTS_VIEWED',
+        success: true,
+        details: {
+          filters: {
+            startDate: req.query.startDate,
+            endDate: req.query.endDate,
+            planCode: req.query.planCode,
+            status: req.query.status,
+            search: req.query.search,
+            page,
+            limit,
+          },
+          totalResults: total,
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log revenue payments view:', auditError);
+    }
+
     res.json({
       success: true,
       data: {
@@ -295,6 +351,27 @@ export const exportPayments = async (
     });
 
     const csvContent = csvRows.join('\n');
+
+    // Log audit
+    try {
+      await AuditLog.create({
+        userId: (req.user as any)._id,
+        action: 'REVENUE_EXPORTED',
+        success: true,
+        details: {
+          filters: {
+            startDate: req.query.startDate,
+            endDate: req.query.endDate,
+            planCode: req.query.planCode,
+            status: req.query.status,
+          },
+          recordCount: payments.length,
+        },
+        ipAddress: req.ip,
+      });
+    } catch (auditError) {
+      console.error('Failed to log revenue export:', auditError);
+    }
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename=payments-${Date.now()}.csv`);
