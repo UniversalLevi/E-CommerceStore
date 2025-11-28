@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 import FindWinningProductModal from '@/components/FindWinningProductModal';
 import IconBadge from '@/components/IconBadge';
 import { useAuth } from '@/contexts/AuthContext';
+import { Package, Target } from 'lucide-react';
 
 export default function ProductsPage() {
   const { isAuthenticated } = useAuth();
@@ -88,11 +89,7 @@ export default function ProductsPage() {
             />
           ) : (
             <IconBadge
-              text={
-                typeof niche.icon === 'string'
-                  ? niche.icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 3)
-                  : undefined
-              }
+              icon={Package}
               label={niche.name}
               size="lg"
             />
@@ -216,7 +213,7 @@ export default function ProductsPage() {
           className="fixed bottom-8 right-8 bg-black hover:bg-gray-700 text-white p-4 rounded-full shadow-2xl hover:shadow-2xl transition-all z-50 flex items-center gap-2 font-semibold border-4 border-gray-600 ring-4 ring-gray-500/30"
           aria-label="Find Winning Product"
         >
-          <IconBadge text="FW" label="Find winning product" size="sm" variant="primary" className="bg-white/10 border-white/30" />
+          <IconBadge icon={Target} label="Find winning product" size="sm" variant="primary" className="bg-white/10 border-white/30" />
           <span className="hidden md:inline">Find Winning Product</span>
         </button>
       )}

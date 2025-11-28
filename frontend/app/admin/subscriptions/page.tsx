@@ -509,7 +509,7 @@ export default function AdminSubscriptionsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && searchUser()}
             placeholder="Enter user email or ID"
-            className="flex-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            className="flex-1 px-4 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all duration-200"
           />
           <button
             onClick={searchUser}
@@ -783,7 +783,7 @@ export default function AdminSubscriptionsPage() {
                       <select
                         value={grantForm.planCode}
                         onChange={(e) => setGrantForm({ ...grantForm, planCode: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                       >
                         <option value="starter_30">Starter Monthly</option>
                         <option value="growth_90">Growth Quarterly</option>
@@ -798,7 +798,7 @@ export default function AdminSubscriptionsPage() {
                         type="number"
                         value={grantForm.daysValid}
                         onChange={(e) => setGrantForm({ ...grantForm, daysValid: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                         placeholder="Leave empty for plan default"
                       />
                     </div>
@@ -810,7 +810,7 @@ export default function AdminSubscriptionsPage() {
                         type="date"
                         value={grantForm.endDate}
                         onChange={(e) => setGrantForm({ ...grantForm, endDate: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                       />
                     </div>
                     <div>
@@ -820,7 +820,7 @@ export default function AdminSubscriptionsPage() {
                       <textarea
                         value={grantForm.adminNote}
                         onChange={(e) => setGrantForm({ ...grantForm, adminNote: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                         rows={3}
                       />
                     </div>
@@ -864,8 +864,8 @@ export default function AdminSubscriptionsPage() {
           <textarea
             value={revokeForm.reason}
             onChange={(e) => setRevokeForm({ reason: e.target.value })}
-            className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
-            rows={3}
+                      className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      rows={3}
           />
         </div>
       </ConfirmModal>
@@ -924,7 +924,7 @@ export default function AdminSubscriptionsPage() {
                         type="number"
                         value={updateForm.extendDays}
                         onChange={(e) => setUpdateForm({ ...updateForm, extendDays: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Number of days to extend"
                       />
                     </div>
@@ -935,7 +935,7 @@ export default function AdminSubscriptionsPage() {
                       <textarea
                         value={updateForm.adminNote}
                         onChange={(e) => setUpdateForm({ ...updateForm, adminNote: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         rows={3}
                       />
                     </div>
@@ -998,7 +998,7 @@ export default function AdminSubscriptionsPage() {
                     <textarea
                       value={noteForm.note}
                       onChange={(e) => setNoteForm({ note: e.target.value })}
-                      className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                      className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       rows={4}
                       placeholder="Enter admin note..."
                     />

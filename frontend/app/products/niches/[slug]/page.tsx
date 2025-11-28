@@ -12,6 +12,7 @@ import FindWinningProductModal from '@/components/FindWinningProductModal';
 import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
 import IconBadge from '@/components/IconBadge';
 import { useAuth } from '@/contexts/AuthContext';
+import { Layers, PenLine, Target } from 'lucide-react';
 
 export default function NicheProductsPage() {
   const params = useParams();
@@ -144,11 +145,7 @@ export default function NicheProductsPage() {
 
           <div className="flex items-start gap-6">
             <IconBadge
-              text={
-                typeof niche.icon === 'string'
-                  ? niche.icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 3)
-                  : undefined
-              }
+              icon={Layers}
               label={niche.name}
               size="lg"
             />
@@ -307,7 +304,7 @@ export default function NicheProductsPage() {
                         className="absolute top-2 right-2 bg-primary-500 hover:bg-primary-600 text-black px-3 py-1.5 rounded-lg text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10 flex items-center gap-2"
                         title="Write Product Description (AI)"
                       >
-                        <IconBadge text="AI" label="AI assistant" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+                        <IconBadge icon={PenLine} label="AI assistant" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
                         Write
                       </button>
                     )}
@@ -333,7 +330,7 @@ export default function NicheProductsPage() {
             className="fixed bottom-8 right-8 bg-primary-500 hover:bg-primary-600 text-black p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 font-semibold"
             aria-label="Find Winning Product"
           >
-            <IconBadge text="FW" label="Find winning product" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+            <IconBadge icon={Target} label="Find winning product" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
             <span className="hidden md:inline">Find Winning Product</span>
           </button>
         )}

@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ReactNode } from 'react';
 import Button from './Button';
 import IconBadge from './IconBadge';
+import { Inbox } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface EmptyStateProps {
-  icon?: ReactNode | string;
+  icon?: LucideIcon;
   title: string;
   message: string;
   actionLabel?: string;
@@ -26,33 +27,10 @@ export default function EmptyState({
   secondaryActionLabel,
   secondaryActionHref,
 }: EmptyStateProps) {
-  const renderIcon = () => {
-    if (typeof icon === 'string') {
-      const cleaned = icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 2);
-      return (
-        <IconBadge
-          text={cleaned || undefined}
-          label={title}
-          size="xl"
-          variant="primary"
-          className="shadow-lg"
-        />
-      );
-    }
-
-    if (icon) {
-      return icon;
-    }
-
-    return (
-      <IconBadge
-        label={title}
-        size="xl"
-        variant="primary"
-        className="shadow-lg"
-      />
-    );
-  };
+  const Icon = icon ?? Inbox;
+  const renderIcon = () => (
+    <IconBadge icon={Icon} label={title} size="xl" variant="primary" className="shadow-lg" />
+  );
 
   return (
     <div className="bg-surface-raised border border-border-default rounded-2xl shadow-xl p-12 text-center space-y-4 hover-lift animate-scaleIn">

@@ -7,6 +7,22 @@ import VideoIntro from '@/components/VideoIntro';
 import IconBadge, { IconBadgeVariant } from '@/components/IconBadge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Link2,
+  Tags,
+  MousePointerClick,
+  Building2,
+  Layers as LayersIcon,
+  Sparkles,
+  ShieldCheck,
+  RefreshCcw,
+  ShoppingBag,
+  Store,
+  BarChart3,
+  Target,
+  CheckCircle2,
+} from 'lucide-react';
 
 interface Plan {
   code: string;
@@ -25,67 +41,70 @@ export default function Home() {
   const [loadingPlans, setLoadingPlans] = useState(true);
   const { isAuthenticated } = useAuth();
   const router = useRouter();
-  type FeatureCard = { title: string; description: string; badge: string; variant?: IconBadgeVariant };
+  type FeatureCard = { title: string; description: string; icon: LucideIcon; variant?: IconBadgeVariant };
   const detailedFeatures: FeatureCard[] = [
     {
       title: 'Easy Store Connection',
       description: 'Connect your Shopify store in minutes with just your access token. No complex setup required.',
-      badge: 'SC',
+      icon: Link2,
       variant: 'primary',
     },
     {
       title: 'Curated Product Catalog',
       description: 'Browse thousands of products organized by niches. Find exactly what you need for your store.',
-      badge: 'PC',
+      icon: Tags,
     },
     {
       title: 'One-Click Product Addition',
       description: 'Add products to your Shopify store with a single click. All details, images, and pricing included.',
-      badge: 'OC',
+      icon: MousePointerClick,
       variant: 'success',
     },
     {
       title: 'Multiple Store Management',
       description: 'Manage multiple Shopify stores from one account. Switch between stores effortlessly.',
-      badge: 'MS',
+      icon: Building2,
     },
     {
       title: 'Niche-Based Organization',
       description: 'Products organized by niches make it easy to find relevant items for your target market.',
-      badge: 'NO',
+      icon: LayersIcon,
     },
     {
       title: 'Automatic Store Setup',
       description: 'Products are automatically added to your store with professional descriptions and images.',
-      badge: 'AS',
+      icon: Sparkles,
       variant: 'success',
     },
     {
       title: 'Secure Credential Storage',
       description: 'Your Shopify credentials are encrypted and stored securely. We never share your data.',
-      badge: 'SS',
+      icon: ShieldCheck,
       variant: 'danger',
     },
     {
       title: 'Real-Time Sync',
       description: 'See your products appear in Shopify instantly. No waiting, no delays.',
-      badge: 'RT',
+      icon: RefreshCcw,
       variant: 'primary',
     },
   ];
 
-  const benefits: Array<{ title: string; description: string }> = [
+  const benefits: Array<{ title: string; description: string; icon: LucideIcon }> = [
     {
       title: 'No Technical Skills Required',
       description: 'Our platform handles all the technical complexity. You just browse, select, and launch.',
+      icon: CheckCircle2,
     },
     {
       title: 'Curated Product Catalog',
       description: 'Every product in our catalog is carefully selected and optimized for e-commerce success.',
+      icon: CheckCircle2,
     },
     {
-      title: 'Automatic Product Setup',
-      description: 'Products include professional descriptions, images, and pricing so you can start selling faster.',
+      title: 'Fast & Reliable',
+      description: 'Get your store up and running in minutes with automated setup and dependable infrastructure.',
+      icon: CheckCircle2,
     },
   ];
 
@@ -198,7 +217,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
               <IconBadge
-                text="BP"
+                icon={ShoppingBag}
                 label="Browse Products"
                 size="lg"
                 className="mb-6 group-hover:scale-110 transition-transform"
@@ -212,7 +231,7 @@ export default function Home() {
             
             <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
               <IconBadge
-                text="CS"
+                icon={Link2}
                 label="Connect Shopify"
                 size="lg"
                 variant="primary"
@@ -227,7 +246,7 @@ export default function Home() {
             
             <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
               <IconBadge
-                text="LS"
+                icon={Target}
                 label="Launch store"
                 size="lg"
                 variant="success"
@@ -254,42 +273,21 @@ export default function Home() {
             </div>
 
             <div className="space-y-8">
-              <div className="flex gap-6 items-start">
-                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary-500 text-black flex items-center justify-center text-2xl font-bold">
-                  01
+              {benefits.map((benefit) => (
+                <div key={benefit.title} className="flex gap-6 items-start">
+                  <IconBadge
+                    icon={benefit.icon}
+                    label={benefit.title}
+                    size="sm"
+                    variant="primary"
+                    className="flex-shrink-0"
+                  />
+                  <div>
+                    <h3 className="text-xl font-bold text-text-primary mb-2">{benefit.title}</h3>
+                    <p className="text-text-secondary">{benefit.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-text-primary mb-2">No Technical Skills Required</h3>
-                  <p className="text-text-secondary">
-                    Our platform handles all the technical complexity. You just browse, select, and launch.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-6 items-start">
-                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary-500 text-black flex items-center justify-center text-2xl font-bold">
-                  02
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-text-primary mb-2">Curated Product Catalog</h3>
-                  <p className="text-text-secondary">
-                    Every product in our catalog is carefully selected and optimized for e-commerce success.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-6 items-start">
-                <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary-500 text-black flex items-center justify-center text-2xl font-bold">
-                  03
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-text-primary mb-2">Fast & Reliable</h3>
-                  <p className="text-text-secondary">
-                    Get your store up and running in minutes. Our automated system ensures 
-                    everything works perfectly.
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -419,7 +417,7 @@ export default function Home() {
                 className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:border-primary-500 hover:shadow-lg transition-all"
               >
                 <IconBadge
-                  text={feature.badge}
+                  icon={feature.icon}
                   label={feature.title}
                   variant={feature.variant ?? 'neutral'}
                   size="lg"

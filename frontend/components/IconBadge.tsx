@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import type { LucideIcon } from 'lucide-react';
 
 export type IconBadgeVariant = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
 export type IconBadgeSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -11,6 +12,10 @@ interface IconBadgeProps {
    * If omitted, initials will be derived from `label`.
    */
   text?: string;
+  /**
+   * Lucide icon to render inside the badge. When provided, overrides `text`.
+   */
+  icon?: LucideIcon;
   /**
    * Label used for deriving initials and accessible title.
    */
@@ -35,6 +40,13 @@ const sizeClasses: Record<IconBadgeSize, string> = {
   xl: 'w-20 h-20 rounded-3xl text-lg',
 };
 
+const iconSizeClasses: Record<IconBadgeSize, string> = {
+  sm: 'h-4 w-4',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
+  xl: 'h-8 w-8',
+};
+
 const getInitials = (label?: string) => {
   if (!label) {
     return '•';
@@ -51,12 +63,14 @@ const getInitials = (label?: string) => {
 
 export default function IconBadge({
   text,
+  icon,
   label,
   variant = 'primary',
   size = 'md',
   className = '',
 }: IconBadgeProps) {
   const content = text?.toUpperCase() || getInitials(label);
+  const Icon = icon;
 
   return (
     <div
@@ -64,7 +78,7 @@ export default function IconBadge({
       aria-label={label || content}
       role="img"
     >
-      {content}
+      {Icon ? <Icon className={`${iconSizeClasses[size]}`} aria-hidden="true" /> : content}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import IconBadge from '@/components/IconBadge';
+import { Activity as ActivityIcon, Store, Users, Layers, FlaskConical, ClipboardList } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
 interface Activity {
@@ -85,11 +86,11 @@ export default function ActivityPage() {
   };
 
   const getActionBadge = (action: string) => {
-    if (action.includes('STORE')) return { text: 'ST', label: 'Store activity', variant: 'primary' as const };
-    if (action.includes('USER')) return { text: 'US', label: 'User activity', variant: 'neutral' as const };
-    if (action.includes('NICHE')) return { text: 'NC', label: 'Niche activity', variant: 'success' as const };
-    if (action.includes('TEST')) return { text: 'QA', label: 'Test activity', variant: 'warning' as const };
-    return { text: 'AC', label: 'Activity', variant: 'neutral' as const };
+    if (action.includes('STORE')) return { icon: Store, label: 'Store activity', variant: 'primary' as const };
+    if (action.includes('USER')) return { icon: Users, label: 'User activity', variant: 'neutral' as const };
+    if (action.includes('NICHE')) return { icon: Layers, label: 'Niche activity', variant: 'success' as const };
+    if (action.includes('TEST')) return { icon: FlaskConical, label: 'Test activity', variant: 'warning' as const };
+    return { icon: ClipboardList, label: 'Activity', variant: 'neutral' as const };
   };
 
   const getActionLabel = (action: string) => {
@@ -217,7 +218,7 @@ export default function ActivityPage() {
         {activities.length === 0 ? (
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
             <div className="flex justify-center">
-              <IconBadge label="No activity" text="NA" size="lg" variant="neutral" />
+              <IconBadge label="No activity" icon={ActivityIcon} size="lg" variant="neutral" />
             </div>
             <h3 className="text-xl font-semibold text-text-primary mb-2">No Activity Found</h3>
             <p className="text-text-secondary">
@@ -233,7 +234,11 @@ export default function ActivityPage() {
                 {activities.map((activity) => (
                   <div key={activity._id} className="p-6 hover:bg-surface-hover transition-colors">
                     <div className="flex items-start gap-4">
-                      <IconBadge {...getActionBadge(activity.action)} size="sm" className="mt-1" />
+                      <IconBadge
+                        {...getActionBadge(activity.action)}
+                        size="sm"
+                        className="mt-1"
+                      />
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="font-semibold text-text-primary">

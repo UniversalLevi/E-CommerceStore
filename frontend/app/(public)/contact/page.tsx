@@ -103,7 +103,7 @@ export default function ContactPage() {
                     onChange={(e) => handleChange('name', e.target.value)}
                     className={`w-full px-4 py-2 bg-surface-elevated border ${
                       errors.name ? 'border-red-500' : 'border-border-default'
-                    } text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                    } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none`}
                     placeholder="Your name"
                   />
                 {errors.name && (
@@ -123,7 +123,7 @@ export default function ContactPage() {
                   onChange={(e) => handleChange('email', e.target.value)}
                     className={`w-full px-4 py-2 bg-surface-elevated border ${
                       errors.email ? 'border-red-500' : 'border-border-default'
-                    } text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                    } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none`}
                   placeholder="your@email.com"
                 />
                 {errors.email && (
@@ -164,7 +164,7 @@ export default function ContactPage() {
                 onChange={(e) => handleChange('message', e.target.value)}
                 className={`w-full px-4 py-2 bg-surface-elevated border ${
                   errors.message ? 'border-red-500' : 'border-border-default'
-                } text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none`}
                 placeholder="Tell us how we can help..."
               />
               {errors.message && (

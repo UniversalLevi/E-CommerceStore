@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { Product } from '@/types';
 import { notify } from '@/lib/toast';
 import IconBadge from '@/components/IconBadge';
+import { Package } from 'lucide-react';
 
 interface UserProduct extends Product {
   stores: Array<{
@@ -111,7 +112,7 @@ export default function MyProductsPage() {
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
             />
           </div>
           {allStores.length > 0 && (
@@ -119,7 +120,7 @@ export default function MyProductsPage() {
               <select
                 value={selectedStore}
                 onChange={(e) => setSelectedStore(e.target.value)}
-                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               >
                 <option value="all">All Stores</option>
                 {allStores.map((storeUrl) => (
@@ -141,7 +142,7 @@ export default function MyProductsPage() {
         {filteredProducts.length === 0 ? (
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
             <div className="flex justify-center">
-              <IconBadge label="No products" text="NP" size="lg" variant="neutral" />
+              <IconBadge label="No products" icon={Package} size="lg" variant="neutral" />
             </div>
             <h3 className="text-xl font-semibold text-text-primary mb-2">
               {searchQuery ? 'No products found' : 'No products added yet'}

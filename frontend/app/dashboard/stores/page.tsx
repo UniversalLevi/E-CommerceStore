@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import ConfirmModal from '@/components/ConfirmModal';
 import IconBadge from '@/components/IconBadge';
+import { Store } from 'lucide-react';
 
 interface StoreConnection {
   _id: string;
@@ -170,7 +171,7 @@ export default function MyStoresPage() {
           {stores.length === 0 ? (
             <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
               <div className="flex justify-center">
-                <IconBadge label="No stores" text="NS" size="lg" variant="neutral" />
+                <IconBadge label="No stores" icon={Store} size="lg" variant="neutral" />
               </div>
               <h3 className="text-xl font-semibold text-text-primary mb-2">
                 No stores connected yet

@@ -244,7 +244,7 @@ export default function AdminAuditPage() {
                     setCurrentPage(1);
                   }}
                   placeholder="Filter by user ID..."
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 />
               </div>
 
@@ -258,7 +258,7 @@ export default function AdminAuditPage() {
                     setAction(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 >
                   <option value="">All Actions</option>
                   <option value="USER_REGISTER">User Register</option>
@@ -293,7 +293,7 @@ export default function AdminAuditPage() {
                     setSuccess(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 >
                   <option value="">All</option>
                   <option value="true">Success</option>
@@ -312,7 +312,7 @@ export default function AdminAuditPage() {
                     setStartDate(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 />
               </div>
 
@@ -327,7 +327,7 @@ export default function AdminAuditPage() {
                     setEndDate(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 />
               </div>
 

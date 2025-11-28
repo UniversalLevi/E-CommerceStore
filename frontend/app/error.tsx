@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import Button from '@/components/Button';
 import IconBadge from '@/components/IconBadge';
+import { AlertTriangle } from 'lucide-react';
 
 export default function Error({
   error,
@@ -20,7 +21,7 @@ export default function Error({
     <div className="min-h-screen bg-surface-base flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-surface-raised border border-border-default rounded-xl shadow-lg p-8 text-center space-y-4">
         <div className="flex justify-center">
-          <IconBadge label="Error" text="ERR" size="lg" variant="danger" />
+          <IconBadge label="Error" icon={AlertTriangle} size="lg" variant="danger" />
         </div>
         <h1 className="text-2xl font-bold text-text-primary mb-2">Something went wrong</h1>
         <p className="text-text-secondary mb-6">

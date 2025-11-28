@@ -9,6 +9,7 @@ import { notify } from '@/lib/toast';
 import Button from '@/components/Button';
 import ConfirmModal from '@/components/ConfirmModal';
 import IconBadge from '@/components/IconBadge';
+import { Package, ExternalLink, Settings as SettingsIcon } from 'lucide-react';
 
 interface StoreConnection {
   _id: string;
@@ -313,7 +314,7 @@ export default function StoreDetailsPage() {
               href={`/dashboard/stores/${params.id}/products`}
               className="bg-surface-elevated hover:bg-surface-hover border border-border-default rounded-lg p-4 text-center transition-colors"
             >
-              <IconBadge text="PR" label="View products" size="sm" className="mb-2 mx-auto" />
+              <IconBadge icon={Package} label="View products" size="sm" className="mb-2 mx-auto" />
               <div className="font-semibold text-text-primary">View Products</div>
               <div className="text-sm text-text-secondary">
                 Manage products in this store
@@ -325,7 +326,7 @@ export default function StoreDetailsPage() {
               rel="noopener noreferrer"
               className="bg-surface-elevated hover:bg-surface-hover border border-border-default rounded-lg p-4 text-center transition-colors"
             >
-              <IconBadge text="VS" label="Visit store" size="sm" variant="primary" className="mb-2 mx-auto" />
+              <IconBadge icon={ExternalLink} label="Visit store" size="sm" variant="primary" className="mb-2 mx-auto" />
               <div className="font-semibold text-text-primary">Visit Store</div>
               <div className="text-sm text-text-secondary">
                 Open store in new tab
@@ -335,7 +336,7 @@ export default function StoreDetailsPage() {
               href={`/dashboard/stores/${params.id}/edit`}
               className="bg-surface-elevated hover:bg-surface-hover border border-border-default rounded-lg p-4 text-center transition-colors"
             >
-              <IconBadge text="ED" label="Edit store" size="sm" variant="warning" className="mb-2 mx-auto" />
+              <IconBadge icon={SettingsIcon} label="Edit store" size="sm" variant="warning" className="mb-2 mx-auto" />
               <div className="font-semibold text-text-primary">Edit Store</div>
               <div className="text-sm text-text-secondary">
                 Update store settings

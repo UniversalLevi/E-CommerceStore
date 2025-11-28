@@ -159,7 +159,7 @@ export default function EditStorePage() {
                 value={formData.storeName}
                 onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
                 placeholder="My Awesome Store"
-                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               />
               <p className="mt-1 text-sm text-text-muted">
                 A friendly name to identify this store
@@ -241,7 +241,7 @@ export default function EditStorePage() {
               <select
                 value={formData.environment}
                 onChange={(e) => setFormData({ ...formData, environment: e.target.value as any })}
-                className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
               >
                 <option value="production">Production</option>
                 <option value="development">Development</option>

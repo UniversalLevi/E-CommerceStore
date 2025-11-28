@@ -29,10 +29,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   if (loading || !mounted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-surface-base flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto"></div>
+          <p className="mt-4 text-text-secondary">Loading...</p>
         </div>
       </div>
     );
@@ -52,12 +52,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface-base">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-surface-raised border-b border-border-default shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-600">
+            <Link href="/dashboard" className="text-2xl font-bold text-yellow-500 hover:text-yellow-400 transition-colors">
               Auto Shopify Store Builder
             </Link>
             <div className="flex items-center gap-4">
@@ -67,21 +67,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   href={item.href}
                   className={`${
                     pathname === item.href
-                      ? 'text-gray-900 font-medium'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'text-yellow-500 font-medium'
+                      : 'text-text-secondary hover:text-text-primary'
                   } transition-colors`}
                 >
                   {item.label}
                 </Link>
               ))}
-              <span className="text-gray-600">{user.email}</span>
+              <span className="text-text-secondary">{user.email}</span>
             </div>
           </div>
         </div>
       </nav>
 
       {/* Content */}
-      {children}
+      <div className="bg-surface-base min-h-screen">
+        {children}
+      </div>
     </div>
   );
 }

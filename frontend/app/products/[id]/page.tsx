@@ -11,6 +11,7 @@ import StoreSelectionModal from '@/components/StoreSelectionModal';
 import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
 import IconBadge from '@/components/IconBadge';
 import { notify } from '@/lib/toast';
+import { CheckCircle2, Tag, ShoppingCart, PenLine, Target, LogIn } from 'lucide-react';
 
 interface StoreConnection {
   _id: string;
@@ -199,7 +200,7 @@ export default function ProductDetailPage() {
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-2xl max-w-lg w-full p-8">
             <div className="text-center mb-6 space-y-4">
               <div className="flex justify-center">
-                <IconBadge label="Store created" text="SC" size="lg" variant="success" />
+                <IconBadge label="Store created" icon={CheckCircle2} size="lg" variant="success" />
               </div>
               <h2 className="text-3xl font-bold text-text-primary mb-2">
                 Store Created Successfully!
@@ -383,11 +384,7 @@ export default function ProductDetailPage() {
                       }
                     >
                       <IconBadge
-                        text={
-                          typeof niche.icon === 'string'
-                            ? niche.icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 3)
-                            : undefined
-                        }
+                        icon={Tag}
                         label={niche.name}
                         size="sm"
                         className="mr-2"
@@ -484,7 +481,7 @@ export default function ProductDetailPage() {
                         className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span className="flex items-center justify-center gap-2">
-                          <IconBadge text="GO" label="Add to store" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+                          <IconBadge icon={ShoppingCart} label="Add to store" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
                           Add to My Store
                         </span>
                       </button>
@@ -493,7 +490,7 @@ export default function ProductDetailPage() {
                         className="w-full bg-surface-raised hover:bg-surface-hover border-2 border-primary-500 text-text-primary py-4 rounded-lg font-semibold text-lg transition-colors"
                       >
                         <span className="flex items-center justify-center gap-2">
-                          <IconBadge text="AI" label="Write description" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+                          <IconBadge icon={PenLine} label="Write description" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
                           Write Product Description (AI)
                         </span>
                       </button>
@@ -505,7 +502,7 @@ export default function ProductDetailPage() {
                         className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors"
                       >
                         <span className="flex items-center justify-center gap-2">
-                          <IconBadge text="GO" label="Login to add" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+                          <IconBadge icon={LogIn} label="Login to add" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
                           Login to Add to Store
                         </span>
                       </button>

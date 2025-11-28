@@ -3,6 +3,7 @@
 import { Fragment } from 'react';
 import { Transition } from '@headlessui/react';
 import IconBadge from './IconBadge';
+import { Store, Package, FlaskConical, Bell } from 'lucide-react';
 
 interface Notification {
   _id: string;
@@ -34,15 +35,15 @@ export default function NotificationDropdown({
   const getNotificationBadge = (type: string) => {
     switch (type) {
       case 'store_connection':
-        return { text: 'SC', label: 'Store connection', variant: 'success' as const };
+        return { icon: Store, label: 'Store connection', variant: 'success' as const };
       case 'product_added':
-        return { text: 'PR', label: 'Product added', variant: 'primary' as const };
+        return { icon: Package, label: 'Product added', variant: 'primary' as const };
       case 'store_test':
-        return { text: 'QA', label: 'Store test', variant: 'warning' as const };
+        return { icon: FlaskConical, label: 'Store test', variant: 'warning' as const };
       case 'system_update':
-        return { text: 'UP', label: 'System update', variant: 'neutral' as const };
+        return { icon: Bell, label: 'System update', variant: 'neutral' as const };
       default:
-        return { text: 'NT', label: 'Notification', variant: 'neutral' as const };
+        return { icon: Bell, label: 'Notification', variant: 'neutral' as const };
     }
   };
 
@@ -74,7 +75,7 @@ export default function NotificationDropdown({
           {notifications.length === 0 ? (
             <div className="p-8 text-center text-[#5D737E] space-y-2">
               <div className="flex justify-center">
-                <IconBadge label="Notifications" text="NT" size="lg" variant="neutral" />
+                <IconBadge label="Notifications" icon={Bell} size="lg" variant="neutral" />
               </div>
               <p>No notifications</p>
             </div>

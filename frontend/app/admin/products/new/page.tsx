@@ -138,7 +138,7 @@ export default function NewProductPage() {
                 required
                 minLength={3}
                 maxLength={200}
-                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 placeholder="Wireless Bluetooth Headphones"
               />
             </div>
@@ -155,7 +155,7 @@ export default function NewProductPage() {
                 required
                 minLength={10}
                 rows={4}
-                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 placeholder="Detailed product description..."
               />
             </div>
@@ -174,7 +174,7 @@ export default function NewProductPage() {
                     setFormData({ ...formData, price: e.target.value })
                   }
                   required
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                   placeholder="29.99"
                 />
               </div>
@@ -189,7 +189,7 @@ export default function NewProductPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                   placeholder="electronics"
                 />
               </div>
@@ -208,7 +208,7 @@ export default function NewProductPage() {
                     setFormData({ ...formData, niche: e.target.value })
                   }
                   required
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 >
                   <option value="">Select a niche</option>
                   {niches.map((niche) => (

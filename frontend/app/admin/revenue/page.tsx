@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import LoadingScreen from '@/components/LoadingScreen';
 import IconBadge from '@/components/IconBadge';
+import { DollarSign, CalendarDays, BadgeCheck, CreditCard } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -273,7 +274,7 @@ export default function AdminRevenuePage() {
               </p>
             </div>
             <IconBadge
-              text="TR"
+              icon={DollarSign}
               label="Total revenue"
               size="md"
               variant="primary"
@@ -292,7 +293,7 @@ export default function AdminRevenuePage() {
               </p>
             </div>
             <IconBadge
-              text="RM"
+              icon={CalendarDays}
               label="Monthly revenue"
               size="md"
               variant="success"
@@ -311,7 +312,7 @@ export default function AdminRevenuePage() {
               </p>
             </div>
             <IconBadge
-              text="AS"
+              icon={BadgeCheck}
               label="Active subscriptions"
               size="md"
               variant="warning"
@@ -330,7 +331,7 @@ export default function AdminRevenuePage() {
               </p>
             </div>
             <IconBadge
-              text="NP"
+              icon={CreditCard}
               label="New payments"
               size="md"
               variant="neutral"
@@ -420,20 +421,20 @@ export default function AdminRevenuePage() {
             type="date"
             value={filters.startDate}
             onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            className="px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
             placeholder="Start Date"
           />
           <input
             type="date"
             value={filters.endDate}
             onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            className="px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
             placeholder="End Date"
           />
           <select
             value={filters.planCode}
             onChange={(e) => setFilters({ ...filters, planCode: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            className="px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
           >
             <option value="">All Plans</option>
             <option value="starter_30">Starter Monthly</option>
@@ -443,7 +444,7 @@ export default function AdminRevenuePage() {
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            className="px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
           >
             <option value="">All Status</option>
             <option value="paid">Paid</option>
@@ -455,7 +456,7 @@ export default function AdminRevenuePage() {
             type="text"
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
+            className="px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
             placeholder="Search by email..."
           />
         </div>

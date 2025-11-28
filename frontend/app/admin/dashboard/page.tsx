@@ -18,6 +18,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { Users as UsersIcon, Store, AlertTriangle, Package } from 'lucide-react';
 
 interface DashboardStats {
   users: {
@@ -200,7 +201,7 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
                 <IconBadge
-                  text="US"
+                  icon={UsersIcon}
                   label="Total users"
                   size="md"
                   className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
@@ -219,8 +220,8 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
                 <IconBadge
-                  text="ST"
-                  label="Total Stores"
+                  icon={Store}
+                  label="Total stores"
                   size="md"
                   variant="success"
                   className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
@@ -239,7 +240,7 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
                 <IconBadge
-                  text="IS"
+                  icon={AlertTriangle}
                   label="Invalid stores"
                   size="md"
                   variant="danger"
@@ -256,7 +257,7 @@ export default function AdminDashboardPage() {
                   <p className="text-3xl font-bold text-text-primary mt-2">{stats.products.total}</p>
                 </div>
                 <IconBadge
-                  text="PR"
+                  icon={Package}
                   label="Products"
                   size="md"
                   variant="neutral"

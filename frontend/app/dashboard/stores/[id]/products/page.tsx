@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { Product } from '@/types';
 import { notify } from '@/lib/toast';
 import IconBadge from '@/components/IconBadge';
+import { Package } from 'lucide-react';
 
 interface UserProduct extends Product {
   stores: Array<{
@@ -154,7 +155,7 @@ export default function StoreProductsPage() {
         ) : filteredProducts.length === 0 ? (
           <div className="bg-white rounded-xl shadow-md p-12 text-center space-y-4">
             <div className="flex justify-center">
-              <IconBadge label="No products" text="NP" size="lg" variant="neutral" />
+              <IconBadge label="No products" icon={Package} size="lg" variant="neutral" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               {searchQuery ? 'No products found' : 'No products in this store'}

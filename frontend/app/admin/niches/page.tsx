@@ -163,7 +163,7 @@ export default function AdminNichesPage() {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
         </div>
       </AdminLayout>
     );
@@ -186,7 +186,7 @@ export default function AdminNichesPage() {
             placeholder="Search niches by name, slug, or synonyms..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full max-w-md px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full max-w-md px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
           />
         </div>
 
@@ -306,7 +306,7 @@ export default function AdminNichesPage() {
                             <>
                               <button
                                 onClick={() => openEditModal(niche)}
-                                className="text-primary-500 hover:text-primary-600"
+                                className="text-yellow-500 hover:text-yellow-400"
                                 disabled={niche.isDefault}
                               >
                                 Edit
@@ -388,7 +388,7 @@ export default function AdminNichesPage() {
                 <textarea
                   value={formData.deletedReason || ''}
                   onChange={(e) => setFormData({ ...formData, deletedReason: e.target.value })}
-                  className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
                   rows={3}
                   placeholder="Why are you deleting this niche?"
                 />
@@ -434,7 +434,7 @@ function NicheModal({
               value={formData.name || ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               disabled={isDefault}
-              className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+              className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none disabled:opacity-50"
               required
             />
           </div>
@@ -448,7 +448,7 @@ function NicheModal({
               value={formData.slug || ''}
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               disabled={isDefault}
-              className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+              className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none disabled:opacity-50"
               placeholder="fitness-health"
             />
           </div>
@@ -460,7 +460,7 @@ function NicheModal({
             <textarea
               value={formData.description || ''}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
               rows={3}
               maxLength={500}
             />
@@ -475,7 +475,7 @@ function NicheModal({
                 type="text"
                 value={formData.icon || ''}
                 onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
                 placeholder="FIT"
                 maxLength={10}
               />
@@ -489,7 +489,7 @@ function NicheModal({
                 type="url"
                 value={formData.image || ''}
                 onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
               />
             </div>
           </div>
@@ -503,7 +503,7 @@ function NicheModal({
                 type="number"
                 value={formData.order || 0}
                 onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
                 min={0}
               />
             </div>
@@ -516,7 +516,7 @@ function NicheModal({
                 type="number"
                 value={formData.priority || 0}
                 onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
-                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
                 min={0}
               />
             </div>
@@ -561,7 +561,7 @@ function NicheModal({
                   synonyms: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
                 })
               }
-              className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
               placeholder="fitness gear, gym, wellness"
             />
           </div>
@@ -572,7 +572,7 @@ function NicheModal({
                 type="checkbox"
                 checked={formData.featured || false}
                 onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                className="rounded border-border-default text-primary-500 focus:ring-primary-500 bg-surface-elevated"
+                className="rounded border-border-default text-yellow-500 focus:ring-yellow-500 bg-surface-elevated"
               />
               <span className="text-sm text-text-secondary">Featured</span>
             </label>
@@ -582,7 +582,7 @@ function NicheModal({
                 type="checkbox"
                 checked={formData.showOnHomePage || false}
                 onChange={(e) => setFormData({ ...formData, showOnHomePage: e.target.checked })}
-                className="rounded border-border-default text-primary-500 focus:ring-primary-500 bg-surface-elevated"
+                className="rounded border-border-default text-yellow-500 focus:ring-yellow-500 bg-surface-elevated"
               />
               <span className="text-sm text-text-secondary">Show on Homepage</span>
             </label>

@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import OnboardingModal from '@/components/OnboardingModal';
 import SubscriptionStatus from '@/components/SubscriptionStatus';
 import IconBadge from '@/components/IconBadge';
+import { Link2, ShoppingBag, Store, BarChart3 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading, logout, isAuthenticated } = useAuth();
@@ -75,7 +76,7 @@ export default function DashboardPage() {
           {/* Store Connection Prompt */}
           <div className="bg-gradient-to-r from-surface-raised to-surface-hover rounded-xl p-6 mb-6 border-2 border-primary-500">
             <div className="flex items-start gap-4">
-              <IconBadge text="SC" label="Store connection" size="md" variant="primary" className="mt-1" />
+              <IconBadge icon={Link2} label="Store connection" size="md" variant="primary" className="mt-1" />
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-text-primary mb-2">
                   Connect Your Shopify Store
@@ -164,7 +165,7 @@ export default function DashboardPage() {
                 href="/products"
                 className="border-2 border-border-default hover:border-primary-500 bg-surface-elevated rounded-lg p-4 transition-colors"
               >
-                <IconBadge text="BP" label="Browse products" size="sm" className="mb-2" />
+                <IconBadge icon={ShoppingBag} label="Browse products" size="sm" className="mb-2" />
                 <h4 className="font-semibold text-text-primary mb-1">
                   Browse Products
                 </h4>
@@ -177,7 +178,7 @@ export default function DashboardPage() {
                 href="/dashboard/stores"
                 className="border-2 border-border-default hover:border-primary-500 bg-surface-elevated rounded-lg p-4 transition-colors"
               >
-                <IconBadge text="MS" label="Manage stores" size="sm" variant="primary" className="mb-2" />
+                <IconBadge icon={Store} label="Manage stores" size="sm" variant="primary" className="mb-2" />
                 <h4 className="font-semibold text-text-primary mb-1">
                   Manage Stores
                 </h4>
@@ -190,7 +191,7 @@ export default function DashboardPage() {
                 href="/dashboard/analytics"
                 className="border-2 border-border-default hover:border-primary-500 bg-surface-elevated rounded-lg p-4 transition-colors"
               >
-                <IconBadge text="AN" label="View analytics" size="sm" variant="success" className="mb-2" />
+                <IconBadge icon={BarChart3} label="View analytics" size="sm" variant="success" className="mb-2" />
                 <h4 className="font-semibold text-text-primary mb-1">
                   View Analytics
                 </h4>

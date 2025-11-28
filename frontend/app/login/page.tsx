@@ -78,7 +78,7 @@ export default function LoginPage() {
                     if (emailError) setErrors({ ...errors, email: emailError.message });
                   }
                 }}
-                className={`w-full px-4 py-2 bg-surface-elevated text-text-primary border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                className={`w-full px-4 py-2 bg-surface-elevated text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none ${
                   errors.email ? 'border-red-500' : 'border-border-default'
                 }`}
                 placeholder="you@example.com"
@@ -110,7 +110,7 @@ export default function LoginPage() {
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }
                 }}
-                className={`w-full px-4 py-2 bg-surface-elevated text-text-primary border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                className={`w-full px-4 py-2 bg-surface-elevated text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none ${
                   errors.password ? 'border-red-500' : 'border-border-default'
                 }`}
                 placeholder="••••••••"

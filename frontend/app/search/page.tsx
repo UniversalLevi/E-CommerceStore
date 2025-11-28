@@ -8,6 +8,7 @@ import { Product, Niche } from '@/types';
 import Navbar from '@/components/Navbar';
 import Pagination from '@/components/Pagination';
 import IconBadge from '@/components/IconBadge';
+import { Search as SearchIcon, Layers, Package } from 'lucide-react';
 
 interface SearchResults {
   products: Product[];
@@ -101,7 +102,7 @@ export default function SearchPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products and niches..."
-              className="flex-1 px-4 py-3 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="flex-1 px-4 py-3 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
             />
             <select
               value={selectedType}
@@ -136,7 +137,7 @@ export default function SearchPage() {
             {results.total === 0 ? (
               <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
                 <div className="flex justify-center">
-                  <IconBadge label="No results" text="NR" size="lg" variant="neutral" />
+                  <IconBadge label="No results" icon={SearchIcon} size="lg" variant="neutral" />
                 </div>
                 <h3 className="text-xl font-semibold text-text-primary mb-2">
                   No results found
@@ -169,11 +170,7 @@ export default function SearchPage() {
                         >
                           <div className="flex items-center gap-4 mb-4">
                             <IconBadge
-                              text={
-                                typeof niche.icon === 'string'
-                                  ? niche.icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 3)
-                                  : undefined
-                              }
+                              icon={Layers}
                               label={niche.name}
                               size="sm"
                             />
@@ -253,7 +250,7 @@ export default function SearchPage() {
         ) : (
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
             <div className="flex justify-center">
-              <IconBadge label="Search" text="SR" size="lg" variant="neutral" />
+              <IconBadge label="Search" icon={SearchIcon} size="lg" variant="neutral" />
             </div>
             <h3 className="text-xl font-semibold text-text-primary mb-2">
               Start Searching

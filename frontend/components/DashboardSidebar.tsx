@@ -3,24 +3,33 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import IconBadge from './IconBadge';
+import {
+  LayoutDashboard,
+  Store,
+  Package,
+  CreditCard,
+  BarChart3,
+  Activity,
+  HelpCircle,
+  Settings,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface NavItem {
   href: string;
   label: string;
-  badge?: string;
-  variant?: 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
+  icon: LucideIcon;
 }
 
 const navItems: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', badge: 'DB', variant: 'primary' },
-  { href: '/dashboard/stores', label: 'My Stores', badge: 'ST' },
-  { href: '/dashboard/products', label: 'My Products', badge: 'PR' },
-  { href: '/dashboard/billing', label: 'Billing', badge: 'BL', variant: 'warning' },
-  { href: '/dashboard/analytics', label: 'Analytics', badge: 'AN' },
-  { href: '/dashboard/activity', label: 'Activity', badge: 'AC' },
-  { href: '/dashboard/help', label: 'Help', badge: 'HP' },
-  { href: '/settings', label: 'Settings', badge: 'SE' },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/stores', label: 'My Stores', icon: Store },
+  { href: '/dashboard/products', label: 'My Products', icon: Package },
+  { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/dashboard/activity', label: 'Activity', icon: Activity },
+  { href: '/dashboard/help', label: 'Help', icon: HelpCircle },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function DashboardSidebar() {
@@ -42,23 +51,35 @@ export default function DashboardSidebar() {
       {/* Navigation */}
       <nav className="p-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          // Check if this route matches
+          const routeMatches = pathname === item.href || pathname.startsWith(item.href + '/');
+          
+          // Check if there's a more specific route that also matches
+          const hasMoreSpecificMatch = navItems.some(
+            (otherItem) =>
+              otherItem.href !== item.href &&
+              otherItem.href.length > item.href.length &&
+              (pathname === otherItem.href || pathname.startsWith(otherItem.href + '/'))
+          );
+          
+          // Only active if this route matches AND there's no more specific match
+          const isActive = routeMatches && !hasMoreSpecificMatch;
+          
           return (
             <Link
               key={item.href}
               href={item.href}
               className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                 isActive
-                  ? 'bg-primary-500 text-black font-semibold shadow-lg'
+                  ? 'bg-yellow-500 text-black font-semibold shadow-lg'
                   : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
               }`}
             >
-              <IconBadge
-                text={item.badge}
-                label={item.label}
-                size="sm"
-                variant={item.variant || 'neutral'}
-                className={`shrink-0 ${isActive ? 'bg-black/10 text-black border-white/40' : 'group-hover:border-primary-500/40'}`}
+              <item.icon
+                className={`h-5 w-5 transition-colors duration-200 ${
+                  isActive ? 'text-black' : 'text-text-secondary group-hover:text-text-primary'
+                }`}
+                aria-hidden="true"
               />
               <span className="font-medium">{item.label}</span>
             </Link>

@@ -202,7 +202,7 @@ export default function AdminContactsPage() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search by name, email, subject..."
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 />
               </div>
 
@@ -421,7 +421,7 @@ export default function AdminContactsPage() {
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   rows={6}
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                   placeholder="Type your reply here..."
                 />
               </div>
