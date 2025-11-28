@@ -464,31 +464,31 @@ export default function AdminAuditPage() {
                 <div className="bg-surface-elevated p-4 rounded-lg border border-border-default">
                   <h4 className="text-lg font-semibold text-text-primary mb-4">Basic Information</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-text-secondary mb-1">Timestamp</label>
                       <p className="text-sm text-text-primary">
-                        {new Date(selectedLog.timestamp).toLocaleString()}
-                      </p>
-                    </div>
+                    {new Date(selectedLog.timestamp).toLocaleString()}
+                  </p>
+                </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-text-secondary mb-1">User Email</label>
                       <p className="text-sm text-text-primary">{selectedLog.userEmail}</p>
-                    </div>
+                </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-text-secondary mb-1">Action</label>
                       <p className="text-sm text-text-primary font-mono">
                         {selectedLog.action.replace(/_/g, ' ')}
                       </p>
-                    </div>
+                </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-text-secondary mb-1">Target</label>
                       <p className="text-sm text-text-primary">{selectedLog.target || 'N/A'}</p>
-                    </div>
+                </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-text-secondary mb-1">Status</label>
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

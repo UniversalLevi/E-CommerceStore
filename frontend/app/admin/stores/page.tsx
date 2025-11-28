@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
+import IconBadge from '@/components/IconBadge';
 
 interface StoreConnection {
   _id: string;
@@ -214,8 +215,10 @@ export default function AdminStoresPage() {
 
           {/* Stores Table */}
           {filteredStores.length === 0 ? (
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center">
-              <div className="text-6xl mb-4">🏪</div>
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
+              <div className="flex justify-center">
+                <IconBadge label="No stores" text="NS" size="lg" variant="neutral" />
+              </div>
               <h3 className="text-xl font-semibold text-text-primary mb-2">
                 No stores found
               </h3>

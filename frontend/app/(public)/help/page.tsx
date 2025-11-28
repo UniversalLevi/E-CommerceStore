@@ -253,7 +253,7 @@ export default function HelpPage() {
           href="/"
           className="text-white hover:text-[#e0e0e0] font-medium"
         >
-          ← Back to Home
+          Back to Home
         </Link>
       </div>
     </div>

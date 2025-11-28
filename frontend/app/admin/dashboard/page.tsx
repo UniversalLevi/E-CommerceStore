@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
-import { notify } from '@/lib/toast';
 import LoadingScreen from '@/components/LoadingScreen';
+import IconBadge from '@/components/IconBadge';
 import {
   BarChart,
   Bar,
@@ -158,32 +158,29 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div>
-      {/* Content */}
+    <div className="space-y-8 animate-fadeIn">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-text-primary">Admin Dashboard</h1>
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold text-text-primary gradient-text">Admin Dashboard</h1>
             <p className="mt-2 text-text-secondary">System overview and statistics</p>
           </div>
 
-          {/* System Health */}
           {health && (
-            <div className="mb-6 bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
+              <div className="flex items-center justify-between flex-wrap gap-6">
                 <div>
                   <h3 className="text-lg font-semibold text-text-primary mb-2">System Health</h3>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 flex-wrap text-sm text-text-secondary">
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${getHealthColor(health.status)}`}></div>
-                      <span className="text-sm text-text-secondary capitalize">{health.status}</span>
+                      <span className="capitalize">{health.status}</span>
                     </div>
-                    <span className="text-sm text-text-secondary">
-                      DB Latency: <span className="font-medium">{health.dbLatency}ms</span>
+                    <span>
+                      DB Latency: <span className="font-medium text-text-primary">{health.dbLatency}ms</span>
                     </span>
-                    <span className="text-sm text-text-secondary">
-                      Uptime: <span className="font-medium">{formatUptime(health.uptime)}</span>
+                    <span>
+                      Uptime: <span className="font-medium text-text-primary">{formatUptime(health.uptime)}</span>
                     </span>
                   </div>
                 </div>
@@ -191,10 +188,10 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="flex items-center justify-between relative z-10">
                 <div>
                   <p className="text-sm text-text-secondary">Total Users</p>
                   <p className="text-3xl font-bold text-text-primary mt-2">{stats.users.total}</p>
@@ -202,12 +199,18 @@ export default function AdminDashboardPage() {
                     {stats.users.active} active (last 7 days)
                   </p>
                 </div>
-                <div className="text-4xl">👥</div>
+                <IconBadge
+                  text="US"
+                  label="Total users"
+                  size="md"
+                  className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+                />
               </div>
             </div>
 
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter-delay-1 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="flex items-center justify-between relative z-10">
                 <div>
                   <p className="text-sm text-text-secondary">Total Stores</p>
                   <p className="text-3xl font-bold text-text-primary mt-2">{stats.stores.total}</p>
@@ -215,12 +218,19 @@ export default function AdminDashboardPage() {
                     {stats.stores.active} active
                   </p>
                 </div>
-                <div className="text-4xl">🏪</div>
+                <IconBadge
+                  text="ST"
+                  label="Total Stores"
+                  size="md"
+                  variant="success"
+                  className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+                />
               </div>
             </div>
 
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter-delay-2 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="flex items-center justify-between relative z-10">
                 <div>
                   <p className="text-sm text-text-secondary">Invalid Stores</p>
                   <p className="text-3xl font-bold text-red-400 mt-2">{stats.stores.invalid}</p>
@@ -228,25 +238,36 @@ export default function AdminDashboardPage() {
                     {stats.stores.revoked} revoked
                   </p>
                 </div>
-                <div className="text-4xl">⚠️</div>
+                <IconBadge
+                  text="IS"
+                  label="Invalid stores"
+                  size="md"
+                  variant="danger"
+                  className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+                />
               </div>
             </div>
 
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter-delay-3 group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="flex items-center justify-between relative z-10">
                 <div>
                   <p className="text-sm text-text-secondary">Total Products</p>
                   <p className="text-3xl font-bold text-text-primary mt-2">{stats.products.total}</p>
                 </div>
-                <div className="text-4xl">📦</div>
+                <IconBadge
+                  text="PR"
+                  label="Products"
+                  size="md"
+                  variant="neutral"
+                  className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+                />
               </div>
             </div>
           </div>
 
-          {/* Charts Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* User Registrations */}
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
               <h3 className="text-lg font-semibold text-text-primary mb-4">
                 User Registrations (Last 30 Days)
               </h3>
@@ -262,8 +283,7 @@ export default function AdminDashboardPage() {
               </ResponsiveContainer>
             </div>
 
-            {/* Store Connections */}
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
               <h3 className="text-lg font-semibold text-text-primary mb-4">
                 Store Connections (Last 30 Days)
               </h3>
@@ -280,9 +300,8 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">Recent Activity</h3>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
+            <h3 className="text-lg font-semibold	text-text-primary mb-4">Recent Activity</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-border-default">
                 <thead className="bg-surface-elevated">
@@ -305,15 +324,19 @@ export default function AdminDashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-surface-raised divide-y divide-border-default">
-                  {stats.recentActivity.map((activity) => (
-                    <tr key={activity.id}>
+                  {stats.recentActivity.map((activity, index) => (
+                    <tr
+                      key={activity.id}
+                      className="transition-all duration-200 hover:bg-surface-base"
+                      style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s both` }}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
                         {new Date(activity.timestamp).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {activity.userEmail}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary capitalize">
                         {activity.action.replace(/_/g, ' ')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
@@ -321,10 +344,10 @@ export default function AdminDashboardPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             activity.success
-                              ? 'bg-secondary-500/20 text-secondary-400 border border-secondary-500/50'
-                              : 'bg-red-500/20 text-red-400 border border-red-500/50'
+                              ? 'bg-secondary-500/20 text-secondary-300 border border-secondary-500/30'
+                              : 'bg-red-500/20 text-red-300 border border-red-500/40'
                           }`}
                         >
                           {activity.success ? 'Success' : 'Failed'}

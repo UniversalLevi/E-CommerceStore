@@ -149,7 +149,7 @@ export default function LoginPage() {
               href="/"
               className="text-sm text-text-muted hover:text-text-tertiary"
             >
-              ← Back to home
+              Back to home
             </Link>
           </div>
         </div>

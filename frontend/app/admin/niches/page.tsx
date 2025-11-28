@@ -469,14 +469,14 @@ function NicheModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">
-                Icon (emoji)
+                Icon Badge (1-3 letters)
               </label>
               <input
                 type="text"
                 value={formData.icon || ''}
                 onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                 className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="💪"
+                placeholder="FIT"
                 maxLength={10}
               />
             </div>

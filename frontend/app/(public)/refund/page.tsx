@@ -170,7 +170,7 @@ export default function RefundPage() {
               href="/"
               className="text-text-primary hover:text-primary-500 font-medium"
             >
-              ← Back to Home
+              Back to Home
             </Link>
           </div>
         </div>

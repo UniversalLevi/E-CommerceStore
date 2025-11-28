@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import Link from 'next/link';
+import IconBadge from './IconBadge';
 
 interface Props {
   children: ReactNode;
@@ -31,8 +32,10 @@ export class AppErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-          <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">⚠️</div>
+          <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center space-y-4">
+            <div className="flex justify-center">
+              <IconBadge label="Error" text="ERR" size="lg" variant="danger" />
+            </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Something went wrong
             </h1>

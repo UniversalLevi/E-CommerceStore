@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import StoreSelectionModal from '@/components/StoreSelectionModal';
 import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
+import IconBadge from '@/components/IconBadge';
 import { notify } from '@/lib/toast';
 
 interface StoreConnection {
@@ -196,8 +197,10 @@ export default function ProductDetailPage() {
       {showSuccessModal && storeData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-2xl max-w-lg w-full p-8">
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">🎉</div>
+            <div className="text-center mb-6 space-y-4">
+              <div className="flex justify-center">
+                <IconBadge label="Store created" text="SC" size="lg" variant="success" />
+              </div>
               <h2 className="text-3xl font-bold text-text-primary mb-2">
                 Store Created Successfully!
               </h2>
@@ -379,7 +382,16 @@ export default function ProductDetailPage() {
                           : {}
                       }
                     >
-                      {niche.icon && <span>{niche.icon}</span>}
+                      <IconBadge
+                        text={
+                          typeof niche.icon === 'string'
+                            ? niche.icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 3)
+                            : undefined
+                        }
+                        label={niche.name}
+                        size="sm"
+                        className="mr-2"
+                      />
                       <span>{niche.name}</span>
                     </Link>
                   )}
@@ -471,13 +483,19 @@ export default function ProductDetailPage() {
                         disabled={loadingStores}
                         className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        🚀 Add to My Store
+                        <span className="flex items-center justify-center gap-2">
+                          <IconBadge text="GO" label="Add to store" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+                          Add to My Store
+                        </span>
                       </button>
                       <button
                         onClick={() => setShowWriteDescription(true)}
                         className="w-full bg-surface-raised hover:bg-surface-hover border-2 border-primary-500 text-text-primary py-4 rounded-lg font-semibold text-lg transition-colors"
                       >
-                        ✍️ Write Product Description (AI)
+                        <span className="flex items-center justify-center gap-2">
+                          <IconBadge text="AI" label="Write description" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+                          Write Product Description (AI)
+                        </span>
                       </button>
                     </>
                   ) : (
@@ -486,7 +504,10 @@ export default function ProductDetailPage() {
                         onClick={() => router.push('/login')}
                         className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors"
                       >
-                        🚀 Login to Add to Store
+                        <span className="flex items-center justify-center gap-2">
+                          <IconBadge text="GO" label="Login to add" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+                          Login to Add to Store
+                        </span>
                       </button>
                       <p className="text-sm text-text-muted text-center">
                         You'll need to log in and connect a store first
@@ -497,13 +518,20 @@ export default function ProductDetailPage() {
 
                 <div className="mt-8 p-4 bg-surface-hover border border-border-default rounded-lg">
                   <h3 className="font-semibold text-text-primary mb-2">
-                    ✨ What You'll Get
+                    What You'll Get
                   </h3>
                   <ul className="space-y-2 text-sm text-text-secondary">
-                    <li>✓ Product added to your Shopify store</li>
-                    <li>✓ Professional descriptions & images</li>
-                    <li>✓ Ready to start selling immediately</li>
-                    <li>✓ Full control in Shopify admin</li>
+                    {[
+                      'Product added to your Shopify store',
+                      'Professional descriptions & images',
+                      'Ready to start selling immediately',
+                      'Full control in Shopify admin',
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -517,14 +545,14 @@ export default function ProductDetailPage() {
                 href={`/products/niches/${niche.slug}`}
                 className="text-text-primary hover:text-primary-500 font-semibold"
               >
-                ← Back to {niche.name}
+                Back to {niche.name}
               </Link>
             ) : (
               <button
                 onClick={() => router.push('/products')}
                 className="text-text-primary hover:text-primary-500 font-semibold"
               >
-                ← Back to Products
+                Back to Products
               </button>
             )}
           </div>
@@ -575,7 +603,7 @@ export default function ProductDetailPage() {
             aria-label="Close zoom"
             type="button"
           >
-            ×
+          Close
           </button>
           <div className="max-w-4xl max-h-full">
             <img

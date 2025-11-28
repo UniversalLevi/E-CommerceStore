@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
 
           {success ? (
             <div className="bg-surface-raised border border-border-default rounded-lg p-6 text-center">
-              <div className="text-4xl mb-4 text-primary-500">✓</div>
+              <div className="text-4xl mb-4 text-primary-500">Success</div>
               <h3 className="text-lg font-semibold text-text-primary mb-2">
                 Check Your Email
               </h3>
@@ -126,7 +126,7 @@ export default function ForgotPasswordPage() {
                   href="/login"
                   className="text-sm text-text-primary hover:text-primary-500 font-medium"
                 >
-                  ← Back to Login
+                  Back to Login
                 </Link>
               </div>
             </form>

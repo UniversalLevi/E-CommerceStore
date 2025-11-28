@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { Product, Niche } from '@/types';
 import Navbar from '@/components/Navbar';
 import Pagination from '@/components/Pagination';
+import IconBadge from '@/components/IconBadge';
 
 interface SearchResults {
   products: Product[];
@@ -133,8 +134,10 @@ export default function SearchPage() {
         ) : query ? (
           <>
             {results.total === 0 ? (
-              <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center">
-                <div className="text-6xl mb-4">🔍</div>
+              <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
+                <div className="flex justify-center">
+                  <IconBadge label="No results" text="NR" size="lg" variant="neutral" />
+                </div>
                 <h3 className="text-xl font-semibold text-text-primary mb-2">
                   No results found
                 </h3>
@@ -165,7 +168,15 @@ export default function SearchPage() {
                           className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:border-primary-500 hover:shadow-lg transition-all"
                         >
                           <div className="flex items-center gap-4 mb-4">
-                            {niche.icon && <span className="text-4xl">{niche.icon}</span>}
+                            <IconBadge
+                              text={
+                                typeof niche.icon === 'string'
+                                  ? niche.icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 3)
+                                  : undefined
+                              }
+                              label={niche.name}
+                              size="sm"
+                            />
                             <h3 className="text-xl font-bold text-text-primary">{niche.name}</h3>
                           </div>
                           {niche.description && (
@@ -240,8 +251,10 @@ export default function SearchPage() {
             )}
           </>
         ) : (
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center">
-            <div className="text-6xl mb-4">🔍</div>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
+            <div className="flex justify-center">
+              <IconBadge label="Search" text="SR" size="lg" variant="neutral" />
+            </div>
             <h3 className="text-xl font-semibold text-text-primary mb-2">
               Start Searching
             </h3>

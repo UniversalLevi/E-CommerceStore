@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
 
           {success ? (
             <div className="bg-[#1a1a1a] border border-[#505050] rounded-lg p-6 text-center">
-              <div className="text-4xl mb-4 text-white">✓</div>
+              <div className="text-4xl mb-4 text-white">Success</div>
               <h3 className="text-lg font-semibold text-white mb-2">
                 Password Reset Successful
               </h3>
@@ -179,7 +179,7 @@ export default function ResetPasswordPage() {
                   href="/login"
                   className="text-sm text-white hover:text-[#e0e0e0] font-medium"
                 >
-                  ← Back to Login
+                  Back to Login
                 </Link>
               </div>
             </form>

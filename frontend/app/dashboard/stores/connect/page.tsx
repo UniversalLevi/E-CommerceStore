@@ -62,7 +62,7 @@ export default function ConnectStorePage() {
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/dashboard/stores" className="text-gray-300 hover:text-white">
-                ← Back to Stores
+                Back to Stores
               </Link>
             </div>
           </div>
@@ -82,7 +82,7 @@ export default function ConnectStorePage() {
           {/* Instructions */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-8">
             <h3 className="font-semibold text-white mb-3">
-              📚 How to get your credentials:
+              How to get your credentials:
             </h3>
             <ol className="list-decimal list-inside space-y-2 text-gray-300 text-sm">
               <li>
@@ -262,7 +262,7 @@ export default function ConnectStorePage() {
           {/* Security Note */}
           <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4">
             <p className="text-sm text-gray-300">
-              🔒 <strong>Security:</strong> Your credentials are encrypted using AES-256-GCM before storage.
+              <strong>Security:</strong> Your credentials are encrypted using AES-256-GCM before storage.
               They are only decrypted when needed to perform operations on your behalf.
             </p>
           </div>

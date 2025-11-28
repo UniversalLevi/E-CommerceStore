@@ -3,22 +3,24 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import IconBadge from './IconBadge';
 
 interface NavItem {
   href: string;
   label: string;
-  icon: string;
+  badge?: string;
+  variant?: 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
 }
 
 const navItems: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/dashboard/stores', label: 'My Stores', icon: '🏪' },
-  { href: '/dashboard/products', label: 'My Products', icon: '📦' },
-  { href: '/dashboard/billing', label: 'Billing', icon: '💳' },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: '📈' },
-  { href: '/dashboard/activity', label: 'Activity', icon: '🕐' },
-  { href: '/dashboard/help', label: 'Help', icon: '❓' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/dashboard', label: 'Dashboard', badge: 'DB', variant: 'primary' },
+  { href: '/dashboard/stores', label: 'My Stores', badge: 'ST' },
+  { href: '/dashboard/products', label: 'My Products', badge: 'PR' },
+  { href: '/dashboard/billing', label: 'Billing', badge: 'BL', variant: 'warning' },
+  { href: '/dashboard/analytics', label: 'Analytics', badge: 'AN' },
+  { href: '/dashboard/activity', label: 'Activity', badge: 'AC' },
+  { href: '/dashboard/help', label: 'Help', badge: 'HP' },
+  { href: '/settings', label: 'Settings', badge: 'SE' },
 ];
 
 export default function DashboardSidebar() {
@@ -45,13 +47,19 @@ export default function DashboardSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                 isActive
                   ? 'bg-primary-500 text-black font-semibold shadow-lg'
                   : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
               }`}
             >
-              <span className="text-xl">{item.icon}</span>
+              <IconBadge
+                text={item.badge}
+                label={item.label}
+                size="sm"
+                variant={item.variant || 'neutral'}
+                className={`shrink-0 ${isActive ? 'bg-black/10 text-black border-white/40' : 'group-hover:border-primary-500/40'}`}
+              />
               <span className="font-medium">{item.label}</span>
             </Link>
           );

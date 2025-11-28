@@ -149,7 +149,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
                 {step === 1 && (
                   <div>
                     <Dialog.Title as="h3" className="text-2xl font-bold leading-6 text-text-primary mb-4">
-                      Welcome! 👋
+                      Welcome!
                     </Dialog.Title>
                     <div className="mt-2">
                       <p className="text-text-secondary mb-6">
@@ -305,7 +305,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
                 {step === 5 && (
                   <div>
                     <Dialog.Title as="h3" className="text-2xl font-bold leading-6 text-text-primary mb-4">
-                      Start Adding Products! 🚀
+                      Start Adding Products!
                     </Dialog.Title>
                     <div className="mt-2">
                       <p className="text-text-secondary mb-6">

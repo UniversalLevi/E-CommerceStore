@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { ReactNode } from 'react';
 import Button from './Button';
+import IconBadge from './IconBadge';
 
 interface EmptyStateProps {
-  icon?: string;
+  icon?: ReactNode | string;
   title: string;
   message: string;
   actionLabel?: string;
@@ -15,7 +17,7 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({
-  icon = '📦',
+  icon,
   title,
   message,
   actionLabel,
@@ -24,11 +26,39 @@ export default function EmptyState({
   secondaryActionLabel,
   secondaryActionHref,
 }: EmptyStateProps) {
+  const renderIcon = () => {
+    if (typeof icon === 'string') {
+      const cleaned = icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 2);
+      return (
+        <IconBadge
+          text={cleaned || undefined}
+          label={title}
+          size="xl"
+          variant="primary"
+          className="shadow-lg"
+        />
+      );
+    }
+
+    if (icon) {
+      return icon;
+    }
+
+    return (
+      <IconBadge
+        label={title}
+        size="xl"
+        variant="primary"
+        className="shadow-lg"
+      />
+    );
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-md p-12 text-center">
-      <div className="text-6xl mb-4">{icon}</div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 mb-6">{message}</p>
+    <div className="bg-surface-raised border border-border-default rounded-2xl shadow-xl p-12 text-center space-y-4 hover-lift animate-scaleIn">
+      <div className="flex justify-center">{renderIcon()}</div>
+      <h3 className="text-2xl font-semibold text-text-primary">{title}</h3>
+      <p className="text-text-secondary max-w-xl mx-auto">{message}</p>
       {(actionLabel || secondaryActionLabel) && (
         <div className="flex gap-4 justify-center flex-wrap">
           {actionLabel && (
@@ -36,7 +66,7 @@ export default function EmptyState({
               {actionHref ? (
                 <Link
                   href={actionHref}
-                  className="inline-block bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-colors"
+                  className="inline-flex items-center justify-center bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                 >
                   {actionLabel}
                 </Link>
@@ -48,7 +78,7 @@ export default function EmptyState({
           {secondaryActionLabel && secondaryActionHref && (
             <Link
               href={secondaryActionHref}
-              className="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors"
+              className="inline-flex items-center justify-center bg-surface-hover hover:bg-surface-elevated text-text-primary px-6 py-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 border border-border-default"
             >
               {secondaryActionLabel}
             </Link>

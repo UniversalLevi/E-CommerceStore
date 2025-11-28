@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Product } from '@/types';
 import { notify } from '@/lib/toast';
+import IconBadge from '@/components/IconBadge';
 
 interface UserProduct extends Product {
   stores: Array<{
@@ -138,8 +139,10 @@ export default function MyProductsPage() {
         )}
 
         {filteredProducts.length === 0 ? (
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center">
-            <div className="text-6xl mb-4">📦</div>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
+            <div className="flex justify-center">
+              <IconBadge label="No products" text="NP" size="lg" variant="neutral" />
+            </div>
             <h3 className="text-xl font-semibold text-text-primary mb-2">
               {searchQuery ? 'No products found' : 'No products added yet'}
             </h3>

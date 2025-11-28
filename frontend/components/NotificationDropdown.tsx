@@ -2,6 +2,7 @@
 
 import { Fragment } from 'react';
 import { Transition } from '@headlessui/react';
+import IconBadge from './IconBadge';
 
 interface Notification {
   _id: string;
@@ -30,18 +31,18 @@ export default function NotificationDropdown({
   onClose,
   onNotificationClick,
 }: NotificationDropdownProps) {
-  const getNotificationIcon = (type: string) => {
+  const getNotificationBadge = (type: string) => {
     switch (type) {
       case 'store_connection':
-        return '🏪';
+        return { text: 'SC', label: 'Store connection', variant: 'success' as const };
       case 'product_added':
-        return '📦';
+        return { text: 'PR', label: 'Product added', variant: 'primary' as const };
       case 'store_test':
-        return '🔍';
+        return { text: 'QA', label: 'Store test', variant: 'warning' as const };
       case 'system_update':
-        return '🔔';
+        return { text: 'UP', label: 'System update', variant: 'neutral' as const };
       default:
-        return '📢';
+        return { text: 'NT', label: 'Notification', variant: 'neutral' as const };
     }
   };
 
@@ -71,8 +72,10 @@ export default function NotificationDropdown({
 
         <div className="overflow-y-auto flex-1">
           {notifications.length === 0 ? (
-            <div className="p-8 text-center text-[#5D737E]">
-              <div className="text-4xl mb-2">🔔</div>
+            <div className="p-8 text-center text-[#5D737E] space-y-2">
+              <div className="flex justify-center">
+                <IconBadge label="Notifications" text="NT" size="lg" variant="neutral" />
+              </div>
               <p>No notifications</p>
             </div>
           ) : (
@@ -91,9 +94,11 @@ export default function NotificationDropdown({
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="text-2xl flex-shrink-0">
-                      {getNotificationIcon(notification.type)}
-                    </div>
+                    <IconBadge
+                      {...getNotificationBadge(notification.type)}
+                      size="sm"
+                      className="flex-shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="font-semibold text-[#F0F7EE] text-sm">

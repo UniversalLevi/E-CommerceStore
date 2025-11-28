@@ -26,13 +26,13 @@ export default function Button({
   className = '',
 }: ButtonProps) {
   const baseStyles =
-    'inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] shadow-lg hover:shadow-xl';
 
   const variantStyles = {
-    primary: 'bg-primary-500 hover:bg-primary-600 text-black focus:ring-primary-500',
-    secondary: 'bg-surface-hover hover:bg-surface-elevated text-text-primary focus:ring-primary-500 border border-border-default',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
-    ghost: 'bg-transparent hover:bg-surface-hover text-text-primary focus:ring-primary-500',
+    primary: 'bg-primary-500 hover:bg-primary-600 text-black',
+    secondary: 'bg-surface-hover hover:bg-surface-elevated text-text-primary border border-border-default',
+    danger: 'bg-red-600 hover:bg-red-700 text-white',
+    ghost: 'bg-transparent hover:bg-surface-hover text-text-primary',
   };
 
   return (

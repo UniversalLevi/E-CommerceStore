@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { Niche } from '@/types';
 import Navbar from '@/components/Navbar';
 import FindWinningProductModal from '@/components/FindWinningProductModal';
+import IconBadge from '@/components/IconBadge';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProductsPage() {
@@ -85,10 +86,16 @@ export default function ProductsPage() {
               alt={niche.name}
               className="w-full h-full object-cover"
             />
-          ) : niche.icon ? (
-            <div className="text-8xl">{niche.icon}</div>
           ) : (
-            <div className="text-6xl text-text-muted">📦</div>
+            <IconBadge
+              text={
+                typeof niche.icon === 'string'
+                  ? niche.icon.replace(/[^A-Za-z0-9]/g, '').slice(0, 3)
+                  : undefined
+              }
+              label={niche.name}
+              size="lg"
+            />
           )}
         </div>
         <div className="p-6" style={cardStyle.color ? {} : {}}>
@@ -209,7 +216,7 @@ export default function ProductsPage() {
           className="fixed bottom-8 right-8 bg-black hover:bg-gray-700 text-white p-4 rounded-full shadow-2xl hover:shadow-2xl transition-all z-50 flex items-center gap-2 font-semibold border-4 border-gray-600 ring-4 ring-gray-500/30"
           aria-label="Find Winning Product"
         >
-          <span className="text-2xl">🎯</span>
+          <IconBadge text="FW" label="Find winning product" size="sm" variant="primary" className="bg-white/10 border-white/30" />
           <span className="hidden md:inline">Find Winning Product</span>
         </button>
       )}

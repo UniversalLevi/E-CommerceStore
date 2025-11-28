@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import VideoIntro from '@/components/VideoIntro';
+import IconBadge, { IconBadgeVariant } from '@/components/IconBadge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -24,6 +25,69 @@ export default function Home() {
   const [loadingPlans, setLoadingPlans] = useState(true);
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  type FeatureCard = { title: string; description: string; badge: string; variant?: IconBadgeVariant };
+  const detailedFeatures: FeatureCard[] = [
+    {
+      title: 'Easy Store Connection',
+      description: 'Connect your Shopify store in minutes with just your access token. No complex setup required.',
+      badge: 'SC',
+      variant: 'primary',
+    },
+    {
+      title: 'Curated Product Catalog',
+      description: 'Browse thousands of products organized by niches. Find exactly what you need for your store.',
+      badge: 'PC',
+    },
+    {
+      title: 'One-Click Product Addition',
+      description: 'Add products to your Shopify store with a single click. All details, images, and pricing included.',
+      badge: 'OC',
+      variant: 'success',
+    },
+    {
+      title: 'Multiple Store Management',
+      description: 'Manage multiple Shopify stores from one account. Switch between stores effortlessly.',
+      badge: 'MS',
+    },
+    {
+      title: 'Niche-Based Organization',
+      description: 'Products organized by niches make it easy to find relevant items for your target market.',
+      badge: 'NO',
+    },
+    {
+      title: 'Automatic Store Setup',
+      description: 'Products are automatically added to your store with professional descriptions and images.',
+      badge: 'AS',
+      variant: 'success',
+    },
+    {
+      title: 'Secure Credential Storage',
+      description: 'Your Shopify credentials are encrypted and stored securely. We never share your data.',
+      badge: 'SS',
+      variant: 'danger',
+    },
+    {
+      title: 'Real-Time Sync',
+      description: 'See your products appear in Shopify instantly. No waiting, no delays.',
+      badge: 'RT',
+      variant: 'primary',
+    },
+  ];
+
+  const benefits: Array<{ title: string; description: string }> = [
+    {
+      title: 'No Technical Skills Required',
+      description: 'Our platform handles all the technical complexity. You just browse, select, and launch.',
+    },
+    {
+      title: 'Curated Product Catalog',
+      description: 'Every product in our catalog is carefully selected and optimized for e-commerce success.',
+    },
+    {
+      title: 'Automatic Product Setup',
+      description: 'Products include professional descriptions, images, and pricing so you can start selling faster.',
+    },
+  ];
 
   const handleIntroComplete = () => {
     setShowContent(true);
@@ -133,7 +197,12 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
-              <div className="text-5xl mb-6 group-hover:scale-110 transition-transform">🛍️</div>
+              <IconBadge
+                text="BP"
+                label="Browse Products"
+                size="lg"
+                className="mb-6 group-hover:scale-110 transition-transform"
+              />
               <h3 className="text-2xl font-bold mb-4 text-text-primary">Browse Products</h3>
               <p className="text-text-secondary leading-relaxed">
                 Choose from our curated catalog of ready-to-sell products across multiple niches. 
@@ -142,7 +211,13 @@ export default function Home() {
             </div>
             
             <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
-              <div className="text-5xl mb-6 group-hover:scale-110 transition-transform">🔗</div>
+              <IconBadge
+                text="CS"
+                label="Connect Shopify"
+                size="lg"
+                variant="primary"
+                className="mb-6 group-hover:scale-110 transition-transform"
+              />
               <h3 className="text-2xl font-bold mb-4 text-text-primary">Connect Shopify</h3>
               <p className="text-text-secondary leading-relaxed">
                 Securely link your Shopify account in seconds. Manage multiple stores 
@@ -151,7 +226,13 @@ export default function Home() {
             </div>
             
             <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
-              <div className="text-5xl mb-6 group-hover:scale-110 transition-transform">🚀</div>
+              <IconBadge
+                text="LS"
+                label="Launch store"
+                size="lg"
+                variant="success"
+                className="mb-6 group-hover:scale-110 transition-transform"
+              />
               <h3 className="text-2xl font-bold mb-4 text-text-primary">Launch Store</h3>
               <p className="text-text-secondary leading-relaxed">
                 Get a fully functional store created automatically. Add products with 
@@ -175,7 +256,7 @@ export default function Home() {
             <div className="space-y-8">
               <div className="flex gap-6 items-start">
                 <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary-500 text-black flex items-center justify-center text-2xl font-bold">
-                  ✓
+                  01
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-text-primary mb-2">No Technical Skills Required</h3>
@@ -187,7 +268,7 @@ export default function Home() {
 
               <div className="flex gap-6 items-start">
                 <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary-500 text-black flex items-center justify-center text-2xl font-bold">
-                  ✓
+                  02
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-text-primary mb-2">Curated Product Catalog</h3>
@@ -199,7 +280,7 @@ export default function Home() {
 
               <div className="flex gap-6 items-start">
                 <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary-500 text-black flex items-center justify-center text-2xl font-bold">
-                  ✓
+                  03
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-text-primary mb-2">Fast & Reliable</h3>
@@ -275,20 +356,20 @@ export default function Home() {
                     <ul className="space-y-3 mb-8">
                       {plan.features.map((feature, idx) => (
                         <li key={idx} className="flex items-start gap-3">
-                          <span className="text-primary-500 mt-1">✓</span>
+                          <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
                           <span className="text-text-secondary">{feature}</span>
                         </li>
                       ))}
                       {plan.maxProducts !== null ? (
                         <li className="flex items-start gap-3">
-                          <span className="text-primary-500 mt-1">✓</span>
+                          <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
                           <span className="text-text-secondary">
                             Up to {plan.maxProducts} products
                           </span>
                         </li>
                       ) : (
                         <li className="flex items-start gap-3">
-                          <span className="text-primary-500 mt-1">✓</span>
+                          <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
                           <span className="text-text-secondary font-semibold">
                             Unlimited products
                           </span>
@@ -332,53 +413,18 @@ export default function Home() {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 max-w-7xl mx-auto">
-            {[
-              {
-                title: 'Easy Store Connection',
-                description: 'Connect your Shopify store in minutes with just your access token. No complex setup required.',
-                icon: '🔗',
-              },
-              {
-                title: 'Curated Product Catalog',
-                description: 'Browse thousands of products organized by niches. Find exactly what you need for your store.',
-                icon: '📦',
-              },
-              {
-                title: 'One-Click Product Addition',
-                description: 'Add products to your Shopify store with a single click. All details, images, and pricing included.',
-                icon: '⚡',
-              },
-              {
-                title: 'Multiple Store Management',
-                description: 'Manage multiple Shopify stores from one account. Switch between stores effortlessly.',
-                icon: '🏪',
-              },
-              {
-                title: 'Niche-Based Organization',
-                description: 'Products organized by niches make it easy to find relevant items for your target market.',
-                icon: '🎯',
-              },
-              {
-                title: 'Automatic Store Setup',
-                description: 'Products are automatically added to your store with professional descriptions and images.',
-                icon: '🤖',
-              },
-              {
-                title: 'Secure Credential Storage',
-                description: 'Your Shopify credentials are encrypted and stored securely. We never share your data.',
-                icon: '🔒',
-              },
-              {
-                title: 'Real-Time Sync',
-                description: 'See your products appear in Shopify instantly. No waiting, no delays.',
-                icon: '🔄',
-              },
-            ].map((feature, index) => (
+            {detailedFeatures.map((feature, index) => (
               <div
                 key={index}
                 className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:border-primary-500 hover:shadow-lg transition-all"
               >
-                <div className="text-4xl mb-4">{feature.icon}</div>
+                <IconBadge
+                  text={feature.badge}
+                  label={feature.title}
+                  variant={feature.variant ?? 'neutral'}
+                  size="lg"
+                  className="mb-4"
+                />
                 <h3 className="text-xl font-semibold text-text-primary mb-2">{feature.title}</h3>
                 <p className="text-text-secondary text-sm">{feature.description}</p>
               </div>

@@ -170,7 +170,7 @@ export default function RegisterPage() {
               href="/"
               className="text-sm text-[#808080] hover:text-[#a0a0a0]"
             >
-              ← Back to home
+              Back to home
             </Link>
           </div>
         </div>

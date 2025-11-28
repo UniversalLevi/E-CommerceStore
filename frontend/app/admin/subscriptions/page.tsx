@@ -384,18 +384,19 @@ export default function AdminSubscriptionsPage() {
   }
 
   return (
-    <div className="space-y-6" style={{ position: 'relative', zIndex: 1 }}>
-      <h1 className="text-3xl font-bold text-text-primary">Subscription Management</h1>
+    <div className="space-y-6 animate-fadeIn" style={{ position: 'relative', zIndex: 1 }}>
+      <h1 className="text-3xl font-bold text-text-primary gradient-text animate-slideIn">Subscription Management</h1>
 
       {/* All Subscriptions List */}
-      <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+      <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
         <h2 className="text-lg font-semibold text-text-primary mb-4">All Active Subscriptions</h2>
         {loadingSubscriptions ? (
           <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
             <p className="text-text-secondary">Loading subscriptions...</p>
           </div>
         ) : allSubscriptions.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-8 animate-fadeIn">
             <p className="text-text-secondary">No active subscriptions found</p>
           </div>
         ) : (
@@ -428,11 +429,12 @@ export default function AdminSubscriptionsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-surface-raised divide-y divide-border-default">
-                  {allSubscriptions.map((sub) => (
+                  {allSubscriptions.map((sub, index) => (
                     <tr
                       key={sub.id}
-                      className="hover:bg-surface-hover cursor-pointer"
+                      className="hover:bg-surface-hover cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.01]"
                       onClick={() => handleUserClick(sub.userId, sub.userEmail)}
+                      style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s both` }}
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-text-primary">
                         {sub.userEmail}
@@ -458,7 +460,7 @@ export default function AdminSubscriptionsPage() {
                             e.stopPropagation();
                             handleUserClick(sub.userId, sub.userEmail);
                           }}
-                          className="text-primary-500 hover:text-primary-600"
+                          className="text-primary-500 hover:text-primary-600 transition-all duration-200 hover:scale-110 font-medium"
                         >
                           View Details
                         </button>
@@ -479,14 +481,14 @@ export default function AdminSubscriptionsPage() {
                   <button
                     onClick={() => setSubscriptionsPagination({ ...subscriptionsPagination, page: subscriptionsPagination.page - 1 })}
                     disabled={subscriptionsPagination.page === 1}
-                    className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setSubscriptionsPagination({ ...subscriptionsPagination, page: subscriptionsPagination.page + 1 })}
                     disabled={subscriptionsPagination.page >= subscriptionsPagination.pages}
-                    className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
                   >
                     Next
                   </button>
@@ -498,7 +500,7 @@ export default function AdminSubscriptionsPage() {
       </div>
 
       {/* Search Section */}
-      <div id="search-section" className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+      <div id="search-section" className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
         <h2 className="text-lg font-semibold text-text-primary mb-4">Search User</h2>
         <div className="flex gap-4">
           <input
@@ -507,12 +509,12 @@ export default function AdminSubscriptionsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && searchUser()}
             placeholder="Enter user email or ID"
-            className="flex-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+            className="flex-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
           />
           <button
             onClick={searchUser}
             disabled={searching}
-            className="px-6 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600 disabled:opacity-50"
+            className="px-6 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600 disabled:opacity-50 transition-all duration-200 hover:scale-105 active:scale-95 font-medium shadow-lg hover:shadow-xl"
           >
             {searching ? 'Searching...' : 'Search'}
           </button>
@@ -522,7 +524,7 @@ export default function AdminSubscriptionsPage() {
       {searchedUser && (
         <>
           {/* User Info */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
             <h2 className="text-lg font-semibold text-text-primary mb-4">User Information</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -553,16 +555,17 @@ export default function AdminSubscriptionsPage() {
           {/* Subscription Details */}
           {loading ? (
             <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
               <p className="text-text-secondary">Loading subscription...</p>
             </div>
           ) : subscription ? (
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6" style={{ position: 'relative', zIndex: 10 }}>
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn" style={{ position: 'relative', zIndex: 10 }}>
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-lg font-semibold text-text-primary">Current Subscription</h2>
                 <div className="flex gap-2 relative z-10" style={{ pointerEvents: 'auto' }}>
                   <button
                     onClick={() => setUpdateModalOpen(true)}
-                    className="px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600 relative z-10"
+                    className="px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600 relative z-10 transition-all duration-200 hover:scale-105 active:scale-95 font-medium shadow-md hover:shadow-lg"
                     type="button"
                     style={{ cursor: 'pointer', pointerEvents: 'auto' }}
                   >
@@ -570,7 +573,7 @@ export default function AdminSubscriptionsPage() {
                   </button>
                   <button
                     onClick={() => setRevokeModalOpen(true)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 relative z-10"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 relative z-10 transition-all duration-200 hover:scale-105 active:scale-95 font-medium shadow-md hover:shadow-lg"
                     type="button"
                     style={{ cursor: 'pointer', pointerEvents: 'auto' }}
                   >
@@ -616,12 +619,12 @@ export default function AdminSubscriptionsPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
               <div className="flex justify-between items-center">
                 <p className="text-text-secondary">No active subscription found</p>
                 <button
                   onClick={() => setGrantModalOpen(true)}
-                  className="px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600"
+                  className="px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600 transition-all duration-200 hover:scale-105 active:scale-95 font-medium shadow-md hover:shadow-lg"
                 >
                   Grant Plan
                 </button>
@@ -630,12 +633,12 @@ export default function AdminSubscriptionsPage() {
           )}
 
           {/* Actions Panel */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 relative z-10" style={{ pointerEvents: 'auto' }}>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 relative z-10 hover-lift animate-scaleIn" style={{ pointerEvents: 'auto' }}>
             <h2 className="text-lg font-semibold text-text-primary mb-4">Actions</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4" style={{ pointerEvents: 'auto' }}>
               <button
                 onClick={() => setGrantModalOpen(true)}
-                className="px-4 py-3 bg-primary-500 text-black rounded-lg hover:bg-primary-600 transition-colors relative z-10"
+                className="px-4 py-3 bg-primary-500 text-black rounded-lg hover:bg-primary-600 transition-all duration-200 hover:scale-105 active:scale-95 relative z-10 font-medium shadow-md hover:shadow-lg"
                 type="button"
                 style={{ cursor: 'pointer', pointerEvents: 'auto' }}
               >
@@ -650,7 +653,7 @@ export default function AdminSubscriptionsPage() {
                   }
                 }}
                 disabled={!subscription}
-                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors relative z-10"
+                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 relative z-10 font-medium shadow-md hover:shadow-lg"
                 type="button"
                 style={{ cursor: subscription ? 'pointer' : 'not-allowed', pointerEvents: subscription ? 'auto' : 'none' }}
               >
@@ -665,7 +668,7 @@ export default function AdminSubscriptionsPage() {
                   }
                 }}
                 disabled={!subscription}
-                className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors relative z-10"
+                className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 relative z-10 font-medium shadow-md hover:shadow-lg"
                 type="button"
                 style={{ cursor: subscription ? 'pointer' : 'not-allowed', pointerEvents: subscription ? 'auto' : 'none' }}
               >
@@ -680,7 +683,7 @@ export default function AdminSubscriptionsPage() {
                   }
                 }}
                 disabled={!subscription}
-                className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors relative z-10"
+                className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 relative z-10 font-medium shadow-md hover:shadow-lg"
                 type="button"
                 style={{ cursor: subscription ? 'pointer' : 'not-allowed', pointerEvents: subscription ? 'auto' : 'none' }}
               >
@@ -690,20 +693,25 @@ export default function AdminSubscriptionsPage() {
           </div>
 
           {/* History Timeline */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
             <h2 className="text-lg font-semibold text-text-primary mb-4">Subscription History</h2>
             {loadingHistory ? (
               <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
                 <p className="text-text-secondary">Loading history...</p>
               </div>
             ) : subscriptionHistory.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-8 animate-fadeIn">
                 <p className="text-text-secondary">No history found</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {subscriptionHistory.map((sub) => (
-                  <div key={sub.id} className="border-l-2 border-border-default pl-4 pb-4">
+                {subscriptionHistory.map((sub, index) => (
+                  <div 
+                    key={sub.id} 
+                    className="border-l-2 border-border-default pl-4 pb-4 hover:border-primary-500 transition-all duration-300 hover:bg-surface-base rounded-r-lg p-2 -ml-2"
+                    style={{ animation: `slideIn 0.4s ease-out ${index * 0.1}s both` }}
+                  >
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-text-primary font-medium">{sub.planName}</p>
@@ -715,12 +723,16 @@ export default function AdminSubscriptionsPage() {
                       {getStatusBadge(sub.status)}
                     </div>
                     {sub.history && sub.history.length > 0 && (
-                      <div className="mt-2 space-y-2">
+                      <div className="mt-2 space-y-1">
                         {sub.history.map((event, idx) => (
-                          <div key={idx} className="text-sm text-text-secondary">
-                            <span className="font-medium">{event.action}</span> -{' '}
+                          <div 
+                            key={idx} 
+                            className="text-sm text-text-secondary hover:text-text-primary transition-colors duration-200 p-2 rounded hover:bg-surface-hover"
+                            style={{ animation: `fadeIn 0.3s ease-out ${(index * 0.1 + idx * 0.05)}s both` }}
+                          >
+                            <span className="font-medium text-text-primary">{event.action}</span> -{' '}
                             {formatDate(event.timestamp)}
-                            {event.notes && <span className="ml-2">({event.notes})</span>}
+                            {event.notes && <span className="ml-2 text-text-tertiary">({event.notes})</span>}
                           </div>
                         ))}
                       </div>
@@ -759,7 +771,7 @@ export default function AdminSubscriptionsPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-6 text-left align-middle shadow-2xl transition-all">
                   <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-text-primary">
                     Grant Subscription
                   </Dialog.Title>
@@ -771,7 +783,7 @@ export default function AdminSubscriptionsPage() {
                       <select
                         value={grantForm.planCode}
                         onChange={(e) => setGrantForm({ ...grantForm, planCode: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                       >
                         <option value="starter_30">Starter Monthly</option>
                         <option value="growth_90">Growth Quarterly</option>
@@ -786,7 +798,7 @@ export default function AdminSubscriptionsPage() {
                         type="number"
                         value={grantForm.daysValid}
                         onChange={(e) => setGrantForm({ ...grantForm, daysValid: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                         placeholder="Leave empty for plan default"
                       />
                     </div>
@@ -798,7 +810,7 @@ export default function AdminSubscriptionsPage() {
                         type="date"
                         value={grantForm.endDate}
                         onChange={(e) => setGrantForm({ ...grantForm, endDate: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                       />
                     </div>
                     <div>
@@ -808,7 +820,7 @@ export default function AdminSubscriptionsPage() {
                       <textarea
                         value={grantForm.adminNote}
                         onChange={(e) => setGrantForm({ ...grantForm, adminNote: e.target.value })}
-                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                        className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
                         rows={3}
                       />
                     </div>
@@ -816,13 +828,13 @@ export default function AdminSubscriptionsPage() {
                   <div className="mt-6 flex gap-3">
                     <button
                       onClick={handleGrant}
-                      className="flex-1 px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600"
+                      className="flex-1 px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600 transition-all duration-200 hover:scale-105 active:scale-95 font-medium shadow-md hover:shadow-lg"
                     >
                       Grant
                     </button>
                     <button
                       onClick={() => setGrantModalOpen(false)}
-                      className="flex-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover"
+                      className="flex-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover transition-all duration-200 hover:scale-105 active:scale-95"
                     >
                       Cancel
                     </button>
@@ -884,7 +896,7 @@ export default function AdminSubscriptionsPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-6 text-left align-middle shadow-2xl transition-all">
                   <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-text-primary">
                     Update Subscription
                   </Dialog.Title>
@@ -975,7 +987,7 @@ export default function AdminSubscriptionsPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-6 text-left align-middle shadow-2xl transition-all">
                   <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-text-primary">
                     Add Admin Note
                   </Dialog.Title>

@@ -124,7 +124,7 @@ export default function EditStorePage() {
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/dashboard/stores" className="text-text-secondary hover:text-text-primary">
-                ← Back to Stores
+                Back to Stores
               </Link>
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function EditStorePage() {
           {/* Security Note */}
           <div className="mt-6 bg-surface-base border border-border-default rounded-lg p-4">
             <p className="text-sm text-text-secondary">
-              🔒 <strong>Security:</strong> Your credentials are encrypted using AES-256-GCM before storage.
+              <strong>Security:</strong> Your credentials are encrypted using AES-256-GCM before storage.
               They are only decrypted when needed to perform operations on your behalf.
             </p>
           </div>

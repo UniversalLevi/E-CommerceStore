@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import LoadingScreen from '@/components/LoadingScreen';
+import IconBadge from '@/components/IconBadge';
 import {
   BarChart,
   Bar,
@@ -249,12 +250,12 @@ export default function AdminRevenuePage() {
 
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-text-primary">Revenue Dashboard</h1>
+    <div className="space-y-6 animate-fadeIn">
+      <div className="flex justify-between items-center animate-slideIn">
+        <h1 className="text-3xl font-bold text-text-primary gradient-text">Revenue Dashboard</h1>
         <button
           onClick={handleExport}
-          className="px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600 transition-colors"
+          className="px-6 py-3 bg-primary-500 text-black rounded-lg hover:bg-primary-600 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl font-medium"
         >
           Export CSV
         </button>
@@ -262,51 +263,79 @@ export default function AdminRevenuePage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-          <div className="flex justify-between items-start">
+        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="flex justify-between items-start relative z-10">
             <div>
               <p className="text-text-secondary text-sm mb-1">Total Revenue</p>
-              <p className="text-3xl font-bold text-text-primary">
+              <p className="text-3xl font-bold text-text-primary transition-transform duration-300 group-hover:scale-105">
                 {summary ? formatCurrency(summary.totalRevenue) : '₹0.00'}
               </p>
             </div>
-            <div className="text-4xl">💰</div>
+            <IconBadge
+              text="TR"
+              label="Total revenue"
+              size="md"
+              variant="primary"
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+            />
           </div>
         </div>
 
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-          <div className="flex justify-between items-start">
+        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter-delay-1 group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="flex justify-between items-start relative z-10">
             <div>
               <p className="text-text-secondary text-sm mb-1">Revenue This Month</p>
-              <p className="text-3xl font-bold text-text-primary">
+              <p className="text-3xl font-bold text-text-primary transition-transform duration-300 group-hover:scale-105">
                 {summary ? formatCurrency(summary.monthlyRevenue) : '₹0.00'}
               </p>
             </div>
-            <div className="text-4xl">📈</div>
+            <IconBadge
+              text="RM"
+              label="Monthly revenue"
+              size="md"
+              variant="success"
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+            />
           </div>
         </div>
 
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-          <div className="flex justify-between items-start">
+        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter-delay-2 group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="flex justify-between items-start relative z-10">
             <div>
               <p className="text-text-secondary text-sm mb-1">Active Subscriptions</p>
-              <p className="text-3xl font-bold text-text-primary">
+              <p className="text-3xl font-bold text-text-primary transition-transform duration-300 group-hover:scale-105">
                 {summary?.activeSubscriptions || 0}
               </p>
             </div>
-            <div className="text-4xl">✅</div>
+            <IconBadge
+              text="AS"
+              label="Active subscriptions"
+              size="md"
+              variant="warning"
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+            />
           </div>
         </div>
 
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-          <div className="flex justify-between items-start">
+        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter-delay-3 group relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="flex justify-between items-start relative z-10">
             <div>
               <p className="text-text-secondary text-sm mb-1">New Payments (Month)</p>
-              <p className="text-3xl font-bold text-text-primary">
+              <p className="text-3xl font-bold text-text-primary transition-transform duration-300 group-hover:scale-105">
                 {summary?.newPaymentsThisMonth || 0}
               </p>
             </div>
-            <div className="text-4xl">💳</div>
+            <IconBadge
+              text="NP"
+              label="New payments"
+              size="md"
+              variant="neutral"
+              className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+            />
           </div>
         </div>
       </div>
@@ -314,7 +343,7 @@ export default function AdminRevenuePage() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Payments Over Time */}
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
           <h3 className="text-lg font-semibold text-text-primary mb-4">
             Payments vs Date (Last 30 Days)
           </h3>
@@ -357,7 +386,7 @@ export default function AdminRevenuePage() {
         </div>
 
         {/* Plan Performance */}
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
           <h3 className="text-lg font-semibold text-text-primary mb-4">
             Revenue by Plan
           </h3>
@@ -382,7 +411,7 @@ export default function AdminRevenuePage() {
       </div>
 
       {/* Payments Table */}
-      <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+      <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 animate-fadeIn">
         <h3 className="text-lg font-semibold text-text-primary mb-4">Payments</h3>
 
         {/* Filters */}
@@ -391,20 +420,20 @@ export default function AdminRevenuePage() {
             type="date"
             value={filters.startDate}
             onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
             placeholder="Start Date"
           />
           <input
             type="date"
             value={filters.endDate}
             onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
             placeholder="End Date"
           />
           <select
             value={filters.planCode}
             onChange={(e) => setFilters({ ...filters, planCode: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
           >
             <option value="">All Plans</option>
             <option value="starter_30">Starter Monthly</option>
@@ -414,7 +443,7 @@ export default function AdminRevenuePage() {
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
           >
             <option value="">All Status</option>
             <option value="paid">Paid</option>
@@ -426,7 +455,7 @@ export default function AdminRevenuePage() {
             type="text"
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+            className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
             placeholder="Search by email..."
           />
         </div>
@@ -434,10 +463,11 @@ export default function AdminRevenuePage() {
         {/* Table */}
         {loadingPayments ? (
           <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
             <p className="text-text-secondary">Loading payments...</p>
           </div>
         ) : payments.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-8 animate-fadeIn">
             <p className="text-text-secondary">No payments found</p>
           </div>
         ) : (
@@ -455,10 +485,11 @@ export default function AdminRevenuePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.map((payment) => (
+                  {payments.map((payment, index) => (
                     <tr
                       key={payment.id}
-                      className="border-b border-border-default hover:bg-surface-base transition-colors"
+                      className="border-b border-border-default hover:bg-surface-base transition-all duration-200 hover:shadow-md"
+                      style={{ animation: `fadeIn 0.3s ease-out ${index * 0.05}s both` }}
                     >
                       <td className="py-3 px-4 text-text-primary">{formatDate(payment.createdAt)}</td>
                       <td className="py-3 px-4 text-text-primary">{payment.userEmail}</td>
@@ -497,14 +528,14 @@ export default function AdminRevenuePage() {
                 <button
                   onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
                   disabled={pagination.page === 1}
-                  className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-raised"
+                  className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-raised transition-all duration-200 hover:scale-105 active:scale-95"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                   disabled={pagination.page >= pagination.pages}
-                  className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-raised"
+                  className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-surface-raised transition-all duration-200 hover:scale-105 active:scale-95"
                 >
                   Next
                 </button>

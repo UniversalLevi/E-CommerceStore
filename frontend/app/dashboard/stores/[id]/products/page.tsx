@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Product } from '@/types';
 import { notify } from '@/lib/toast';
+import IconBadge from '@/components/IconBadge';
 
 interface UserProduct extends Product {
   stores: Array<{
@@ -110,7 +111,7 @@ export default function StoreProductsPage() {
             href={`/dashboard/stores/${params.id}`}
             className="text-primary-600 hover:text-primary-700 font-medium"
           >
-            ← Back to Store Details
+            Back to Store Details
           </Link>
         </div>
 
@@ -151,8 +152,10 @@ export default function StoreProductsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-md p-12 text-center">
-            <div className="text-6xl mb-4">📦</div>
+          <div className="bg-white rounded-xl shadow-md p-12 text-center space-y-4">
+            <div className="flex justify-center">
+              <IconBadge label="No products" text="NP" size="lg" variant="neutral" />
+            </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               {searchQuery ? 'No products found' : 'No products in this store'}
             </h3>

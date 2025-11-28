@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import Button from '@/components/Button';
 import ConfirmModal from '@/components/ConfirmModal';
+import IconBadge from '@/components/IconBadge';
 
 interface StoreConnection {
   _id: string;
@@ -133,7 +134,7 @@ export default function StoreDetailsPage() {
             href="/dashboard/stores"
             className="text-primary-500 hover:text-primary-600 font-medium"
           >
-            ← Back to Stores
+            Back to Stores
           </Link>
         </div>
 
@@ -312,7 +313,7 @@ export default function StoreDetailsPage() {
               href={`/dashboard/stores/${params.id}/products`}
               className="bg-surface-elevated hover:bg-surface-hover border border-border-default rounded-lg p-4 text-center transition-colors"
             >
-              <div className="text-3xl mb-2">📦</div>
+              <IconBadge text="PR" label="View products" size="sm" className="mb-2 mx-auto" />
               <div className="font-semibold text-text-primary">View Products</div>
               <div className="text-sm text-text-secondary">
                 Manage products in this store
@@ -324,7 +325,7 @@ export default function StoreDetailsPage() {
               rel="noopener noreferrer"
               className="bg-surface-elevated hover:bg-surface-hover border border-border-default rounded-lg p-4 text-center transition-colors"
             >
-              <div className="text-3xl mb-2">🛍️</div>
+              <IconBadge text="VS" label="Visit store" size="sm" variant="primary" className="mb-2 mx-auto" />
               <div className="font-semibold text-text-primary">Visit Store</div>
               <div className="text-sm text-text-secondary">
                 Open store in new tab
@@ -334,7 +335,7 @@ export default function StoreDetailsPage() {
               href={`/dashboard/stores/${params.id}/edit`}
               className="bg-surface-elevated hover:bg-surface-hover border border-border-default rounded-lg p-4 text-center transition-colors"
             >
-              <div className="text-3xl mb-2">⚙️</div>
+              <IconBadge text="ED" label="Edit store" size="sm" variant="warning" className="mb-2 mx-auto" />
               <div className="font-semibold text-text-primary">Edit Store</div>
               <div className="text-sm text-text-secondary">
                 Update store settings

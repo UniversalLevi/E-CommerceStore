@@ -74,7 +74,7 @@ export default function ContactPage() {
 
         {success ? (
           <div className="bg-surface-hover border border-border-default rounded-lg p-6 text-center">
-            <div className="text-4xl mb-4 text-text-primary">✓</div>
+            <div className="text-4xl mb-4 text-text-primary">Thank you</div>
             <h3 className="text-lg font-semibold text-text-primary mb-2">
               Message Sent Successfully
             </h3>

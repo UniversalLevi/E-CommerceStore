@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import Button from '@/components/Button';
+import IconBadge from '@/components/IconBadge';
 
 export default function Error({
   error,
@@ -17,8 +18,10 @@ export default function Error({
 
   return (
     <div className="min-h-screen bg-surface-base flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-surface-raised border border-border-default rounded-xl shadow-lg p-8 text-center">
-        <div className="text-6xl mb-4">⚠️</div>
+      <div className="max-w-md w-full bg-surface-raised border border-border-default rounded-xl shadow-lg p-8 text-center space-y-4">
+        <div className="flex justify-center">
+          <IconBadge label="Error" text="ERR" size="lg" variant="danger" />
+        </div>
         <h1 className="text-2xl font-bold text-text-primary mb-2">Something went wrong</h1>
         <p className="text-text-secondary mb-6">
           We encountered an unexpected error. Please try again or contact support if the problem
