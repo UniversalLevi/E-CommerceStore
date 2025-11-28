@@ -36,7 +36,12 @@ export const listSubscriptions = async (
     const filter: any = {};
 
     if (req.query.status) {
-      filter.status = req.query.status;
+      // If status is 'active', include both 'active' and 'manually_granted'
+      if (req.query.status === 'active') {
+        filter.status = { $in: ['active', 'manually_granted'] };
+      } else {
+        filter.status = req.query.status;
+      }
     }
 
     if (req.query.planCode) {
@@ -448,8 +453,8 @@ export const updateSubscription = async (
       throw createError('userId is required', 400);
     }
 
-    if (!planCode && !extendDays) {
-      throw createError('Either planCode or extendDays must be provided', 400);
+    if (!planCode && !extendDays && !adminNote) {
+      throw createError('Either planCode, extendDays, or adminNote must be provided', 400);
     }
 
     const user = await User.findById(userId);
@@ -468,7 +473,7 @@ export const updateSubscription = async (
     }
 
     const now = new Date();
-    let actionType: 'manual_upgrade' | 'manual_extension' = 'manual_extension';
+    let actionType: 'manual_upgrade' | 'manual_extension' | 'note_added' = 'note_added';
 
     // Handle upgrade
     if (planCode) {
@@ -512,23 +517,47 @@ export const updateSubscription = async (
 
       // Update user model
       user.planExpiresAt = subscription.endDate;
+      actionType = 'manual_extension';
+    }
+
+    // Handle admin note update
+    if (adminNote && !planCode && !extendDays) {
+      subscription.adminNote = adminNote;
+      actionType = 'note_added';
+    } else if (adminNote) {
+      // If adminNote is provided along with other changes, just update it
+      subscription.adminNote = adminNote;
     }
 
     // Add history entry
+    const historyNotes = adminNote || 
+      (actionType === 'manual_upgrade' ? 'Plan upgraded by admin' : 
+       actionType === 'manual_extension' ? 'Plan extended by admin' : 
+       'Admin note added');
+    
+    // Use valid action type for history
+    const historyAction = actionType === 'note_added' ? 'manual_extension' : actionType;
+    
     subscription.history.push({
-      action: actionType,
+      action: historyAction as 'manual_upgrade' | 'manual_extension',
       timestamp: now,
       adminId: (req.user as any)._id,
-      notes: adminNote || (actionType === 'manual_upgrade' ? 'Plan upgraded by admin' : 'Plan extended by admin'),
+      notes: historyNotes,
     });
 
     await subscription.save();
     await user.save();
 
     // Create audit log
+    const auditAction = actionType === 'manual_upgrade' 
+      ? 'SUBSCRIPTION_UPGRADED' 
+      : actionType === 'note_added'
+      ? 'SUBSCRIPTION_EXTENDED' // Use existing action type
+      : 'SUBSCRIPTION_EXTENDED';
+    
     await AuditLog.create({
       userId: (req.user as any)._id,
-      action: actionType === 'manual_upgrade' ? 'SUBSCRIPTION_UPGRADED' : 'SUBSCRIPTION_EXTENDED',
+      action: auditAction,
       success: true,
       details: {
         targetUserId: userId,
@@ -536,13 +565,20 @@ export const updateSubscription = async (
         planCode: planCode || subscription.planCode,
         extendDays,
         adminNote,
+        actionType: actionType,
       },
       ipAddress: req.ip,
     });
 
+    const successMessage = actionType === 'manual_upgrade' 
+      ? 'Subscription upgraded successfully' 
+      : actionType === 'note_added'
+      ? 'Admin note added successfully'
+      : 'Subscription extended successfully';
+
     res.json({
       success: true,
-      message: actionType === 'manual_upgrade' ? 'Subscription upgraded successfully' : 'Subscription extended successfully',
+      message: successMessage,
       data: {
         subscription: {
           id: subscription._id,

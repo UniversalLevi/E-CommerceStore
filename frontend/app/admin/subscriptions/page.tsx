@@ -92,12 +92,13 @@ export default function AdminSubscriptionsPage() {
     try {
       setSearching(true);
       // Try to find user by email or ID
-      const response = await api.get<{ success: boolean; data: User[] }>(
-        `/api/admin/users?search=${encodeURIComponent(searchQuery)}`
-      );
+      const response = await api.get<{
+        success: boolean;
+        data: { users: User[]; pagination: any };
+      }>(`/api/admin/users?search=${encodeURIComponent(searchQuery)}&limit=1`);
 
-      if (response.data && response.data.length > 0) {
-        const foundUser = response.data[0];
+      if (response.data.users && response.data.users.length > 0) {
+        const foundUser = response.data.users[0];
         setSearchedUser(foundUser);
         await fetchUserSubscription(foundUser._id);
         await fetchSubscriptionHistory(foundUser._id);
@@ -118,19 +119,46 @@ export default function AdminSubscriptionsPage() {
   const fetchUserSubscription = async (userId: string) => {
     try {
       setLoading(true);
-      // Get active subscription
+      // Get active or manually_granted subscription
       const response = await api.get<{
         success: boolean;
         data: { subscriptions: Subscription[] };
       }>(`/api/admin/subscriptions?userId=${userId}&status=active`);
 
-      if (response.data.subscriptions && response.data.subscriptions.length > 0) {
-        setSubscription(response.data.subscriptions[0]);
+      console.log('Subscription API response:', response.data);
+
+      if (response.data && response.data.subscriptions && response.data.subscriptions.length > 0) {
+        const activeSub = response.data.subscriptions.find(
+          (sub) => sub.status === 'active' || sub.status === 'manually_granted'
+        ) || response.data.subscriptions[0];
+        console.log('Setting subscription:', activeSub);
+        setSubscription(activeSub);
       } else {
-        setSubscription(null);
+        // Try without status filter to get any subscription
+        const allResponse = await api.get<{
+          success: boolean;
+          data: { subscriptions: Subscription[] };
+        }>(`/api/admin/subscriptions?userId=${userId}`);
+        
+        if (allResponse.data && allResponse.data.subscriptions && allResponse.data.subscriptions.length > 0) {
+          const activeSub = allResponse.data.subscriptions.find(
+            (sub) => sub.status === 'active' || sub.status === 'manually_granted'
+          );
+          if (activeSub) {
+            console.log('Setting subscription from all:', activeSub);
+            setSubscription(activeSub);
+          } else {
+            console.log('No active subscription found');
+            setSubscription(null);
+          }
+        } else {
+          console.log('No subscriptions found');
+          setSubscription(null);
+        }
       }
     } catch (error: any) {
       console.error('Error fetching subscription:', error);
+      setSubscription(null);
     } finally {
       setLoading(false);
     }
@@ -220,6 +248,12 @@ export default function AdminSubscriptionsPage() {
         payload.adminNote = updateForm.adminNote;
       }
 
+      // Validate that at least one field is provided
+      if (!payload.planCode && !payload.extendDays && !payload.adminNote) {
+        notify.error('Please provide at least one field to update');
+        return;
+      }
+
       await api.post('/api/admin/subscriptions/update', payload);
       notify.success('Subscription updated successfully');
       setUpdateModalOpen(false);
@@ -229,6 +263,30 @@ export default function AdminSubscriptionsPage() {
     } catch (error: any) {
       console.error('Error updating subscription:', error);
       notify.error(error.response?.data?.message || 'Failed to update subscription');
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!searchedUser || !subscription) return;
+
+    try {
+      if (!noteForm.note.trim()) {
+        notify.error('Please enter a note');
+        return;
+      }
+
+      await api.post('/api/admin/subscriptions/update', {
+        userId: searchedUser._id,
+        adminNote: noteForm.note,
+      });
+      notify.success('Note added successfully');
+      setNoteModalOpen(false);
+      setNoteForm({ note: '' });
+      await fetchUserSubscription(searchedUser._id);
+      await fetchSubscriptionHistory(searchedUser._id);
+    } catch (error: any) {
+      console.error('Error adding note:', error);
+      notify.error(error.response?.data?.message || 'Failed to add note');
     }
   };
 
@@ -267,7 +325,7 @@ export default function AdminSubscriptionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ position: 'relative', zIndex: 1 }}>
       <h1 className="text-3xl font-bold text-text-primary">Subscription Management</h1>
 
       {/* Search Section */}
@@ -329,19 +387,23 @@ export default function AdminSubscriptionsPage() {
               <p className="text-text-secondary">Loading subscription...</p>
             </div>
           ) : subscription ? (
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6" style={{ position: 'relative', zIndex: 10 }}>
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-lg font-semibold text-text-primary">Current Subscription</h2>
-                <div className="flex gap-2">
+                <div className="flex gap-2 relative z-10" style={{ pointerEvents: 'auto' }}>
                   <button
                     onClick={() => setUpdateModalOpen(true)}
-                    className="px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600"
+                    className="px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600 relative z-10"
+                    type="button"
+                    style={{ cursor: 'pointer', pointerEvents: 'auto' }}
                   >
                     Update
                   </button>
                   <button
                     onClick={() => setRevokeModalOpen(true)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 relative z-10"
+                    type="button"
+                    style={{ cursor: 'pointer', pointerEvents: 'auto' }}
                   >
                     Revoke
                   </button>
@@ -399,32 +461,59 @@ export default function AdminSubscriptionsPage() {
           )}
 
           {/* Actions Panel */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 relative z-10" style={{ pointerEvents: 'auto' }}>
             <h2 className="text-lg font-semibold text-text-primary mb-4">Actions</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4" style={{ pointerEvents: 'auto' }}>
               <button
                 onClick={() => setGrantModalOpen(true)}
-                className="px-4 py-3 bg-primary-500 text-black rounded-lg hover:bg-primary-600 transition-colors"
+                className="px-4 py-3 bg-primary-500 text-black rounded-lg hover:bg-primary-600 transition-colors relative z-10"
+                type="button"
+                style={{ cursor: 'pointer', pointerEvents: 'auto' }}
               >
                 Grant Plan
               </button>
               <button
-                onClick={() => setUpdateModalOpen(true)}
+                onClick={() => {
+                  if (subscription) {
+                    setUpdateModalOpen(true);
+                  } else {
+                    notify.error('No active subscription found');
+                  }
+                }}
                 disabled={!subscription}
-                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors relative z-10"
+                type="button"
+                style={{ cursor: subscription ? 'pointer' : 'not-allowed', pointerEvents: subscription ? 'auto' : 'none' }}
               >
                 Upgrade/Extend
               </button>
               <button
-                onClick={() => setRevokeModalOpen(true)}
+                onClick={() => {
+                  if (subscription) {
+                    setRevokeModalOpen(true);
+                  } else {
+                    notify.error('No active subscription found');
+                  }
+                }}
                 disabled={!subscription}
-                className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors relative z-10"
+                type="button"
+                style={{ cursor: subscription ? 'pointer' : 'not-allowed', pointerEvents: subscription ? 'auto' : 'none' }}
               >
                 Revoke Plan
               </button>
               <button
-                onClick={() => setNoteModalOpen(true)}
-                className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                onClick={() => {
+                  if (subscription) {
+                    setNoteModalOpen(true);
+                  } else {
+                    notify.error('No active subscription found');
+                  }
+                }}
+                disabled={!subscription}
+                className="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors relative z-10"
+                type="button"
+                style={{ cursor: subscription ? 'pointer' : 'not-allowed', pointerEvents: subscription ? 'auto' : 'none' }}
               >
                 Add Note
               </button>
@@ -679,6 +768,69 @@ export default function AdminSubscriptionsPage() {
                     </button>
                     <button
                       onClick={() => setUpdateModalOpen(false)}
+                      className="flex-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Add Note Modal */}
+      <Transition appear show={noteModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={() => setNoteModalOpen(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-text-primary">
+                    Add Admin Note
+                  </Dialog.Title>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-text-secondary mb-1">
+                      Note
+                    </label>
+                    <textarea
+                      value={noteForm.note}
+                      onChange={(e) => setNoteForm({ note: e.target.value })}
+                      className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                      rows={4}
+                      placeholder="Enter admin note..."
+                    />
+                  </div>
+                  <div className="mt-6 flex gap-3">
+                    <button
+                      onClick={handleAddNote}
+                      className="flex-1 px-4 py-2 bg-primary-500 text-black rounded-lg hover:bg-primary-600"
+                    >
+                      Add Note
+                    </button>
+                    <button
+                      onClick={() => setNoteModalOpen(false)}
                       className="flex-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover"
                     >
                       Cancel

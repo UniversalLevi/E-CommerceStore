@@ -23,13 +23,13 @@ export const revokeSubscriptionSchema = z.object({
 export const updateSubscriptionSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   planCode: z.string().refine(
-    (val) => isValidPlanCode(val),
+    (val) => !val || isValidPlanCode(val),
     { message: 'Invalid plan code' }
   ).optional(),
   extendDays: z.number().int().positive().optional(),
   adminNote: z.string().optional(),
 }).refine(
-  (data) => data.planCode || data.extendDays,
-  { message: 'Either planCode or extendDays must be provided' }
+  (data) => data.planCode || data.extendDays || data.adminNote,
+  { message: 'Either planCode, extendDays, or adminNote must be provided' }
 );
 
