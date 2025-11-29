@@ -2,6 +2,7 @@
 
 import { Fragment } from 'react';
 import { Transition } from '@headlessui/react';
+import { useRouter } from 'next/navigation';
 import IconBadge from './IconBadge';
 import { Store, Package, FlaskConical, Bell } from 'lucide-react';
 
@@ -32,6 +33,7 @@ export default function NotificationDropdown({
   onClose,
   onNotificationClick,
 }: NotificationDropdownProps) {
+  const router = useRouter();
   const getNotificationBadge = (type: string) => {
     switch (type) {
       case 'store_connection':
@@ -123,19 +125,17 @@ export default function NotificationDropdown({
           )}
         </div>
 
-        {notifications.length > 0 && (
-          <div className="p-4 border-t border-[#5D737E] text-center">
-            <button
-              onClick={() => {
-                onClose();
-                // Navigate to notifications page if it exists
-              }}
-              className="text-sm text-[#1AC8ED] hover:text-[#1AC8ED]/80 transition-colors"
-            >
-              View all notifications
-            </button>
-          </div>
-        )}
+        <div className="p-4 border-t border-[#5D737E] text-center">
+          <button
+            onClick={() => {
+              onClose();
+              router.push('/dashboard/notifications');
+            }}
+            className="text-sm text-[#1AC8ED] hover:text-[#1AC8ED]/80 transition-colors"
+          >
+            View all notifications
+          </button>
+        </div>
       </div>
     </Transition>
   );

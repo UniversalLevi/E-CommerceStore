@@ -33,6 +33,11 @@ export default function SettingsPage() {
   const [emailLinkError, setEmailLinkError] = useState('');
   const [linkingEmail, setLinkingEmail] = useState(false);
 
+  // Mobile linking form
+  const [mobileLink, setMobileLink] = useState('');
+  const [mobileLinkError, setMobileLinkError] = useState('');
+  const [linkingMobile, setLinkingMobile] = useState(false);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -109,7 +114,7 @@ export default function SettingsPage() {
       const response = await api.post('/api/auth/link-email', {
         email: emailLink.trim(),
       });
-      notify.success('Email linked successfully');
+      notify.success(response.message || 'Verification email sent. Please check your email to verify and link your email address.');
       setEmailLink('');
       // Refresh user data
       window.location.reload();
@@ -118,6 +123,40 @@ export default function SettingsPage() {
       notify.error(error.response?.data?.error || 'Failed to link email');
     } finally {
       setLinkingEmail(false);
+    }
+  };
+
+  const handleLinkMobile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMobileLinkError('');
+
+    if (!mobileLink.trim()) {
+      setMobileLinkError('Mobile number is required');
+      return;
+    }
+
+    const mobileRegex = /^\+?[1-9]\d{1,14}$/;
+    const cleanMobile = mobileLink.replace(/\s/g, '');
+    if (!mobileRegex.test(cleanMobile)) {
+      setMobileLinkError('Invalid mobile number format');
+      return;
+    }
+
+    setLinkingMobile(true);
+
+    try {
+      const response = await api.post('/api/auth/link-mobile', {
+        mobile: cleanMobile,
+      });
+      notify.success('Mobile number linked successfully');
+      setMobileLink('');
+      // Refresh user data
+      window.location.reload();
+    } catch (error: any) {
+      setMobileLinkError(error.response?.data?.error || 'Failed to link mobile number');
+      notify.error(error.response?.data?.error || 'Failed to link mobile number');
+    } finally {
+      setLinkingMobile(false);
     }
   };
 
@@ -167,12 +206,10 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-text-secondary">Email</label>
                 <p className="mt-1 text-sm text-text-primary">{user?.email || 'Not linked'}</p>
               </div>
-              {user?.mobile && (
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary">Mobile</label>
-                  <p className="mt-1 text-sm text-text-primary">{user.mobile}</p>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary">Mobile</label>
+                <p className="mt-1 text-sm text-text-primary">{user?.mobile || 'Not linked'}</p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-text-secondary">Role</label>
                 <span
@@ -236,6 +273,48 @@ export default function SettingsPage() {
                 </div>
                 <Button type="submit" loading={linkingEmail}>
                   Link Email
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* Link Mobile */}
+          {!user?.mobile && (
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold text-text-primary mb-4">Link Mobile Number</h2>
+              <p className="text-sm text-text-secondary mb-4">
+                Link a mobile number to your account for better security and verification.
+              </p>
+              <form onSubmit={handleLinkMobile} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="mobileLink"
+                    className="block text-sm font-medium text-text-secondary mb-2"
+                  >
+                    Mobile Number
+                  </label>
+                  <input
+                    id="mobileLink"
+                    type="tel"
+                    value={mobileLink}
+                    onChange={(e) => {
+                      setMobileLink(e.target.value);
+                      if (mobileLinkError) setMobileLinkError('');
+                    }}
+                    className={`w-full px-4 py-2 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      mobileLinkError ? 'border-red-500' : 'border-border-default'
+                    }`}
+                    placeholder="+1234567890"
+                  />
+                  {mobileLinkError && (
+                    <p className="mt-1 text-sm text-red-400">{mobileLinkError}</p>
+                  )}
+                  <p className="mt-1 text-xs text-text-muted">
+                    Include country code (e.g., +1 for US, +44 for UK)
+                  </p>
+                </div>
+                <Button type="submit" loading={linkingMobile}>
+                  Link Mobile Number
                 </Button>
               </form>
             </div>

@@ -59,6 +59,12 @@ export const register = async (
         userData.emailLinkReminderSent = false;
       }
     }
+    if (email && email.trim()) {
+      // If email-only account, set flag to send mobile link reminder
+      if (!mobile || !mobile.trim()) {
+        userData.mobileLinkReminderSent = false;
+      }
+    }
 
     const user = await User.create(userData);
 
@@ -112,6 +118,20 @@ export const register = async (
         link: '/settings',
         metadata: {
           reminderType: 'email_link',
+        },
+      });
+    }
+
+    // If email-only account, send notification to link mobile
+    if (email && !mobile) {
+      await createNotification({
+        userId: user._id as mongoose.Types.ObjectId,
+        type: 'system_update',
+        title: 'Link Your Mobile Number',
+        message: 'For better account security and verification, please link a mobile number to your account.',
+        link: '/settings',
+        metadata: {
+          reminderType: 'mobile_link',
         },
       });
     }
@@ -447,6 +467,82 @@ export const linkEmail = async (
       message: 'Verification email sent. Please check your email to verify and link your email address.',
       // Only in development
       ...(process.env.NODE_ENV === 'development' && { verifyUrl }),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const linkMobile = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { mobile } = req.body;
+
+    if (!mobile) {
+      throw createError('Mobile number is required', 400);
+    }
+
+    // Validate mobile format
+    const mobileRegex = /^\+?[1-9]\d{1,14}$/;
+    const cleanMobile = mobile.replace(/\s/g, '');
+    if (!mobileRegex.test(cleanMobile)) {
+      throw createError('Invalid mobile number format', 400);
+    }
+
+    const user = await User.findById((req.user as any)._id);
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    // Check if mobile is already linked to another account (exclude deleted accounts)
+    const existingUser = await User.findOne({ 
+      mobile: cleanMobile,
+      $or: [
+        { deletedAt: { $exists: false } },
+        { deletedAt: null }
+      ]
+    });
+    if (existingUser && (existingUser._id as mongoose.Types.ObjectId).toString() !== (user._id as mongoose.Types.ObjectId).toString()) {
+      throw createError('Mobile number is already linked to another account', 409);
+    }
+
+    // Check if user already has this mobile
+    if (user.mobile && user.mobile === cleanMobile) {
+      throw createError('This mobile number is already linked to your account', 400);
+    }
+
+    // Link mobile to account (no verification needed for mobile, just link directly)
+    user.mobile = cleanMobile;
+    user.mobileLinkedAt = new Date();
+    user.mobileLinkReminderSent = true;
+    await user.save();
+
+    // Create audit log
+    await logAuditWithRequest(req, {
+      userId: (req.user as any)._id,
+      action: 'LINK_MOBILE',
+      success: true,
+      details: {
+        mobile: cleanMobile,
+        hadEmail: !!user.email,
+      },
+    });
+
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete (userResponse as any).password;
+
+    res.status(200).json({
+      success: true,
+      message: 'Mobile number linked successfully',
+      user: userResponse,
     });
   } catch (error) {
     next(error);

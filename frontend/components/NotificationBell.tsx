@@ -49,11 +49,12 @@ export default function NotificationBell() {
 
   const fetchNotifications = async () => {
     try {
+      // Only fetch unread notifications for the navbar dropdown
       const response = await api.get<{
         success: boolean;
         data: Notification[];
         unreadCount: number;
-      }>('/api/notifications?limit=10');
+      }>('/api/notifications?limit=10&read=false');
       setNotifications(response.data);
       setUnreadCount(response.unreadCount);
     } catch (err) {
@@ -64,9 +65,8 @@ export default function NotificationBell() {
   const handleMarkAsRead = async (id: string) => {
     try {
       await api.put(`/api/notifications/${id}/read`);
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === id ? { ...n, read: true } : n))
-      );
+      // Remove the notification from the list since it's now read
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
       console.error('Failed to mark notification as read');
@@ -76,7 +76,8 @@ export default function NotificationBell() {
   const handleMarkAllAsRead = async () => {
     try {
       await api.put('/api/notifications/read-all');
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      // Clear all notifications from the dropdown since they're all read now
+      setNotifications([]);
       setUnreadCount(0);
     } catch (err) {
       console.error('Failed to mark all as read');

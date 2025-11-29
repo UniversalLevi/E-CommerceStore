@@ -61,6 +61,7 @@ const auditLogSchema = new Schema<IAuditLog>({
       'REVENUE_EXPORTED',
       'LINK_EMAIL',
       'VERIFY_EMAIL',
+      'LINK_MOBILE',
       'MENTORSHIP_REPLY_SENT',
     ],
     index: true,

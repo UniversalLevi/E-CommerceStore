@@ -38,6 +38,9 @@ export interface IUser extends Document {
   // Email linking for mobile-only accounts
   emailLinkedAt?: Date;
   emailLinkReminderSent?: boolean;
+  // Mobile linking for email-only accounts
+  mobileLinkedAt?: Date;
+  mobileLinkReminderSent?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -169,6 +172,14 @@ const userSchema = new Schema<IUser>(
       type: Date,
     },
     emailLinkReminderSent: {
+      type: Boolean,
+      default: false,
+    },
+    // Mobile linking for email-only accounts
+    mobileLinkedAt: {
+      type: Date,
+    },
+    mobileLinkReminderSent: {
       type: Boolean,
       default: false,
     },

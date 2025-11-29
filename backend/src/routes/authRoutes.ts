@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { register, login, logout, getMe, changePassword, deleteAccount, forgotPassword, resetPassword, updateOnboarding, linkEmail, verifyEmail } from '../controllers/authController';
+import { register, login, logout, getMe, changePassword, deleteAccount, forgotPassword, resetPassword, updateOnboarding, linkEmail, verifyEmail, linkMobile } from '../controllers/authController';
 import { validate } from '../middleware/validate';
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '../validators/authValidator';
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema, linkMobileSchema } from '../validators/authValidator';
 import { authenticateToken } from '../middleware/auth';
 import { authRateLimit, generalApiRateLimit } from '../middleware/rateLimit';
 import { z } from 'zod';
@@ -20,6 +20,7 @@ router.post('/logout', authenticateToken, generalApiRateLimit, logout);
 router.get('/me', authenticateToken, generalApiRateLimit, getMe);
 router.put('/change-password', authenticateToken, generalApiRateLimit, changePassword);
 router.post('/link-email', authenticateToken, generalApiRateLimit, linkEmail);
+router.post('/link-mobile', authenticateToken, generalApiRateLimit, validate(linkMobileSchema), linkMobile);
 router.delete('/account', authenticateToken, generalApiRateLimit, deleteAccount);
 
 // Onboarding route

@@ -31,9 +31,14 @@ export const verifyEmailSchema = z.object({
   token: z.string().min(1, 'Verification token is required'),
 });
 
+export const linkMobileSchema = z.object({
+  mobile: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid mobile number format'),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type LinkMobileInput = z.infer<typeof linkMobileSchema>;
 
