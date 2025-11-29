@@ -176,7 +176,7 @@ export default function WriteProductDescriptionModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-8 text-left align-middle shadow-xl transition-all max-h-[90vh] overflow-y-auto">
+              <Dialog.Panel className="w-full max-w-4xl mx-4 transform overflow-hidden rounded-2xl bg-surface-raised border border-border-default p-4 md:p-6 lg:p-8 text-left align-middle shadow-xl transition-all max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
                   <Dialog.Title as="h3" className="text-2xl font-bold text-text-primary">
                     Write Product Description (AI)

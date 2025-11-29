@@ -262,7 +262,7 @@ export default function AdminUsersPage() {
           {/* Users Table */}
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border-default">
+              <table className="w-full min-w-full divide-y divide-border-default">
                 <thead className="bg-surface-elevated">
                   <tr>
                     <th

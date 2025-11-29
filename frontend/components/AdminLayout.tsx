@@ -56,16 +56,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Navigation */}
       <nav className="bg-surface-raised border-b border-border-default shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-yellow-500 hover:text-yellow-400 transition-colors">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <Link href="/dashboard" className="text-xl md:text-2xl font-bold text-yellow-500 hover:text-yellow-400 transition-colors">
               Auto Shopify Store Builder
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 md:gap-4">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`${
+                  className={`text-sm md:text-base min-h-[44px] flex items-center px-2 py-1 ${
                     pathname === item.href
                       ? 'text-yellow-500 font-medium'
                       : 'text-text-secondary hover:text-text-primary'
@@ -74,7 +74,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   {item.label}
                 </Link>
               ))}
-              <span className="text-text-secondary">{user.email}</span>
+              <span className="text-text-secondary text-sm md:text-base">{user.email}</span>
             </div>
           </div>
         </div>

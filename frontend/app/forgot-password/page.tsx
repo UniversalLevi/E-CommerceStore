@@ -100,9 +100,9 @@ export default function ForgotPasswordPage() {
                       setErrors({ ...errors, email: '' });
                     }
                   }}
-                  className={`appearance-none relative block w-full px-3 py-2 bg-surface-elevated text-text-primary border ${
+                  className={`appearance-none relative block w-full px-4 py-3 bg-surface-elevated text-text-primary border ${
                     errors.email ? 'border-red-500' : 'border-border-default'
-                  } placeholder:text-text-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
+                  } placeholder:text-text-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm min-h-[44px]`}
                   placeholder="you@example.com"
                 />
                 {errors.email && (

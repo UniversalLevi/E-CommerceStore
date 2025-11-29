@@ -89,7 +89,7 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
         {/* Text Overlay */}
         {showText && (
           <h1
-            className="text-5xl md:text-7xl lg:text-8xl font-bold text-white text-center px-4 italic"
+            className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white text-center px-4 italic"
             style={{
               fontFamily: 'var(--font-playfair), "Playfair Display", "Georgia", serif',
               textShadow: `
@@ -131,13 +131,12 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
         {showButton && (
           <button
             onClick={handleStart}
-            className={`bg-transparent hover:opacity-80 text-white font-bold transition-all duration-500 transform hover:scale-110 cursor-pointer border-none outline-none ${
+            className={`bg-transparent hover:opacity-80 text-white font-bold transition-all duration-500 transform hover:scale-110 cursor-pointer border-none outline-none text-4xl md:text-6xl lg:text-8xl px-4 py-2 ${
               showButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
             style={{
               fontFamily: '"Inter", "Arial", sans-serif',
               letterSpacing: '0.1em',
-              fontSize: '8rem',
               lineHeight: '1',
               textShadow: '0 4px 30px rgba(0, 0, 0, 0.8), 0 2px 15px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 255, 255, 0.2)',
             }}
@@ -150,7 +149,7 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
       {/* Optional: Add a skip button */}
       <button
         onClick={handleStart}
-        className="absolute bottom-8 right-8 z-10 bg-black/50 hover:bg-black/70 text-white px-6 py-3 rounded-lg font-semibold transition-all backdrop-blur-sm border border-white/20"
+        className="absolute bottom-4 right-4 md:bottom-8 md:right-8 z-10 bg-black/50 hover:bg-black/70 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition-all backdrop-blur-sm border border-white/20 text-sm md:text-base min-h-[44px]"
         aria-label="Skip intro"
       >
         Skip Intro

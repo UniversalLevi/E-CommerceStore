@@ -178,7 +178,7 @@ export default function AdminDashboardPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <div>
-            <h1 className="text-3xl font-bold text-text-primary gradient-text">Admin Dashboard</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-text-primary gradient-text">Admin Dashboard</h1>
             <p className="mt-2 text-text-secondary">System overview and statistics</p>
           </div>
 
@@ -204,13 +204,13 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift card-enter group relative overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-4 md:p-6 hover-lift card-enter group relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="flex items-center justify-between relative z-10">
                 <div>
                   <p className="text-sm text-text-secondary">Total Users</p>
-                  <p className="text-3xl font-bold text-text-primary mt-2">{stats.users.total}</p>
+                  <p className="text-2xl md:text-3xl font-bold text-text-primary mt-2">{stats.users.total}</p>
                   <p className="text-sm text-secondary-400 mt-1">
                     {stats.users.active} active (last 7 days)
                   </p>
@@ -282,8 +282,8 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-4 md:p-6 hover-lift animate-scaleIn">
               <h3 className="text-lg font-semibold text-text-primary mb-4">
                 User Registrations (Last 30 Days)
               </h3>

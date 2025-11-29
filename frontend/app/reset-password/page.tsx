@@ -126,9 +126,9 @@ export default function ResetPasswordPage() {
                       setErrors({ ...errors, password: '' });
                     }
                   }}
-                  className={`appearance-none relative block w-full px-3 py-2 bg-[#0a0a0a] text-white border ${
+                  className={`appearance-none relative block w-full px-4 py-3 bg-[#0a0a0a] text-white border ${
                     errors.password ? 'border-red-500' : 'border-[#505050]'
-                  } placeholder-[#808080] rounded-lg focus:outline-none focus:ring-[#808080] focus:border-[#808080] focus:z-10 sm:text-sm`}
+                  } placeholder-[#808080] rounded-lg focus:outline-none focus:ring-[#808080] focus:border-[#808080] focus:z-10 sm:text-sm min-h-[44px]`}
                   placeholder="Enter new password"
                 />
                 {errors.password && (
@@ -153,9 +153,9 @@ export default function ResetPasswordPage() {
                       setErrors({ ...errors, confirmPassword: '' });
                     }
                   }}
-                  className={`appearance-none relative block w-full px-3 py-2 bg-[#0a0a0a] text-white border ${
+                  className={`appearance-none relative block w-full px-4 py-3 bg-[#0a0a0a] text-white border ${
                     errors.confirmPassword ? 'border-red-500' : 'border-[#505050]'
-                  } placeholder-[#808080] rounded-lg focus:outline-none focus:ring-[#808080] focus:border-[#808080] focus:z-10 sm:text-sm`}
+                  } placeholder-[#808080] rounded-lg focus:outline-none focus:ring-[#808080] focus:border-[#808080] focus:z-10 sm:text-sm min-h-[44px]`}
                   placeholder="Confirm new password"
                 />
                 {errors.confirmPassword && (

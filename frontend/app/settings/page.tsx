@@ -176,30 +176,30 @@ export default function SettingsPage() {
       {/* Navigation */}
       <nav className="bg-surface-raised border-b border-border-default shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <Link href="/dashboard" className="text-xl md:text-2xl font-bold text-primary-500">
               Auto Shopify Store Builder
             </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-text-secondary hover:text-primary-500">
+            <div className="flex flex-wrap items-center gap-2 md:gap-4">
+              <Link href="/dashboard" className="text-text-secondary hover:text-primary-500 text-sm md:text-base min-h-[44px] flex items-center">
                 Dashboard
               </Link>
-              <Link href="/products" className="text-text-secondary hover:text-primary-500">
+              <Link href="/products" className="text-text-secondary hover:text-primary-500 text-sm md:text-base min-h-[44px] flex items-center">
                 Products
               </Link>
-              <span className="text-text-secondary">{user?.email}</span>
+              <span className="text-text-secondary text-sm md:text-base">{user?.email}</span>
             </div>
           </div>
         </div>
       </nav>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-text-primary mb-8">Settings</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-text-primary mb-6 md:mb-8">Settings</h1>
 
           {/* Profile Info */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-4 md:p-6 mb-4 md:mb-6">
             <h2 className="text-xl font-semibold text-text-primary mb-4">Profile Information</h2>
             <div className="space-y-4">
               <div>
@@ -241,7 +241,7 @@ export default function SettingsPage() {
 
           {/* Link Email */}
           {!user?.email && (
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-4 md:p-6 mb-4 md:mb-6">
               <h2 className="text-xl font-semibold text-text-primary mb-4">Link Email Address</h2>
               <p className="text-sm text-text-secondary mb-4">
                 Link an email address to your account for better security and password recovery.
@@ -262,7 +262,7 @@ export default function SettingsPage() {
                       setEmailLink(e.target.value);
                       if (emailLinkError) setEmailLinkError('');
                     }}
-                    className={`w-full px-4 py-2 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    className={`w-full px-4 py-3 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 min-h-[44px] ${
                       emailLinkError ? 'border-red-500' : 'border-border-default'
                     }`}
                     placeholder="you@example.com"
@@ -280,7 +280,7 @@ export default function SettingsPage() {
 
           {/* Link Mobile */}
           {!user?.mobile && (
-            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-4 md:p-6 mb-4 md:mb-6">
               <h2 className="text-xl font-semibold text-text-primary mb-4">Link Mobile Number</h2>
               <p className="text-sm text-text-secondary mb-4">
                 Link a mobile number to your account for better security and verification.
@@ -301,7 +301,7 @@ export default function SettingsPage() {
                       setMobileLink(e.target.value);
                       if (mobileLinkError) setMobileLinkError('');
                     }}
-                    className={`w-full px-4 py-2 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    className={`w-full px-4 py-3 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 min-h-[44px] ${
                       mobileLinkError ? 'border-red-500' : 'border-border-default'
                     }`}
                     placeholder="+1234567890"
@@ -321,7 +321,7 @@ export default function SettingsPage() {
           )}
 
           {/* Change Password */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-4 md:p-6 mb-4 md:mb-6">
             <h2 className="text-xl font-semibold text-text-primary mb-4">Change Password</h2>
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>

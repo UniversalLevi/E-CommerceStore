@@ -199,7 +199,7 @@ export default function AdminNichesPage() {
         {/* Niches Table */}
         <div className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-full">
               <thead className="bg-surface-elevated">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">

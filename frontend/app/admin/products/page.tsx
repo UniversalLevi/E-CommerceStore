@@ -134,25 +134,26 @@ export default function AdminProductsPage() {
           </div>
         ) : (
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden">
-            <table className="w-full">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-full">
               <thead className="bg-surface-elevated border-b border-border-default">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Product
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Niche
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Price
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -160,26 +161,26 @@ export default function AdminProductsPage() {
               <tbody className="divide-y divide-border-default">
                 {products.map((product) => (
                   <tr key={product._id} className="hover:bg-surface-hover">
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-6 py-4">
                       <div className="flex items-center">
                         {product.images?.[0] && (
                         <img
                           src={product.images[0]}
                           alt={product.title}
-                          className="w-12 h-12 object-cover rounded"
+                          className="w-10 h-10 md:w-12 md:h-12 object-cover rounded"
                         />
                         )}
-                        <div className="ml-4">
+                        <div className="ml-2 md:ml-4">
                           <div className="text-sm font-medium text-text-primary">
                             {product.title}
                           </div>
-                          <div className="text-sm text-text-muted">
+                          <div className="text-xs md:text-sm text-text-muted hidden md:block">
                             {product.description?.substring(0, 50)}...
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-6 py-4">
                       {product.niche && typeof product.niche === 'object' ? (
                         <span
                           className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-primary-500 text-black cursor-pointer hover:bg-primary-600"
@@ -192,13 +193,13 @@ export default function AdminProductsPage() {
                         <span className="text-xs text-text-muted">Uncategorized</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-text-secondary capitalize">
+                    <td className="px-3 md:px-6 py-4 text-sm text-text-secondary capitalize">
                       {product.category || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-text-primary">
+                    <td className="px-3 md:px-6 py-4 text-sm text-text-primary">
                       ${product.price.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 md:px-6 py-4">
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           product.active
@@ -209,24 +210,27 @@ export default function AdminProductsPage() {
                         {product.active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right text-sm font-medium">
-                      <Link
-                        href={`/admin/products/${product._id}/edit`}
-                        className="text-primary-500 hover:text-primary-600 mr-4"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(product._id)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        Delete
-                      </button>
+                    <td className="px-3 md:px-6 py-4 text-right text-sm font-medium">
+                      <div className="flex flex-col md:flex-row gap-2 md:gap-0 md:justify-end">
+                        <Link
+                          href={`/admin/products/${product._id}/edit`}
+                          className="text-primary-500 hover:text-primary-600 md:mr-4"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(product._id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         )}
     </div>

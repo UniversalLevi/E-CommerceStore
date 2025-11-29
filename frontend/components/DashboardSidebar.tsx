@@ -14,6 +14,7 @@ import {
   Settings,
   Megaphone,
   Bell,
+  X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -21,6 +22,11 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+}
+
+interface DashboardSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 const navItems: NavItem[] = [
@@ -36,21 +42,52 @@ const navItems: NavItem[] = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export default function DashboardSidebar() {
+export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
 
   return (
-    <aside className="w-64 bg-surface-raised border-r border-border-default h-screen fixed left-0 top-0 overflow-y-auto">
-      {/* Logo */}
-      <div className="p-6 border-b border-border-default">
-        <Link 
-          href="/" 
-          className="text-xl font-bold text-text-primary hover:text-text-secondary transition-colors"
-        >
-          Store Builder
-        </Link>
-      </div>
+    <>
+      {/* Backdrop overlay for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed lg:relative
+          top-0 left-0
+          w-64 h-screen
+          bg-surface-raised border-r border-border-default
+          overflow-y-auto
+          z-50 lg:z-auto
+          transform transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+      >
+        {/* Logo and Close Button */}
+        <div className="p-6 border-b border-border-default flex items-center justify-between">
+          <Link 
+            href="/" 
+            className="text-xl font-bold text-text-primary hover:text-text-secondary transition-colors"
+            onClick={() => onClose?.()}
+          >
+            Store Builder
+          </Link>
+          {/* Close button for mobile */}
+          <button
+            onClick={onClose}
+            className="lg:hidden p-2 text-text-secondary hover:text-text-primary transition-colors rounded-lg hover:bg-surface-hover"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
       {/* Navigation */}
       <nav className="p-4 space-y-1">
@@ -73,7 +110,8 @@ export default function DashboardSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+              onClick={() => onClose?.()}
+              className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[44px] ${
                 isActive
                   ? 'bg-yellow-500 text-black font-semibold shadow-lg'
                   : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
@@ -107,7 +145,8 @@ export default function DashboardSidebar() {
           </div>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 

@@ -64,7 +64,7 @@ export default function DashboardPage() {
     <div>
       {/* Dashboard Content */}
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-text-primary mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-text-primary mb-4 md:mb-6">
             Welcome back, {user.email}!
           </h2>
 
@@ -74,27 +74,27 @@ export default function DashboardPage() {
           </div>
 
           {/* Store Connection Prompt */}
-          <div className="bg-gradient-to-r from-surface-raised to-surface-hover rounded-xl p-6 mb-6 border-2 border-primary-500">
-            <div className="flex items-start gap-4">
-              <IconBadge icon={Link2} label="Store connection" size="md" variant="primary" className="mt-1" />
+          <div className="bg-gradient-to-r from-surface-raised to-surface-hover rounded-xl p-4 md:p-6 mb-4 md:mb-6 border-2 border-primary-500">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
+              <IconBadge icon={Link2} label="Store connection" size="md" variant="primary" className="mt-1 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-text-primary mb-2">
+                <h3 className="text-lg md:text-xl font-bold text-text-primary mb-2">
                   Connect Your Shopify Store
                 </h3>
-                <p className="text-text-secondary mb-4">
+                <p className="text-sm md:text-base text-text-secondary mb-4">
                   Connect your Shopify store credentials to start creating and managing products.
                   You can connect multiple stores and switch between them.
                 </p>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Link
                     href="/dashboard/stores/connect"
-                    className="bg-primary-500 hover:bg-primary-600 text-black px-6 py-2 rounded-lg transition-colors font-medium"
+                    className="bg-primary-500 hover:bg-primary-600 text-black px-4 md:px-6 py-2 rounded-lg transition-colors font-medium text-center min-h-[44px] flex items-center justify-center"
                   >
                     Connect Store
                   </Link>
                   <Link
                     href="/dashboard/stores"
-                    className="bg-surface-raised hover:bg-surface-hover text-text-primary px-6 py-2 rounded-lg transition-colors font-medium border-2 border-primary-500"
+                    className="bg-surface-raised hover:bg-surface-hover text-text-primary px-4 md:px-6 py-2 rounded-lg transition-colors font-medium border-2 border-primary-500 text-center min-h-[44px] flex items-center justify-center"
                   >
                     View My Stores
                   </Link>
@@ -104,8 +104,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Created Stores */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 mb-6">
-            <h3 className="text-xl font-bold mb-4 text-text-primary">Your Created Stores</h3>
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-4 md:p-6 mb-4 md:mb-6">
+            <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-text-primary">Your Created Stores</h3>
             {user.stores && user.stores.length > 0 ? (
               <div className="space-y-4">
                 {user.stores.map((store, index) => (
@@ -158,9 +158,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6">
-            <h3 className="text-xl font-bold mb-4 text-text-primary">Quick Actions</h3>
-            <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-4 md:p-6">
+            <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-text-primary">Quick Actions</h3>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               <Link
                 href="/products"
                 className="border-2 border-border-default hover:border-primary-500 bg-surface-elevated rounded-lg p-4 transition-colors"

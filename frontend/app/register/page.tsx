@@ -65,7 +65,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-[#1a1a1a] border border-[#505050] rounded-xl shadow-lg p-8">
+        <div className="bg-[#1a1a1a] border border-[#505050] rounded-xl shadow-lg p-4 md:p-6 lg:p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">
               Create Account
@@ -89,7 +89,7 @@ export default function RegisterPage() {
                   setIdentifier(e.target.value);
                   if (errors.identifier) setErrors({ ...errors, identifier: undefined });
                 }}
-                className={`w-full px-4 py-2 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] ${
+                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
                   errors.identifier ? 'border-red-500' : 'border-[#505050]'
                 }`}
                 placeholder="you@example.com or +1234567890"
@@ -121,7 +121,7 @@ export default function RegisterPage() {
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }
                 }}
-                className={`w-full px-4 py-2 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] ${
+                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
                   errors.password ? 'border-red-500' : 'border-[#505050]'
                 }`}
                 placeholder="••••••••"
@@ -146,7 +146,7 @@ export default function RegisterPage() {
                   setConfirmPassword(e.target.value);
                   if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
                 }}
-                className={`w-full px-4 py-2 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] ${
+                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
                   errors.confirmPassword ? 'border-red-500' : 'border-[#505050]'
                 }`}
                 placeholder="••••••••"

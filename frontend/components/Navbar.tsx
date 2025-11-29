@@ -26,15 +26,16 @@ export default function Navbar() {
 
   return (
     <nav className="bg-[#1a1a1a] border-b border-[#505050] shadow-lg sticky top-0 z-50" role="navigation" aria-label="Main navigation">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-between items-center gap-4">
-          <div className="flex items-center gap-4">
+      <div className="container mx-auto px-3 md:px-4 py-3 md:py-4">
+        <div className="flex justify-between items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Link 
               href="/" 
-              className="text-xl md:text-2xl font-bold text-white hover:text-[#e0e0e0] transition-colors"
+              className="text-lg sm:text-xl md:text-2xl font-bold text-white hover:text-[#e0e0e0] transition-colors"
               aria-label="Home"
             >
-              Auto Shopify Store Builder
+              <span className="hidden sm:inline">Auto Shopify Store Builder</span>
+              <span className="sm:hidden">Store Builder</span>
             </Link>
           </div>
 
@@ -53,7 +54,7 @@ export default function Navbar() {
           )}
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4 lg:gap-6">
             {isAuthenticated ? (
               <>
                 <Link
@@ -85,7 +86,7 @@ export default function Navbar() {
                 </span>
                 <button
                   onClick={logout}
-                  className="bg-[#2a2a2a] hover:bg-[#404040] text-white px-4 py-2 rounded-lg transition-colors text-sm min-h-[44px] min-w-[80px]"
+                  className="bg-[#2a2a2a] hover:bg-[#404040] text-white px-3 md:px-4 py-2 rounded-lg transition-colors text-xs md:text-sm min-h-[44px] min-w-[70px] md:min-w-[80px]"
                   aria-label="Logout"
                 >
                   Logout
@@ -109,7 +110,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-white hover:bg-[#e0e0e0] text-black px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center font-semibold"
+                  className="bg-white hover:bg-[#e0e0e0] text-black px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center font-semibold text-sm md:text-base"
                   aria-label="Sign Up"
                 >
                   Sign Up

@@ -144,10 +144,10 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-surface-base">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-text-primary mb-4">Product Catalog</h1>
-        <p className="text-xl text-text-secondary">
+      <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="text-center mb-8 md:mb-12">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-3 md:mb-4">Product Catalog</h1>
+        <p className="text-base md:text-lg lg:text-xl text-text-secondary">
           Select a niche to browse products
         </p>
       </div>
@@ -160,9 +160,9 @@ export default function ProductsPage() {
 
       {/* Featured Niches Section */}
       {featuredNiches.length > 0 && (
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-text-primary mb-6">Featured Niches</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mb-8 md:mb-12">
+          <h2 className="text-xl md:text-2xl font-bold text-text-primary mb-4 md:mb-6">Featured Niches</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {featuredNiches.map((niche) => (
               <NicheCard key={niche._id} niche={niche} />
             ))}
@@ -172,9 +172,9 @@ export default function ProductsPage() {
 
       {/* Homepage Niches Section */}
       {homepageFiltered.length > 0 && (
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-text-primary mb-6">Popular Niches</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="mb-8 md:mb-12">
+          <h2 className="text-xl md:text-2xl font-bold text-text-primary mb-4 md:mb-6">Popular Niches</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {homepageFiltered.map((niche) => (
               <NicheCard key={niche._id} niche={niche} />
             ))}
@@ -184,9 +184,9 @@ export default function ProductsPage() {
 
       {/* All Niches Section */}
       {allFiltered.length > 0 && (
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-text-primary mb-6">All Niches</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="mb-8 md:mb-12">
+          <h2 className="text-xl md:text-2xl font-bold text-text-primary mb-4 md:mb-6">All Niches</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {allFiltered.map((niche) => (
               <NicheCard key={niche._id} niche={niche} />
             ))}
@@ -210,7 +210,7 @@ export default function ProductsPage() {
       {isAuthenticated && (
         <button
           onClick={() => setShowFindProduct(true)}
-          className="fixed bottom-8 right-8 bg-black hover:bg-gray-700 text-white p-4 rounded-full shadow-2xl hover:shadow-2xl transition-all z-50 flex items-center gap-2 font-semibold border-4 border-gray-600 ring-4 ring-gray-500/30"
+          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 bg-black hover:bg-gray-700 text-white p-3 md:p-4 rounded-full shadow-2xl hover:shadow-2xl transition-all z-50 flex items-center gap-2 font-semibold border-2 md:border-4 border-gray-600 ring-2 md:ring-4 ring-gray-500/30 min-h-[44px] min-w-[44px]"
           aria-label="Find Winning Product"
         >
           <IconBadge icon={Target} label="Find winning product" size="sm" variant="primary" className="bg-white/10 border-white/30" />

@@ -60,7 +60,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-surface-base flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-8">
+        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-4 md:p-6 lg:p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-text-primary mb-2">
               Welcome Back
@@ -84,7 +84,7 @@ export default function LoginPage() {
                   setIdentifier(e.target.value);
                   if (errors.identifier) setErrors({ ...errors, identifier: undefined });
                 }}
-                className={`w-full px-4 py-2 bg-surface-elevated text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none ${
+                className={`w-full px-4 py-3 bg-surface-elevated text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none min-h-[44px] ${
                   errors.identifier ? 'border-red-500' : 'border-border-default'
                 }`}
                 placeholder="you@example.com or +1234567890"
@@ -124,7 +124,7 @@ export default function LoginPage() {
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }
                 }}
-                className={`w-full px-4 py-2 bg-surface-elevated text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none ${
+                className={`w-full px-4 py-3 bg-surface-elevated text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none min-h-[44px] ${
                   errors.password ? 'border-red-500' : 'border-border-default'
                 }`}
                 placeholder="••••••••"

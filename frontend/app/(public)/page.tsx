@@ -159,33 +159,33 @@ export default function Home() {
       <section className="relative overflow-hidden min-h-[90vh] flex items-center bg-gradient-to-b from-surface-base via-surface-elevated to-surface-base">
         <div className="relative container mx-auto px-4 py-24 md:py-32 w-full">
           <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-5xl md:text-7xl font-bold text-text-primary mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-text-primary mb-4 md:mb-6 leading-tight px-2">
               Launch Your Shopify Store
               <span className="block mt-2">in Minutes</span>
             </h1>
-            <p className="text-xl md:text-2xl text-text-secondary mb-12 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-text-secondary mb-8 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4">
               No technical skills needed. Browse products, connect your Shopify account,
               and get a fully functional store automatically.
             </p>
             
-            <div className="flex gap-4 justify-center flex-wrap mb-16">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center flex-wrap mb-12 md:mb-16 px-4">
               <button
                 onClick={handleGetStarted}
-                className="bg-primary-500 hover:bg-primary-600 text-black px-10 py-4 rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-black px-6 sm:px-8 md:px-10 py-3 md:py-4 rounded-lg font-bold text-base sm:text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 min-h-[44px]"
               >
                 Get Started Free
               </button>
               <Link
                 href="/login"
-                className="bg-transparent hover:bg-surface-hover text-text-primary border-2 border-primary-500 px-10 py-4 rounded-lg font-semibold text-lg transition-all"
+                className="w-full sm:w-auto bg-transparent hover:bg-surface-hover text-text-primary border-2 border-primary-500 px-6 sm:px-8 md:px-10 py-3 md:py-4 rounded-lg font-semibold text-base sm:text-lg transition-all min-h-[44px] flex items-center justify-center"
               >
                 Login
               </Link>
             </div>
 
             {/* Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
-              <div className="text-center bg-surface-raised border border-border-default rounded-lg p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto px-4">
+              <div className="text-center bg-surface-raised border border-border-default rounded-lg p-4 md:p-6">
                 <div className="text-4xl font-bold text-text-primary mb-2">1000+</div>
                 <div className="text-text-secondary">Products Available</div>
               </div>
@@ -203,26 +203,26 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-surface-elevated">
+      <section className="py-12 md:py-16 lg:py-20 bg-surface-elevated">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-8 md:mb-12 lg:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-3 md:mb-4">
               Everything You Need
             </h2>
-            <p className="text-xl text-text-secondary max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto">
               Powerful features to help you build and grow your online store
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
+            <div className="bg-surface-raised border border-border-default p-6 md:p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
               <IconBadge
                 icon={ShoppingBag}
                 label="Browse Products"
                 size="lg"
                 className="mb-6 group-hover:scale-110 transition-transform"
               />
-              <h3 className="text-2xl font-bold mb-4 text-text-primary">Browse Products</h3>
+              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-text-primary">Browse Products</h3>
               <p className="text-text-secondary leading-relaxed">
                 Choose from our curated catalog of ready-to-sell products across multiple niches. 
                 Find the perfect products for your store.
@@ -263,11 +263,11 @@ export default function Home() {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 bg-surface-base">
+      <section className="py-12 md:py-16 lg:py-20 bg-surface-base">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-4">
+            <div className="text-center mb-8 md:mb-12 lg:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-3 md:mb-4">
                 Why Choose Us
               </h2>
             </div>
@@ -294,13 +294,13 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 bg-surface-elevated">
+      <section className="py-12 md:py-16 lg:py-20 bg-surface-elevated">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-8 md:mb-12 lg:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-3 md:mb-4">
               Choose Your Plan
             </h2>
-            <p className="text-xl text-text-secondary max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto">
               Select the perfect plan for your business needs. All plans include full access to our product catalog.
             </p>
           </div>
@@ -310,7 +310,7 @@ export default function Home() {
               <div className="text-text-secondary">Loading plans...</div>
             </div>
           ) : plans.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
               {plans.map((plan, index) => {
                 const isPopular = index === 1; // Middle plan is popular
                 const isLifetime = plan.isLifetime;
@@ -318,9 +318,9 @@ export default function Home() {
                 return (
                   <div
                     key={plan.code}
-                    className={`relative bg-surface-raised border rounded-xl p-8 transition-all duration-300 hover:shadow-2xl ${
+                    className={`relative bg-surface-raised border rounded-xl p-6 md:p-8 transition-all duration-300 hover:shadow-2xl ${
                       isPopular
-                        ? 'border-primary-500 border-2 shadow-lg scale-105'
+                        ? 'border-primary-500 border-2 shadow-lg md:scale-105'
                         : 'border-border-default hover:border-primary-500'
                     }`}
                   >
@@ -398,23 +398,23 @@ export default function Home() {
       </section>
 
       {/* Detailed Features Section */}
-      <section className="py-20 bg-surface-base">
+      <section className="py-12 md:py-16 lg:py-20 bg-surface-base">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-text-primary mb-4">
+          <div className="text-center mb-8 md:mb-12 lg:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-3 md:mb-4">
               Powerful Features
             </h2>
-            <p className="text-xl text-text-secondary max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
               Everything you need to build and manage your Shopify store quickly and efficiently.
             </p>
           </div>
 
           {/* Features Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 max-w-7xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12 lg:mb-16 max-w-7xl mx-auto">
             {detailedFeatures.map((feature, index) => (
               <div
                 key={index}
-                className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:border-primary-500 hover:shadow-lg transition-all"
+                className="bg-surface-raised border border-border-default rounded-xl shadow-md p-4 md:p-6 hover:border-primary-500 hover:shadow-lg transition-all"
               >
                 <IconBadge
                   icon={feature.icon}
@@ -423,8 +423,8 @@ export default function Home() {
                   size="lg"
                   className="mb-4"
                 />
-                <h3 className="text-xl font-semibold text-text-primary mb-2">{feature.title}</h3>
-                <p className="text-text-secondary text-sm">{feature.description}</p>
+                <h3 className="text-lg md:text-xl font-semibold text-text-primary mb-2">{feature.title}</h3>
+                <p className="text-text-secondary text-xs md:text-sm">{feature.description}</p>
               </div>
             ))}
           </div>
