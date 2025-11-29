@@ -127,6 +127,44 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string): P
   });
 }
 
+export async function sendEmailVerificationEmail(email: string, verifyUrl: string): Promise<boolean> {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Verify Your Email</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: white; margin: 0;">Verify Your Email Address</h1>
+      </div>
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e0e0e0;">
+        <p>Hello,</p>
+        <p>You requested to link this email address to your account. Please verify your email by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verifyUrl}" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Verify Email</a>
+        </div>
+        <p style="font-size: 12px; color: #666;">Or copy and paste this link into your browser:</p>
+        <p style="font-size: 12px; color: #667eea; word-break: break-all;">${verifyUrl}</p>
+        <p style="font-size: 12px; color: #666; margin-top: 30px;">This link will expire in 24 hours.</p>
+        <p style="font-size: 12px; color: #666;">If you didn't request this, please ignore this email.</p>
+      </div>
+      <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+        <p>© ${new Date().getFullYear()} Shopify Store Builder. All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: 'Verify Your Email Address - Shopify Store Builder',
+    html,
+  });
+}
+
 export async function sendContactFormEmail(
   name: string,
   email: string,

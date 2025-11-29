@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDatabase from '@/lib/db';
 import MentorshipApplication from '@/lib/models/MentorshipApplication';
+import User from '@/lib/models/User';
+import Notification from '@/lib/models/Notification';
 import { z } from 'zod';
 
 const applicationSchema = z.object({
@@ -20,6 +22,31 @@ export async function POST(req: NextRequest) {
     await connectDatabase();
     const application = new MentorshipApplication(validated);
     await application.save();
+
+    // Notify all admin users
+    try {
+      const admins = await User.find({ role: 'admin' }).select('_id').lean();
+      const notifications = admins.map((admin) => ({
+        userId: admin._id,
+        type: 'mentorship_application' as const,
+        title: 'New Mentorship Application',
+        message: `${validated.name} (${validated.email}) submitted a mentorship application`,
+        link: `/admin/mentorship/applications/${application._id}`,
+        metadata: {
+          applicationId: application._id.toString(),
+          applicantName: validated.name,
+          applicantEmail: validated.email,
+        },
+        read: false,
+      }));
+
+      if (notifications.length > 0) {
+        await Notification.insertMany(notifications);
+      }
+    } catch (notificationError) {
+      // Log but don't fail the request if notifications fail
+      console.error('Failed to create notifications:', notificationError);
+    }
 
     return NextResponse.json(
       { success: true, message: 'Application submitted successfully', application },

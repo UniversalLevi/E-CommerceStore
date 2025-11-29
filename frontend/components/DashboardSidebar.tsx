@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Settings,
   Megaphone,
+  Bell,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -30,6 +31,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/activity', label: 'Activity', icon: Activity },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/dashboard/help', label: 'Help', icon: HelpCircle },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];

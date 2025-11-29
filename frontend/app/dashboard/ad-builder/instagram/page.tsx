@@ -7,8 +7,9 @@ import FileUploader from '@/components/ads/FileUploader';
 import AIResultPanel from '@/components/ads/AIResultPanel';
 import AdPreview from '@/components/ads/AdPreview';
 import { notify } from '@/lib/toast';
-import { Sparkles, Download, Save } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import AdBuilderTabs from '@/components/ads/AdBuilderTabs';
+import { COUNTRIES } from '@/lib/countries';
 
 interface CampaignFormData {
   campaignGoal: string;
@@ -48,7 +49,6 @@ export default function InstagramAdsPage() {
     hashtags: false,
     recommendations: false,
     ctaRecommendations: false,
-    saving: false,
   });
 
   const [generated, setGenerated] = useState({
@@ -234,70 +234,6 @@ export default function InstagramAdsPage() {
     }
   };
 
-  const handleSaveDraft = async () => {
-    setLoading({ ...loading, saving: true });
-    try {
-      // Create image/video URLs for preview
-      const imageUrl = formData.imageFile ? URL.createObjectURL(formData.imageFile) : undefined;
-      const videoUrl = formData.videoFile ? URL.createObjectURL(formData.videoFile) : undefined;
-
-      const campaignData = {
-        platform: 'instagram' as const,
-        campaignGoal: formData.campaignGoal,
-        dailyBudget: formData.dailyBudget,
-        country: formData.country,
-        ageRange: formData.ageRange,
-        gender: formData.gender,
-        productName: formData.productName,
-        interests: formData.interests,
-        creative: {
-          imageUrl,
-          videoUrl,
-        },
-        captions: formData.captions,
-        hashtags: formData.hashtags,
-        ctaRecommendations: formData.ctaRecommendations,
-        status: 'draft' as const,
-      };
-
-      const response = await fetch('/api/instagram/campaigns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(campaignData),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        notify.success('Draft saved successfully!');
-        setCurrentDraft(data.campaign);
-      } else {
-        notify.error(data.error || 'Failed to save draft');
-      }
-    } catch (error) {
-      notify.error('Failed to save draft');
-    } finally {
-      setLoading({ ...loading, saving: false });
-    }
-  };
-
-  const handleExport = () => {
-    const exportData = {
-      platform: 'instagram',
-      ...formData,
-      exportedAt: new Date().toISOString(),
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `instagram-campaign-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify.success('Campaign exported!');
-  };
 
   const imageUrl = formData.imageFile ? URL.createObjectURL(formData.imageFile) : undefined;
   const videoUrl = formData.videoFile ? URL.createObjectURL(formData.videoFile) : undefined;
@@ -348,12 +284,18 @@ export default function InstagramAdsPage() {
 
             <div>
               <label className="block text-sm font-medium text-text-primary mb-2">Country</label>
-              <input
-                type="text"
+              <select
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                 className="w-full px-4 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-              />
+              >
+                <option value="">Select country</option>
+                {COUNTRIES.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -580,26 +522,6 @@ export default function InstagramAdsPage() {
           </div>
         </section>
 
-        {/* Section 4: Save & Export */}
-        <section className="bg-surface-raised border border-border-default rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-text-primary mb-4">Save & Export</h2>
-          <div className="flex gap-4">
-            <Button
-              onClick={handleSaveDraft}
-              loading={loading.saving}
-              iconLeft={<Save className="h-4 w-4" />}
-            >
-              Save Draft
-            </Button>
-            <Button
-              onClick={handleExport}
-              variant="secondary"
-              iconLeft={<Download className="h-4 w-4" />}
-            >
-              Export JSON
-            </Button>
-          </div>
-        </section>
       </div>
     </div>
   );

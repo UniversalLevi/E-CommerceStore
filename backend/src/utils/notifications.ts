@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 export interface CreateNotificationParams {
   userId: mongoose.Types.ObjectId | string;
-  type: 'store_connection' | 'product_added' | 'store_test' | 'system_update';
+  type: 'store_connection' | 'product_added' | 'store_test' | 'system_update' | 'mentorship_application' | 'admin_sent';
   title: string;
   message: string;
   link?: string;

@@ -17,6 +17,7 @@ import {
 } from '../controllers/adminController';
 import revenueRoutes from './revenueRoutes';
 import subscriptionRoutes from './subscriptionRoutes';
+import { sendNotification, getNotificationHistory, getNotificationDetails } from '../controllers/notificationController';
 
 const router = Router();
 
@@ -49,6 +50,11 @@ router.use('/revenue', revenueRoutes);
 
 // Subscription management routes
 router.use('/subscriptions', subscriptionRoutes);
+
+// Notification routes
+router.post('/notifications/send', sendNotification);
+router.get('/notifications/history', getNotificationHistory);
+router.get('/notifications/details', getNotificationDetails);
 
 export default router;
 

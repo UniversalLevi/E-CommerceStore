@@ -8,8 +8,8 @@ import { User } from '@/types';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  login: (emailOrMobile: string, password: string, isMobile?: boolean) => Promise<void>;
+  register: (email: string | undefined, mobile: string | undefined, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
@@ -42,12 +42,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (emailOrMobile: string, password: string, isMobile: boolean = false) => {
     try {
+      const payload = isMobile 
+        ? { mobile: emailOrMobile, password }
+        : { email: emailOrMobile, password };
+
       const response = await api.post<{
         success: boolean;
         user: User;
-      }>('/api/auth/login', { email, password });
+      }>('/api/auth/login', payload);
 
       setUser(response.user);
       // Redirect based on user role
@@ -62,12 +66,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string | undefined, mobile: string | undefined, password: string) => {
     try {
+      const payload: any = { password };
+      if (email) payload.email = email;
+      if (mobile) payload.mobile = mobile;
+
       const response = await api.post<{
         success: boolean;
         user: User;
-      }>('/api/auth/register', { email, password });
+      }>('/api/auth/register', payload);
 
       setUser(response.user);
       router.push('/dashboard');

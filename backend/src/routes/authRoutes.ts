@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { register, login, logout, getMe, changePassword, deleteAccount, forgotPassword, resetPassword, updateOnboarding } from '../controllers/authController';
+import { register, login, logout, getMe, changePassword, deleteAccount, forgotPassword, resetPassword, updateOnboarding, linkEmail, verifyEmail } from '../controllers/authController';
 import { validate } from '../middleware/validate';
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../validators/authValidator';
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '../validators/authValidator';
 import { authenticateToken } from '../middleware/auth';
 import { authRateLimit, generalApiRateLimit } from '../middleware/rateLimit';
 import { z } from 'zod';
@@ -13,11 +13,13 @@ router.post('/register', authRateLimit, validate(registerSchema), register);
 router.post('/login', authRateLimit, validate(loginSchema), login);
 router.post('/forgot-password', authRateLimit, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', authRateLimit, validate(resetPasswordSchema), resetPassword);
+router.post('/verify-email', authRateLimit, validate(verifyEmailSchema), verifyEmail);
 
 // Protected routes
 router.post('/logout', authenticateToken, generalApiRateLimit, logout);
 router.get('/me', authenticateToken, generalApiRateLimit, getMe);
 router.put('/change-password', authenticateToken, generalApiRateLimit, changePassword);
+router.post('/link-email', authenticateToken, generalApiRateLimit, linkEmail);
 router.delete('/account', authenticateToken, generalApiRateLimit, deleteAccount);
 
 // Onboarding route

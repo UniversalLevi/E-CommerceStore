@@ -3,11 +3,12 @@ import bcrypt from 'bcrypt';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import { User } from '../models/User';
+import { User, IUser } from '../models/User';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { logAuditWithRequest, logAudit } from '../utils/auditLogger';
+import { createNotification } from '../utils/notifications';
 
 export const register = async (
   req: Request,
@@ -15,30 +16,51 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password } = req.body;
+    const { email, mobile, password } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Validate that at least email or mobile is provided
+    if (!email && !mobile) {
+      throw createError('Either email or mobile number is required', 400);
+    }
+
+    // Check if user already exists by email or mobile
+    const existingUser = email 
+      ? await User.findOne({ email })
+      : await User.findOne({ mobile });
+
     if (existingUser) {
       // If account is deleted, hard delete it to allow re-registration
       if (existingUser.deletedAt) {
-        console.log('Found deleted account, hard deleting to allow re-registration:', email);
+        console.log('Found deleted account, hard deleting to allow re-registration:', email || mobile);
         await User.findByIdAndDelete(existingUser._id);
       } else {
         // Account exists and is not deleted
-        throw createError('Email already registered', 409);
+        const field = email ? 'Email' : 'Mobile number';
+        throw createError(`${field} already registered`, 409);
       }
     }
 
     // Hash password with optimized rounds (10 -> 8 for better performance)
     const hashedPassword = await bcrypt.hash(password, 8);
 
-    // Create user
-    const user = await User.create({
-      email,
+    // Create user - only include fields that are provided (don't set null/undefined)
+    const userData: Partial<IUser> = {
       password: hashedPassword,
       role: 'user',
-    });
+    };
+
+    if (email && email.trim()) {
+      userData.email = email.trim().toLowerCase();
+    }
+    if (mobile && mobile.trim()) {
+      userData.mobile = mobile.trim();
+      // If mobile-only account, set flag to send email link reminder
+      if (!email || !email.trim()) {
+        userData.emailLinkReminderSent = false;
+      }
+    }
+
+    const user = await User.create(userData);
 
     // Generate JWT token with password change timestamp
     const jwtOptions: SignOptions = {
@@ -73,11 +95,26 @@ export const register = async (
       success: true,
       details: {
         email: user.email,
+        mobile: user.mobile,
         role: user.role,
       },
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
     });
+
+    // If mobile-only account, send notification to link email
+    if (mobile && !email) {
+      await createNotification({
+        userId: user._id as mongoose.Types.ObjectId,
+        type: 'system_update',
+        title: 'Link Your Email for Account Security',
+        message: 'For better account security and password recovery, please link an email address to your account.',
+        link: '/settings',
+        metadata: {
+          reminderType: 'email_link',
+        },
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -95,18 +132,26 @@ export const login = async (
   next: NextFunction
 ) => {
   try {
-    const { email, password } = req.body;
+    const { email, mobile, password } = req.body;
 
-    // Find user - ensure we get the password field
-    const user = await User.findOne({ email });
+    // Validate that at least email or mobile is provided
+    if (!email && !mobile) {
+      throw createError('Either email or mobile number is required', 400);
+    }
+
+    // Find user by email or mobile - ensure we get the password field
+    const user = email 
+      ? await User.findOne({ email })
+      : await User.findOne({ mobile });
+
     if (!user) {
-      console.log('Login failed: User not found:', email);
-      throw createError('Invalid email or password', 401);
+      console.log('Login failed: User not found:', email || mobile);
+      throw createError('Invalid credentials', 401);
     }
 
     // Check if account is deleted
     if (user.deletedAt) {
-      console.log('Login failed: Account deleted:', email);
+      console.log('Login failed: Account deleted:', email || mobile);
       throw createError('This account has been deleted.', 403);
     }
 
@@ -116,17 +161,18 @@ export const login = async (
     }
 
     // Verify password
-    console.log('🔐 Login attempt for user:', email);
+    const identifier = email || mobile;
+    console.log('🔐 Login attempt for user:', identifier);
     console.log('🔐 Stored password hash (first 20 chars):', user.password.substring(0, 20));
     console.log('🔐 Password changed at:', user.passwordChangedAt);
     
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      console.log('❌ Login failed: Password mismatch for user:', email);
-      throw createError('Invalid email or password', 401);
+      console.log('❌ Login failed: Password mismatch for user:', identifier);
+      throw createError('Invalid credentials', 401);
     }
     
-    console.log('✅ Login successful for user:', email);
+    console.log('✅ Login successful for user:', identifier);
     console.log('✅ Password changed at:', user.passwordChangedAt);
 
     // Update lastLogin
@@ -320,6 +366,182 @@ export const deleteAccount = async (
   }
 };
 
+export const linkEmail = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { email } = req.body;
+
+    if (!email) {
+      throw createError('Email is required', 400);
+    }
+
+    // Validate email format
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(email)) {
+      throw createError('Invalid email format', 400);
+    }
+
+    const user = await User.findById((req.user as any)._id);
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    // Check if email is already linked to another account (exclude deleted accounts)
+    const existingUser = await User.findOne({ 
+      email,
+      $or: [
+        { deletedAt: { $exists: false } },
+        { deletedAt: null }
+      ]
+    });
+    if (existingUser && (existingUser._id as mongoose.Types.ObjectId).toString() !== (user._id as mongoose.Types.ObjectId).toString()) {
+      throw createError('Email is already linked to another account', 409);
+    }
+
+    // Check if user already has this email
+    if (user.email && user.email.toLowerCase() === email.toLowerCase()) {
+      throw createError('This email is already linked to your account', 400);
+    }
+
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
+    
+    // Set token, expiration (24 hours), and pending email
+    user.emailVerificationToken = verificationTokenHash;
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    user.pendingEmail = email.toLowerCase().trim();
+    await user.save();
+
+    // Send verification email
+    const verifyUrl = `${config.corsOrigin || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    
+    const { sendEmailVerificationEmail } = await import('../utils/email');
+    await sendEmailVerificationEmail(email, verifyUrl);
+
+    // Create audit log
+    await logAuditWithRequest(req, {
+      userId: (req.user as any)._id,
+      action: 'LINK_EMAIL',
+      success: true,
+      details: {
+        email,
+        hadMobile: !!user.mobile,
+        verificationSent: true,
+      },
+    });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Email verification URL:', verifyUrl);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification email sent. Please check your email to verify and link your email address.',
+      // Only in development
+      ...(process.env.NODE_ENV === 'development' && { verifyUrl }),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      throw createError('Verification token is required', 400);
+    }
+
+    // Hash the token to compare with stored hash
+    const verificationTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Find user with valid token
+    const user = await User.findOne({
+      emailVerificationToken: verificationTokenHash,
+      emailVerificationExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      // Check if token exists but expired
+      const expiredUser = await User.findOne({ emailVerificationToken: verificationTokenHash });
+      if (expiredUser) {
+        throw createError('Verification token has expired. Please request a new verification email.', 400);
+      }
+      throw createError('Invalid verification token', 400);
+    }
+
+    if (!user.pendingEmail) {
+      throw createError('No pending email to verify', 400);
+    }
+
+    // Check if the pending email is already linked to another account (exclude deleted accounts)
+    const existingUser = await User.findOne({ 
+      email: user.pendingEmail,
+      $or: [
+        { deletedAt: { $exists: false } },
+        { deletedAt: null }
+      ]
+    });
+    if (existingUser && (existingUser._id as mongoose.Types.ObjectId).toString() !== (user._id as mongoose.Types.ObjectId).toString()) {
+      // Clear verification token
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+      user.pendingEmail = undefined;
+      await user.save();
+      throw createError('This email is already linked to another account', 409);
+    }
+
+    // Link email to account
+    user.email = user.pendingEmail;
+    user.emailLinkedAt = new Date();
+    user.emailLinkReminderSent = true;
+    
+    // Clear verification token and pending email
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    user.pendingEmail = undefined;
+    await user.save();
+
+    // Create audit log
+    await logAudit({
+      userId: user._id as mongoose.Types.ObjectId,
+      action: 'VERIFY_EMAIL',
+      success: true,
+      details: {
+        email: user.email,
+        hadMobile: !!user.mobile,
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
+
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete (userResponse as any).password;
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified and linked successfully',
+      user: userResponse,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const forgotPassword = async (
   req: Request,
   res: Response,
@@ -356,7 +578,9 @@ export const forgotPassword = async (
     
     // Import email service
     const { sendPasswordResetEmail } = await import('../utils/email');
-    await sendPasswordResetEmail(user.email, resetUrl);
+    if (user.email) {
+      await sendPasswordResetEmail(user.email, resetUrl);
+    }
     
     // Log password reset request
     await logAudit({

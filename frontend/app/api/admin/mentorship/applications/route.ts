@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
+    const limit = searchParams.get('limit');
 
     await connectDatabase();
     const query: any = {};
@@ -20,9 +21,14 @@ export async function GET(req: NextRequest) {
       query.status = status;
     }
 
-    const applications = await MentorshipApplication.find(query)
-      .sort({ createdAt: -1 })
-      .lean();
+    let applicationsQuery = MentorshipApplication.find(query)
+      .sort({ createdAt: -1 });
+
+    if (limit) {
+      applicationsQuery = applicationsQuery.limit(parseInt(limit, 10));
+    }
+
+    const applications = await applicationsQuery.lean();
 
     return NextResponse.json({ success: true, applications });
   } catch (error: any) {

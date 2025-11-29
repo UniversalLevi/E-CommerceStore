@@ -43,6 +43,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import aiRoutes from './routes/aiRoutes';
+import mentorshipRoutes from './routes/mentorshipRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -61,6 +62,8 @@ app.use('/api/ai', aiRoutes);
 // Niche routes (separate namespaces to prevent route overlap)
 app.use('/api/niches', nicheRoutes);
 app.use('/api/admin/niches', authenticateToken, requireAdmin, nicheAdminRoutes);
+// Mentorship routes (admin only)
+app.use('/api/admin/mentorship', mentorshipRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

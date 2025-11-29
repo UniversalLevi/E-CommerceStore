@@ -28,6 +28,11 @@ export default function SettingsPage() {
     confirmPassword?: string;
   }>({});
 
+  // Email linking form
+  const [emailLink, setEmailLink] = useState('');
+  const [emailLinkError, setEmailLinkError] = useState('');
+  const [linkingEmail, setLinkingEmail] = useState(false);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -83,6 +88,39 @@ export default function SettingsPage() {
     }
   };
 
+  const handleLinkEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailLinkError('');
+
+    if (!emailLink.trim()) {
+      setEmailLinkError('Email is required');
+      return;
+    }
+
+    const emailRegex = /^\S+@\S+\.\S+$/;
+    if (!emailRegex.test(emailLink.trim())) {
+      setEmailLinkError('Invalid email format');
+      return;
+    }
+
+    setLinkingEmail(true);
+
+    try {
+      const response = await api.post('/api/auth/link-email', {
+        email: emailLink.trim(),
+      });
+      notify.success('Email linked successfully');
+      setEmailLink('');
+      // Refresh user data
+      window.location.reload();
+    } catch (error: any) {
+      setEmailLinkError(error.response?.data?.error || 'Failed to link email');
+      notify.error(error.response?.data?.error || 'Failed to link email');
+    } finally {
+      setLinkingEmail(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-surface-base flex items-center justify-center">
@@ -127,8 +165,14 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text-secondary">Email</label>
-                <p className="mt-1 text-sm text-text-primary">{user?.email}</p>
+                <p className="mt-1 text-sm text-text-primary">{user?.email || 'Not linked'}</p>
               </div>
+              {user?.mobile && (
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary">Mobile</label>
+                  <p className="mt-1 text-sm text-text-primary">{user.mobile}</p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-text-secondary">Role</label>
                 <span
@@ -157,6 +201,45 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+
+          {/* Link Email */}
+          {!user?.email && (
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold text-text-primary mb-4">Link Email Address</h2>
+              <p className="text-sm text-text-secondary mb-4">
+                Link an email address to your account for better security and password recovery.
+              </p>
+              <form onSubmit={handleLinkEmail} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="emailLink"
+                    className="block text-sm font-medium text-text-secondary mb-2"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    id="emailLink"
+                    type="email"
+                    value={emailLink}
+                    onChange={(e) => {
+                      setEmailLink(e.target.value);
+                      if (emailLinkError) setEmailLinkError('');
+                    }}
+                    className={`w-full px-4 py-2 bg-surface-elevated border rounded-lg text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      emailLinkError ? 'border-red-500' : 'border-border-default'
+                    }`}
+                    placeholder="you@example.com"
+                  />
+                  {emailLinkError && (
+                    <p className="mt-1 text-sm text-red-400">{emailLinkError}</p>
+                  )}
+                </div>
+                <Button type="submit" loading={linkingEmail}>
+                  Link Email
+                </Button>
+              </form>
+            </div>
+          )}
 
           {/* Change Password */}
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-6">

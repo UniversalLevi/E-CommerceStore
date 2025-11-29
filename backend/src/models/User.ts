@@ -8,7 +8,8 @@ export interface IStore {
 }
 
 export interface IUser extends Document {
-  email: string;
+  email?: string;
+  mobile?: string;
   password: string;
   role: 'user' | 'admin';
   shopifyAccessToken?: string;
@@ -20,6 +21,9 @@ export interface IUser extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   passwordChangedAt?: Date;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
+  pendingEmail?: string;
   // Subscription fields
   plan: string | null;
   planExpiresAt: Date | null;
@@ -31,6 +35,9 @@ export interface IUser extends Document {
     goal: 'dropship' | 'brand' | 'start_small';
     answeredAt: Date;
   };
+  // Email linking for mobile-only accounts
+  emailLinkedAt?: Date;
+  emailLinkReminderSent?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,11 +65,20 @@ const userSchema = new Schema<IUser>(
   {
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: false,
       unique: true,
+      sparse: true, // Allow multiple null values
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
+    },
+    mobile: {
+      type: String,
+      required: false,
+      unique: true,
+      sparse: true, // Allow multiple null values
+      trim: true,
+      match: [/^\+?[1-9]\d{1,14}$/, 'Please provide a valid mobile number'],
     },
     password: {
       type: String,
@@ -103,6 +119,17 @@ const userSchema = new Schema<IUser>(
     passwordChangedAt: {
       type: Date,
     },
+    emailVerificationToken: {
+      type: String,
+    },
+    emailVerificationExpires: {
+      type: Date,
+    },
+    pendingEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+    },
     // Subscription fields
     plan: {
       type: String,
@@ -137,14 +164,33 @@ const userSchema = new Schema<IUser>(
         type: Date,
       },
     },
+    // Email linking for mobile-only accounts
+    emailLinkedAt: {
+      type: Date,
+    },
+    emailLinkReminderSent: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Index is already defined in schema with unique: true, removing duplicate
-// userSchema.index({ email: 1 }); // REMOVED - causing duplicate index warning
+// Add validation to ensure at least email or mobile is provided
+userSchema.pre('validate', function (next) {
+  if (!this.email && !this.mobile) {
+    this.invalidate('email', 'Either email or mobile number is required');
+    this.invalidate('mobile', 'Either email or mobile number is required');
+  }
+  next();
+});
+
+// Ensure sparse indexes for email and mobile to allow multiple null values
+// Drop existing indexes if they exist and recreate with sparse option
+userSchema.index({ email: 1 }, { unique: true, sparse: true });
+userSchema.index({ mobile: 1 }, { unique: true, sparse: true });
 
 // Helper functions for subscription status
 export function getSubscriptionStatus(user: IUser): 'active' | 'expired' | 'none' {

@@ -8,10 +8,10 @@ import Button from '@/components/Button';
 import { notify } from '@/lib/toast';
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ identifier?: string; password?: string; confirmPassword?: string }>({});
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
 
@@ -19,13 +19,26 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrors({});
 
+    // Determine if identifier is email or mobile
+    const isEmail = identifier.includes('@');
+    const isMobile = /^\+?[1-9]\d{1,14}$/.test(identifier.replace(/\s/g, ''));
+
+    if (!isEmail && !isMobile) {
+      setErrors({ identifier: 'Please enter a valid email or mobile number' });
+      return;
+    }
+
     // Validate with Zod
-    const result = registerSchema.safeParse({ email, password });
+    const registerData = isEmail ? { email: identifier, password } : { mobile: identifier.replace(/\s/g, ''), password };
+    const result = registerSchema.safeParse(registerData);
     if (!result.success) {
-      const fieldErrors: { email?: string; password?: string } = {};
+      const fieldErrors: { identifier?: string; password?: string } = {};
       result.error.issues.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as keyof typeof fieldErrors] = err.message;
+        const field = err.path[0] as string;
+        if (field === 'email' || field === 'mobile') {
+          fieldErrors.identifier = err.message;
+        } else {
+          fieldErrors[field as keyof typeof fieldErrors] = err.message;
         }
       });
       setErrors(fieldErrors);
@@ -40,7 +53,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(email, password);
+      await register(isEmail ? identifier : undefined, isEmail ? undefined : identifier.replace(/\s/g, ''), password);
       notify.success('Account created successfully!');
     } catch (err: any) {
       notify.error(err.message || 'Registration failed');
@@ -63,33 +76,26 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
-                htmlFor="email"
+                htmlFor="identifier"
                 className="block text-sm font-medium text-[#a0a0a0] mb-2"
               >
-                Email Address
+                Email or Mobile Number
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
+                id="identifier"
+                type="text"
+                value={identifier}
                 onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (errors.email) setErrors({ ...errors, email: undefined });
-                }}
-                onBlur={() => {
-                  const result = registerSchema.safeParse({ email, password });
-                  if (!result.success) {
-                    const emailError = result.error.issues.find((e) => e.path[0] === 'email');
-                    if (emailError) setErrors({ ...errors, email: emailError.message });
-                  }
+                  setIdentifier(e.target.value);
+                  if (errors.identifier) setErrors({ ...errors, identifier: undefined });
                 }}
                 className={`w-full px-4 py-2 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] ${
-                  errors.email ? 'border-red-500' : 'border-[#505050]'
+                  errors.identifier ? 'border-red-500' : 'border-[#505050]'
                 }`}
-                placeholder="you@example.com"
+                placeholder="you@example.com or +1234567890"
               />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+              {errors.identifier && (
+                <p className="mt-1 text-sm text-red-400">{errors.identifier}</p>
               )}
             </div>
 

@@ -18,7 +18,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { Users as UsersIcon, Store, AlertTriangle, Package } from 'lucide-react';
+import { Users as UsersIcon, Store, AlertTriangle, Package, UserCheck } from 'lucide-react';
+import Link from 'next/link';
 
 interface DashboardStats {
   users: {
@@ -64,6 +65,7 @@ export default function AdminDashboardPage() {
   const [health, setHealth] = useState<SystemHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mentorshipApplications, setMentorshipApplications] = useState<any[]>([]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -77,16 +79,29 @@ export default function AdminDashboardPage() {
     if (isAuthenticated && user?.role === 'admin') {
       fetchDashboardData();
       fetchHealth();
+      fetchMentorshipApplications();
       
       // Refresh every 30 seconds
       const interval = setInterval(() => {
         fetchDashboardData();
         fetchHealth();
+        fetchMentorshipApplications();
       }, 30000);
       
       return () => clearInterval(interval);
     }
   }, [isAuthenticated, user]);
+
+  const fetchMentorshipApplications = async () => {
+    try {
+      const response = await api.get<{ success: boolean; applications: any[] }>(
+        '/api/admin/mentorship/applications?status=pending'
+      );
+      setMentorshipApplications((response.applications || []).slice(0, 5)); // Show latest 5
+    } catch (error: any) {
+      console.error('Error fetching mentorship applications:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -300,6 +315,41 @@ export default function AdminDashboardPage() {
               </ResponsiveContainer>
             </div>
           </div>
+
+          {mentorshipApplications.length > 0 && (
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-text-primary">Recent Mentorship Applications</h3>
+                <Link
+                  href="/admin/mentorship/applications"
+                  className="text-sm text-yellow-500 hover:text-yellow-400 transition-colors"
+                >
+                  View All →
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {mentorshipApplications.map((app) => (
+                  <div
+                    key={app._id}
+                    className="p-3 bg-surface-elevated rounded-lg border border-border-default hover:bg-surface-hover transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-text-primary">{app.name}</p>
+                        <p className="text-sm text-text-secondary">{app.email}</p>
+                        <p className="text-xs text-text-muted mt-1">
+                          {new Date(app.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <span className="px-2 py-1 text-xs bg-yellow-500/20 text-yellow-400 rounded">
+                        {app.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
             <h3 className="text-lg font-semibold	text-text-primary mb-4">Recent Activity</h3>

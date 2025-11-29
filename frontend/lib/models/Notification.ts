@@ -1,8 +1,8 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId;
-  type: 'store_connection' | 'product_added' | 'store_test' | 'system_update' | 'mentorship_application' | 'admin_sent';
+  type: 'store_connection' | 'product_added' | 'store_test' | 'system_update' | 'mentorship_application';
   title: string;
   message: string;
   read: boolean;
@@ -22,7 +22,7 @@ const notificationSchema = new Schema<INotification>(
     },
     type: {
       type: String,
-      enum: ['store_connection', 'product_added', 'store_test', 'system_update', 'mentorship_application', 'admin_sent'],
+      enum: ['store_connection', 'product_added', 'store_test', 'system_update', 'mentorship_application'],
       required: true,
       index: true,
     },
@@ -52,12 +52,5 @@ const notificationSchema = new Schema<INotification>(
   }
 );
 
-// Compound indexes
-notificationSchema.index({ userId: 1, read: 1, createdAt: -1 });
-notificationSchema.index({ userId: 1, createdAt: -1 });
-
-export const Notification = mongoose.model<INotification>(
-  'Notification',
-  notificationSchema
-);
+export default mongoose.models.Notification || mongoose.model<INotification>('Notification', notificationSchema);
 

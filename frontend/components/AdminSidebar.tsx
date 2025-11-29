@@ -15,6 +15,8 @@ import {
   ClipboardList,
   LogOut,
   ArrowLeftToLine,
+  UserCheck,
+  Send,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -32,7 +34,9 @@ const navItems: NavItem[] = [
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/revenue', label: 'Revenue', icon: LineChart },
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: BadgeCheck },
+  { href: '/admin/mentorship/applications', label: 'Mentorship', icon: UserCheck },
   { href: '/admin/contacts', label: 'Contacts', icon: MessageSquare },
+  { href: '/admin/notifications/send', label: 'Send Notification', icon: Send },
   { href: '/admin/audit', label: 'Audit Logs', icon: ClipboardList },
 ];
 
