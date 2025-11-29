@@ -143,13 +143,27 @@ All pages are mobile-first and responsive:
 
 ## 🌐 Environment Variables
 
-Only one required:
+Required variables:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
-Note: `NEXT_PUBLIC_` prefix makes it available in browser.
+For Ad Builder Platform features:
+
+```env
+# MongoDB connection (for Next.js API routes)
+MONGODB_URI=mongodb://localhost:27017/shopify-store-builder
+
+# OpenAI API key (for AI features)
+OPENAI_API_KEY=your-openai-api-key-here
+OPENAI_MODEL=gpt-3.5-turbo
+
+# JWT Secret (must match backend JWT_SECRET)
+JWT_SECRET=your-jwt-secret-key-minimum-32-characters-long
+```
+
+Note: `NEXT_PUBLIC_` prefix makes variables available in browser. Server-side variables (like `MONGODB_URI`, `OPENAI_API_KEY`, and `JWT_SECRET`) are only available in API routes and server components.
 
 ## 🚀 Deployment
 

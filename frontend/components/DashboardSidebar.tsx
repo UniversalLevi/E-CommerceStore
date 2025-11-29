@@ -12,6 +12,7 @@ import {
   Activity,
   HelpCircle,
   Settings,
+  Megaphone,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -25,6 +26,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/stores', label: 'My Stores', icon: Store },
   { href: '/dashboard/products', label: 'My Products', icon: Package },
+  { href: '/dashboard/ad-builder/instagram', label: 'Ad Builder', icon: Megaphone },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/activity', label: 'Activity', icon: Activity },
