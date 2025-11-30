@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import VideoIntro from '@/components/VideoIntro';
-import IconBadge, { IconBadgeVariant } from '@/components/IconBadge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import type { LucideIcon } from 'lucide-react';
@@ -17,12 +15,16 @@ import {
   Sparkles,
   ShieldCheck,
   RefreshCcw,
-  ShoppingBag,
-  Store,
-  BarChart3,
-  Target,
-  CheckCircle2,
 } from 'lucide-react';
+import HeroSection from '@/components/landing/HeroSection';
+import StatsSection from '@/components/landing/StatsSection';
+import HowItWorks from '@/components/landing/HowItWorks';
+import FeaturesGrid from '@/components/landing/FeaturesGrid';
+import StorePreview from '@/components/landing/StorePreview';
+import TemplatesSection from '@/components/landing/TemplatesSection';
+import TestimonialsSection from '@/components/landing/TestimonialsSection';
+import PricingSection from '@/components/landing/PricingSection';
+import type { IconBadgeVariant } from '@/components/IconBadge';
 
 interface Plan {
   code: string;
@@ -90,23 +92,6 @@ export default function Home() {
     },
   ];
 
-  const benefits: Array<{ title: string; description: string; icon: LucideIcon }> = [
-    {
-      title: 'No Technical Skills Required',
-      description: 'Our platform handles all the technical complexity. You just browse, select, and launch.',
-      icon: CheckCircle2,
-    },
-    {
-      title: 'Curated Product Catalog',
-      description: 'Every product in our catalog is carefully selected and optimized for e-commerce success.',
-      icon: CheckCircle2,
-    },
-    {
-      title: 'Fast & Reliable',
-      description: 'Get your store up and running in minutes with automated setup and dependable infrastructure.',
-      icon: CheckCircle2,
-    },
-  ];
 
   const handleIntroComplete = () => {
     setShowContent(true);
@@ -146,290 +131,57 @@ export default function Home() {
     }
   };
 
+  // Prepare features for FeaturesGrid with gradients
+  const featuresWithGradients = detailedFeatures.map((feature, index) => {
+    const gradients = [
+      'from-purple-500/20 to-purple-600/20',
+      'from-blue-500/20 to-blue-600/20',
+      'from-teal-500/20 to-teal-600/20',
+      'from-pink-500/20 to-pink-600/20',
+    ];
+    return {
+      ...feature,
+      gradient: gradients[index % gradients.length],
+    };
+  });
+
   return (
     <>
       {mounted && !showContent && <VideoIntro onComplete={handleIntroComplete} />}
       
       <div 
-        className={`min-h-screen bg-surface-base transition-opacity duration-1000 ${
+        className={`min-h-screen bg-black transition-opacity duration-1000 ${
           showContent ? 'opacity-100' : 'opacity-0'
         }`}
       >
-      {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-[90vh] flex items-center bg-gradient-to-b from-surface-base via-surface-elevated to-surface-base">
-        <div className="relative container mx-auto px-4 py-24 md:py-32 w-full">
-          <div className="max-w-5xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-text-primary mb-4 md:mb-6 leading-tight px-2">
-              Launch Your Shopify Store
-              <span className="block mt-2">in Minutes</span>
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-text-secondary mb-8 md:mb-12 max-w-3xl mx-auto leading-relaxed px-4">
-              No technical skills needed. Browse products, connect your Shopify account,
-              and get a fully functional store automatically.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center flex-wrap mb-12 md:mb-16 px-4">
-              <button
-                onClick={handleGetStarted}
-                className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-black px-6 sm:px-8 md:px-10 py-3 md:py-4 rounded-lg font-bold text-base sm:text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 min-h-[44px]"
-              >
-                Get Started Free
-              </button>
-              <Link
-                href="/login"
-                className="w-full sm:w-auto bg-transparent hover:bg-surface-hover text-text-primary border-2 border-primary-500 px-6 sm:px-8 md:px-10 py-3 md:py-4 rounded-lg font-semibold text-base sm:text-lg transition-all min-h-[44px] flex items-center justify-center"
-              >
-                Login
-              </Link>
-            </div>
+        {/* Hero Section */}
+        <HeroSection onGetStarted={handleGetStarted} />
 
-            {/* Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto px-4">
-              <div className="text-center bg-surface-raised border border-border-default rounded-lg p-4 md:p-6">
-                <div className="text-4xl font-bold text-text-primary mb-2">1000+</div>
-                <div className="text-text-secondary">Products Available</div>
-              </div>
-              <div className="text-center bg-surface-raised border border-border-default rounded-lg p-6">
-                <div className="text-4xl font-bold text-text-primary mb-2">5 Min</div>
-                <div className="text-text-secondary">Setup Time</div>
-              </div>
-              <div className="text-center bg-surface-raised border border-border-default rounded-lg p-6">
-                <div className="text-4xl font-bold text-text-primary mb-2">24/7</div>
-                <div className="text-text-secondary">Support</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        {/* Stats Section */}
+        <StatsSection />
 
-      {/* Features Section */}
-      <section className="py-12 md:py-16 lg:py-20 bg-surface-elevated">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8 md:mb-12 lg:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-3 md:mb-4">
-              Everything You Need
-            </h2>
-            <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto">
-              Powerful features to help you build and grow your online store
-            </p>
-          </div>
+        {/* How It Works */}
+        <HowItWorks />
 
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
-            <div className="bg-surface-raised border border-border-default p-6 md:p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
-              <IconBadge
-                icon={ShoppingBag}
-                label="Browse Products"
-                size="lg"
-                className="mb-6 group-hover:scale-110 transition-transform"
-              />
-              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 text-text-primary">Browse Products</h3>
-              <p className="text-text-secondary leading-relaxed">
-                Choose from our curated catalog of ready-to-sell products across multiple niches. 
-                Find the perfect products for your store.
-              </p>
-            </div>
-            
-            <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
-              <IconBadge
-                icon={Link2}
-                label="Connect Shopify"
-                size="lg"
-                variant="primary"
-                className="mb-6 group-hover:scale-110 transition-transform"
-              />
-              <h3 className="text-2xl font-bold mb-4 text-text-primary">Connect Shopify</h3>
-              <p className="text-text-secondary leading-relaxed">
-                Securely link your Shopify account in seconds. Manage multiple stores 
-                from one dashboard.
-              </p>
-            </div>
-            
-            <div className="bg-surface-raised border border-border-default p-8 rounded-xl hover:border-primary-500 transition-all duration-300 hover:shadow-2xl group">
-              <IconBadge
-                icon={Target}
-                label="Launch store"
-                size="lg"
-                variant="success"
-                className="mb-6 group-hover:scale-110 transition-transform"
-              />
-              <h3 className="text-2xl font-bold mb-4 text-text-primary">Launch Store</h3>
-              <p className="text-text-secondary leading-relaxed">
-                Get a fully functional store created automatically. Add products with 
-                one click and start selling immediately.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+        {/* Store Preview */}
+        <StorePreview />
 
-      {/* Benefits Section */}
-      <section className="py-12 md:py-16 lg:py-20 bg-surface-base">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8 md:mb-12 lg:mb-16">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-3 md:mb-4">
-                Why Choose Us
-              </h2>
-            </div>
+        {/* Features Grid */}
+        <FeaturesGrid features={featuresWithGradients} />
 
-            <div className="space-y-8">
-              {benefits.map((benefit) => (
-                <div key={benefit.title} className="flex gap-6 items-start">
-                  <IconBadge
-                    icon={benefit.icon}
-                    label={benefit.title}
-                    size="sm"
-                    variant="primary"
-                    className="flex-shrink-0"
-                  />
-                  <div>
-                    <h3 className="text-xl font-bold text-text-primary mb-2">{benefit.title}</h3>
-                    <p className="text-text-secondary">{benefit.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+        {/* Templates Section */}
+        <TemplatesSection />
 
-      {/* Pricing Section */}
-      <section className="py-12 md:py-16 lg:py-20 bg-surface-elevated">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8 md:mb-12 lg:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-3 md:mb-4">
-              Choose Your Plan
-            </h2>
-            <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto">
-              Select the perfect plan for your business needs. All plans include full access to our product catalog.
-            </p>
-          </div>
+        {/* Testimonials Section */}
+        <TestimonialsSection />
 
-          {loadingPlans ? (
-            <div className="text-center py-12">
-              <div className="text-text-secondary">Loading plans...</div>
-            </div>
-          ) : plans.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
-              {plans.map((plan, index) => {
-                const isPopular = index === 1; // Middle plan is popular
-                const isLifetime = plan.isLifetime;
-                
-                return (
-                  <div
-                    key={plan.code}
-                    className={`relative bg-surface-raised border rounded-xl p-6 md:p-8 transition-all duration-300 hover:shadow-2xl ${
-                      isPopular
-                        ? 'border-primary-500 border-2 shadow-lg md:scale-105'
-                        : 'border-border-default hover:border-primary-500'
-                    }`}
-                  >
-                    {isPopular && (
-                      <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <span className="bg-primary-500 text-black px-4 py-1 rounded-full text-sm font-bold">
-                          Most Popular
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="text-center mb-6">
-                      <h3 className="text-2xl font-bold text-text-primary mb-2">{plan.name}</h3>
-                      <div className="mb-4">
-                        <span className="text-4xl font-bold text-text-primary">
-                          {formatPrice(plan.price)}
-                        </span>
-                        {!isLifetime && plan.durationDays && (
-                          <span className="text-text-secondary ml-2">
-                            / {plan.durationDays === 30 ? 'month' : plan.durationDays === 90 ? 'quarter' : `${plan.durationDays} days`}
-                          </span>
-                        )}
-                      </div>
-                      {isLifetime && (
-                        <div className="text-sm text-primary-500 font-semibold mb-2">
-                          One-time payment
-                        </div>
-                      )}
-                    </div>
-
-                    <ul className="space-y-3 mb-8">
-                      {plan.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-3">
-                          <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                          <span className="text-text-secondary">{feature}</span>
-                        </li>
-                      ))}
-                      {plan.maxProducts !== null ? (
-                        <li className="flex items-start gap-3">
-                          <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                          <span className="text-text-secondary">
-                            Up to {plan.maxProducts} products
-                          </span>
-                        </li>
-                      ) : (
-                        <li className="flex items-start gap-3">
-                          <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                          <span className="text-text-secondary font-semibold">
-                            Unlimited products
-                          </span>
-                        </li>
-                      )}
-                    </ul>
-
-                    <button
-                      onClick={handleGetStarted}
-                      className={`block w-full text-center py-3 px-6 rounded-lg font-semibold transition-all ${
-                        isPopular
-                          ? 'bg-primary-500 hover:bg-primary-600 text-black'
-                          : 'bg-surface-hover hover:bg-surface-hover/80 text-text-primary border border-border-default'
-                      }`}
-                    >
-                      Get Started
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-text-secondary">No plans available at the moment.</div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Detailed Features Section */}
-      <section className="py-12 md:py-16 lg:py-20 bg-surface-base">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8 md:mb-12 lg:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-3 md:mb-4">
-              Powerful Features
-            </h2>
-            <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto">
-              Everything you need to build and manage your Shopify store quickly and efficiently.
-            </p>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12 lg:mb-16 max-w-7xl mx-auto">
-            {detailedFeatures.map((feature, index) => (
-              <div
-                key={index}
-                className="bg-surface-raised border border-border-default rounded-xl shadow-md p-4 md:p-6 hover:border-primary-500 hover:shadow-lg transition-all"
-              >
-                <IconBadge
-                  icon={feature.icon}
-                  label={feature.title}
-                  variant={feature.variant ?? 'neutral'}
-                  size="lg"
-                  className="mb-4"
-                />
-                <h3 className="text-lg md:text-xl font-semibold text-text-primary mb-2">{feature.title}</h3>
-                <p className="text-text-secondary text-xs md:text-sm">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        {/* Pricing Section */}
+        <PricingSection 
+          plans={plans}
+          loading={loadingPlans}
+          onGetStarted={handleGetStarted}
+          formatPrice={formatPrice}
+        />
       </div>
     </>
   );

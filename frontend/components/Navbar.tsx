@@ -15,6 +15,9 @@ export default function Navbar() {
 
   // Show search bar only on products page and search page
   const showSearchBar = pathname?.startsWith('/products') || pathname?.startsWith('/search');
+  
+  // Hide Products link on home page
+  const isHomePage = pathname === '/';
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -25,15 +28,19 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-[#1a1a1a] border-b border-[#505050] shadow-lg sticky top-0 z-50" role="navigation" aria-label="Main navigation">
-      <div className="container mx-auto px-3 md:px-4 py-3 md:py-4">
-        <div className="flex justify-between items-center gap-2 md:gap-4">
-          <div className="flex items-center gap-2 md:gap-4">
+    <nav className="sticky top-0 z-50 backdrop-blur-xl bg-black/50 border-b border-white/10" role="navigation" aria-label="Main navigation">
+      <div className="container mx-auto px-4 md:px-6 py-4">
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link 
               href="/" 
-              className="text-lg sm:text-xl md:text-2xl font-bold text-white hover:text-[#e0e0e0] transition-colors"
+              className="flex items-center gap-2 text-lg sm:text-xl md:text-2xl font-bold text-white hover:text-white/80 transition-colors"
               aria-label="Home"
             >
+              <div className="relative">
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse-glow"></div>
+                <div className="absolute inset-0 w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 blur-sm opacity-50"></div>
+              </div>
               <span className="hidden sm:inline">Auto Shopify Store Builder</span>
               <span className="sm:hidden">Store Builder</span>
             </Link>
@@ -57,13 +64,15 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-4 lg:gap-6">
             {isAuthenticated ? (
               <>
-                <Link
-                  href="/products"
-                  className="text-[#a0a0a0] hover:text-white transition-colors"
-                  aria-label="Browse Products"
-                >
-                  Products
-                </Link>
+                {!isHomePage && (
+                  <Link
+                    href="/products"
+                    className="text-[#a0a0a0] hover:text-white transition-colors"
+                    aria-label="Browse Products"
+                  >
+                    Products
+                  </Link>
+                )}
                 <Link
                   href="/dashboard"
                   className="text-[#a0a0a0] hover:text-white transition-colors"
@@ -94,13 +103,15 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link
-                  href="/products"
-                  className="text-[#a0a0a0] hover:text-white transition-colors"
-                  aria-label="Browse Products"
-                >
-                  Products
-                </Link>
+                {!isHomePage && (
+                  <Link
+                    href="/products"
+                    className="text-[#a0a0a0] hover:text-white transition-colors"
+                    aria-label="Browse Products"
+                  >
+                    Products
+                  </Link>
+                )}
                 <Link
                   href="/login"
                   className="text-[#a0a0a0] hover:text-white transition-colors"
@@ -110,7 +121,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-white hover:bg-[#e0e0e0] text-black px-3 md:px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center font-semibold text-sm md:text-base"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-4 md:px-6 py-2 rounded-full transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 min-h-[44px] flex items-center font-semibold text-sm md:text-base"
                   aria-label="Sign Up"
                 >
                   Sign Up
@@ -171,14 +182,16 @@ export default function Navbar() {
             <div className="flex flex-col gap-4">
               {isAuthenticated ? (
                 <>
-                  <Link
-                    href="/products"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-[#a0a0a0] hover:text-white transition-colors py-2"
-                    aria-label="Browse Products"
-                  >
-                    Products
-                  </Link>
+                  {!isHomePage && (
+                    <Link
+                      href="/products"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-[#a0a0a0] hover:text-white transition-colors py-2"
+                      aria-label="Browse Products"
+                    >
+                      Products
+                    </Link>
+                  )}
                   <Link
                     href="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
@@ -214,14 +227,16 @@ export default function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link
-                    href="/products"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-[#a0a0a0] hover:text-white transition-colors py-2 min-h-[44px] flex items-center"
-                    aria-label="Browse Products"
-                  >
-                    Products
-                  </Link>
+                  {!isHomePage && (
+                    <Link
+                      href="/products"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="text-[#a0a0a0] hover:text-white transition-colors py-2 min-h-[44px] flex items-center"
+                      aria-label="Browse Products"
+                    >
+                      Products
+                    </Link>
+                  )}
                   <Link
                     href="/login"
                     onClick={() => setMobileMenuOpen(false)}
@@ -233,7 +248,7 @@ export default function Navbar() {
                   <Link
                     href="/register"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="bg-white hover:bg-[#e0e0e0] text-black px-4 py-2 rounded-lg transition-colors min-h-[44px] flex items-center justify-center font-semibold"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-4 py-2 rounded-full transition-all shadow-lg shadow-purple-500/25 min-h-[44px] flex items-center justify-center font-semibold"
                     aria-label="Sign Up"
                   >
                     Sign Up
