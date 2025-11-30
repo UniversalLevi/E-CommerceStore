@@ -6,14 +6,16 @@ interface SkeletonLoaderProps {
 
 export function SkeletonLoader({ className = '' }: SkeletonLoaderProps) {
   return (
-    <div className={`animate-pulse bg-gray-700 rounded ${className}`}></div>
+    <div className={`animate-pulse bg-purple-500/10 rounded relative overflow-hidden ${className}`}>
+      <div className="absolute inset-0 -translate-x-full animate-shimmer-premium bg-gradient-to-r from-transparent via-purple-500/10 to-transparent"></div>
+    </div>
   );
 }
 
 export function ProductCardSkeleton() {
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md overflow-hidden">
-      <SkeletonLoader className="aspect-square w-full bg-gray-700" />
+    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+      <SkeletonLoader className="aspect-square w-full" />
       <div className="p-6">
         <SkeletonLoader className="h-4 w-20 mb-2" />
         <SkeletonLoader className="h-6 w-full mb-2" />
@@ -26,7 +28,7 @@ export function ProductCardSkeleton() {
 
 export function StoreCardSkeleton() {
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-md p-6">
+    <div className="bg-white/5 border border-white/10 rounded-xl p-6">
       <SkeletonLoader className="h-6 w-3/4 mb-4" />
       <SkeletonLoader className="h-4 w-full mb-2" />
       <SkeletonLoader className="h-4 w-2/3 mb-4" />

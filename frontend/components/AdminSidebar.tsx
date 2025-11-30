@@ -75,12 +75,16 @@ export default function AdminSidebar({ isOpen = true, onClose }: AdminSidebarPro
         `}
       >
         {/* Logo and Close Button */}
-        <div className="p-6 border-b border-border-default flex items-center justify-between flex-shrink-0">
+        <div className="p-6 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <Link 
             href="/" 
-            className="text-xl font-bold text-text-primary hover:text-text-secondary transition-all duration-200 hover:-translate-y-0.5 inline-flex items-center gap-2"
+            className="flex items-center gap-2 text-xl font-bold text-text-primary hover:text-text-secondary transition-all duration-200 hover:-translate-y-0.5"
             onClick={() => onClose?.()}
           >
+            <div className="relative">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse-glow"></div>
+              <div className="absolute inset-0 w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 blur-sm opacity-50"></div>
+            </div>
             Admin Panel
           </Link>
           {/* Close button for mobile */}
@@ -117,29 +121,24 @@ export default function AdminSidebar({ isOpen = true, onClose }: AdminSidebarPro
               onClick={() => onClose?.()}
               className={`group relative flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[44px] ${
                 isActive
-                  ? 'bg-yellow-500 text-black font-semibold shadow-xl'
-                  : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold shadow-lg shadow-purple-500/25'
+                  : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'
               }`}
             >
               <item.icon
                 className={`h-5 w-5 transition-colors duration-200 ${
-                  isActive ? 'text-black' : 'text-text-secondary group-hover:text-text-primary'
+                  isActive ? 'text-white' : 'text-text-secondary group-hover:text-text-primary'
                 }`}
                 aria-hidden="true"
               />
               <span className="font-medium tracking-wide">{item.label}</span>
-              <span
-                className={`absolute inset-y-1 right-2 w-[2px] rounded-full transition-all duration-200 ${
-                  isActive ? 'bg-black/50 opacity-100 scale-y-100' : 'opacity-0 scale-y-0 group-hover:opacity-60 group-hover:scale-y-100 bg-yellow-500/60'
-                }`}
-              />
             </Link>
           );
         })}
       </nav>
 
       {/* Bottom Actions - Fixed at bottom */}
-      <div className="p-4 border-t border-border-default bg-surface-raised space-y-2 flex-shrink-0">
+      <div className="p-4 border-t border-white/10 bg-surface-raised space-y-2 flex-shrink-0">
         <button
           onClick={() => {
             onClose?.();

@@ -212,24 +212,24 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-3 md:px-6 py-4 text-right text-sm font-medium">
                       <div className="flex flex-col md:flex-row gap-2 md:gap-0 md:justify-end">
-                        <Link
-                          href={`/admin/products/${product._id}/edit`}
+                      <Link
+                        href={`/admin/products/${product._id}/edit`}
                           className="text-primary-500 hover:text-primary-600 md:mr-4"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(product._id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          Delete
-                        </button>
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(product._id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Delete
+                      </button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              </table>
+            </table>
             </div>
           </div>
         )}

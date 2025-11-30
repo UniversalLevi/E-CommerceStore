@@ -5,6 +5,9 @@ import { Product } from '../models/Product';
 import { StoreConnection } from '../models/StoreConnection';
 import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
+import { decrypt } from '../utils/encryption';
+import { fetchShopifyOrders } from '../utils/shopify';
+import mongoose from 'mongoose';
 
 /**
  * Get user analytics
@@ -108,6 +111,114 @@ export const getUserAnalytics = async (
       },
     ]);
 
+    // Get user revenue stats from Shopify stores
+    const activeStores = stores.filter((s) => s.status === 'active');
+    let totalRevenue = 0;
+    let totalOrders = 0;
+    let revenueInRange = 0;
+    let ordersInRange = 0;
+    const revenueOverTimeMap: Record<string, { amount: number; count: number }> = {};
+    const revenueByStoreMap: Record<string, { amount: number; count: number }> = {};
+    
+    // Order status tracking
+    const financialStatusMap: Record<string, number> = {};
+    const fulfillmentStatusMap: Record<string, number> = {};
+    const financialStatusInRangeMap: Record<string, number> = {};
+    const fulfillmentStatusInRangeMap: Record<string, number> = {};
+
+    // Fetch orders from all active stores
+    for (const store of activeStores) {
+      try {
+        // Decrypt access token
+        const accessToken = decrypt(store.accessToken);
+
+        // Fetch all orders (we'll filter by date in memory)
+        const allOrders = await fetchShopifyOrders(
+          store.shopDomain,
+          accessToken,
+          store.apiVersion
+        );
+
+        // Process all orders
+        allOrders.forEach((order) => {
+          const orderDate = new Date(order.createdAt);
+          const isInRange = orderDate >= start && orderDate <= end;
+          
+          // Track financial status (all orders)
+          const financialStatus = order.financialStatus || 'pending';
+          financialStatusMap[financialStatus] = (financialStatusMap[financialStatus] || 0) + 1;
+          
+          // Track fulfillment status (all orders)
+          const fulfillmentStatus = order.fulfillmentStatus || 'unfulfilled';
+          fulfillmentStatusMap[fulfillmentStatus] = (fulfillmentStatusMap[fulfillmentStatus] || 0) + 1;
+          
+          // Track status in date range
+          if (isInRange) {
+            financialStatusInRangeMap[financialStatus] = (financialStatusInRangeMap[financialStatus] || 0) + 1;
+            fulfillmentStatusInRangeMap[fulfillmentStatus] = (fulfillmentStatusInRangeMap[fulfillmentStatus] || 0) + 1;
+          }
+
+          // Only count paid/authorized orders for revenue
+          if (order.financialStatus === 'paid' || order.financialStatus === 'authorized') {
+            // Shopify returns prices as strings (e.g., "99.99")
+            // Convert to number and then to smallest currency unit (paise for INR, cents for USD)
+            const priceValue = parseFloat(order.totalPrice) || 0;
+            // Store in smallest currency unit (multiply by 100)
+            const amount = Math.round(priceValue * 100);
+            
+            // Add to total revenue (all time)
+            totalRevenue += amount;
+            totalOrders += 1;
+
+            // Group by store
+            if (!revenueByStoreMap[store.storeName]) {
+              revenueByStoreMap[store.storeName] = { amount: 0, count: 0 };
+            }
+            revenueByStoreMap[store.storeName].amount += amount;
+            revenueByStoreMap[store.storeName].count += 1;
+
+            // Check if order is in date range
+            if (isInRange) {
+              revenueInRange += amount;
+              ordersInRange += 1;
+
+              // Group by date for revenue over time
+              const orderDateStr = orderDate.toISOString().split('T')[0];
+              if (!revenueOverTimeMap[orderDateStr]) {
+                revenueOverTimeMap[orderDateStr] = { amount: 0, count: 0 };
+              }
+              revenueOverTimeMap[orderDateStr].amount += amount;
+              revenueOverTimeMap[orderDateStr].count += 1;
+            }
+          }
+        });
+
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error: any) {
+        console.error(`Error fetching orders from store ${store.storeName}:`, error.message);
+        // Continue with other stores even if one fails
+      }
+    }
+
+    // Convert revenue over time map to array
+    const revenueOverTime = Object.entries(revenueOverTimeMap)
+      .map(([date, data]) => ({
+        date,
+        amount: data.amount,
+        count: data.count,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Convert revenue by store map to array
+    const revenueByStore = Object.entries(revenueByStoreMap)
+      .map(([storeName, data]) => ({
+        storeName,
+        amount: data.amount,
+        count: data.count,
+      }))
+      .sort((a, b) => b.amount - a.amount);
+
     res.status(200).json({
       success: true,
       data: {
@@ -119,6 +230,30 @@ export const getUserAnalytics = async (
           totalProducts: userStores.length,
           totalStores: stores.length,
           activeStores: stores.filter((s) => s.status === 'active').length,
+        },
+        revenue: {
+          totalRevenue,
+          totalOrders,
+          revenueInRange,
+          ordersInRange,
+          revenueOverTime,
+          revenueByStore,
+          financialStatus: Object.entries(financialStatusMap).map(([status, count]) => ({
+            status,
+            count,
+          })),
+          fulfillmentStatus: Object.entries(fulfillmentStatusMap).map(([status, count]) => ({
+            status,
+            count,
+          })),
+          financialStatusInRange: Object.entries(financialStatusInRangeMap).map(([status, count]) => ({
+            status,
+            count,
+          })),
+          fulfillmentStatusInRange: Object.entries(fulfillmentStatusInRangeMap).map(([status, count]) => ({
+            status,
+            count,
+          })),
         },
       },
     });

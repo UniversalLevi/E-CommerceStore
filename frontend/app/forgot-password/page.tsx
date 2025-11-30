@@ -51,12 +51,17 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-base">
+    <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
+      {/* Radial Glow Background */}
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-40"></div>
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
+      
       <Navbar />
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
+            <h2 className="mt-6 text-center text-3xl md:text-4xl font-extrabold text-gradient-purple">
               Forgot Password
             </h2>
             <p className="mt-2 text-center text-sm text-text-secondary">
@@ -65,7 +70,7 @@ export default function ForgotPasswordPage() {
           </div>
 
           {success ? (
-            <div className="bg-surface-raised border border-border-default rounded-lg p-6 text-center">
+            <div className="glass-card border border-white/10 rounded-2xl p-6 text-center shadow-2xl">
               <div className="text-4xl mb-4 text-primary-500">Success</div>
               <h3 className="text-lg font-semibold text-text-primary mb-2">
                 Check Your Email
@@ -100,9 +105,9 @@ export default function ForgotPasswordPage() {
                       setErrors({ ...errors, email: '' });
                     }
                   }}
-                  className={`appearance-none relative block w-full px-4 py-3 bg-surface-elevated text-text-primary border ${
-                    errors.email ? 'border-red-500' : 'border-border-default'
-                  } placeholder:text-text-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm min-h-[44px]`}
+                  className={`appearance-none relative block w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border ${
+                    errors.email ? 'border-red-500' : 'border-white/10'
+                  } placeholder:text-text-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm min-h-[44px] transition-all`}
                   placeholder="you@example.com"
                 />
                 {errors.email && (

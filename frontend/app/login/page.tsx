@@ -58,11 +58,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-base flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-hero flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Radial Glow Background */}
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-40"></div>
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      
+      {/* Subtle Grid Pattern */}
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
+      
+      <div className="max-w-md w-full relative z-10">
+        <div className="glass-card border border-white/10 rounded-2xl shadow-2xl p-4 md:p-6 lg:p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-text-primary mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-gradient-purple mb-2">
               Welcome Back
             </h1>
             <p className="text-text-secondary">Sign in to your account</p>
@@ -84,8 +91,8 @@ export default function LoginPage() {
                   setIdentifier(e.target.value);
                   if (errors.identifier) setErrors({ ...errors, identifier: undefined });
                 }}
-                className={`w-full px-4 py-3 bg-surface-elevated text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none min-h-[44px] ${
-                  errors.identifier ? 'border-red-500' : 'border-border-default'
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all ${
+                  errors.identifier ? 'border-red-500' : 'border-white/10'
                 }`}
                 placeholder="you@example.com or +1234567890"
               />
@@ -124,8 +131,8 @@ export default function LoginPage() {
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }
                 }}
-                className={`w-full px-4 py-3 bg-surface-elevated text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none min-h-[44px] ${
-                  errors.password ? 'border-red-500' : 'border-border-default'
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary placeholder:text-text-muted border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all ${
+                  errors.password ? 'border-red-500' : 'border-white/10'
                 }`}
                 placeholder="••••••••"
               />

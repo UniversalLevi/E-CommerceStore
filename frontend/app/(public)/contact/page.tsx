@@ -64,16 +64,19 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl bg-surface-base min-h-screen">
-      <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-8 md:p-12">
-        <h1 className="text-4xl font-bold text-text-primary mb-4">Contact Us</h1>
+    <div className="min-h-screen bg-gradient-hero relative py-12">
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-30"></div>
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
+      <div className="container mx-auto px-4 max-w-4xl relative z-10">
+      <div className="glass-card border border-white/10 rounded-2xl shadow-2xl p-8 md:p-12">
+        <h1 className="text-4xl font-bold mb-4"><span className="text-gradient-purple">Contact Us</span></h1>
         <p className="text-text-secondary mb-8">
             Have a question or need help? We'd love to hear from you. Send us a message and we'll
             respond as soon as possible.
           </p>
 
         {success ? (
-          <div className="bg-surface-hover border border-border-default rounded-lg p-6 text-center">
+          <div className="glass-card border border-white/10 rounded-2xl p-6 text-center">
             <div className="text-4xl mb-4 text-text-primary">Thank you</div>
             <h3 className="text-lg font-semibold text-text-primary mb-2">
               Message Sent Successfully
@@ -101,9 +104,9 @@ export default function ContactPage() {
                     required
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
-                    className={`w-full px-4 py-2 bg-surface-elevated border ${
-                      errors.name ? 'border-red-500' : 'border-border-default'
-                    } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none`}
+                    className={`w-full px-4 py-2 bg-white/5 backdrop-blur-sm border ${
+                      errors.name ? 'border-red-500' : 'border-white/10'
+                    } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all`}
                     placeholder="Your name"
                   />
                 {errors.name && (
@@ -121,9 +124,9 @@ export default function ContactPage() {
                   required
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
-                    className={`w-full px-4 py-2 bg-surface-elevated border ${
-                      errors.email ? 'border-red-500' : 'border-border-default'
-                    } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none`}
+                    className={`w-full px-4 py-2 bg-white/5 backdrop-blur-sm border ${
+                      errors.email ? 'border-red-500' : 'border-white/10'
+                    } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all`}
                   placeholder="your@email.com"
                 />
                 {errors.email && (
@@ -142,9 +145,9 @@ export default function ContactPage() {
                 required
                 value={formData.subject}
                 onChange={(e) => handleChange('subject', e.target.value)}
-                className={`w-full px-4 py-2 bg-surface-elevated border ${
-                  errors.subject ? 'border-red-500' : 'border-border-default'
-                } text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                className={`w-full px-4 py-2 bg-white/5 backdrop-blur-sm border ${
+                  errors.subject ? 'border-red-500' : 'border-white/10'
+                } text-text-primary rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all`}
                 placeholder="What is this regarding?"
               />
               {errors.subject && (
@@ -162,9 +165,9 @@ export default function ContactPage() {
                 rows={6}
                 value={formData.message}
                 onChange={(e) => handleChange('message', e.target.value)}
-                className={`w-full px-4 py-2 bg-surface-elevated border ${
-                  errors.message ? 'border-red-500' : 'border-border-default'
-                } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none`}
+                className={`w-full px-4 py-2 bg-white/5 backdrop-blur-sm border ${
+                  errors.message ? 'border-red-500' : 'border-white/10'
+                } text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all`}
                 placeholder="Tell us how we can help..."
               />
               {errors.message && (
@@ -186,7 +189,7 @@ export default function ContactPage() {
             </form>
           )}
 
-        <div className="mt-12 pt-8 border-t border-border-default">
+        <div className="mt-12 pt-8 border-t border-white/10">
           <h3 className="text-lg font-semibold text-text-primary mb-4">Support Hours</h3>
           <p className="text-text-secondary mb-2">
             <strong>Monday - Friday:</strong> 9:00 AM - 6:00 PM EST
@@ -202,11 +205,12 @@ export default function ContactPage() {
         <div className="mt-8">
           <Link
             href="/help"
-            className="text-text-primary hover:text-primary-500 font-medium"
+            className="text-text-primary hover:text-purple-400 font-medium transition-colors"
           >
             Visit our Help Center →
           </Link>
         </div>
+      </div>
       </div>
     </div>
   );

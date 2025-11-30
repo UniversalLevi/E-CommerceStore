@@ -156,10 +156,14 @@ export default function ProductDetailPage() {
   // Render loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-base">
+      <div className="min-h-screen bg-gradient-hero relative">
+        <div className="absolute inset-0 bg-radial-glow-purple opacity-30"></div>
         <Navbar />
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+        <div className="flex items-center justify-center py-16 relative z-10">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-purple-500 border-r-blue-500"></div>
+            <div className="absolute inset-0 animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-blue-500 border-r-purple-500" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+          </div>
         </div>
       </div>
     );
@@ -168,15 +172,16 @@ export default function ProductDetailPage() {
   // Render error state
   if (error && !product) {
     return (
-      <div className="min-h-screen bg-surface-base">
+      <div className="min-h-screen bg-gradient-hero relative">
+        <div className="absolute inset-0 bg-radial-glow-purple opacity-30"></div>
         <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
+        <div className="container mx-auto px-4 py-16 text-center relative z-10">
           <h2 className="text-2xl font-bold text-text-primary mb-4">
             Product Not Found
           </h2>
           <button
             onClick={() => router.push('/products')}
-            className="bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-6 py-3 rounded-lg transition-colors shadow-lg shadow-purple-500/25"
           >
             Browse Products
           </button>
@@ -191,13 +196,15 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-base">
+    <div className="min-h-screen bg-gradient-hero relative">
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-30"></div>
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
       <Navbar />
 
       {/* Success Modal */}
       {showSuccessModal && storeData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-2xl max-w-lg w-full p-8">
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass-card border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full p-8">
             <div className="text-center mb-6 space-y-4">
               <div className="flex justify-center">
                 <IconBadge label="Store created" icon={CheckCircle2} size="lg" variant="success" />
@@ -306,7 +313,7 @@ export default function ProductDetailPage() {
             </nav>
           )}
 
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden">
+          <div className="glass-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden relative z-10">
             <div className="grid md:grid-cols-2 gap-8 p-8">
               {/* Images */}
               <div>
@@ -474,11 +481,11 @@ export default function ProductDetailPage() {
                 <div className="space-y-4">
                   {isAuthenticated ? (
                     <>
-                      <button
-                        onClick={() => setShowStoreModal(true)}
-                        disabled={loadingStores}
-                        className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
+                                <button
+                                        onClick={() => setShowStoreModal(true)}
+                                        disabled={loadingStores}
+                                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white py-4 rounded-lg font-semibold text-lg transition-all shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
                         <span className="flex items-center justify-center gap-2">
                           <IconBadge icon={ShoppingCart} label="Add to store" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
                           Add to My Store
@@ -486,7 +493,7 @@ export default function ProductDetailPage() {
                       </button>
                       <button
                         onClick={() => setShowWriteDescription(true)}
-                        className="w-full bg-surface-raised hover:bg-surface-hover border-2 border-primary-500 text-text-primary py-4 rounded-lg font-semibold text-lg transition-colors"
+                        className="w-full glass-card hover:bg-white/10 border-2 border-purple-500/50 text-text-primary py-4 rounded-lg font-semibold text-lg transition-all"
                       >
                         <span className="flex items-center justify-center gap-2">
                           <IconBadge icon={PenLine} label="Write description" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
@@ -498,7 +505,7 @@ export default function ProductDetailPage() {
                     <>
                       <button
                         onClick={() => router.push('/login')}
-                        className="w-full bg-primary-500 hover:bg-primary-600 text-black py-4 rounded-lg font-semibold text-lg transition-colors"
+                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white py-4 rounded-lg font-semibold text-lg transition-all shadow-lg shadow-purple-500/25"
                       >
                         <span className="flex items-center justify-center gap-2">
                           <IconBadge icon={LogIn} label="Login to add" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
@@ -512,7 +519,7 @@ export default function ProductDetailPage() {
                   )}
                 </div>
 
-                <div className="mt-8 p-4 bg-surface-hover border border-border-default rounded-lg">
+                <div className="mt-8 p-4 glass-card border border-white/10 rounded-lg">
                   <h3 className="font-semibold text-text-primary mb-2">
                     What You'll Get
                   </h3>
@@ -560,10 +567,10 @@ export default function ProductDetailPage() {
             <h2 className="text-2xl font-bold text-text-primary mb-6">Related Products</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
-                <Link
+                              <Link
                   key={relatedProduct._id}
                   href={`/products/${relatedProduct._id}`}
-                  className="bg-surface-raised border border-border-default rounded-xl shadow-md overflow-hidden hover:border-primary-500 hover:shadow-lg transition-all"
+                  className="glass-card glass-card-hover rounded-xl overflow-hidden transition-all hover:-translate-y-1"
                 >
                   <div className="aspect-square relative">
                     <img

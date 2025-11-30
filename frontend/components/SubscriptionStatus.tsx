@@ -28,9 +28,9 @@ export default function SubscriptionStatus() {
 
   if (loading) {
     return (
-      <div className="bg-[#1a1a1a] rounded-lg p-4 animate-pulse">
-        <div className="h-4 bg-[#2a2a2a] rounded w-1/3 mb-2"></div>
-        <div className="h-4 bg-[#2a2a2a] rounded w-1/2"></div>
+      <div className="bg-white/5 border border-white/10 rounded-lg p-4 animate-pulse">
+        <div className="h-4 bg-purple-500/10 rounded w-1/3 mb-2"></div>
+        <div className="h-4 bg-purple-500/10 rounded w-1/2"></div>
       </div>
     );
   }
@@ -42,11 +42,11 @@ export default function SubscriptionStatus() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-[#2a2a2a] text-white border-[#808080]';
+        return 'bg-gradient-to-r from-purple-600 to-blue-600 text-white border-transparent shadow-lg shadow-purple-500/20';
       case 'expired':
-        return 'bg-[#2a2a2a] text-[#a0a0a0] border-[#606060]';
+        return 'bg-red-500/20 text-red-300 border-red-500/30';
       default:
-        return 'bg-[#2a2a2a] text-[#808080] border-[#505050]';
+        return 'bg-white/10 text-text-secondary border-white/20';
     }
   };
 
@@ -74,9 +74,9 @@ export default function SubscriptionStatus() {
   };
 
   return (
-    <div className="bg-[#1a1a1a] rounded-lg p-6 border border-[#505050]">
+    <div className="bg-white/5 rounded-lg p-6 border border-white/10">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Subscription Status</h3>
+        <h3 className="text-lg font-semibold text-text-primary">Subscription Status</h3>
         <span
           className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
             subscription.status
@@ -90,13 +90,13 @@ export default function SubscriptionStatus() {
         <>
           <div className="mb-4">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-[#a0a0a0]">Product Usage</span>
-              <span className="text-white font-medium">{formatProductUsage()}</span>
+              <span className="text-text-secondary">Product Usage</span>
+              <span className="text-text-primary font-medium">{formatProductUsage()}</span>
             </div>
             {subscription.maxProducts !== null && (
-              <div className="w-full bg-[#2a2a2a] rounded-full h-2">
+              <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-white h-2 rounded-full transition-all"
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all"
                   style={{ width: `${getUsagePercentage()}%` }}
                 ></div>
               </div>
@@ -104,27 +104,27 @@ export default function SubscriptionStatus() {
           </div>
 
           {subscription.planExpiresAt && !subscription.isLifetime && (
-            <div className="text-sm text-[#a0a0a0] mb-4">
+            <div className="text-sm text-text-secondary mb-4">
               Expires: {new Date(subscription.planExpiresAt).toLocaleDateString()}
             </div>
           )}
 
           {subscription.isLifetime && (
-            <div className="text-sm text-white mb-4">Lifetime Plan</div>
+            <div className="text-sm text-purple-400 mb-4">✨ Lifetime Plan</div>
           )}
         </>
       )}
 
       {subscription.status !== 'active' && (
         <div className="mb-4">
-          <p className="text-[#a0a0a0] text-sm mb-3">
+          <p className="text-text-secondary text-sm mb-3">
             {subscription.status === 'expired'
               ? 'Your subscription has expired. Upgrade to continue adding products.'
               : 'No active subscription. Choose a plan to get started.'}
           </p>
           <Link
             href="/dashboard/billing"
-            className="inline-block bg-white hover:bg-[#e0e0e0] text-black px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+            className="inline-block bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-lg shadow-purple-500/20"
           >
             {subscription.status === 'expired' ? 'Renew Plan' : 'Choose Plan'}
           </Link>

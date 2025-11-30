@@ -26,13 +26,13 @@ export default function Button({
   className = '',
 }: ButtonProps) {
   const baseStyles =
-    'inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] shadow-lg hover:shadow-xl';
+    'inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]';
 
   const variantStyles = {
-    primary: 'bg-primary-500 hover:bg-primary-600 text-black',
-    secondary: 'bg-surface-hover hover:bg-surface-elevated text-text-primary border border-border-default',
-    danger: 'bg-red-600 hover:bg-red-700 text-white',
-    ghost: 'bg-transparent hover:bg-surface-hover text-text-primary',
+    primary: 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40',
+    secondary: 'glass-card hover:bg-white/10 text-text-primary border border-white/10 hover:border-white/20',
+    danger: 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/25',
+    ghost: 'bg-transparent hover:bg-white/5 text-text-primary',
   };
 
   return (

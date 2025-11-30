@@ -94,21 +94,28 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="bg-[#1a1a1a] border border-[#505050] rounded-xl shadow-lg p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-hero flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Radial Glow Background */}
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-40"></div>
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      
+      {/* Subtle Grid Pattern */}
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
+      
+      <div className="max-w-md w-full relative z-10">
+        <div className="glass-card border border-white/10 rounded-2xl shadow-2xl p-4 md:p-6 lg:p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-gradient-purple mb-2">
               Create Account
             </h1>
-            <p className="text-[#a0a0a0]">Start building your store today</p>
+            <p className="text-text-secondary">Start building your store today</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Full Name *
               </label>
@@ -121,8 +128,8 @@ export default function RegisterPage() {
                   if (errors.name) setErrors({ ...errors, name: undefined });
                 }}
                 required
-                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
-                  errors.name ? 'border-red-500' : 'border-[#505050]'
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all ${
+                  errors.name ? 'border-red-500' : 'border-white/10'
                 }`}
                 placeholder="John Doe"
               />
@@ -134,7 +141,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Email Address *
               </label>
@@ -147,8 +154,8 @@ export default function RegisterPage() {
                   if (errors.email) setErrors({ ...errors, email: undefined });
                 }}
                 required
-                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
-                  errors.email ? 'border-red-500' : 'border-[#505050]'
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all ${
+                  errors.email ? 'border-red-500' : 'border-white/10'
                 }`}
                 placeholder="you@example.com"
               />
@@ -160,7 +167,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="phone"
-                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Phone Number *
               </label>
@@ -173,8 +180,8 @@ export default function RegisterPage() {
                   if (errors.phone) setErrors({ ...errors, phone: undefined });
                 }}
                 required
-                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
-                  errors.phone ? 'border-red-500' : 'border-[#505050]'
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all ${
+                  errors.phone ? 'border-red-500' : 'border-white/10'
                 }`}
                 placeholder="+1234567890"
               />
@@ -186,7 +193,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="country"
-                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Country *
               </label>
@@ -198,8 +205,8 @@ export default function RegisterPage() {
                   if (errors.country) setErrors({ ...errors, country: undefined });
                 }}
                 required
-                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
-                  errors.country ? 'border-red-500' : 'border-[#505050]'
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all ${
+                  errors.country ? 'border-red-500' : 'border-white/10'
                 }`}
               >
                 <option value="">Select a country</option>
@@ -217,7 +224,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Password
               </label>
@@ -229,8 +236,8 @@ export default function RegisterPage() {
                   setPassword(e.target.value);
                   if (errors.password) setErrors({ ...errors, password: undefined });
                 }}
-                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
-                  errors.password ? 'border-red-500' : 'border-[#505050]'
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all ${
+                  errors.password ? 'border-red-500' : 'border-white/10'
                 }`}
                 placeholder="••••••••"
               />
@@ -242,7 +249,7 @@ export default function RegisterPage() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Confirm Password
               </label>
@@ -254,8 +261,8 @@ export default function RegisterPage() {
                   setConfirmPassword(e.target.value);
                   if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
                 }}
-                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-[#505050]'
+                className={`w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all ${
+                  errors.confirmPassword ? 'border-red-500' : 'border-white/10'
                 }`}
                 placeholder="••••••••"
               />

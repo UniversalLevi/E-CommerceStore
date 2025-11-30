@@ -112,7 +112,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-75" />
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -126,7 +126,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-4xl mx-4 transform overflow-hidden rounded-2xl bg-surface-raised border-4 border-primary-500 p-4 md:p-6 lg:p-10 text-left align-middle shadow-2xl transition-all ring-4 ring-primary-500/20">
+              <Dialog.Panel className="w-full max-w-4xl mx-4 transform overflow-hidden rounded-2xl glass-card border-2 border-purple-500/50 p-4 md:p-6 lg:p-10 text-left align-middle shadow-2xl transition-all">
                 {/* Progress Indicator */}
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-2">

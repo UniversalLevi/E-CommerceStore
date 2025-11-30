@@ -78,21 +78,26 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
+      {/* Radial Glow Background */}
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-40"></div>
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
+      
       <Navbar />
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
+            <h2 className="mt-6 text-center text-3xl md:text-4xl font-extrabold text-gradient-purple">
               Reset Password
             </h2>
-            <p className="mt-2 text-center text-sm text-[#a0a0a0]">
+            <p className="mt-2 text-center text-sm text-text-secondary">
               Enter your new password below.
             </p>
           </div>
 
           {success ? (
-            <div className="bg-[#1a1a1a] border border-[#505050] rounded-lg p-6 text-center">
+            <div className="glass-card border border-white/10 rounded-2xl p-6 text-center shadow-2xl">
               <div className="text-4xl mb-4 text-white">Success</div>
               <h3 className="text-lg font-semibold text-white mb-2">
                 Password Reset Successful
@@ -110,7 +115,7 @@ export default function ResetPasswordPage() {
           ) : (
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-[#a0a0a0] mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-2">
                   New Password
                 </label>
                 <input
@@ -126,9 +131,9 @@ export default function ResetPasswordPage() {
                       setErrors({ ...errors, password: '' });
                     }
                   }}
-                  className={`appearance-none relative block w-full px-4 py-3 bg-[#0a0a0a] text-white border ${
-                    errors.password ? 'border-red-500' : 'border-[#505050]'
-                  } placeholder-[#808080] rounded-lg focus:outline-none focus:ring-[#808080] focus:border-[#808080] focus:z-10 sm:text-sm min-h-[44px]`}
+                  className={`appearance-none relative block w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border ${
+                    errors.password ? 'border-red-500' : 'border-white/10'
+                  } placeholder:text-text-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm min-h-[44px] transition-all`}
                   placeholder="Enter new password"
                 />
                 {errors.password && (
@@ -137,7 +142,7 @@ export default function ResetPasswordPage() {
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#a0a0a0] mb-2">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-secondary mb-2">
                   Confirm Password
                 </label>
                 <input
@@ -153,9 +158,9 @@ export default function ResetPasswordPage() {
                       setErrors({ ...errors, confirmPassword: '' });
                     }
                   }}
-                  className={`appearance-none relative block w-full px-4 py-3 bg-[#0a0a0a] text-white border ${
-                    errors.confirmPassword ? 'border-red-500' : 'border-[#505050]'
-                  } placeholder-[#808080] rounded-lg focus:outline-none focus:ring-[#808080] focus:border-[#808080] focus:z-10 sm:text-sm min-h-[44px]`}
+                  className={`appearance-none relative block w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border ${
+                    errors.confirmPassword ? 'border-red-500' : 'border-white/10'
+                  } placeholder:text-text-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm min-h-[44px] transition-all`}
                   placeholder="Confirm new password"
                 />
                 {errors.confirmPassword && (

@@ -89,7 +89,7 @@ export default function StoreSelectionModal({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -103,23 +103,23 @@ export default function StoreSelectionModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md mx-4 transform overflow-hidden rounded-2xl bg-white p-4 md:p-6 text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-md mx-4 transform overflow-hidden rounded-2xl glass-card border border-white/10 p-4 md:p-6 text-left align-middle shadow-2xl transition-all">
                 <Dialog.Title
                   as="h3"
-                  className="text-lg font-medium leading-6 text-gray-900 mb-4"
+                  className="text-lg font-medium leading-6 text-text-primary mb-4"
                 >
                   Add Product to Store
                 </Dialog.Title>
 
                 {error && (
-                  <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  <div className="mb-4 bg-red-900/30 border border-red-700/50 text-red-200 px-4 py-3 rounded-lg text-sm">
                     {error}
                   </div>
                 )}
 
                 {stores.length === 0 ? (
                   <div className="mb-4">
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-text-secondary mb-4">
                       You don't have any stores connected yet. Connect a Shopify store to
                       add products.
                     </p>
@@ -135,7 +135,7 @@ export default function StoreSelectionModal({
                 ) : (
                   <>
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-text-secondary mb-2">
                         Select Store
                       </label>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -144,8 +144,8 @@ export default function StoreSelectionModal({
                             key={store._id}
                             className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-colors ${
                               selectedStoreId === store._id
-                                ? 'border-primary-500 bg-primary-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                                ? 'border-purple-500 bg-purple-500/20'
+                                : 'border-white/10 hover:border-white/20 bg-white/5'
                             }`}
                             aria-label={`Select store ${store.storeName}`}
                           >
@@ -155,26 +155,26 @@ export default function StoreSelectionModal({
                               value={store._id}
                               checked={selectedStoreId === store._id}
                               onChange={(e) => setSelectedStoreId(e.target.value)}
-                              className="mr-3 text-primary-600 focus:ring-primary-500"
+                              className="mr-3 text-purple-500 focus:ring-purple-500"
                               aria-labelledby={`store-${store._id}-label`}
                             />
                             <div className="flex-1" id={`store-${store._id}-label`}>
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-gray-900">
+                                <span className="font-medium text-text-primary">
                                   {store.storeName}
                                 </span>
                                 {store.isDefault && (
-                                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-primary-100 text-primary-700">
+                                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-500/30 text-purple-300">
                                     Default
                                   </span>
                                 )}
                                 {store.status !== 'active' && (
-                                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">
+                                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-500/30 text-yellow-300">
                                     {store.status}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm text-gray-500 mt-1">
+                              <p className="text-sm text-text-secondary mt-1">
                                 {store.shopDomain}
                               </p>
                             </div>
@@ -201,7 +201,7 @@ export default function StoreSelectionModal({
                       <button
                         type="button"
                         onClick={handleConnectNewStore}
-                        className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        className="text-sm text-purple-400 hover:text-purple-300 font-medium"
                       >
                         + Connect New Store
                       </button>

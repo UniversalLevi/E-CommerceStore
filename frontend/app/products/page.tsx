@@ -45,8 +45,11 @@ export default function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 bg-surface-base">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      <div className="flex items-center justify-center py-16 bg-black">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-purple-500 border-r-blue-500"></div>
+          <div className="absolute inset-0 animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-blue-500 border-r-purple-500" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+        </div>
       </div>
     );
   }
@@ -77,10 +80,10 @@ export default function ProductsPage() {
     return (
       <Link
         href={`/products/niches/${niche.slug}`}
-        className="bg-surface-raised border border-border-default rounded-xl shadow-lg overflow-hidden hover:border-primary-500 hover:shadow-xl transition-all group"
+        className="glass-card glass-card-hover rounded-2xl overflow-hidden transition-all group hover:-translate-y-1"
         style={cardStyle}
       >
-        <div className="aspect-square relative flex items-center justify-center bg-gradient-to-br from-surface-base to-surface-raised">
+        <div className="aspect-square relative flex items-center justify-center bg-gradient-to-br from-purple-500/10 to-blue-500/10">
           {niche.image ? (
             <img
               src={niche.image}
@@ -99,17 +102,17 @@ export default function ProductsPage() {
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2">
               {niche.featured && (
-                <span className="text-xs font-semibold bg-primary-500 text-black px-2 py-1 rounded uppercase">
+                <span className="text-xs font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-white px-2 py-1 rounded uppercase">
                   Featured
                 </span>
               )}
               {niche.isDefault && (
-                <span className="text-xs font-semibold bg-accent-500 text-white px-2 py-1 rounded uppercase">
+                <span className="text-xs font-semibold bg-purple-500/30 text-purple-300 px-2 py-1 rounded uppercase">
                   Default
                 </span>
               )}
             </div>
-            <span className="text-sm font-semibold bg-surface-elevated text-text-primary px-3 py-1 rounded-full border border-border-default">
+            <span className="text-sm font-semibold bg-white/10 text-text-primary px-3 py-1 rounded-full border border-white/10">
               {productCount} {productCount === 1 ? 'Product' : 'Products'}
             </span>
           </div>
@@ -142,11 +145,15 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-base">
+    <div className="min-h-screen bg-gradient-hero relative">
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-30"></div>
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
       <Navbar />
-      <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="container mx-auto px-4 py-4 md:py-8 relative z-10">
       <div className="text-center mb-8 md:mb-12">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-3 md:mb-4">Product Catalog</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">
+          <span className="text-gradient-purple">Product Catalog</span>
+        </h1>
         <p className="text-base md:text-lg lg:text-xl text-text-secondary">
           Select a niche to browse products
         </p>
@@ -161,7 +168,7 @@ export default function ProductsPage() {
       {/* Featured Niches Section */}
       {featuredNiches.length > 0 && (
         <div className="mb-8 md:mb-12">
-          <h2 className="text-xl md:text-2xl font-bold text-text-primary mb-4 md:mb-6">Featured Niches</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-gradient-blue mb-4 md:mb-6">Featured Niches</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {featuredNiches.map((niche) => (
               <NicheCard key={niche._id} niche={niche} />
@@ -210,7 +217,7 @@ export default function ProductsPage() {
       {isAuthenticated && (
         <button
           onClick={() => setShowFindProduct(true)}
-          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 bg-black hover:bg-gray-700 text-white p-3 md:p-4 rounded-full shadow-2xl hover:shadow-2xl transition-all z-50 flex items-center gap-2 font-semibold border-2 md:border-4 border-gray-600 ring-2 md:ring-4 ring-gray-500/30 min-h-[44px] min-w-[44px]"
+          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white p-3 md:p-4 rounded-full shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all z-50 flex items-center gap-2 font-semibold min-h-[44px] min-w-[44px]"
           aria-label="Find Winning Product"
         >
           <IconBadge icon={Target} label="Find winning product" size="sm" variant="primary" className="bg-white/10 border-white/30" />
