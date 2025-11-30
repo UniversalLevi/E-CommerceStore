@@ -66,11 +66,13 @@ export default function VerifyEmailPage() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-surface-base">
+      <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
+        <div className="absolute inset-0 bg-radial-glow-purple opacity-40"></div>
+        <div className="absolute inset-0 grid-pattern opacity-20"></div>
         <Navbar />
-        <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-md w-full space-y-8">
-            <div className="bg-surface-raised border border-border-default rounded-lg p-6 text-center">
+            <div className="glass-card border border-white/10 rounded-2xl p-6 text-center shadow-2xl">
               <h2 className="text-2xl font-bold text-text-primary mb-2">Invalid Token</h2>
               <p className="text-text-secondary mb-4">
                 The verification link is invalid or missing a token.
@@ -89,12 +91,14 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-base">
+    <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-40"></div>
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
       <Navbar />
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-md w-full space-y-8">
           <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
+            <h2 className="mt-6 text-center text-3xl md:text-4xl font-extrabold text-gradient-purple">
               Verify Email Address
             </h2>
             <p className="mt-2 text-center text-sm text-text-secondary">
@@ -103,7 +107,7 @@ export default function VerifyEmailPage() {
           </div>
 
           {success ? (
-            <div className="bg-surface-raised border border-border-default rounded-lg p-6 text-center">
+            <div className="glass-card border border-white/10 rounded-2xl p-6 text-center shadow-2xl">
               <div className="text-4xl mb-4 text-green-400">✓</div>
               <h3 className="text-lg font-semibold text-text-primary mb-2">
                 Email Verified Successfully
@@ -122,7 +126,7 @@ export default function VerifyEmailPage() {
               </Link>
             </div>
           ) : error ? (
-            <div className="bg-surface-raised border border-red-500/50 rounded-lg p-6 text-center">
+            <div className="glass-card border border-red-500/50 rounded-2xl p-6 text-center shadow-2xl">
               <div className="text-4xl mb-4 text-red-400">✗</div>
               <h3 className="text-lg font-semibold text-text-primary mb-2">
                 Verification Failed
@@ -148,8 +152,11 @@ export default function VerifyEmailPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-surface-raised border border-border-default rounded-lg p-6 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+            <div className="glass-card border border-white/10 rounded-2xl p-6 text-center shadow-2xl">
+              <div className="relative mx-auto mb-4 w-12 h-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-purple-500 border-r-blue-500"></div>
+                <div className="absolute inset-0 animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-blue-500 border-r-purple-500" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+              </div>
               <p className="text-text-secondary">
                 Verifying your email address...
               </p>

@@ -73,12 +73,16 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
         `}
       >
         {/* Logo and Close Button */}
-        <div className="p-6 border-b border-border-default flex items-center justify-between flex-shrink-0">
+        <div className="p-6 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <Link 
             href="/" 
-            className="text-xl font-bold text-text-primary hover:text-text-secondary transition-colors"
+            className="flex items-center gap-2 text-xl font-bold text-text-primary hover:text-text-secondary transition-colors"
             onClick={() => onClose?.()}
           >
+            <div className="relative">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse-glow"></div>
+              <div className="absolute inset-0 w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 blur-sm opacity-50"></div>
+            </div>
             Store Builder
           </Link>
           {/* Close button for mobile */}
@@ -115,13 +119,13 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
               onClick={() => onClose?.()}
               className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[44px] ${
                 isActive
-                  ? 'bg-yellow-500 text-black font-semibold shadow-lg'
-                  : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold shadow-lg shadow-purple-500/25'
+                  : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'
               }`}
             >
               <item.icon
                 className={`h-5 w-5 transition-colors duration-200 ${
-                  isActive ? 'text-black' : 'text-text-secondary group-hover:text-text-primary'
+                  isActive ? 'text-white' : 'text-text-secondary group-hover:text-text-primary'
                 }`}
                 aria-hidden="true"
               />
@@ -132,9 +136,9 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
       </nav>
 
       {/* User Section - Fixed at bottom */}
-      <div className="p-4 border-t border-border-default bg-surface-raised flex-shrink-0">
+      <div className="p-4 border-t border-white/10 bg-surface-raised flex-shrink-0">
         <div className="flex items-center gap-3 px-4 py-2">
-          <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-black font-semibold">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold border border-white/20">
             {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">

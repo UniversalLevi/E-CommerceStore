@@ -72,7 +72,7 @@ export default function ConfirmModal({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -86,13 +86,13 @@ export default function ConfirmModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md mx-4 transform overflow-hidden rounded-2xl bg-white p-4 md:p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+              <Dialog.Panel className="w-full max-w-md mx-4 transform overflow-hidden rounded-2xl glass-card border border-white/10 p-4 md:p-6 text-left align-middle shadow-2xl transition-all">
+                <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-text-primary">
                   {title}
                 </Dialog.Title>
                 {message && (
                   <div className="mt-2">
-                    <p className="text-sm text-gray-500">{message}</p>
+                    <p className="text-sm text-text-secondary">{message}</p>
                   </div>
                 )}
 
@@ -101,7 +101,7 @@ export default function ConfirmModal({
                 <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-end">
                   <button
                     type="button"
-                    className="inline-flex justify-center rounded-md border border-transparent bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 min-h-[44px]"
+                    className="inline-flex justify-center rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black min-h-[44px] transition-colors"
                     onClick={handleClose}
                     disabled={loading}
                   >
@@ -109,7 +109,7 @@ export default function ConfirmModal({
                   </button>
                   <button
                     type="button"
-                    className={`inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 min-h-[44px] ${styles.button}`}
+                    className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black min-h-[44px] transition-all ${styles.button}`}
                     onClick={onConfirm}
                     disabled={loading || disabled}
                   >

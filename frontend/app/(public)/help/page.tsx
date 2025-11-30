@@ -104,10 +104,13 @@ export default function HelpPage() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-6xl bg-black min-h-screen">
+    <div className="min-h-screen bg-gradient-hero relative py-12">
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-30"></div>
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
+      <div className="container mx-auto px-4 max-w-6xl relative z-10">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-white mb-4">Help & Support</h1>
-        <p className="text-xl text-[#a0a0a0]">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4"><span className="text-gradient-purple">Help & Support</span></h1>
+        <p className="text-xl text-text-secondary">
             Find answers to common questions and learn how to get the most out of our platform
           </p>
         </div>
@@ -119,7 +122,7 @@ export default function HelpPage() {
           placeholder="Search for help..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full max-w-2xl mx-auto block px-4 py-3 bg-[#1a1a1a] border border-[#505050] text-white rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080]"
+          className="w-full max-w-2xl mx-auto block px-4 py-3 bg-white/5 backdrop-blur-sm border border-white/10 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
         />
       </div>
 
@@ -129,10 +132,10 @@ export default function HelpPage() {
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-2 rounded-lg transition-all ${
               selectedCategory === category
-                ? 'bg-white text-black'
-                : 'bg-[#1a1a1a] text-[#a0a0a0] border border-[#505050] hover:bg-[#2a2a2a]'
+                ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25'
+                : 'glass-card text-text-secondary border border-white/10 hover:bg-white/10'
             }`}
           >
             {category}
@@ -141,31 +144,31 @@ export default function HelpPage() {
       </div>
 
       {/* FAQ Section */}
-      <div className="bg-[#1a1a1a] border border-[#505050] rounded-xl shadow-md p-8 mb-12">
-        <h2 className="text-2xl font-bold text-white mb-6">Frequently Asked Questions</h2>
+      <div className="glass-card border border-white/10 rounded-2xl shadow-2xl p-8 mb-12">
+        <h2 className="text-2xl font-bold text-text-primary mb-6">Frequently Asked Questions</h2>
           <div className="space-y-4">
         {filteredFAQs.length === 0 ? (
-          <p className="text-[#a0a0a0] text-center py-8">
+          <p className="text-text-secondary text-center py-8">
             No FAQs found matching your search. Try a different query or category.
           </p>
         ) : (
           filteredFAQs.map((faq, index) => (
             <div
               key={index}
-              className="border border-[#505050] rounded-lg overflow-hidden"
+              className="border border-white/10 rounded-lg overflow-hidden bg-white/5"
             >
               <button
                 onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
-                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-[#2a2a2a] transition-colors"
+                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-white/5 transition-colors"
               >
                 <div className="flex-1">
-                  <div className="text-sm text-[#808080] font-medium mb-1">
+                  <div className="text-sm text-purple-400 font-medium mb-1">
                     {faq.category}
                   </div>
-                  <h3 className="font-semibold text-white">{faq.question}</h3>
+                  <h3 className="font-semibold text-text-primary">{faq.question}</h3>
                 </div>
                 <svg
-                  className={`w-5 h-5 text-[#808080] transition-transform ${
+                  className={`w-5 h-5 text-text-secondary transition-transform ${
                     expandedFAQ === index ? 'transform rotate-180' : ''
                   }`}
                   fill="none"
@@ -255,6 +258,7 @@ export default function HelpPage() {
         >
           Back to Home
         </Link>
+      </div>
       </div>
     </div>
   );

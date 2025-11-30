@@ -122,8 +122,7 @@ export default function Home() {
     return `₹${(priceInPaise / 100).toLocaleString('en-IN')}`;
   };
 
-  const handleGetStarted = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleGetStarted = () => {
     if (isAuthenticated) {
       router.push('/dashboard/billing');
     } else {

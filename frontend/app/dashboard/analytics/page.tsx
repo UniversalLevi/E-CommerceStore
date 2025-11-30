@@ -43,6 +43,14 @@ interface AnalyticsData {
     totalStores: number;
     activeStores: number;
   };
+  revenue?: {
+    totalRevenue: number;
+    totalPayments: number;
+    revenueInRange: number;
+    paymentsInRange: number;
+    revenueOverTime: Array<{ date: string; amount: number; count: number }>;
+    revenueByPlan: Array<{ planCode: string; amount: number; count: number }>;
+  };
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -141,7 +149,7 @@ export default function AnalyticsPage() {
         )}
 
         {/* Summary Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
           <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
             <div className="text-sm text-text-secondary mb-1">Total Products Added</div>
             <div className="text-3xl font-bold text-text-primary">{data.summary.totalProducts}</div>
@@ -154,37 +162,92 @@ export default function AnalyticsPage() {
             <div className="text-sm text-text-secondary mb-1">Active Stores</div>
             <div className="text-3xl font-bold text-text-primary">{data.summary.activeStores}</div>
           </div>
+          {data.revenue && (
+            <>
+              <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+                <div className="text-sm text-text-secondary mb-1">Total Revenue</div>
+                <div className="text-3xl font-bold text-text-primary">
+                  ₹{(data.revenue.totalRevenue / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+                <div className="text-sm text-text-secondary mb-1">Total Payments</div>
+                <div className="text-3xl font-bold text-text-primary">{data.revenue.totalPayments}</div>
+              </div>
+              <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+                <div className="text-sm text-text-secondary mb-1">Revenue (Selected Period)</div>
+                <div className="text-3xl font-bold text-text-primary">
+                  ₹{(data.revenue.revenueInRange / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Products Over Time Chart */}
-        {data.productsOverTime.length > 0 && (
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 mb-8">
-            <h2 className="text-xl font-bold text-text-primary mb-4">Products Added Over Time</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data.productsOverTime}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1a1a1a', 
-                    border: '1px solid #505050',
-                    color: '#ffffff',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  name="Products Added"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Products Over Time Chart */}
+          {data.productsOverTime.length > 0 && (
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-text-primary mb-4">Products Added Over Time</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data.productsOverTime}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1a1a1a', 
+                      border: '1px solid #505050',
+                      color: '#ffffff',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#3B82F6"
+                    strokeWidth={2}
+                    name="Products Added"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Revenue Over Time Chart */}
+          {data.revenue && data.revenue.revenueOverTime.length > 0 && (
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-text-primary mb-4">Revenue Over Time</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data.revenue.revenueOverTime}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis 
+                    tickFormatter={(value) => `₹${(value / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1a1a1a', 
+                      border: '1px solid #505050',
+                      color: '#ffffff',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [`₹${(value / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    name="Revenue (₹)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* Popular Niches */}
@@ -210,6 +273,34 @@ export default function AnalyticsPage() {
             </div>
           )}
 
+          {/* Revenue by Plan */}
+          {data.revenue && data.revenue.revenueByPlan.length > 0 && (
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-text-primary mb-4">Revenue by Plan</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={data.revenue.revenueByPlan}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="planCode" />
+                  <YAxis 
+                    tickFormatter={(value) => `₹${(value / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1a1a1a', 
+                      border: '1px solid #505050',
+                      color: '#ffffff',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [`₹${(value / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
+                  />
+                  <Bar dataKey="amount" fill="#10B981" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* Activity Summary */}
           {data.activitySummary.length > 0 && (
             <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">

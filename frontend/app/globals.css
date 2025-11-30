@@ -76,7 +76,9 @@ input[type="number"]:focus,
 input[type="url"]:focus,
 textarea:focus,
 select:focus {
-  @apply bg-[#1a1a1a] text-white border-[#808080];
+  @apply bg-[#1a1a1a] text-white border-purple-500;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1), 0 0 0 1px rgba(124, 58, 237, 0.3);
+  transition: all 0.2s ease;
 }
 
 input::placeholder,

@@ -148,21 +148,23 @@ export default function PrivacyPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface-base">
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
-        <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-8 md:p-12">
-          <h1 className="text-4xl font-bold text-text-primary mb-2">Privacy Policy</h1>
+    <div className="min-h-screen bg-gradient-hero relative py-12">
+      <div className="absolute inset-0 bg-radial-glow-purple opacity-30"></div>
+      <div className="absolute inset-0 grid-pattern opacity-20"></div>
+      <div className="container mx-auto px-4 max-w-4xl relative z-10">
+        <div className="glass-card border border-white/10 rounded-2xl shadow-2xl p-8 md:p-12">
+          <h1 className="text-4xl font-bold mb-2"><span className="text-gradient-purple">Privacy Policy</span></h1>
           <p className="text-text-secondary mb-8">Last updated: {new Date().toLocaleDateString()}</p>
 
           <div className="space-y-3">
             {sections.map((section, index) => (
               <div
                 key={index}
-                className="border border-border-default rounded-lg overflow-hidden bg-surface-elevated"
+                className="border border-white/10 rounded-lg overflow-hidden bg-white/5"
               >
                 <button
                   onClick={() => toggleSection(index)}
-                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-surface-hover transition-colors"
+                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-white/5 transition-colors"
                 >
                   <h2 className="text-lg font-semibold text-text-primary">{section.title}</h2>
                   <svg
@@ -182,7 +184,7 @@ export default function PrivacyPage() {
                   </svg>
                 </button>
                 {openSection === index && (
-                  <div className="px-6 py-4 border-t border-border-default">
+                  <div className="px-6 py-4 border-t border-white/10">
                     {section.content}
                   </div>
                 )}
@@ -190,10 +192,10 @@ export default function PrivacyPage() {
             ))}
           </div>
 
-          <div className="mt-12 pt-8 border-t border-border-default">
+          <div className="mt-12 pt-8 border-t border-white/10">
             <Link
               href="/"
-              className="text-text-primary hover:text-primary-500 font-medium"
+              className="text-text-primary hover:text-purple-400 font-medium transition-colors"
             >
               Back to Home
             </Link>

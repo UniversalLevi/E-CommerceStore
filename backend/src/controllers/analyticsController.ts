@@ -4,7 +4,9 @@ import { User } from '../models/User';
 import { Product } from '../models/Product';
 import { StoreConnection } from '../models/StoreConnection';
 import { AuditLog } from '../models/AuditLog';
+import { Payment } from '../models/Payment';
 import { createError } from '../middleware/errorHandler';
+import mongoose from 'mongoose';
 
 /**
  * Get user analytics
@@ -108,6 +110,88 @@ export const getUserAnalytics = async (
       },
     ]);
 
+    // Get user revenue stats
+    const userIdObj = new mongoose.Types.ObjectId(userId);
+    
+    // Total revenue (all time)
+    const totalRevenueResult = await Payment.aggregate([
+      {
+        $match: {
+          userId: userIdObj,
+          status: 'paid',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$amount' },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const totalRevenue = totalRevenueResult[0]?.total || 0;
+    const totalPayments = totalRevenueResult[0]?.count || 0;
+
+    // Revenue in date range
+    const revenueInRangeResult = await Payment.aggregate([
+      {
+        $match: {
+          userId: userIdObj,
+          status: 'paid',
+          createdAt: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$amount' },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const revenueInRange = revenueInRangeResult[0]?.total || 0;
+    const paymentsInRange = revenueInRangeResult[0]?.count || 0;
+
+    // Revenue over time (grouped by date)
+    const revenueOverTime = await Payment.aggregate([
+      {
+        $match: {
+          userId: userIdObj,
+          status: 'paid',
+          createdAt: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+          },
+          amount: { $sum: '$amount' },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
+
+    // Revenue by plan
+    const revenueByPlanResult = await Payment.aggregate([
+      {
+        $match: {
+          userId: userIdObj,
+          status: 'paid',
+        },
+      },
+      {
+        $group: {
+          _id: '$planCode',
+          amount: { $sum: '$amount' },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
     res.status(200).json({
       success: true,
       data: {
@@ -119,6 +203,22 @@ export const getUserAnalytics = async (
           totalProducts: userStores.length,
           totalStores: stores.length,
           activeStores: stores.filter((s) => s.status === 'active').length,
+        },
+        revenue: {
+          totalRevenue,
+          totalPayments,
+          revenueInRange,
+          paymentsInRange,
+          revenueOverTime: revenueOverTime.map((item) => ({
+            date: item._id,
+            amount: item.amount,
+            count: item.count,
+          })),
+          revenueByPlan: revenueByPlanResult.map((item) => ({
+            planCode: item._id,
+            amount: item.amount,
+            count: item.count,
+          })),
         },
       },
     });

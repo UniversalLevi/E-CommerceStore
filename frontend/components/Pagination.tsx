@@ -80,7 +80,7 @@ export default function Pagination({
   return (
     <div className="flex flex-col items-center gap-4 mt-8">
       {hasSummary && (
-        <div className="text-gray-400 text-sm">
+        <div className="text-text-secondary text-sm">
           Showing {startItem}-{endItem} of {total} products
         </div>
       )}
@@ -90,10 +90,10 @@ export default function Pagination({
         <button
           onClick={() => updatePage(currentPage - 1)}
           disabled={currentPage === 1}
-          className={`px-4 py-2 rounded-lg border transition-colors ${
+          className={`px-4 py-2 rounded-lg border transition-all ${
             currentPage === 1
-              ? 'bg-gray-800 border-gray-700 text-gray-600 cursor-not-allowed'
-              : 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700 hover:border-primary-500'
+              ? 'bg-white/5 border-white/10 text-text-muted cursor-not-allowed'
+              : 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-purple-500/50'
           }`}
         >
           Previous
@@ -104,7 +104,7 @@ export default function Pagination({
           {getPageNumbers().map((page, index) => {
             if (page === '...') {
               return (
-                <span key={`ellipsis-${index}`} className="text-gray-500 px-2">
+                <span key={`ellipsis-${index}`} className="text-text-muted px-2">
                   ...
                 </span>
               );
@@ -117,10 +117,10 @@ export default function Pagination({
               <button
                 key={pageNum}
                 onClick={() => updatePage(pageNum)}
-                className={`px-4 py-2 rounded-lg border transition-colors ${
+                className={`px-4 py-2 rounded-lg border transition-all ${
                   isActive
-                    ? 'bg-primary-600 border-primary-500 text-white'
-                    : 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700 hover:border-primary-500'
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 border-transparent text-white shadow-lg shadow-purple-500/20'
+                    : 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-purple-500/50'
                 }`}
               >
                 {pageNum}
@@ -133,10 +133,10 @@ export default function Pagination({
         <button
           onClick={() => updatePage(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className={`px-4 py-2 rounded-lg border transition-colors ${
+          className={`px-4 py-2 rounded-lg border transition-all ${
             currentPage === totalPages
-              ? 'bg-gray-800 border-gray-700 text-gray-600 cursor-not-allowed'
-              : 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700 hover:border-primary-500'
+              ? 'bg-white/5 border-white/10 text-text-muted cursor-not-allowed'
+              : 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-purple-500/50'
           }`}
         >
           Next
