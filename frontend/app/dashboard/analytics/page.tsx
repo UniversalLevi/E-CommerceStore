@@ -45,11 +45,15 @@ interface AnalyticsData {
   };
   revenue?: {
     totalRevenue: number;
-    totalPayments: number;
+    totalOrders: number;
     revenueInRange: number;
-    paymentsInRange: number;
+    ordersInRange: number;
     revenueOverTime: Array<{ date: string; amount: number; count: number }>;
-    revenueByPlan: Array<{ planCode: string; amount: number; count: number }>;
+    revenueByStore: Array<{ storeName: string; amount: number; count: number }>;
+    financialStatus: Array<{ status: string; count: number }>;
+    fulfillmentStatus: Array<{ status: string; count: number }>;
+    financialStatusInRange: Array<{ status: string; count: number }>;
+    fulfillmentStatusInRange: Array<{ status: string; count: number }>;
   };
 }
 
@@ -62,10 +66,43 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [timePeriod, setTimePeriod] = useState<'1m' | '3m' | '6m' | '1y' | 'all'>('1m');
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
   });
+
+  // Update date range when time period changes
+  useEffect(() => {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timePeriod) {
+      case '1m':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '3m':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '6m':
+        startDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        break;
+      case '1y':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        break;
+      case 'all':
+        // Set to a very old date (10 years ago)
+        startDate = new Date(now.getTime() - 10 * 365 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    setDateRange({
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: now.toISOString().split('T')[0],
+    });
+  }, [timePeriod]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -120,25 +157,84 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-surface-base">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
           <h1 className="text-3xl font-bold text-text-primary">Analytics Dashboard</h1>
-          <div className="flex gap-4">
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={(e) =>
-                setDateRange({ ...dateRange, startDate: e.target.value })
-              }
-              className="px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={(e) =>
-                setDateRange({ ...dateRange, endDate: e.target.value })
-              }
-              className="px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500"
-            />
+          <div className="flex gap-4 items-center flex-wrap">
+            {/* Time Period Selector */}
+            <div className="flex gap-2 bg-surface-elevated border border-border-default rounded-lg p-1">
+              <button
+                onClick={() => setTimePeriod('1m')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  timePeriod === '1m'
+                    ? 'bg-primary-500 text-black'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                1 Month
+              </button>
+              <button
+                onClick={() => setTimePeriod('3m')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  timePeriod === '3m'
+                    ? 'bg-primary-500 text-black'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                3 Months
+              </button>
+              <button
+                onClick={() => setTimePeriod('6m')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  timePeriod === '6m'
+                    ? 'bg-primary-500 text-black'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                6 Months
+              </button>
+              <button
+                onClick={() => setTimePeriod('1y')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  timePeriod === '1y'
+                    ? 'bg-primary-500 text-black'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                1 Year
+              </button>
+              <button
+                onClick={() => setTimePeriod('all')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  timePeriod === 'all'
+                    ? 'bg-primary-500 text-black'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                All Time
+              </button>
+            </div>
+            {/* Custom Date Range (optional) */}
+            <div className="flex gap-2 text-sm text-text-secondary items-center">
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={(e) => {
+                  setDateRange({ ...dateRange, startDate: e.target.value });
+                  setTimePeriod('1m'); // Reset to custom
+                }}
+                className="px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              />
+              <span>to</span>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={(e) => {
+                  setDateRange({ ...dateRange, endDate: e.target.value });
+                  setTimePeriod('1m'); // Reset to custom
+                }}
+                className="px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              />
+            </div>
           </div>
         </div>
 
@@ -171,8 +267,8 @@ export default function AnalyticsPage() {
                 </div>
               </div>
               <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-                <div className="text-sm text-text-secondary mb-1">Total Payments</div>
-                <div className="text-3xl font-bold text-text-primary">{data.revenue.totalPayments}</div>
+                <div className="text-sm text-text-secondary mb-1">Total Orders</div>
+                <div className="text-3xl font-bold text-text-primary">{data.revenue.totalOrders}</div>
               </div>
               <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
                 <div className="text-sm text-text-secondary mb-1">Revenue (Selected Period)</div>
@@ -273,14 +369,14 @@ export default function AnalyticsPage() {
             </div>
           )}
 
-          {/* Revenue by Plan */}
-          {data.revenue && data.revenue.revenueByPlan.length > 0 && (
+          {/* Revenue by Store */}
+          {data.revenue && data.revenue.revenueByStore.length > 0 && (
             <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
-              <h2 className="text-xl font-bold text-text-primary mb-4">Revenue by Plan</h2>
+              <h2 className="text-xl font-bold text-text-primary mb-4">Revenue by Store</h2>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.revenue.revenueByPlan}>
+                <BarChart data={data.revenue.revenueByStore}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="planCode" />
+                  <XAxis dataKey="storeName" angle={-45} textAnchor="end" height={100} />
                   <YAxis 
                     tickFormatter={(value) => `₹${(value / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
                   />
@@ -299,6 +395,123 @@ export default function AnalyticsPage() {
             </div>
           )}
         </div>
+
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Financial Status */}
+          {data.revenue && data.revenue.financialStatusInRange.length > 0 && (
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-text-primary mb-4">Order Financial Status</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={data.revenue.financialStatusInRange}
+                    dataKey="count"
+                    nameKey="status"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label={(entry: any) => `${entry.status}: ${entry.count}`}
+                  >
+                    {data.revenue.financialStatusInRange.map((entry, index) => (
+                      <Cell key={`cell-financial-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1a1a1a', 
+                      border: '1px solid #505050',
+                      color: '#ffffff',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Fulfillment Status */}
+          {data.revenue && data.revenue.fulfillmentStatusInRange.length > 0 && (
+            <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-text-primary mb-4">Order Fulfillment Status</h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={data.revenue.fulfillmentStatusInRange}
+                    dataKey="count"
+                    nameKey="status"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label={(entry: any) => `${entry.status || 'unfulfilled'}: ${entry.count}`}
+                  >
+                    {data.revenue.fulfillmentStatusInRange.map((entry, index) => (
+                      <Cell key={`cell-fulfillment-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1a1a1a', 
+                      border: '1px solid #505050',
+                      color: '#ffffff',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Order Status Cards */}
+        {data.revenue && (data.revenue.financialStatusInRange.length > 0 || data.revenue.fulfillmentStatusInRange.length > 0) && (
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {/* Financial Status Breakdown */}
+            {data.revenue.financialStatusInRange.length > 0 && (
+              <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+                <h2 className="text-xl font-bold text-text-primary mb-4">Financial Status Breakdown</h2>
+                <div className="space-y-3">
+                  {data.revenue.financialStatusInRange.map((status, index) => (
+                    <div key={status.status} className="flex items-center justify-between p-3 bg-surface-elevated rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        ></div>
+                        <span className="text-text-primary font-medium capitalize">{status.status}</span>
+                      </div>
+                      <span className="text-text-primary font-bold">{status.count} orders</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Fulfillment Status Breakdown */}
+            {data.revenue.fulfillmentStatusInRange.length > 0 && (
+              <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6">
+                <h2 className="text-xl font-bold text-text-primary mb-4">Fulfillment Status Breakdown</h2>
+                <div className="space-y-3">
+                  {data.revenue.fulfillmentStatusInRange.map((status, index) => (
+                    <div key={status.status} className="flex items-center justify-between p-3 bg-surface-elevated rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        ></div>
+                        <span className="text-text-primary font-medium capitalize">
+                          {status.status || 'unfulfilled'}
+                        </span>
+                      </div>
+                      <span className="text-text-primary font-bold">{status.count} orders</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* Activity Summary */}
