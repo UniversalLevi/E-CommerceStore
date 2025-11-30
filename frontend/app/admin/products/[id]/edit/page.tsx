@@ -75,7 +75,7 @@ export default function EditProductPage() {
         price: product.price.toString(),
         category: product.category || '',
         niche: nicheId || '',
-        images: product.images,
+        images: Array.isArray(product.images) ? product.images : [],
         active: product.active,
       });
     } catch (err: any) {
