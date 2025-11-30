@@ -16,11 +16,23 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { email, mobile, password } = req.body;
+    const { name, email, mobile, country, password } = req.body;
 
-    // Validate that at least email or mobile is provided
-    if (!email && !mobile) {
-      throw createError('Either email or mobile number is required', 400);
+    // Validate required fields
+    if (!name || !name.trim()) {
+      throw createError('Name is required', 400);
+    }
+
+    if (!email || !email.trim()) {
+      throw createError('Email is required', 400);
+    }
+
+    if (!mobile || !mobile.trim()) {
+      throw createError('Mobile number is required', 400);
+    }
+
+    if (!country || !country.trim()) {
+      throw createError('Country is required', 400);
     }
 
     // Check if user already exists by email or mobile
@@ -43,28 +55,18 @@ export const register = async (
     // Hash password with optimized rounds (10 -> 8 for better performance)
     const hashedPassword = await bcrypt.hash(password, 8);
 
-    // Create user - only include fields that are provided (don't set null/undefined)
+    // Create user - all fields are required now
     const userData: Partial<IUser> = {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      mobile: mobile.trim(),
+      country: country.trim(),
       password: hashedPassword,
       role: 'user',
+      // Both email and mobile are provided, so no reminders needed
+      emailLinkReminderSent: true,
+      mobileLinkReminderSent: true,
     };
-
-    if (email && email.trim()) {
-      userData.email = email.trim().toLowerCase();
-    }
-    if (mobile && mobile.trim()) {
-      userData.mobile = mobile.trim();
-      // If mobile-only account, set flag to send email link reminder
-      if (!email || !email.trim()) {
-        userData.emailLinkReminderSent = false;
-      }
-    }
-    if (email && email.trim()) {
-      // If email-only account, set flag to send mobile link reminder
-      if (!mobile || !mobile.trim()) {
-        userData.mobileLinkReminderSent = false;
-      }
-    }
 
     const user = await User.create(userData);
 

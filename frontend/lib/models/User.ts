@@ -2,10 +2,14 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
-  email: string;
+  email?: string | null;
+  mobile?: string | null;
   password: string;
   role: 'user' | 'admin';
   isActive: boolean;
+  plan?: string | null;
+  planExpiresAt?: Date | null;
+  isLifetime?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

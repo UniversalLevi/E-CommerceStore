@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { requireSubscription } from '@/lib/subscription';
 import connectDatabase from '@/lib/db';
 import Campaign from '@/lib/models/Campaign';
 import { z } from 'zod';
@@ -42,6 +43,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check subscription
+    const subscriptionError = await requireSubscription(user._id);
+    if (subscriptionError) {
+      return NextResponse.json({ error: subscriptionError.error }, { status: subscriptionError.status });
+    }
+
     await connectDatabase();
     const campaigns = await Campaign.find({
       userId: user._id,
@@ -65,6 +72,12 @@ export async function POST(req: NextRequest) {
     const user = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription
+    const subscriptionError = await requireSubscription(user._id);
+    if (subscriptionError) {
+      return NextResponse.json({ error: subscriptionError.error }, { status: subscriptionError.status });
     }
 
     const body = await req.json();

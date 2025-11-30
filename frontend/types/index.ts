@@ -1,13 +1,20 @@
 export interface User {
   _id: string;
+  name?: string | null;
   email?: string | null;
   mobile?: string | null;
+  country?: string | null;
   role: 'user' | 'admin';
   shopifyConnected?: boolean;
   shopifyShop?: string;
   stores: Store[];
   createdAt?: string;
   lastLogin?: string;
+  // Subscription fields
+  plan?: PlanCode | null;
+  planExpiresAt?: string | null;
+  isLifetime?: boolean;
+  productsAdded?: number;
 }
 
 export interface Niche {

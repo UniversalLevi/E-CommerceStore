@@ -1,16 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useContentStore } from '@/store/useContentStore';
 import Button from '@/components/Button';
+import SubscriptionLock from '@/components/SubscriptionLock';
+import { useSubscription } from '@/hooks/useSubscription';
 import { notify } from '@/lib/toast';
 import { Sparkles, Save, RefreshCw, Trash2 } from 'lucide-react';
 import AIResultPanel from '@/components/ads/AIResultPanel';
 import AdBuilderTabs from '@/components/ads/AdBuilderTabs';
 
 export default function ContentFinderPage() {
+  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
   const { library, dailyIdeas, setLibrary, addToLibrary, removeFromLibrary, setDailyIdeas } =
     useContentStore();
+
+  // Check subscription before rendering
+  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
+    return <SubscriptionLock featureName="Content Finder" />;
+  }
 
   const [niche, setNiche] = useState('');
   const [productName, setProductName] = useState('');

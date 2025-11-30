@@ -54,7 +54,7 @@ export default function AdminLayout({
             </button>
             <h1 className="text-lg font-bold text-white">Admin Panel</h1>
             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black font-semibold text-sm">
-              {user?.email?.[0]?.toUpperCase() || 'A'}
+              {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'A'}
             </div>
           </div>
         </header>

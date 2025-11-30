@@ -9,6 +9,7 @@ import { notify } from '@/lib/toast';
 import AdminLayout from '@/components/AdminLayout';
 import ConfirmModal from '@/components/ConfirmModal';
 import Button from '@/components/Button';
+import ImageUploader from '@/components/ImageUploader';
 
 export default function AdminNichesPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -483,13 +484,15 @@ function NicheModal({
 
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">
-                Image URL
+                Image
               </label>
-              <input
-                type="url"
-                value={formData.image || ''}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none"
+              <ImageUploader
+                value={formData.image ? [formData.image] : []}
+                onChange={(urls) => setFormData({ ...formData, image: urls[0] || '' })}
+                multiple={false}
+                maxFiles={1}
+                label="Niche Image"
+                required={false}
               />
             </div>
           </div>

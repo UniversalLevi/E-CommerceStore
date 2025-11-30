@@ -16,6 +16,15 @@ class ApiClient {
       withCredentials: true, // Enable cookies (HttpOnly)
     });
 
+    // Request interceptor to handle FormData
+    this.client.interceptors.request.use((config) => {
+      // If data is FormData, remove Content-Type header to let browser set it with boundary
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+      }
+      return config;
+    });
+
     // Response interceptor to handle errors
     this.client.interceptors.response.use(
       (response) => response,
@@ -78,9 +87,9 @@ class ApiClient {
     });
   }
 
-  async post<T>(url: string, data?: any) {
+  async post<T>(url: string, data?: any, config?: any) {
     return this.retryRequest(async () => {
-      const response = await this.client.post<T>(this.buildPath(url), data);
+      const response = await this.client.post<T>(this.buildPath(url), data, config);
       return response.data;
     });
   }

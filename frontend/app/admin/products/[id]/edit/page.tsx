@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { Product, Niche } from '@/types';
 import Navbar from '@/components/Navbar';
+import ImageUploader from '@/components/ImageUploader';
 
 export default function EditProductPage() {
   const { user, loading } = useAuth();
@@ -17,7 +18,7 @@ export default function EditProductPage() {
     price: '',
     category: '',
     niche: '',
-    images: [''],
+    images: [],
     active: true,
   });
   const [niches, setNiches] = useState<Niche[]>([]);
@@ -85,7 +86,7 @@ export default function EditProductPage() {
       const productData = {
         ...formData,
         price: parseFloat(formData.price),
-        images: formData.images.filter((img) => img.trim() !== ''),
+        images: formData.images,
       };
 
       await api.put(`/api/products/${params.id}`, productData);
@@ -97,25 +98,6 @@ export default function EditProductPage() {
     }
   };
 
-  const addImageField = () => {
-    setFormData({
-      ...formData,
-      images: [...formData.images, ''],
-    });
-  };
-
-  const updateImage = (index: number, value: string) => {
-    const newImages = [...formData.images];
-    newImages[index] = value;
-    setFormData({ ...formData, images: newImages });
-  };
-
-  const removeImage = (index: number) => {
-    if (formData.images.length > 1) {
-      const newImages = formData.images.filter((_, i) => i !== index);
-      setFormData({ ...formData, images: newImages });
-    }
-  };
 
   if (loading || loadingProduct) {
     return (
@@ -247,38 +229,14 @@ export default function EditProductPage() {
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-2">
-                Product Images (URLs) *
-              </label>
-              {formData.images.map((image, index) => (
-                <div key={index} className="flex gap-2 mb-2">
-                  <input
-                    type="url"
-                    value={image}
-                    onChange={(e) => updateImage(index, e.target.value)}
-                    required
-                    className="flex-1 px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                  {formData.images.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addImageField}
-                className="mt-2 text-primary-500 hover:text-primary-600 text-sm font-medium"
-              >
-                + Add Another Image
-              </button>
-            </div>
+            <ImageUploader
+              value={formData.images}
+              onChange={(urls) => setFormData({ ...formData, images: urls })}
+              multiple={true}
+              maxFiles={10}
+              label="Product Images"
+              required={true}
+            />
 
             <div className="flex items-center">
               <input

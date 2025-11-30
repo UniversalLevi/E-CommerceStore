@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Instagram, Facebook, Sparkles, Users } from 'lucide-react';
+import { Instagram, Facebook, Sparkles } from 'lucide-react';
 
 interface TabItem {
   href: string;
@@ -14,7 +14,6 @@ const tabs: TabItem[] = [
   { href: '/dashboard/ad-builder/instagram', label: 'Instagram Ads', icon: Instagram },
   { href: '/dashboard/ad-builder/facebook', label: 'Facebook Ads', icon: Facebook },
   { href: '/dashboard/ad-builder/content', label: 'Content Finder', icon: Sparkles },
-  { href: '/dashboard/ad-builder/mentorship', label: 'Mentorship', icon: Users },
 ];
 
 export default function AdBuilderTabs() {

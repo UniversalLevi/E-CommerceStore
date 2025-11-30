@@ -8,6 +8,8 @@ import { api } from '@/lib/api';
 import { Product } from '@/types';
 import { notify } from '@/lib/toast';
 import IconBadge from '@/components/IconBadge';
+import SubscriptionLock from '@/components/SubscriptionLock';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Package } from 'lucide-react';
 
 interface UserProduct extends Product {
@@ -20,6 +22,7 @@ interface UserProduct extends Product {
 
 export default function MyProductsPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
   const router = useRouter();
   const [products, setProducts] = useState<UserProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +35,11 @@ export default function MyProductsPage() {
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // Check subscription before rendering
+  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
+    return <SubscriptionLock featureName="My Products" />;
+  }
 
   useEffect(() => {
     if (isAuthenticated) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { requireSubscription } from '@/lib/subscription';
 import connectDatabase from '@/lib/db';
 import Campaign from '@/lib/models/Campaign';
 
@@ -11,6 +12,12 @@ export async function GET(
     const user = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription
+    const subscriptionError = await requireSubscription(user._id);
+    if (subscriptionError) {
+      return NextResponse.json({ error: subscriptionError.error }, { status: subscriptionError.status });
     }
 
     await connectDatabase();
@@ -79,6 +86,12 @@ export async function DELETE(
     const user = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription
+    const subscriptionError = await requireSubscription(user._id);
+    if (subscriptionError) {
+      return NextResponse.json({ error: subscriptionError.error }, { status: subscriptionError.status });
     }
 
     await connectDatabase();

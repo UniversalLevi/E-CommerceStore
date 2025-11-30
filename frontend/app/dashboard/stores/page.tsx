@@ -8,6 +8,8 @@ import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import ConfirmModal from '@/components/ConfirmModal';
 import IconBadge from '@/components/IconBadge';
+import SubscriptionLock from '@/components/SubscriptionLock';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Store } from 'lucide-react';
 
 interface StoreConnection {
@@ -24,6 +26,7 @@ interface StoreConnection {
 
 export default function MyStoresPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
   const router = useRouter();
   const [stores, setStores] = useState<StoreConnection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +43,11 @@ export default function MyStoresPage() {
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // Check subscription before rendering
+  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
+    return <SubscriptionLock featureName="My Stores" />;
+  }
 
   const fetchStores = useCallback(async () => {
     if (!isAuthenticated) return;

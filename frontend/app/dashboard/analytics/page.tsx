@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
+import SubscriptionLock from '@/components/SubscriptionLock';
+import { useSubscription } from '@/hooks/useSubscription';
 import {
   LineChart,
   Line,
@@ -48,6 +50,7 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 export default function AnalyticsPage() {
   const router = useRouter();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,6 +64,11 @@ export default function AnalyticsPage() {
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // Check subscription before rendering
+  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
+    return <SubscriptionLock featureName="Analytics" />;
+  }
 
   useEffect(() => {
     if (isAuthenticated) {

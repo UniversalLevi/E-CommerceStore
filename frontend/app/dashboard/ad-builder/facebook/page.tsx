@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCampaignStore } from '@/store/useCampaignStore';
 import Button from '@/components/Button';
 import FileUploader from '@/components/ads/FileUploader';
 import AIResultPanel from '@/components/ads/AIResultPanel';
 import AdPreview from '@/components/ads/AdPreview';
+import SubscriptionLock from '@/components/SubscriptionLock';
+import { useSubscription } from '@/hooks/useSubscription';
 import { notify } from '@/lib/toast';
 import { Sparkles } from 'lucide-react';
 import AdBuilderTabs from '@/components/ads/AdBuilderTabs';
@@ -28,6 +31,8 @@ interface CampaignFormData {
 }
 
 export default function FacebookAdsPage() {
+  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
   const { currentDraft, updateCurrentDraft, setCurrentDraft } = useCampaignStore();
   const [formData, setFormData] = useState<CampaignFormData>({
     campaignGoal: '',
@@ -51,6 +56,11 @@ export default function FacebookAdsPage() {
     hashtags: false,
     recommendations: false,
   });
+
+  // Check subscription before rendering
+  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
+    return <SubscriptionLock featureName="Facebook Ads" />;
+  }
 
   const [generated, setGenerated] = useState({
     interests: [] as string[],

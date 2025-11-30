@@ -42,6 +42,7 @@ router.post(
 router.get(
   '/',
   authenticateToken,
+  requirePaidPlan,
   generalApiRateLimit,
   listStoreConnections
 );

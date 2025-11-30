@@ -8,8 +8,10 @@ export interface IStore {
 }
 
 export interface IUser extends Document {
+  name?: string;
   email?: string;
   mobile?: string;
+  country?: string;
   password: string;
   role: 'user' | 'admin';
   shopifyAccessToken?: string;
@@ -66,6 +68,11 @@ const storeSchema = new Schema<IStore>({
 
 const userSchema = new Schema<IUser>(
   {
+    name: {
+      type: String,
+      required: false,
+      trim: true,
+    },
     email: {
       type: String,
       required: false,
@@ -82,6 +89,11 @@ const userSchema = new Schema<IUser>(
       sparse: true, // Allow multiple null values
       trim: true,
       match: [/^\+?[1-9]\d{1,14}$/, 'Please provide a valid mobile number'],
+    },
+    country: {
+      type: String,
+      required: false,
+      trim: true,
     },
     password: {
       type: String,

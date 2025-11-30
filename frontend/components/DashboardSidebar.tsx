@@ -15,6 +15,7 @@ import {
   Megaphone,
   Bell,
   X,
+  Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/products', label: 'My Products', icon: Package },
   { href: '/dashboard/ad-builder/instagram', label: 'Ad Builder', icon: Megaphone },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
+  { href: '/dashboard/mentorship', label: 'Mentorship', icon: Users },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/activity', label: 'Activity', icon: Activity },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
@@ -133,11 +135,11 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
       <div className="p-4 border-t border-border-default bg-surface-raised flex-shrink-0">
         <div className="flex items-center gap-3 px-4 py-2">
           <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-black font-semibold">
-            {user?.email?.[0]?.toUpperCase() || 'U'}
+            {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-text-primary truncate">
-              {user?.email || 'User'}
+              {user?.name || user?.email || 'User'}
             </p>
             {user?.role === 'admin' && (
               <p className="text-xs text-text-secondary">Admin</p>

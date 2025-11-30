@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import SubscriptionLock from '@/components/SubscriptionLock';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 
@@ -10,6 +13,8 @@ export default function EditStorePage() {
   const router = useRouter();
   const params = useParams();
   const storeId = params.id as string;
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
 
   const [formData, setFormData] = useState({
     storeName: '',
@@ -25,8 +30,21 @@ export default function EditStorePage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchStoreData();
-  }, [storeId]);
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  // Check subscription before rendering
+  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
+    return <SubscriptionLock featureName="Edit Store" />;
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchStoreData();
+    }
+  }, [storeId, isAuthenticated]);
 
   const fetchStoreData = async () => {
     try {

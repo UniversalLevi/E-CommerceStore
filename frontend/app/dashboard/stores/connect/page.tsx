@@ -1,13 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import SubscriptionLock from '@/components/SubscriptionLock';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 
 export default function ConnectStorePage() {
   const router = useRouter();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
   const [formData, setFormData] = useState({
     storeName: '',
     shopDomain: '',
@@ -19,6 +24,17 @@ export default function ConnectStorePage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  // Check subscription before rendering
+  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
+    return <SubscriptionLock featureName="Connect Store" />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { requireSubscription } from '@/lib/subscription';
 import connectDatabase from '@/lib/db';
 import ContentLibrary from '@/lib/models/ContentLibrary';
 import { z } from 'zod';
@@ -18,6 +19,12 @@ export async function GET(req: NextRequest) {
     const user = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription
+    const subscriptionError = await requireSubscription(user._id);
+    if (subscriptionError) {
+      return NextResponse.json({ error: subscriptionError.error }, { status: subscriptionError.status });
     }
 
     const { searchParams } = new URL(req.url);
@@ -48,6 +55,12 @@ export async function POST(req: NextRequest) {
     const user = await getAuthenticatedUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription
+    const subscriptionError = await requireSubscription(user._id);
+    if (subscriptionError) {
+      return NextResponse.json({ error: subscriptionError.error }, { status: subscriptionError.status });
     }
 
     const body = await req.json();

@@ -50,7 +50,7 @@ export default function DashboardTopbar({ onMenuClick }: DashboardTopbarProps) {
           </Button>
 
           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black font-semibold text-sm">
-            {user?.email?.[0]?.toUpperCase() || 'U'}
+            {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
           </div>
         </div>
       </div>

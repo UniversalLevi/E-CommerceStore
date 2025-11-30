@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import { config } from './config/env';
 import { connectDatabase } from './config/database';
 import { errorHandler } from './middleware/errorHandler';
@@ -18,6 +19,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+// Serve static files from public directory
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
@@ -44,6 +47,7 @@ import analyticsRoutes from './routes/analyticsRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import aiRoutes from './routes/aiRoutes';
 import mentorshipRoutes from './routes/mentorshipRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -59,6 +63,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/upload', uploadRoutes);
 // Niche routes (separate namespaces to prevent route overlap)
 app.use('/api/niches', nicheRoutes);
 app.use('/api/admin/niches', authenticateToken, requireAdmin, nicheAdminRoutes);

@@ -6,12 +6,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { registerSchema } from '@/lib/validation';
 import Button from '@/components/Button';
 import { notify } from '@/lib/toast';
+import { COUNTRIES } from '@/lib/countries';
 
 export default function RegisterPage() {
-  const [identifier, setIdentifier] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [errors, setErrors] = useState<{ identifier?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string; country?: string; password?: string; confirmPassword?: string }>({});
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
 
@@ -19,29 +23,39 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrors({});
 
-    // Determine if identifier is email or mobile
-    const isEmail = identifier.includes('@');
-    const isMobile = /^\+?[1-9]\d{1,14}$/.test(identifier.replace(/\s/g, ''));
-
-    if (!isEmail && !isMobile) {
-      setErrors({ identifier: 'Please enter a valid email or mobile number' });
+    // Basic validation
+    if (!name.trim()) {
+      setErrors({ name: 'Name is required' });
       return;
     }
 
-    // Validate with Zod
-    const registerData = isEmail ? { email: identifier, password } : { mobile: identifier.replace(/\s/g, ''), password };
-    const result = registerSchema.safeParse(registerData);
-    if (!result.success) {
-      const fieldErrors: { identifier?: string; password?: string } = {};
-      result.error.issues.forEach((err) => {
-        const field = err.path[0] as string;
-        if (field === 'email' || field === 'mobile') {
-          fieldErrors.identifier = err.message;
-        } else {
-          fieldErrors[field as keyof typeof fieldErrors] = err.message;
-        }
-      });
-      setErrors(fieldErrors);
+    if (!email.trim()) {
+      setErrors({ email: 'Email is required' });
+      return;
+    }
+
+    if (!phone.trim()) {
+      setErrors({ phone: 'Phone number is required' });
+      return;
+    }
+
+    if (!country.trim()) {
+      setErrors({ country: 'Country is required' });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrors({ email: 'Please enter a valid email address' });
+      return;
+    }
+
+    // Validate phone format
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    const cleanPhone = phone.replace(/\s/g, '');
+    if (!phoneRegex.test(cleanPhone)) {
+      setErrors({ phone: 'Please enter a valid phone number (e.g., +1234567890)' });
       return;
     }
 
@@ -50,10 +64,27 @@ export default function RegisterPage() {
       return;
     }
 
+    // Validate with Zod
+    const registerData = { email, mobile: cleanPhone, password, name, country };
+    const result = registerSchema.safeParse(registerData);
+    if (!result.success) {
+      const fieldErrors: { email?: string; phone?: string; password?: string } = {};
+      result.error.issues.forEach((err) => {
+        const field = err.path[0] as string;
+        if (field === 'mobile') {
+          fieldErrors.phone = err.message;
+        } else {
+          fieldErrors[field as keyof typeof fieldErrors] = err.message;
+        }
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await register(isEmail ? identifier : undefined, isEmail ? undefined : identifier.replace(/\s/g, ''), password);
+      await register(email, cleanPhone, password, name, country);
       notify.success('Account created successfully!');
     } catch (err: any) {
       notify.error(err.message || 'Registration failed');
@@ -76,26 +107,110 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
-                htmlFor="identifier"
+                htmlFor="name"
                 className="block text-sm font-medium text-[#a0a0a0] mb-2"
               >
-                Email or Mobile Number
+                Full Name *
               </label>
               <input
-                id="identifier"
+                id="name"
                 type="text"
-                value={identifier}
+                value={name}
                 onChange={(e) => {
-                  setIdentifier(e.target.value);
-                  if (errors.identifier) setErrors({ ...errors, identifier: undefined });
+                  setName(e.target.value);
+                  if (errors.name) setErrors({ ...errors, name: undefined });
                 }}
+                required
                 className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
-                  errors.identifier ? 'border-red-500' : 'border-[#505050]'
+                  errors.name ? 'border-red-500' : 'border-[#505050]'
                 }`}
-                placeholder="you@example.com or +1234567890"
+                placeholder="John Doe"
               />
-              {errors.identifier && (
-                <p className="mt-1 text-sm text-red-400">{errors.identifier}</p>
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-400">{errors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+              >
+                Email Address *
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors({ ...errors, email: undefined });
+                }}
+                required
+                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
+                  errors.email ? 'border-red-500' : 'border-[#505050]'
+                }`}
+                placeholder="you@example.com"
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="phone"
+                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+              >
+                Phone Number *
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  if (errors.phone) setErrors({ ...errors, phone: undefined });
+                }}
+                required
+                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
+                  errors.phone ? 'border-red-500' : 'border-[#505050]'
+                }`}
+                placeholder="+1234567890"
+              />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-400">{errors.phone}</p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="country"
+                className="block text-sm font-medium text-[#a0a0a0] mb-2"
+              >
+                Country *
+              </label>
+              <select
+                id="country"
+                value={country}
+                onChange={(e) => {
+                  setCountry(e.target.value);
+                  if (errors.country) setErrors({ ...errors, country: undefined });
+                }}
+                required
+                className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
+                  errors.country ? 'border-red-500' : 'border-[#505050]'
+                }`}
+              >
+                <option value="">Select a country</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              {errors.country && (
+                <p className="mt-1 text-sm text-red-400">{errors.country}</p>
               )}
             </div>
 
@@ -113,21 +228,6 @@ export default function RegisterPage() {
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (errors.password) setErrors({ ...errors, password: undefined });
-                }}
-                onBlur={() => {
-                  if (!password) return;
-                  
-                  // Determine if identifier is email or mobile
-                  const isEmail = identifier.includes('@');
-                  const registerData = isEmail 
-                    ? { email: identifier, password } 
-                    : { mobile: identifier.replace(/\s/g, ''), password };
-                  
-                  const result = registerSchema.safeParse(registerData);
-                  if (!result.success && result.error?.issues) {
-                    const passwordError = result.error.issues.find((e) => e.path[0] === 'password');
-                    if (passwordError) setErrors({ ...errors, password: passwordError.message });
-                  }
                 }}
                 className={`w-full px-4 py-3 bg-[#0a0a0a] text-white border rounded-lg focus:ring-2 focus:ring-[#808080] focus:border-[#808080] min-h-[44px] ${
                   errors.password ? 'border-red-500' : 'border-[#505050]'
