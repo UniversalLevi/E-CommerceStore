@@ -12,7 +12,15 @@ export default function EditProductPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    price: string;
+    category: string;
+    niche: string;
+    images: string[];
+    active: boolean;
+  }>({
     title: '',
     description: '',
     price: '',

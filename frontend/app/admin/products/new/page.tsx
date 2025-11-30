@@ -11,7 +11,15 @@ import ImageUploader from '@/components/ImageUploader';
 export default function NewProductPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    price: string;
+    category: string;
+    niche: string;
+    images: string[];
+    active: boolean;
+  }>({
     title: '',
     description: '',
     price: '',
