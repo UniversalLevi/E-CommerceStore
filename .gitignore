@@ -56,3 +56,8 @@ out/
 .vercel
 .cache
 
+# Uploads
+**/public/uploads/
+backend/public/uploads/
+frontend/public/uploads/
+
