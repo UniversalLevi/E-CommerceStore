@@ -218,10 +218,10 @@ export default function AdminSendNotificationPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-text-primary">Select Users</h2>
             <div className="flex items-center gap-2">
-              <Button onClick={selectAll} variant="ghost" size="sm">
+              <Button onClick={selectAll} variant="ghost" className="text-sm">
                 Select All
               </Button>
-              <Button onClick={deselectAll} variant="ghost" size="sm">
+              <Button onClick={deselectAll} variant="ghost" className="text-sm">
                 Clear
               </Button>
             </div>
@@ -301,9 +301,9 @@ export default function AdminSendNotificationPage() {
                     </div>
                   </div>
                   <Button
-                    onClick={() => fetchNotificationDetails(notif)}
+                    onClick={() => fetchNotificationDetails(notif)}     
                     variant="ghost"
-                    size="sm"
+                    className="text-sm"
                     iconLeft={<Eye className="h-4 w-4" />}
                   >
                     View Details

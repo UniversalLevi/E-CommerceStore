@@ -1,6 +1,7 @@
 export interface User {
   _id: string;
-  email: string;
+  email?: string | null;
+  mobile?: string | null;
   role: 'user' | 'admin';
   shopifyConnected?: boolean;
   shopifyShop?: string;

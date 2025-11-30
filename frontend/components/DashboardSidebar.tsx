@@ -60,18 +60,18 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:relative
+          fixed lg:fixed
           top-0 left-0
           w-64 h-screen
           bg-surface-raised border-r border-border-default
-          overflow-y-auto
-          z-50 lg:z-auto
+          flex flex-col
+          z-50 lg:z-30
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Logo and Close Button */}
-        <div className="p-6 border-b border-border-default flex items-center justify-between">
+        <div className="p-6 border-b border-border-default flex items-center justify-between flex-shrink-0">
           <Link 
             href="/" 
             className="text-xl font-bold text-text-primary hover:text-text-secondary transition-colors"
@@ -89,8 +89,8 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
           </button>
         </div>
 
-      {/* Navigation */}
-      <nav className="p-4 space-y-1">
+      {/* Navigation - Scrollable */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1 pb-24">
         {navItems.map((item) => {
           // Check if this route matches
           const routeMatches = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -129,8 +129,8 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
         })}
       </nav>
 
-      {/* User Section */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border-default bg-surface-raised">
+      {/* User Section - Fixed at bottom */}
+      <div className="p-4 border-t border-border-default bg-surface-raised flex-shrink-0">
         <div className="flex items-center gap-3 px-4 py-2">
           <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-black font-semibold">
             {user?.email?.[0]?.toUpperCase() || 'U'}

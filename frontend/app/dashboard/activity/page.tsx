@@ -236,8 +236,7 @@ export default function ActivityPage() {
                     <div className="flex items-start gap-4">
                       <IconBadge
                         {...getActionBadge(activity.action)}
-                        size="sm"
-                        className="mt-1"
+                        className="text-sm mt-1"
                       />
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">

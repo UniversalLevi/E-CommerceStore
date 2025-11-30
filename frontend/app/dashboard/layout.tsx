@@ -41,7 +41,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-surface-base flex">
       <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 lg:ml-64 flex flex-col w-full lg:w-auto">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <DashboardTopbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <main className="flex-1 overflow-y-auto bg-surface-base p-4 md:p-6">
           {children}

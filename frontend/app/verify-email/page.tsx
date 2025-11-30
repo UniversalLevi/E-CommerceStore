@@ -43,7 +43,7 @@ export default function VerifyEmailPage() {
         token,
       });
 
-      if (response && response.success) {
+      if (response && (response as any).success) {
         setSuccess(true);
         notify.success('Email verified and linked successfully!');
         // Refresh user data to get updated email

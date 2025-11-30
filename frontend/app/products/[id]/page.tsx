@@ -386,8 +386,7 @@ export default function ProductDetailPage() {
                       <IconBadge
                         icon={Tag}
                         label={niche.name}
-                        size="sm"
-                        className="mr-2"
+                        className="text-sm mr-2"
                       />
                       <span>{niche.name}</span>
                     </Link>

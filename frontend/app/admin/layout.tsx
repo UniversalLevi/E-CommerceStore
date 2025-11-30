@@ -41,7 +41,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-surface-base flex">
       <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 lg:ml-64 flex flex-col w-full lg:w-auto">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         {/* Mobile header with menu button */}
         <header className="lg:hidden bg-[#1a1a1a] border-b border-[#505050] h-16 sticky top-0 z-40">
           <div className="flex items-center justify-between px-4 h-full">

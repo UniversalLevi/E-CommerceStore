@@ -115,8 +115,16 @@ export default function RegisterPage() {
                   if (errors.password) setErrors({ ...errors, password: undefined });
                 }}
                 onBlur={() => {
-                  const result = registerSchema.safeParse({ email, password });
-                  if (!result.success) {
+                  if (!password) return;
+                  
+                  // Determine if identifier is email or mobile
+                  const isEmail = identifier.includes('@');
+                  const registerData = isEmail 
+                    ? { email: identifier, password } 
+                    : { mobile: identifier.replace(/\s/g, ''), password };
+                  
+                  const result = registerSchema.safeParse(registerData);
+                  if (!result.success && result.error?.issues) {
                     const passwordError = result.error.issues.find((e) => e.path[0] === 'password');
                     if (passwordError) setErrors({ ...errors, password: passwordError.message });
                   }

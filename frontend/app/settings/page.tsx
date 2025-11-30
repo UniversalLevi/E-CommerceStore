@@ -114,7 +114,7 @@ export default function SettingsPage() {
       const response = await api.post('/api/auth/link-email', {
         email: emailLink.trim(),
       });
-      notify.success(response.message || 'Verification email sent. Please check your email to verify and link your email address.');
+      notify.success((response as any).message || 'Verification email sent. Please check your email to verify and link your email address.');
       setEmailLink('');
       // Refresh user data
       window.location.reload();

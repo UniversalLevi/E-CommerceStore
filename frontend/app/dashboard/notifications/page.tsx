@@ -201,18 +201,18 @@ export default function NotificationsPage() {
                   <div className="flex items-center gap-2">
                     {!notification.read && (
                       <Button
-                        onClick={() => markAsRead(notification._id)}
+                        onClick={() => markAsRead(notification._id)}    
                         variant="secondary"
-                        size="sm"
+                        className="text-sm"
                         iconLeft={<Check className="h-4 w-4" />}
                       >
                         Mark Read
                       </Button>
                     )}
                     <Button
-                      onClick={() => deleteNotification(notification._id)}
+                      onClick={() => deleteNotification(notification._id)}                                                                              
                       variant="ghost"
-                      size="sm"
+                      className="text-sm"
                       iconLeft={<Trash2 className="h-4 w-4" />}
                     >
                       Delete

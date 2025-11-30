@@ -64,18 +64,18 @@ export default function AdminSidebar({ isOpen = true, onClose }: AdminSidebarPro
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:relative
+          fixed lg:fixed
           top-0 left-0
           w-64 h-screen
           bg-surface-raised border-r border-border-default
-          overflow-y-auto
-          z-50 lg:z-auto
+          flex flex-col
+          z-50 lg:z-30
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Logo and Close Button */}
-        <div className="p-6 border-b border-border-default flex items-center justify-between">
+        <div className="p-6 border-b border-border-default flex items-center justify-between flex-shrink-0">
           <Link 
             href="/" 
             className="text-xl font-bold text-text-primary hover:text-text-secondary transition-all duration-200 hover:-translate-y-0.5 inline-flex items-center gap-2"
@@ -93,8 +93,8 @@ export default function AdminSidebar({ isOpen = true, onClose }: AdminSidebarPro
           </button>
         </div>
 
-      {/* Navigation */}
-      <nav className="p-4 space-y-1">
+      {/* Navigation - Scrollable */}
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1 pb-24">
         {navItems.map((item) => {
           // Check if this route matches
           const routeMatches = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -138,8 +138,8 @@ export default function AdminSidebar({ isOpen = true, onClose }: AdminSidebarPro
         })}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border-default bg-surface-raised space-y-2">
+      {/* Bottom Actions - Fixed at bottom */}
+      <div className="p-4 border-t border-border-default bg-surface-raised space-y-2 flex-shrink-0">
         <button
           onClick={() => {
             onClose?.();

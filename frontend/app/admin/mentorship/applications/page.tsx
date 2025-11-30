@@ -249,7 +249,7 @@ export default function MentorshipApplicationsPage() {
                     </Button>
                     <Button
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e?.stopPropagation();
                         setSelectedApplication({ ...app }); // Set application for reply context
                         setShowReplyModal(true);
                         setReplyMessage('');

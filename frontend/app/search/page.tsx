@@ -172,7 +172,7 @@ export default function SearchPage() {
                             <IconBadge
                               icon={Layers}
                               label={niche.name}
-                              size="sm"
+                              className="text-sm"
                             />
                             <h3 className="text-xl font-bold text-text-primary">{niche.name}</h3>
                           </div>
