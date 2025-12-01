@@ -93,7 +93,7 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
       },
     },
   };
@@ -104,7 +104,7 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
       transition: {
         duration: 4,
         repeat: Infinity,
-        ease: 'easeInOut',
+        ease: "easeInOut" as const,
       },
     },
   };
