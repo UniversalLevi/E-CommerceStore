@@ -56,12 +56,18 @@ export function canAddProduct(user: IUser): { allowed: boolean; reason?: string;
 
 /**
  * Middleware to require active paid subscription
+ * Note: Admins are always allowed access regardless of subscription
  */
 export function requirePaidPlan(req: AuthRequest, res: Response, next: NextFunction) {
   const user = req.user;
   
   if (!user) {
     return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Admins always have access regardless of subscription
+  if (user.role === 'admin') {
+    return next();
   }
 
   if (!isPaidUser(user)) {

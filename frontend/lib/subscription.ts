@@ -3,14 +3,20 @@ import User from './models/User';
 
 /**
  * Check if user has an active subscription
+ * Note: Admins always return true regardless of subscription
  */
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
   try {
     await connectDatabase();
-    const user = await User.findById(userId).select('plan planExpiresAt isLifetime').lean();
+    const user = await User.findById(userId).select('plan planExpiresAt isLifetime role').lean();
     
     if (!user) {
       return false;
+    }
+    
+    // Admins always have access regardless of subscription
+    if (user.role === 'admin') {
+      return true;
     }
     
     // Lifetime users always have access
@@ -34,6 +40,7 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
 /**
  * Middleware function to check subscription in Next.js API routes
  * Returns null if subscription is active, otherwise returns error response
+ * Note: Admins are always allowed access
  */
 export async function requireSubscription(userId: string): Promise<{ error: string; status: number } | null> {
   const hasSubscription = await hasActiveSubscription(userId);
