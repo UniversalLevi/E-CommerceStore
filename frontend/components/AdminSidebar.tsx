@@ -18,6 +18,7 @@ import {
   UserCheck,
   Send,
   X,
+  ShoppingCart,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/stores', label: 'Stores', icon: Store },
+  { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/niches', label: 'Niches', icon: Layers },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/revenue', label: 'Revenue', icon: LineChart },
