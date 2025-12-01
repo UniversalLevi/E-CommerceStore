@@ -286,6 +286,23 @@ export default function OrdersPage() {
     }
   };
 
+  const handleMarkCompleted = async (orderId: number) => {
+    try {
+      setActionLoading(true);
+      await api.post(`/api/orders/${selectedStore}/${orderId}/complete`, {
+        paymentReceived: true,
+        note: 'Marked as completed via dashboard',
+      });
+      notify.success('Order marked as completed & paid!');
+      await fetchOrders();
+      setSelectedOrder(null);
+    } catch (error: any) {
+      notify.error(error.response?.data?.error || 'Failed to mark order as completed');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getFinancialStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       paid: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50',
@@ -664,6 +681,18 @@ export default function OrdersPage() {
                         {actionLoading ? 'Fulfilling...' : 'Mark as Fulfilled'}
                       </button>
                     </div>
+                  )}
+                  
+                  {/* Mark as Completed & Paid Button */}
+                  {selectedOrder.fulfillmentStatus === 'fulfilled' && (
+                    <button
+                      onClick={() => handleMarkCompleted(selectedOrder.id)}
+                      disabled={actionLoading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all font-medium disabled:opacity-50"
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      {actionLoading ? 'Processing...' : 'Mark as Completed & Paid'}
+                    </button>
                   )}
                   
                   <div className="flex gap-2">

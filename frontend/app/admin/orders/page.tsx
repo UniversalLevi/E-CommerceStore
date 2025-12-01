@@ -326,6 +326,25 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const handleMarkCompleted = async (order: Order) => {
+    if (!order.storeId) return;
+    
+    try {
+      setActionLoading(true);
+      await api.post(`/api/orders/${order.storeId}/${order.id}/complete`, {
+        paymentReceived: true,
+        note: 'Marked as completed by admin',
+      });
+      notify.success('Order marked as completed & paid!');
+      await fetchAllOrders();
+      setSelectedOrder(null);
+    } catch (error: any) {
+      notify.error(error.response?.data?.error || 'Failed to mark order as completed');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const toggleStoreExpand = (storeId: string) => {
     const newExpanded = new Set(expandedStores);
     if (newExpanded.has(storeId)) {
@@ -840,24 +859,38 @@ export default function AdminOrdersPage() {
                   )}
                   
                   {selectedOrder.storeId && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleOrderAction('close', selectedOrder.id, selectedOrder.storeId!)}
-                        disabled={actionLoading}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-surface-base hover:bg-surface-hover border border-border-default text-text-primary rounded-lg text-sm disabled:opacity-50"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Close
-                      </button>
-                      <button
-                        onClick={() => setConfirmModal({ isOpen: true, action: 'cancel', order: selectedOrder })}
-                        disabled={actionLoading}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-lg text-sm disabled:opacity-50"
-                      >
-                        <Ban className="w-4 h-4" />
-                        Cancel
-                      </button>
-                    </div>
+                    <>
+                      {/* Mark as Completed & Paid Button */}
+                      {selectedOrder.fulfillmentStatus === 'fulfilled' && (
+                        <button
+                          onClick={() => handleMarkCompleted(selectedOrder)}
+                          disabled={actionLoading}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all font-medium disabled:opacity-50"
+                        >
+                          <DollarSign className="w-4 h-4" />
+                          {actionLoading ? 'Processing...' : 'Mark as Completed & Paid'}
+                        </button>
+                      )}
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleOrderAction('close', selectedOrder.id, selectedOrder.storeId!)}
+                          disabled={actionLoading}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-surface-base hover:bg-surface-hover border border-border-default text-text-primary rounded-lg text-sm disabled:opacity-50"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Close
+                        </button>
+                        <button
+                          onClick={() => setConfirmModal({ isOpen: true, action: 'cancel', order: selectedOrder })}
+                          disabled={actionLoading}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-lg text-sm disabled:opacity-50"
+                        >
+                          <Ban className="w-4 h-4" />
+                          Cancel
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
 
