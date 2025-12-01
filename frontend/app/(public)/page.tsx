@@ -23,9 +23,6 @@ import FeaturesGrid from '@/components/landing/FeaturesGrid';
 import StorePreview from '@/components/landing/StorePreview';
 import TemplatesSection from '@/components/landing/TemplatesSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
-import TrustedBySection from '@/components/landing/TrustedBySection';
-import FAQSection from '@/components/landing/FAQSection';
-import CTASection from '@/components/landing/CTASection';
 import PricingSection from '@/components/landing/PricingSection';
 import type { IconBadgeVariant } from '@/components/IconBadge';
 
@@ -159,9 +156,6 @@ export default function Home() {
         {/* Hero Section */}
         <HeroSection onGetStarted={handleGetStarted} />
 
-        {/* Trusted By Section */}
-        <TrustedBySection />
-
         {/* Stats Section */}
         <StatsSection />
 
@@ -187,13 +181,8 @@ export default function Home() {
           onGetStarted={handleGetStarted}
           formatPrice={formatPrice}
         />
-
-        {/* FAQ Section */}
-        <FAQSection />
-
-        {/* CTA Section */}
-        <CTASection onGetStarted={handleGetStarted} />
       </div>
     </>
   );
 }
+
