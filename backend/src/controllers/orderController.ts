@@ -948,6 +948,251 @@ export const getStoreRevenueAnalytics = async (
 };
 
 /**
+ * Mark order as completed (payment received)
+ * POST /api/orders/:storeId/:orderId/complete
+ */
+export const markOrderCompleted = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { storeId, orderId } = req.params;
+    const { note, paymentReceived = true } = req.body;
+
+    // Get store connection
+    const store = await StoreConnection.findById(storeId);
+    if (!store) {
+      throw createError('Store not found', 404);
+    }
+
+    // Check ownership or admin
+    const isOwner = store.owner.toString() === (req.user as any)._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
+      throw createError('You do not have access to this store', 403);
+    }
+
+    // Decrypt access token
+    const accessToken = decrypt(store.accessToken);
+    const apiVersion = store.apiVersion || '2024-01';
+
+    // First, get the current order
+    const orderResponse = await axios.get(
+      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const order = orderResponse.data.order;
+    if (!order) {
+      throw createError('Order not found', 404);
+    }
+
+    // Build completion note
+    const timestamp = new Date().toISOString();
+    const completedBy = req.user.email || 'Admin';
+    const completionNote = [
+      order.note || '',
+      `\n[COMPLETED - ${timestamp}]`,
+      paymentReceived ? 'Payment received and verified.' : '',
+      note ? `Note: ${note}` : '',
+      `Marked by: ${completedBy}`,
+    ].filter(Boolean).join('\n');
+
+    // Get existing tags and add completion tags
+    const existingTags = order.tags ? order.tags.split(', ') : [];
+    const newTags = [...new Set([
+      ...existingTags,
+      'completed',
+      paymentReceived ? 'payment-received' : '',
+    ].filter(Boolean))].join(', ');
+
+    // Update order with tags and note
+    await axios.put(
+      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
+      {
+        order: {
+          id: orderId,
+          note: completionNote,
+          tags: newTags,
+        },
+      },
+      {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    // Close the order (marks it as archived/completed in Shopify)
+    const closeResponse = await axios.post(
+      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/close.json`,
+      {},
+      {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    // Audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      storeId: store._id,
+      action: 'ORDER_COMPLETED',
+      success: true,
+      details: {
+        orderId,
+        orderName: order.name,
+        totalPrice: order.total_price,
+        currency: order.currency,
+        paymentReceived,
+        note,
+        completedBy,
+      },
+      ipAddress: req.ip,
+    });
+
+    res.json({
+      success: true,
+      message: 'Order marked as completed successfully',
+      data: {
+        order: closeResponse.data.order ? transformOrder(closeResponse.data.order) : null,
+        completedAt: timestamp,
+        paymentReceived,
+      },
+    });
+  } catch (error: any) {
+    console.error('Mark completed error:', error.response?.data || error.message);
+    if (error.response?.data?.errors) {
+      return next(createError(`Shopify error: ${JSON.stringify(error.response.data.errors)}`, 400));
+    }
+    next(error);
+  }
+};
+
+/**
+ * Reopen a completed order
+ * POST /api/orders/:storeId/:orderId/reopen
+ */
+export const reopenOrder = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { storeId, orderId } = req.params;
+    const { note } = req.body;
+
+    // Get store connection
+    const store = await StoreConnection.findById(storeId);
+    if (!store) {
+      throw createError('Store not found', 404);
+    }
+
+    // Check ownership or admin
+    const isOwner = store.owner.toString() === (req.user as any)._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
+      throw createError('You do not have access to this store', 403);
+    }
+
+    // Decrypt access token
+    const accessToken = decrypt(store.accessToken);
+    const apiVersion = store.apiVersion || '2024-01';
+
+    // Reopen the order
+    const response = await axios.post(
+      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/open.json`,
+      {},
+      {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    // Update note if provided
+    if (note) {
+      const order = response.data.order;
+      const timestamp = new Date().toISOString();
+      const reopenNote = [
+        order.note || '',
+        `\n[REOPENED - ${timestamp}]`,
+        `Reason: ${note}`,
+        `Reopened by: ${req.user.email || 'Admin'}`,
+      ].filter(Boolean).join('\n');
+
+      // Remove completed tags
+      const existingTags = order.tags ? order.tags.split(', ') : [];
+      const newTags = existingTags
+        .filter((tag: string) => !['completed', 'payment-received'].includes(tag.toLowerCase()))
+        .join(', ');
+
+      await axios.put(
+        `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
+        {
+          order: {
+            id: orderId,
+            note: reopenNote,
+            tags: newTags,
+          },
+        },
+        {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    // Audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      storeId: store._id,
+      action: 'ORDER_REOPENED',
+      success: true,
+      details: {
+        orderId,
+        note,
+        reopenedBy: req.user.email,
+      },
+      ipAddress: req.ip,
+    });
+
+    res.json({
+      success: true,
+      message: 'Order reopened successfully',
+      data: response.data.order ? transformOrder(response.data.order) : null,
+    });
+  } catch (error: any) {
+    if (error.response?.data?.errors) {
+      return next(createError(`Shopify error: ${JSON.stringify(error.response.data.errors)}`, 400));
+    }
+    next(error);
+  }
+};
+
+/**
  * Add note to order
  * POST /api/orders/:storeId/:orderId/note
  */

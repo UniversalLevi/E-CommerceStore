@@ -11,6 +11,8 @@ import {
   cancelFulfillment,
   getStoreRevenueAnalytics,
   addOrderNote,
+  markOrderCompleted,
+  reopenOrder,
 } from '../controllers/orderController';
 
 const router = Router();
@@ -88,6 +90,22 @@ router.post(
   authenticateToken,
   requirePaidPlan,
   addOrderNote
+);
+
+// Mark order as completed (payment received)
+router.post(
+  '/:storeId/:orderId/complete',
+  authenticateToken,
+  requirePaidPlan,
+  markOrderCompleted
+);
+
+// Reopen a completed order
+router.post(
+  '/:storeId/:orderId/reopen',
+  authenticateToken,
+  requirePaidPlan,
+  reopenOrder
 );
 
 export default router;
