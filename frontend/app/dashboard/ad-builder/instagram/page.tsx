@@ -100,6 +100,7 @@ export default function InstagramAdsPage() {
       const response = await fetch('/api/instagram/generate-interests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ productName: formData.productName }),
       });
 
@@ -129,6 +130,7 @@ export default function InstagramAdsPage() {
       const response = await fetch('/api/instagram/generate-captions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ productName: formData.productName }),
       });
 
@@ -158,6 +160,7 @@ export default function InstagramAdsPage() {
       const response = await fetch('/api/instagram/generate-hashtags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ productName: formData.productName }),
       });
 
@@ -188,6 +191,7 @@ export default function InstagramAdsPage() {
       const response = await fetch('/api/instagram/generate-recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ productName: formData.productName }),
       });
 
@@ -219,6 +223,7 @@ export default function InstagramAdsPage() {
       const response = await fetch('/api/instagram/generate-recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ productName: formData.productName }),
       });
 

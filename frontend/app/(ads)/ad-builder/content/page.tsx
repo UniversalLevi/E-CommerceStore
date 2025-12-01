@@ -30,7 +30,7 @@ export default function ContentFinderPage() {
 
   const loadDailyIdeas = async () => {
     try {
-      const response = await fetch('/api/content/daily');
+      const response = await fetch('/api/content/daily', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
         setDailyIdeas(data.ideas);
@@ -42,7 +42,7 @@ export default function ContentFinderPage() {
 
   const loadLibrary = async () => {
     try {
-      const response = await fetch('/api/content/library');
+      const response = await fetch('/api/content/library', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
         setLibrary(data.library);
@@ -63,6 +63,7 @@ export default function ContentFinderPage() {
       const response = await fetch('/api/content/trending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ niche }),
       });
 
@@ -83,7 +84,7 @@ export default function ContentFinderPage() {
   const generateDaily = async () => {
     setLoading({ ...loading, daily: true });
     try {
-      const response = await fetch('/api/content/daily');
+      const response = await fetch('/api/content/daily', { credentials: 'include' });
       const data = await response.json();
       if (data.success) {
         setDailyIdeas(data.ideas);
@@ -109,6 +110,7 @@ export default function ContentFinderPage() {
       const response = await fetch('/api/content/generator', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ productName }),
       });
 
@@ -131,6 +133,7 @@ export default function ContentFinderPage() {
       const response = await fetch('/api/content/library', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           type,
           content,
@@ -155,6 +158,7 @@ export default function ContentFinderPage() {
     try {
       const response = await fetch(`/api/content/library/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       const data = await response.json();
