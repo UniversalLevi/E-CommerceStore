@@ -41,8 +41,8 @@ export default function Navbar() {
                 <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse-glow"></div>
                 <div className="absolute inset-0 w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 blur-sm opacity-50"></div>
               </div>
-              <span className="hidden sm:inline">Auto Shopify Store Builder</span>
-              <span className="sm:hidden">Store Builder</span>
+              <span className="hidden sm:inline">EAZY DROPSHIPPING</span>
+              <span className="sm:hidden">EAZY</span>
             </Link>
           </div>
 

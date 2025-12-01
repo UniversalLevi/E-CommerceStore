@@ -14,7 +14,7 @@ export default function AboutPage() {
               <span className="text-gradient-purple">About Us</span>
             </h1>
             <p className="text-xl text-text-secondary">
-              Learn more about Auto Shopify Store Builder
+              Learn more about EAZY DROPSHIPPING
             </p>
           </div>
 
@@ -22,7 +22,7 @@ export default function AboutPage() {
           <section>
             <h2 className="text-2xl font-bold text-text-primary mb-4">Our Mission</h2>
             <p className="text-text-secondary leading-relaxed">
-              At Auto Shopify Store Builder, we believe that launching an e-commerce store shouldn't require technical expertise or months of setup. Our mission is to democratize e-commerce by making it possible for anyone to launch a fully functional Shopify store in minutes, not months.
+              At EAZY DROPSHIPPING, we believe that launching an e-commerce store shouldn't require technical expertise or months of setup. Our mission is to democratize e-commerce by making it possible for anyone to launch a fully functional Shopify store in minutes, not months.
             </p>
           </section>
 

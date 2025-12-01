@@ -90,7 +90,7 @@ export const createStore = async (
       product: {
         title: product.title,
         body_html: productDescription,
-        vendor: 'Auto Store Builder',
+        vendor: 'EAZY DROPSHIPPING',
         product_type: product.category,
         variants: [
           {

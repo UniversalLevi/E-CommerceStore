@@ -1,4 +1,4 @@
-# Frontend - Auto Shopify Store Builder
+# Frontend - EAZY DROPSHIPPING
 
 Next.js 14 application with TypeScript, Tailwind CSS, and App Router.
 
@@ -153,7 +153,7 @@ For Ad Builder Platform features:
 
 ```env
 # MongoDB connection (for Next.js API routes)
-MONGODB_URI=mongodb://localhost:27017/shopify-store-builder
+MONGODB_URI=mongodb://localhost:27017/eazy-dropshipping
 
 # OpenAI API key (for AI features)
 OPENAI_API_KEY=your-openai-api-key-here

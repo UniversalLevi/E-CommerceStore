@@ -242,7 +242,7 @@ export default function FAQSection() {
             <div className="grid sm:grid-cols-3 gap-4">
               {[
                 { icon: MessageCircle, label: 'Live Chat', desc: 'Chat with us now', color: 'from-purple-600 to-blue-600' },
-                { icon: Mail, label: 'Email Us', desc: 'support@storebuilder.com', color: 'from-blue-600 to-teal-600' },
+                { icon: Mail, label: 'Email Us', desc: 'support@eazydropshipping.com', color: 'from-blue-600 to-teal-600' },
                 { icon: Phone, label: 'Call Us', desc: '+91 800-123-4567', color: 'from-teal-600 to-green-600' },
               ].map((contact) => {
                 const Icon = contact.icon;

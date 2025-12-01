@@ -1,7 +1,7 @@
 {
-  "name": "shopify-store-builder-backend",
+  "name": "eazy-dropshipping-backend",
   "version": "1.0.0",
-  "description": "Backend API for Auto Shopify Store Builder",
+  "description": "Backend API for EAZY DROPSHIPPING",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",

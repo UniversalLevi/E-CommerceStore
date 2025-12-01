@@ -74,7 +74,7 @@ export default function ConnectStorePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <Link href="/dashboard" className="text-2xl font-bold text-[#1AC8ED]">
-              Auto Shopify Store Builder
+              EAZY DROPSHIPPING
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/dashboard/stores" className="text-gray-300 hover:text-white">

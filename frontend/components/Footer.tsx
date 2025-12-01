@@ -63,7 +63,7 @@ const socialLinks = [
 ];
 
 const contactInfo = [
-  { icon: Mail, label: 'support@storebuilder.com' },
+  { icon: Mail, label: 'support@eazydropshipping.com' },
   { icon: Phone, label: '+91 800-123-4567' },
   { icon: MapPin, label: 'Mumbai, India' },
 ];
@@ -99,7 +99,7 @@ export default function Footer() {
                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse-glow" />
                 <div className="absolute inset-0 w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 blur-sm opacity-50" />
               </div>
-              Auto Shopify Store Builder
+              EAZY DROPSHIPPING
             </Link>
             
             <p className="text-text-secondary text-sm mb-6 max-w-sm leading-relaxed">
@@ -283,7 +283,7 @@ export default function Footer() {
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-text-secondary text-sm">
-              © {currentYear} Auto Shopify Store Builder. All rights reserved.
+              © {currentYear} EAZY DROPSHIPPING. All rights reserved.
             </p>
             
             <div className="flex items-center gap-6">

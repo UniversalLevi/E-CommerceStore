@@ -178,7 +178,7 @@ export default function SettingsPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <Link href="/dashboard" className="text-xl md:text-2xl font-bold text-primary-500">
-              Auto Shopify Store Builder
+              EAZY DROPSHIPPING
             </Link>
             <div className="flex flex-wrap items-center gap-2 md:gap-4">
               <Link href="/dashboard" className="text-text-secondary hover:text-primary-500 text-sm md:text-base min-h-[44px] flex items-center">

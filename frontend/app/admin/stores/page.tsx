@@ -141,7 +141,7 @@ export default function AdminStoresPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
-              Auto Shopify Store Builder
+              EAZY DROPSHIPPING
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/dashboard" className="text-text-secondary hover:text-primary-500">

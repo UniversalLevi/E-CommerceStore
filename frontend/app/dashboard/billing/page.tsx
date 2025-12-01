@@ -59,7 +59,7 @@ export default function BillingPage() {
           key: keyId,
           amount: amount,
           currency: currency,
-          name: 'Shopify Store Builder',
+          name: 'EAZY DROPSHIPPING',
           description: `Subscription: ${plans.find(p => p.code === planCode)?.name || planCode}`,
           order_id: orderId,
           theme: {

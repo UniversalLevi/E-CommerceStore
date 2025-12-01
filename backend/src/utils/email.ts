@@ -51,7 +51,7 @@ interface EmailOptions {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   const emailTransporter = getTransporter();
   const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@example.com';
-  const fromName = process.env.SMTP_FROM_NAME || 'Shopify Store Builder';
+  const fromName = process.env.SMTP_FROM_NAME || 'EAZY DROPSHIPPING';
 
   const mailOptions = {
     from: `"${fromName}" <${fromEmail}>`,
@@ -114,7 +114,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string): P
         <p style="font-size: 12px; color: #666;">If you didn't request this, please ignore this email.</p>
       </div>
       <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} Shopify Store Builder. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} EAZY DROPSHIPPING. All rights reserved.</p>
       </div>
     </body>
     </html>
@@ -122,7 +122,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string): P
 
   return sendEmail({
     to: email,
-    subject: 'Password Reset Request - Shopify Store Builder',
+    subject: 'Password Reset Request - EAZY DROPSHIPPING',
     html,
   });
 }
@@ -152,7 +152,7 @@ export async function sendEmailVerificationEmail(email: string, verifyUrl: strin
         <p style="font-size: 12px; color: #666;">If you didn't request this, please ignore this email.</p>
       </div>
       <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} Shopify Store Builder. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} EAZY DROPSHIPPING. All rights reserved.</p>
       </div>
     </body>
     </html>
@@ -160,7 +160,7 @@ export async function sendEmailVerificationEmail(email: string, verifyUrl: strin
 
   return sendEmail({
     to: email,
-    subject: 'Verify Your Email Address - Shopify Store Builder',
+    subject: 'Verify Your Email Address - EAZY DROPSHIPPING',
     html,
   });
 }
