@@ -1082,9 +1082,38 @@ export const markOrderCompleted = async (
     // If payment should be marked and order is not already paid
     if (paymentReceived && order.financial_status !== 'paid') {
       try {
-        // Get existing transactions
-        const transactionsResponse = await axios.get(
-          `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
+        // Use GraphQL orderMarkAsPaid mutation - the official way to mark orders as paid
+        const graphqlEndpoint = `https://${store.shopDomain}/admin/api/${apiVersion}/graphql.json`;
+        
+        // Convert REST order ID to GraphQL Global ID
+        const orderGid = `gid://shopify/Order/${orderId}`;
+        
+        const markAsPaidMutation = `
+          mutation orderMarkAsPaid($input: OrderMarkAsPaidInput!) {
+            orderMarkAsPaid(input: $input) {
+              order {
+                id
+                displayFinancialStatus
+                fullyPaid
+              }
+              userErrors {
+                field
+                message
+              }
+            }
+          }
+        `;
+        
+        const graphqlResponse = await axios.post(
+          graphqlEndpoint,
+          {
+            query: markAsPaidMutation,
+            variables: {
+              input: {
+                id: orderGid,
+              },
+            },
+          },
           {
             headers: {
               'X-Shopify-Access-Token': accessToken,
@@ -1092,49 +1121,27 @@ export const markOrderCompleted = async (
             },
           }
         );
-
-        const transactions = transactionsResponse.data.transactions || [];
-        const authTransaction = transactions.find(
-          (t: any) => t.kind === 'authorization' && t.status === 'success'
-        );
-
-        if (authTransaction) {
-          // Capture the existing authorization
-          await axios.post(
-            `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
-            {
-              transaction: {
-                kind: 'capture',
-                parent_id: authTransaction.id,
-                amount: order.total_price,
-                currency: order.currency,
-              },
-            },
-            {
-              headers: {
-                'X-Shopify-Access-Token': accessToken,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
+        
+        const result = graphqlResponse.data;
+        
+        if (result.data?.orderMarkAsPaid?.order) {
           paymentMarked = true;
-          console.log('Payment marked via capture');
-        } else {
-          // For manual/COD orders, try creating a "sale" transaction
-          // This is for orders where payment is collected outside Shopify
+          console.log('Payment marked via GraphQL orderMarkAsPaid:', result.data.orderMarkAsPaid.order);
+        } else if (result.data?.orderMarkAsPaid?.userErrors?.length > 0) {
+          console.log('GraphQL userErrors:', result.data.orderMarkAsPaid.userErrors);
+          // Try REST API fallback
+          await tryRestApiPayment();
+        } else if (result.errors) {
+          console.log('GraphQL errors:', result.errors);
+          // Try REST API fallback
+          await tryRestApiPayment();
+        }
+        
+        async function tryRestApiPayment() {
+          // Fallback: Try REST API with transaction
           try {
-            await axios.post(
+            const transactionsResponse = await axios.get(
               `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
-              {
-                transaction: {
-                  kind: 'sale',
-                  status: 'success',
-                  amount: order.total_price,
-                  currency: order.currency,
-                  gateway: 'Cash on Delivery (COD)',
-                  source_name: 'manual',
-                },
-              },
               {
                 headers: {
                   'X-Shopify-Access-Token': accessToken,
@@ -1142,19 +1149,20 @@ export const markOrderCompleted = async (
                 },
               }
             );
-            paymentMarked = true;
-            console.log('Payment marked via sale transaction');
-          } catch (saleError: any) {
-            console.log('Sale transaction failed:', saleError.response?.data);
-            
-            // Last resort: Try marking paid via order update (some Shopify versions)
-            try {
-              await axios.put(
-                `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
+
+            const transactions = transactionsResponse.data.transactions || [];
+            const authTransaction = transactions.find(
+              (t: any) => t.kind === 'authorization' && t.status === 'success'
+            );
+
+            if (authTransaction) {
+              // Capture existing authorization
+              await axios.post(
+                `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
                 {
-                  order: {
-                    id: orderId,
-                    financial_status: 'paid',
+                  transaction: {
+                    kind: 'capture',
+                    parent_id: authTransaction.id,
                   },
                 },
                 {
@@ -1165,18 +1173,15 @@ export const markOrderCompleted = async (
                 }
               );
               paymentMarked = true;
-              console.log('Payment marked via order update');
-            } catch (updateError: any) {
-              console.log('Direct order update failed:', updateError.response?.data);
-              // Continue without marking payment - Shopify doesn't allow it for this order type
+              console.log('Payment marked via REST capture');
             }
+          } catch (restError: any) {
+            console.log('REST fallback failed:', restError.response?.data || restError.message);
           }
         }
       } catch (paymentError: any) {
         console.log('Payment marking error:', paymentError.response?.data || paymentError.message);
-        // If transaction creation fails, we'll still complete the order with tags
-        // Some stores might have restrictions on manual transactions
-      }
+        // If all methods fail, we'll still complete the order with tags
     } else if (order.financial_status === 'paid') {
       paymentMarked = true; // Already paid
     }
