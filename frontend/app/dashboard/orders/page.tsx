@@ -676,6 +676,27 @@ export default function OrdersPage() {
                     <Package className="w-4 h-4" /> Quick Actions
                   </h3>
                   
+                  {/* Mark as Paid Button - Show when payment is pending/not paid */}
+                  {selectedOrder.financialStatus !== 'paid' && selectedOrder.financialStatus !== 'refunded' && (
+                    <button
+                      onClick={() => handleMarkCompleted(selectedOrder.id)}
+                      disabled={actionLoading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all font-medium disabled:opacity-50 shadow-lg shadow-emerald-500/25"
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      {actionLoading ? 'Processing...' : 'Mark as Paid ₹' + parseFloat(selectedOrder.totalPrice).toLocaleString()}
+                    </button>
+                  )}
+
+                  {/* Already Paid indicator */}
+                  {selectedOrder.financialStatus === 'paid' && (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="font-medium">Payment Received</span>
+                    </div>
+                  )}
+                  
+                  {/* Mark as Fulfilled Button */}
                   {selectedOrder.fulfillmentStatus !== 'fulfilled' && (
                     <div className="space-y-2">
                       <textarea
@@ -688,27 +709,23 @@ export default function OrdersPage() {
                       <button
                         onClick={() => handleFulfillOrder(selectedOrder.id)}
                         disabled={actionLoading}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
                       >
                         <Truck className="w-4 h-4" />
-                        {actionLoading ? 'Fulfilling...' : 'Mark as Fulfilled'}
+                        {actionLoading ? 'Fulfilling...' : 'Mark as Fulfilled (Shipped)'}
                       </button>
                     </div>
                   )}
-                  
-                  {/* Mark as Completed & Paid Button */}
+
+                  {/* Already Fulfilled indicator */}
                   {selectedOrder.fulfillmentStatus === 'fulfilled' && (
-                    <button
-                      onClick={() => handleMarkCompleted(selectedOrder.id)}
-                      disabled={actionLoading}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all font-medium disabled:opacity-50"
-                    >
-                      <DollarSign className="w-4 h-4" />
-                      {actionLoading ? 'Processing...' : 'Mark as Completed & Paid'}
-                    </button>
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-lg">
+                      <Truck className="w-4 h-4" />
+                      <span className="font-medium">Order Fulfilled</span>
+                    </div>
                   )}
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-2 border-t border-border-default">
                     <button
                       onClick={() => handleOrderAction('close', selectedOrder.id)}
                       disabled={actionLoading}

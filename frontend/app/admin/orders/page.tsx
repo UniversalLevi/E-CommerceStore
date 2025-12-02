@@ -853,6 +853,27 @@ export default function AdminOrdersPage() {
                     <Package className="w-4 h-4" /> Quick Actions
                   </h3>
                   
+                  {/* Mark as Paid Button - Show when payment is pending/not paid */}
+                  {selectedOrder.storeId && selectedOrder.financialStatus !== 'paid' && selectedOrder.financialStatus !== 'refunded' && (
+                    <button
+                      onClick={() => handleMarkCompleted(selectedOrder)}
+                      disabled={actionLoading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all font-medium disabled:opacity-50 shadow-lg shadow-emerald-500/25"
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      {actionLoading ? 'Processing...' : 'Mark as Paid ' + formatCurrency(selectedOrder.totalPrice, selectedOrder.currency)}
+                    </button>
+                  )}
+
+                  {/* Already Paid indicator */}
+                  {selectedOrder.financialStatus === 'paid' && (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="font-medium">Payment Received</span>
+                    </div>
+                  )}
+                  
+                  {/* Mark as Fulfilled Button */}
                   {selectedOrder.fulfillmentStatus !== 'fulfilled' && selectedOrder.storeId && (
                     <div className="space-y-2">
                       <textarea
@@ -865,47 +886,41 @@ export default function AdminOrdersPage() {
                       <button
                         onClick={() => handleFulfillOrder(selectedOrder)}
                         disabled={actionLoading}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium disabled:opacity-50"
                       >
                         <Truck className="w-4 h-4" />
-                        {actionLoading ? 'Fulfilling...' : 'Mark as Fulfilled'}
+                        {actionLoading ? 'Fulfilling...' : 'Mark as Fulfilled (Shipped)'}
                       </button>
+                    </div>
+                  )}
+
+                  {/* Already Fulfilled indicator */}
+                  {selectedOrder.fulfillmentStatus === 'fulfilled' && (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-sky-500/10 border border-sky-500/30 text-sky-400 rounded-lg">
+                      <Truck className="w-4 h-4" />
+                      <span className="font-medium">Order Fulfilled</span>
                     </div>
                   )}
                   
                   {selectedOrder.storeId && (
-                    <>
-                      {/* Mark as Completed & Paid Button */}
-                      {selectedOrder.fulfillmentStatus === 'fulfilled' && (
-                        <button
-                          onClick={() => handleMarkCompleted(selectedOrder)}
-                          disabled={actionLoading}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg transition-all font-medium disabled:opacity-50"
-                        >
-                          <DollarSign className="w-4 h-4" />
-                          {actionLoading ? 'Processing...' : 'Mark as Completed & Paid'}
-                        </button>
-                      )}
-                      
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleOrderAction('close', selectedOrder.id, selectedOrder.storeId!)}
-                          disabled={actionLoading}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-surface-base hover:bg-surface-hover border border-border-default text-text-primary rounded-lg text-sm disabled:opacity-50"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Close
-                        </button>
-                        <button
-                          onClick={() => setConfirmModal({ isOpen: true, action: 'cancel', order: selectedOrder })}
-                          disabled={actionLoading}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-lg text-sm disabled:opacity-50"
-                        >
-                          <Ban className="w-4 h-4" />
-                          Cancel
-                        </button>
-                      </div>
-                    </>
+                    <div className="flex gap-2 pt-2 border-t border-border-default">
+                      <button
+                        onClick={() => handleOrderAction('close', selectedOrder.id, selectedOrder.storeId!)}
+                        disabled={actionLoading}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-surface-base hover:bg-surface-hover border border-border-default text-text-primary rounded-lg text-sm disabled:opacity-50"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Close
+                      </button>
+                      <button
+                        onClick={() => setConfirmModal({ isOpen: true, action: 'cancel', order: selectedOrder })}
+                        disabled={actionLoading}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-lg text-sm disabled:opacity-50"
+                      >
+                        <Ban className="w-4 h-4" />
+                        Cancel
+                      </button>
+                    </div>
                   )}
                 </div>
 
