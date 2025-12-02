@@ -459,17 +459,25 @@ export const listAllStoreOrders = async (
 
     const results = await Promise.all(allOrdersPromises);
 
-    // Flatten all orders and sort by date
-    const allOrders = results
+    // Separate successful and failed stores
+    const successfulResults = results.filter(r => !(r as any).error);
+    const failedStores = results.filter(r => (r as any).error).map(r => ({
+      storeId: r.store.id,
+      storeName: r.store.name,
+      error: (r as any).error,
+    }));
+
+    // Flatten all orders and sort by date (only from successful stores)
+    const allOrders = successfulResults
       .flatMap(r => r.orders)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Calculate aggregated stats
+    // Calculate aggregated stats (only from successful stores)
     const aggregatedStats = {
-      totalOrders: results.reduce((sum, r) => sum + r.stats.totalOrders, 0),
-      totalRevenue: results.reduce((sum, r) => sum + r.stats.totalRevenue, 0),
-      paidRevenue: results.reduce((sum, r) => sum + (r.stats.paidRevenue || 0), 0),
-      storeStats: results.map(r => ({
+      totalOrders: successfulResults.reduce((sum, r) => sum + r.stats.totalOrders, 0),
+      totalRevenue: successfulResults.reduce((sum, r) => sum + r.stats.totalRevenue, 0),
+      paidRevenue: successfulResults.reduce((sum, r) => sum + (r.stats.paidRevenue || 0), 0),
+      storeStats: successfulResults.map(r => ({
         storeId: r.store.id,
         storeName: r.store.name,
         shopDomain: r.store.domain,
@@ -478,15 +486,16 @@ export const listAllStoreOrders = async (
         totalRevenue: r.stats.totalRevenue,
         paidRevenue: r.stats.paidRevenue || 0,
         currency: r.stats.currency,
-        error: (r as any).error,
+        status: 'active',
       })),
+      failedStores,
     };
 
     res.json({
       success: true,
       count: allOrders.length,
       data: allOrders,
-      stores: results.map(r => r.store),
+      stores: successfulResults.map(r => r.store),
       aggregatedStats,
     });
   } catch (error) {
@@ -1000,18 +1009,30 @@ export const getStoreRevenueAnalytics = async (
 
     const storeRevenues = await Promise.all(revenuePromises);
 
-    // Calculate totals
+    // Separate successful and failed stores
+    const successfulStores = storeRevenues.filter(s => !s.error);
+    const failedStores = storeRevenues.filter(s => s.error).map(s => ({
+      storeId: s.storeId,
+      storeName: s.storeName,
+      error: s.error,
+    }));
+
+    // Calculate totals (only from successful stores)
     const totals = {
-      totalRevenue: storeRevenues.reduce((sum, s) => sum + s.totalRevenue, 0),
-      totalOrders: storeRevenues.reduce((sum, s) => sum + s.totalOrders, 0),
+      totalRevenue: successfulStores.reduce((sum, s) => sum + s.totalRevenue, 0),
+      paidRevenue: successfulStores.reduce((sum, s) => sum + (s.revenueByStatus?.paid || 0), 0),
+      pendingRevenue: successfulStores.reduce((sum, s) => sum + (s.revenueByStatus?.pending || 0), 0),
+      totalOrders: successfulStores.reduce((sum, s) => sum + s.totalOrders, 0),
       totalStores: stores.length,
-      activeStores: storeRevenues.filter(s => !s.error).length,
+      activeStores: successfulStores.length,
+      failedStores: failedStores.length,
     };
 
     res.json({
       success: true,
       data: {
-        stores: storeRevenues,
+        stores: successfulStores,
+        failedStores,
         totals,
         period: {
           startDate: startDate || 'all time',
