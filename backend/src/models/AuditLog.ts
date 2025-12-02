@@ -69,6 +69,8 @@ const auditLogSchema = new Schema<IAuditLog>({
       'ORDER_CANCEL',
       'ORDER_CLOSE',
       'ORDER_OPEN',
+      'ORDER_COMPLETED',
+      'ORDER_REOPENED',
       'FULFILLMENT_CANCEL',
       'ORDER_NOTE_ADDED',
     ],
