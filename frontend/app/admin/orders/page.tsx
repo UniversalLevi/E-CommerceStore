@@ -97,6 +97,7 @@ interface StoreStat {
   owner: StoreOwner;
   totalOrders: number;
   totalRevenue: number;
+  paidRevenue?: number;
   currency: string;
   error?: string;
 }
@@ -104,6 +105,7 @@ interface StoreStat {
 interface AggregatedStats {
   totalOrders: number;
   totalRevenue: number;
+  paidRevenue?: number;
   storeStats: StoreStat[];
 }
 
@@ -491,9 +493,11 @@ export default function AdminOrdersPage() {
               <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 rounded-xl p-5">
                 <div className="flex items-center gap-2 text-emerald-400 mb-1">
                   <DollarSign className="w-5 h-5" />
-                  <span className="text-sm font-medium">Total Revenue</span>
+                  <span className="text-sm font-medium">Paid Revenue</span>
                 </div>
-                <p className="text-2xl font-bold text-text-primary">{formatCurrency(aggregatedStats.totalRevenue)}</p>
+                <p className="text-2xl font-bold text-text-primary">
+                  {formatCurrency(aggregatedStats.paidRevenue || aggregatedStats.totalRevenue)}
+                </p>
               </div>
               
               <div className="bg-gradient-to-br from-sky-500/20 to-sky-600/10 border border-sky-500/30 rounded-xl p-5">
@@ -515,10 +519,12 @@ export default function AdminOrdersPage() {
               <div className="bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 rounded-xl p-5">
                 <div className="flex items-center gap-2 text-amber-400 mb-1">
                   <TrendingUp className="w-5 h-5" />
-                  <span className="text-sm font-medium">Avg. Order</span>
+                  <span className="text-sm font-medium">Avg. Paid Order</span>
                 </div>
                 <p className="text-2xl font-bold text-text-primary">
-                  {aggregatedStats.totalOrders > 0 ? formatCurrency(aggregatedStats.totalRevenue / aggregatedStats.totalOrders) : '$0'}
+                  {aggregatedStats.totalOrders > 0 
+                    ? formatCurrency((aggregatedStats.paidRevenue || aggregatedStats.totalRevenue) / aggregatedStats.totalOrders) 
+                    : '$0'}
                 </p>
               </div>
             </div>

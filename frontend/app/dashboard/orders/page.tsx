@@ -82,11 +82,15 @@ interface Order {
 
 interface OrderStats {
   totalRevenue: number;
+  paidRevenue: number;
   currency: string;
   ordersByStatus: {
     pending: number;
     paid: number;
+    authorized?: number;
     refunded: number;
+    partially_refunded?: number;
+    voided?: number;
     unfulfilled: number;
     fulfilled: number;
     partial: number;
@@ -444,10 +448,10 @@ export default function OrdersPage() {
                   <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 rounded-xl p-4">
                     <div className="flex items-center gap-2 text-emerald-400 mb-1">
                       <DollarSign className="w-4 h-4" />
-                      <span className="text-xs font-medium uppercase">Revenue</span>
+                      <span className="text-xs font-medium uppercase">Paid Revenue</span>
                     </div>
                     <p className="text-xl font-bold text-text-primary">
-                      {formatCurrency(stats.totalRevenue, stats.currency)}
+                      {formatCurrency(stats.paidRevenue || stats.totalRevenue, stats.currency)}
                     </p>
                   </div>
                   

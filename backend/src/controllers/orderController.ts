@@ -200,55 +200,91 @@ export const listStoreOrders = async (
     const accessToken = decrypt(store.accessToken);
     const apiVersion = store.apiVersion || '2024-01';
 
-    // Build query params
-    let url = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?limit=${limit}`;
+    // Build base URL for fetching orders with pagination
+    let baseUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?limit=250`;
     
     if (status && status !== 'any') {
-      url += `&status=${status}`;
+      baseUrl += `&status=${status}`;
     } else {
-      url += '&status=any';
+      baseUrl += '&status=any';
     }
     
     if (fulfillmentStatus && fulfillmentStatus !== 'any') {
-      url += `&fulfillment_status=${fulfillmentStatus}`;
-    }
-    
-    if (since_id) {
-      url += `&since_id=${since_id}`;
+      baseUrl += `&fulfillment_status=${fulfillmentStatus}`;
     }
     
     // Add date filters
     if (startDate) {
-      url += `&created_at_min=${startDate}`;
+      baseUrl += `&created_at_min=${startDate}`;
     }
     if (endDate) {
-      url += `&created_at_max=${endDate}`;
+      baseUrl += `&created_at_max=${endDate}`;
     }
 
-    // Fetch orders from Shopify
-    const response = await axios.get(url, {
-      headers: {
-        'X-Shopify-Access-Token': accessToken,
-        'Content-Type': 'application/json',
-      },
-      timeout: 15000,
-    });
+    // Fetch ALL orders with pagination
+    const allOrders: ShopifyOrder[] = [];
+    let hasNextPage = true;
+    let pageInfo: string | null = null;
 
-    const orders = response.data.orders || [];
-    const transformedOrders = orders.map((order: ShopifyOrder) => transformOrder(order));
+    while (hasNextPage) {
+      let currentUrl = baseUrl;
+      if (pageInfo) {
+        // When using page_info, we need to use a different URL format
+        currentUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?limit=250&page_info=${pageInfo}`;
+      }
 
-    // Calculate stats
-    const totalRevenue = orders.reduce((sum: number, order: ShopifyOrder) => {
+      const response = await axios.get(currentUrl, {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+        timeout: 30000,
+      });
+
+      if (response.data?.orders) {
+        allOrders.push(...response.data.orders);
+      }
+
+      // Check for next page using Link header
+      const linkHeader = response.headers['link'];
+      if (linkHeader && linkHeader.includes('rel="next"')) {
+        const nextMatch = linkHeader.match(/page_info=([^&>]+)/);
+        if (nextMatch) {
+          pageInfo = nextMatch[1];
+        } else {
+          hasNextPage = false;
+        }
+      } else {
+        hasNextPage = false;
+      }
+
+      // Small delay to avoid rate limiting
+      if (hasNextPage) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+
+    const transformedOrders = allOrders.map((order: ShopifyOrder) => transformOrder(order));
+
+    // Calculate stats - only count paid/authorized for revenue
+    const paidRevenue = allOrders
+      .filter((o: ShopifyOrder) => o.financial_status === 'paid' || o.financial_status === 'authorized')
+      .reduce((sum: number, order: ShopifyOrder) => sum + parseFloat(order.total_price || '0'), 0);
+
+    const totalRevenue = allOrders.reduce((sum: number, order: ShopifyOrder) => {
       return sum + parseFloat(order.total_price || '0');
     }, 0);
 
     const ordersByStatus = {
-      pending: orders.filter((o: ShopifyOrder) => o.financial_status === 'pending').length,
-      paid: orders.filter((o: ShopifyOrder) => o.financial_status === 'paid').length,
-      refunded: orders.filter((o: ShopifyOrder) => o.financial_status === 'refunded').length,
-      unfulfilled: orders.filter((o: ShopifyOrder) => !o.fulfillment_status || o.fulfillment_status === 'unfulfilled').length,
-      fulfilled: orders.filter((o: ShopifyOrder) => o.fulfillment_status === 'fulfilled').length,
-      partial: orders.filter((o: ShopifyOrder) => o.fulfillment_status === 'partial').length,
+      pending: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'pending').length,
+      paid: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'paid').length,
+      authorized: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'authorized').length,
+      refunded: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'refunded').length,
+      partially_refunded: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'partially_refunded').length,
+      voided: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'voided').length,
+      unfulfilled: allOrders.filter((o: ShopifyOrder) => !o.fulfillment_status || o.fulfillment_status === null).length,
+      fulfilled: allOrders.filter((o: ShopifyOrder) => o.fulfillment_status === 'fulfilled').length,
+      partial: allOrders.filter((o: ShopifyOrder) => o.fulfillment_status === 'partial').length,
     };
 
     res.json({
@@ -257,7 +293,8 @@ export const listStoreOrders = async (
       data: transformedOrders,
       stats: {
         totalRevenue,
-        currency: orders[0]?.currency || 'USD',
+        paidRevenue, // Only paid/authorized orders
+        currency: allOrders[0]?.currency || 'USD',
         ordersByStatus,
       },
       store: {
@@ -321,31 +358,68 @@ export const listAllStoreOrders = async (
       });
     }
 
-    // Fetch orders from all stores in parallel
+    // Fetch orders from all stores with pagination
     const allOrdersPromises = stores.map(async (store) => {
       try {
         const accessToken = decrypt(store.accessToken);
         const apiVersion = store.apiVersion || '2024-01';
         
-        let url = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?status=any&limit=${limit}`;
+        let baseUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?status=any&limit=250`;
         
         // Add date filters
         if (startDate) {
-          url += `&created_at_min=${startDate}`;
+          baseUrl += `&created_at_min=${startDate}`;
         }
         if (endDate) {
-          url += `&created_at_max=${endDate}`;
+          baseUrl += `&created_at_max=${endDate}`;
         }
-        
-        const response = await axios.get(url, {
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-          timeout: 15000,
-        });
 
-        const orders = response.data.orders || [];
+        // Fetch ALL orders with pagination
+        const storeOrders: ShopifyOrder[] = [];
+        let hasNextPage = true;
+        let pageInfo: string | null = null;
+
+        while (hasNextPage) {
+          let currentUrl = baseUrl;
+          if (pageInfo) {
+            currentUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?limit=250&page_info=${pageInfo}`;
+          }
+
+          const response = await axios.get(currentUrl, {
+            headers: {
+              'X-Shopify-Access-Token': accessToken,
+              'Content-Type': 'application/json',
+            },
+            timeout: 30000,
+          });
+
+          if (response.data?.orders) {
+            storeOrders.push(...response.data.orders);
+          }
+
+          // Check for next page
+          const linkHeader = response.headers['link'];
+          if (linkHeader && linkHeader.includes('rel="next"')) {
+            const nextMatch = linkHeader.match(/page_info=([^&>]+)/);
+            if (nextMatch) {
+              pageInfo = nextMatch[1];
+            } else {
+              hasNextPage = false;
+            }
+          } else {
+            hasNextPage = false;
+          }
+
+          if (hasNextPage) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        }
+
+        // Calculate stats - only paid/authorized for revenue
+        const paidRevenue = storeOrders
+          .filter((o: ShopifyOrder) => o.financial_status === 'paid' || o.financial_status === 'authorized')
+          .reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0);
+
         return {
           store: {
             id: store._id.toString(),
@@ -353,7 +427,7 @@ export const listAllStoreOrders = async (
             domain: store.shopDomain,
             owner: store.owner,
           },
-          orders: orders.map((order: ShopifyOrder) => 
+          orders: storeOrders.map((order: ShopifyOrder) => 
             transformOrder(order, {
               id: store._id.toString(),
               name: store.storeName,
@@ -361,9 +435,10 @@ export const listAllStoreOrders = async (
             })
           ),
           stats: {
-            totalOrders: orders.length,
-            totalRevenue: orders.reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0),
-            currency: orders[0]?.currency || 'USD',
+            totalOrders: storeOrders.length,
+            totalRevenue: storeOrders.reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0),
+            paidRevenue,
+            currency: storeOrders[0]?.currency || 'USD',
           },
         };
       } catch (error: any) {
@@ -376,7 +451,7 @@ export const listAllStoreOrders = async (
             owner: store.owner,
           },
           orders: [],
-          stats: { totalOrders: 0, totalRevenue: 0, currency: 'USD' },
+          stats: { totalOrders: 0, totalRevenue: 0, paidRevenue: 0, currency: 'USD' },
           error: error.message,
         };
       }
@@ -393,6 +468,7 @@ export const listAllStoreOrders = async (
     const aggregatedStats = {
       totalOrders: results.reduce((sum, r) => sum + r.stats.totalOrders, 0),
       totalRevenue: results.reduce((sum, r) => sum + r.stats.totalRevenue, 0),
+      paidRevenue: results.reduce((sum, r) => sum + (r.stats.paidRevenue || 0), 0),
       storeStats: results.map(r => ({
         storeId: r.store.id,
         storeName: r.store.name,
@@ -400,6 +476,7 @@ export const listAllStoreOrders = async (
         owner: r.store.owner,
         totalOrders: r.stats.totalOrders,
         totalRevenue: r.stats.totalRevenue,
+        paidRevenue: r.stats.paidRevenue || 0,
         currency: r.stats.currency,
         error: (r as any).error,
       })),
