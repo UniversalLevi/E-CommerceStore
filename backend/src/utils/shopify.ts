@@ -175,16 +175,15 @@ export async function fetchShopifyOrders(
   updatedAt: string;
 }>> {
   try {
-    let url = `https://${shopDomain}/admin/api/${apiVersion}/orders.json?status=any&limit=250`;
+    // Build initial URL with filters
+    let baseUrl = `https://${shopDomain}/admin/api/${apiVersion}/orders.json?status=any&limit=250`;
     
     // Add date filters if provided
     if (startDate) {
-      const startDateStr = startDate.toISOString();
-      url += `&created_at_min=${startDateStr}`;
+      baseUrl += `&created_at_min=${startDate.toISOString()}`;
     }
     if (endDate) {
-      const endDateStr = endDate.toISOString();
-      url += `&created_at_max=${endDateStr}`;
+      baseUrl += `&created_at_max=${endDate.toISOString()}`;
     }
 
     const allOrders: any[] = [];
@@ -192,10 +191,14 @@ export async function fetchShopifyOrders(
     let pageInfo: string | null = null;
 
     // Handle pagination (Shopify uses cursor-based pagination)
+    // IMPORTANT: When using page_info, you can ONLY use page_info and limit, no other params
     while (hasNextPage) {
-      let currentUrl = url;
+      let currentUrl: string;
       if (pageInfo) {
-        currentUrl += `&page_info=${pageInfo}`;
+        // When using page_info, construct URL with ONLY page_info and limit
+        currentUrl = `https://${shopDomain}/admin/api/${apiVersion}/orders.json?limit=250&page_info=${pageInfo}`;
+      } else {
+        currentUrl = baseUrl;
       }
 
       const response = await axios.get(currentUrl, {
@@ -203,11 +206,12 @@ export async function fetchShopifyOrders(
           'X-Shopify-Access-Token': accessToken,
           'Content-Type': 'application/json',
         },
-        timeout: 10000,
+        timeout: 30000, // Increased timeout for large datasets
       });
 
       if (response.data?.orders) {
         allOrders.push(...response.data.orders);
+        console.log(`Fetched ${response.data.orders.length} orders, total: ${allOrders.length}`);
       }
 
       // Check for next page
@@ -226,9 +230,11 @@ export async function fetchShopifyOrders(
 
       // Small delay to avoid rate limiting
       if (hasNextPage) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
+    
+    console.log(`Total orders fetched from ${shopDomain}: ${allOrders.length}`);
 
     return allOrders.map((order) => {
       // Calculate fulfillment status from fulfillments array
