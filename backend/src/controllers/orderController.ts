@@ -1182,6 +1182,7 @@ export const markOrderCompleted = async (
       } catch (paymentError: any) {
         console.log('Payment marking error:', paymentError.response?.data || paymentError.message);
         // If all methods fail, we'll still complete the order with tags
+      }
     } else if (order.financial_status === 'paid') {
       paymentMarked = true; // Already paid
     }
