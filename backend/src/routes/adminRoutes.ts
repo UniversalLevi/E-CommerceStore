@@ -4,6 +4,7 @@ import {
   getDashboardStats,
   getSystemHealth,
   listUsers,
+  getUserDetails,
   updateUserRole,
   toggleUserStatus,
   deleteUser,
@@ -30,6 +31,7 @@ router.get('/health', getSystemHealth);
 
 // User management routes
 router.get('/users', listUsers);
+router.get('/users/:id', getUserDetails);
 router.put('/users/:id/role', updateUserRole);
 router.put('/users/:id/status', toggleUserStatus);
 router.delete('/users/:id', deleteUser);

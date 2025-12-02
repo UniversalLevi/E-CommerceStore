@@ -50,6 +50,7 @@ import mentorshipRoutes from './routes/mentorshipRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import orderRoutes from './routes/orderRoutes';
 import contentRoutes from './routes/contentRoutes';
+import autoOrderRoutes from './routes/fakeOrderRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -67,6 +68,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/auto-orders', autoOrderRoutes);
 // Content and ad builder routes
 app.use('/api', contentRoutes);
 // Niche routes (separate namespaces to prevent route overlap)

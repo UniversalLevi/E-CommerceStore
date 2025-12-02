@@ -349,6 +349,100 @@ export const toggleUserStatus = async (
   }
 };
 
+export const getUserDetails = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    // Get user with all fields (excluding password)
+    const user = await User.findById(id)
+      .select('-password -resetPasswordToken -emailVerificationToken')
+      .lean();
+
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    // Get all stores for this user
+    const stores = await StoreConnection.find({ owner: id })
+      .select('-accessToken -apiKey -apiSecret')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Get password change history from audit logs
+    const passwordChanges = await AuditLog.find({
+      userId: id,
+      action: { $in: ['CHANGE_PASSWORD', 'RESET_PASSWORD'] },
+    })
+      .sort({ timestamp: -1 })
+      .limit(50)
+      .lean();
+
+    // Get recent audit logs (last 20)
+    const recentActivity = await AuditLog.find({
+      userId: id,
+    })
+      .sort({ timestamp: -1 })
+      .limit(20)
+      .lean();
+
+    // Get subscription info
+    const subscriptionStatus = user.isLifetime
+      ? 'lifetime'
+      : user.plan && user.planExpiresAt && user.planExpiresAt > new Date()
+      ? 'active'
+      : user.plan
+      ? 'expired'
+      : 'none';
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          country: user.country,
+          role: user.role,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          lastLogin: user.lastLogin,
+          passwordChangedAt: user.passwordChangedAt,
+          emailLinkedAt: user.emailLinkedAt,
+          mobileLinkedAt: user.mobileLinkedAt,
+          deletedAt: user.deletedAt,
+          pendingEmail: user.pendingEmail,
+          // Subscription
+          plan: user.plan,
+          planExpiresAt: user.planExpiresAt,
+          isLifetime: user.isLifetime,
+          subscriptionStatus,
+          // Products
+          productsAdded: user.productsAdded,
+          // Onboarding
+          onboarding: user.onboarding,
+        },
+        stores,
+        passwordChanges,
+        recentActivity,
+        stats: {
+          totalStores: stores.length,
+          activeStores: stores.filter((s: any) => s.status === 'active').length,
+          totalPasswordChanges: passwordChanges.length,
+          lastPasswordChange: passwordChanges[0]?.timestamp || null,
+        },
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
 export const deleteUser = async (
   req: AuthRequest,
   res: Response,

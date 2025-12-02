@@ -73,6 +73,8 @@ const auditLogSchema = new Schema<IAuditLog>({
       'ORDER_REOPENED',
       'FULFILLMENT_CANCEL',
       'ORDER_NOTE_ADDED',
+      // Order automation
+      'ORDER_AUTO_GENERATED',
     ],
     index: true,
   },

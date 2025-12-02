@@ -6,6 +6,24 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
+import {
+  X,
+  Mail,
+  Phone,
+  Globe,
+  Calendar,
+  Key,
+  Store,
+  Package,
+  CreditCard,
+  Clock,
+  CheckCircle,
+  XCircle,
+  User,
+  FileText,
+  History,
+  MapPin,
+} from 'lucide-react';
 
 interface User {
   _id: string;
@@ -15,6 +33,68 @@ interface User {
   createdAt: string;
   lastLogin?: string;
   storesCount: number;
+}
+
+interface UserDetails {
+  user: {
+    _id: string;
+    name?: string;
+    email?: string;
+    mobile?: string;
+    country?: string;
+    role: 'admin' | 'user';
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    lastLogin?: string;
+    passwordChangedAt?: string;
+    emailLinkedAt?: string;
+    mobileLinkedAt?: string;
+    deletedAt?: string;
+    pendingEmail?: string;
+    plan: string | null;
+    planExpiresAt: string | null;
+    isLifetime: boolean;
+    subscriptionStatus: 'active' | 'expired' | 'none' | 'lifetime';
+    productsAdded: number;
+    onboarding?: {
+      nicheId: string;
+      goal: 'dropship' | 'brand' | 'start_small';
+      answeredAt: string;
+    };
+  };
+  stores: Array<{
+    _id: string;
+    storeName: string;
+    shopDomain: string;
+    status: 'active' | 'invalid' | 'revoked';
+    environment: 'development' | 'production';
+    isDefault: boolean;
+    createdAt: string;
+    updatedAt: string;
+    lastTestedAt?: string;
+    lastTestResult?: string;
+  }>;
+  passwordChanges: Array<{
+    _id: string;
+    action: string;
+    timestamp: string;
+    success: boolean;
+    details?: Record<string, any>;
+  }>;
+  recentActivity: Array<{
+    _id: string;
+    action: string;
+    timestamp: string;
+    success: boolean;
+    details?: Record<string, any>;
+  }>;
+  stats: {
+    totalStores: number;
+    activeStores: number;
+    totalPasswordChanges: number;
+    lastPasswordChange: string | null;
+  };
 }
 
 interface Pagination {
@@ -39,6 +119,11 @@ export default function AdminUsersPage() {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // User detail modal
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   // Debounced search
   const [searchInput, setSearchInput] = useState('');
@@ -138,6 +223,40 @@ export default function AdminUsersPage() {
       setSortBy(column);
       setSortOrder('desc');
     }
+  };
+
+  const handleUserClick = async (userId: string) => {
+    setSelectedUserId(userId);
+    setLoadingDetails(true);
+    try {
+      const response = await api.get<{
+        success: boolean;
+        data: UserDetails;
+      }>(`/api/admin/users/${userId}`);
+      setUserDetails(response.data);
+    } catch (error: any) {
+      console.error('Error fetching user details:', error);
+      notify.error(error.response?.data?.message || 'Failed to load user details');
+      setSelectedUserId(null);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const closeUserDetails = () => {
+    setSelectedUserId(null);
+    setUserDetails(null);
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   if (authLoading || loading) {
@@ -302,7 +421,11 @@ export default function AdminUsersPage() {
                 </thead>
                 <tbody className="bg-surface-raised divide-y divide-border-default">
                   {users.map((userItem) => (
-                    <tr key={userItem._id} className="hover:bg-surface-hover">
+                    <tr
+                      key={userItem._id}
+                      className="hover:bg-surface-hover cursor-pointer"
+                      onClick={() => handleUserClick(userItem._id)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">
                         {userItem.email}
                       </td>
@@ -340,7 +463,7 @@ export default function AdminUsersPage() {
                           {userItem.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleToggleStatus(userItem._id, userItem.isActive)}
                           className={`${
@@ -407,6 +530,324 @@ export default function AdminUsersPage() {
           </div>
         </div>
       </div>
+
+      {/* User Details Modal */}
+      {selectedUserId && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black/60" onClick={closeUserDetails} />
+          <div className="absolute inset-y-0 right-0 w-full max-w-4xl flex">
+            <div className="w-full bg-surface-raised border-l border-border-default flex flex-col overflow-hidden animate-slide-in-right">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-border-default bg-surface-elevated">
+                <div>
+                  <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+                    <User className="w-6 h-6" />
+                    User Details
+                  </h2>
+                  {userDetails && (
+                    <p className="text-sm text-text-secondary mt-1">
+                      {userDetails.user.email || userDetails.user.mobile || 'No contact info'}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={closeUserDetails}
+                  className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-text-secondary" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {loadingDetails ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+                  </div>
+                ) : userDetails ? (
+                  <div className="space-y-6">
+                    {/* Basic Information */}
+                    <div className="bg-surface-elevated rounded-xl p-5 border border-border-default">
+                      <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                        <User className="w-5 h-5" />
+                        Basic Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Email</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <Mail className="w-4 h-4 text-text-muted" />
+                            <span>{userDetails.user.email || 'Not set'}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Mobile</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <Phone className="w-4 h-4 text-text-muted" />
+                            <span>{userDetails.user.mobile || 'Not set'}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Name</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <User className="w-4 h-4 text-text-muted" />
+                            <span>{userDetails.user.name || 'Not set'}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Country</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <Globe className="w-4 h-4 text-text-muted" />
+                            <span>{userDetails.user.country || 'Not set'}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Role</label>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            userDetails.user.role === 'admin'
+                              ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                              : 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
+                          }`}>
+                            {userDetails.user.role.toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Status</label>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            userDetails.user.isActive
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                              : 'bg-red-500/20 text-red-400 border border-red-500/50'
+                          }`}>
+                            {userDetails.user.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Account Dates */}
+                    <div className="bg-surface-elevated rounded-xl p-5 border border-border-default">
+                      <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                        <Calendar className="w-5 h-5" />
+                        Account Dates
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Account Created</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <Clock className="w-4 h-4 text-text-muted" />
+                            <span>{formatDate(userDetails.user.createdAt)}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Last Updated</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <Clock className="w-4 h-4 text-text-muted" />
+                            <span>{formatDate(userDetails.user.updatedAt)}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Last Login</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <Clock className="w-4 h-4 text-text-muted" />
+                            <span>{formatDate(userDetails.user.lastLogin)}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Password Changed</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <Key className="w-4 h-4 text-text-muted" />
+                            <span>{formatDate(userDetails.user.passwordChangedAt)}</span>
+                          </div>
+                        </div>
+                        {userDetails.user.emailLinkedAt && (
+                          <div>
+                            <label className="text-xs text-text-secondary uppercase mb-1 block">Email Linked</label>
+                            <div className="flex items-center gap-2 text-text-primary">
+                              <Mail className="w-4 h-4 text-text-muted" />
+                              <span>{formatDate(userDetails.user.emailLinkedAt)}</span>
+                            </div>
+                          </div>
+                        )}
+                        {userDetails.user.mobileLinkedAt && (
+                          <div>
+                            <label className="text-xs text-text-secondary uppercase mb-1 block">Mobile Linked</label>
+                            <div className="flex items-center gap-2 text-text-primary">
+                              <Phone className="w-4 h-4 text-text-muted" />
+                              <span>{formatDate(userDetails.user.mobileLinkedAt)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Subscription */}
+                    <div className="bg-surface-elevated rounded-xl p-5 border border-border-default">
+                      <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                        <CreditCard className="w-5 h-5" />
+                        Subscription
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Plan</label>
+                          <span className="text-text-primary font-medium">
+                            {userDetails.user.plan ? userDetails.user.plan.replace('_', ' ').toUpperCase() : 'No Plan'}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Status</label>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            userDetails.user.subscriptionStatus === 'active' || userDetails.user.subscriptionStatus === 'lifetime'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                              : userDetails.user.subscriptionStatus === 'expired'
+                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                              : 'bg-slate-500/20 text-slate-400 border border-slate-500/50'
+                          }`}>
+                            {userDetails.user.subscriptionStatus === 'lifetime' ? 'Lifetime' : userDetails.user.subscriptionStatus.toUpperCase()}
+                          </span>
+                        </div>
+                        {userDetails.user.planExpiresAt && (
+                          <div>
+                            <label className="text-xs text-text-secondary uppercase mb-1 block">Expires At</label>
+                            <div className="flex items-center gap-2 text-text-primary">
+                              <Calendar className="w-4 h-4 text-text-muted" />
+                              <span>{formatDate(userDetails.user.planExpiresAt)}</span>
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <label className="text-xs text-text-secondary uppercase mb-1 block">Products Added</label>
+                          <div className="flex items-center gap-2 text-text-primary">
+                            <Package className="w-4 h-4 text-text-muted" />
+                            <span>{userDetails.user.productsAdded}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stores */}
+                    <div className="bg-surface-elevated rounded-xl p-5 border border-border-default">
+                      <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                        <Store className="w-5 h-5" />
+                        Connected Stores ({userDetails.stats.totalStores})
+                      </h3>
+                      {userDetails.stores.length === 0 ? (
+                        <p className="text-text-secondary text-sm">No stores connected</p>
+                      ) : (
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {userDetails.stores.map((store) => (
+                            <div
+                              key={store._id}
+                              className="flex items-center justify-between p-3 bg-surface-raised rounded-lg border border-border-default"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-text-primary">{store.storeName}</span>
+                                  {store.isDefault && (
+                                    <span className="px-2 py-0.5 bg-primary-500/20 text-primary-400 text-xs rounded-full border border-primary-500/50">
+                                      Default
+                                    </span>
+                                  )}
+                                  <span className={`px-2 py-0.5 rounded-full text-xs border ${
+                                    store.status === 'active'
+                                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
+                                      : store.status === 'invalid'
+                                      ? 'bg-red-500/20 text-red-400 border-red-500/50'
+                                      : 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                                  }`}>
+                                    {store.status}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-text-muted">{store.shopDomain}</p>
+                                <p className="text-xs text-text-muted mt-1">
+                                  Created: {formatDate(store.createdAt)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Password Change History */}
+                    {userDetails.passwordChanges.length > 0 && (
+                      <div className="bg-surface-elevated rounded-xl p-5 border border-border-default">
+                        <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                          <Key className="w-5 h-5" />
+                          Password Change History ({userDetails.stats.totalPasswordChanges})
+                        </h3>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {userDetails.passwordChanges.map((change) => (
+                            <div
+                              key={change._id}
+                              className="flex items-center justify-between p-2 bg-surface-raised rounded border border-border-default"
+                            >
+                              <div className="flex items-center gap-2">
+                                {change.success ? (
+                                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                                ) : (
+                                  <XCircle className="w-4 h-4 text-red-400" />
+                                )}
+                                <span className="text-sm text-text-primary">
+                                  {change.action.replace('_', ' ')}
+                                </span>
+                              </div>
+                              <span className="text-xs text-text-muted">
+                                {formatDate(change.timestamp)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recent Activity */}
+                    {userDetails.recentActivity.length > 0 && (
+                      <div className="bg-surface-elevated rounded-xl p-5 border border-border-default">
+                        <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                          <History className="w-5 h-5" />
+                          Recent Activity
+                        </h3>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {userDetails.recentActivity.map((activity) => (
+                            <div
+                              key={activity._id}
+                              className="flex items-center justify-between p-2 bg-surface-raised rounded border border-border-default"
+                            >
+                              <div className="flex items-center gap-2">
+                                {activity.success ? (
+                                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                                ) : (
+                                  <XCircle className="w-4 h-4 text-red-400" />
+                                )}
+                                <span className="text-sm text-text-primary">
+                                  {activity.action.replace(/_/g, ' ')}
+                                </span>
+                              </div>
+                              <span className="text-xs text-text-muted">
+                                {formatDate(activity.timestamp)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slide-in-right {
+          animation: slide-in-right 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
