@@ -1082,8 +1082,7 @@ export const markOrderCompleted = async (
     // If payment should be marked and order is not already paid
     if (paymentReceived && order.financial_status !== 'paid') {
       try {
-        // Create a transaction to mark the order as paid
-        // First, check if there's an existing authorization to capture
+        // Get existing transactions
         const transactionsResponse = await axios.get(
           `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
           {
@@ -1119,31 +1118,62 @@ export const markOrderCompleted = async (
             }
           );
           paymentMarked = true;
+          console.log('Payment marked via capture');
         } else {
-          // Create a manual payment transaction (for cash/manual payments)
-          // This marks the order as paid
-          await axios.post(
-            `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
-            {
-              transaction: {
-                kind: 'capture',
-                status: 'success',
-                amount: order.total_price,
-                currency: order.currency,
-                gateway: 'manual',
+          // For manual/COD orders, try creating a "sale" transaction
+          // This is for orders where payment is collected outside Shopify
+          try {
+            await axios.post(
+              `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
+              {
+                transaction: {
+                  kind: 'sale',
+                  status: 'success',
+                  amount: order.total_price,
+                  currency: order.currency,
+                  gateway: 'Cash on Delivery (COD)',
+                  source_name: 'manual',
+                },
               },
-            },
-            {
-              headers: {
-                'X-Shopify-Access-Token': accessToken,
-                'Content-Type': 'application/json',
-              },
+              {
+                headers: {
+                  'X-Shopify-Access-Token': accessToken,
+                  'Content-Type': 'application/json',
+                },
+              }
+            );
+            paymentMarked = true;
+            console.log('Payment marked via sale transaction');
+          } catch (saleError: any) {
+            console.log('Sale transaction failed:', saleError.response?.data);
+            
+            // Last resort: Try marking paid via order update (some Shopify versions)
+            try {
+              await axios.put(
+                `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
+                {
+                  order: {
+                    id: orderId,
+                    financial_status: 'paid',
+                  },
+                },
+                {
+                  headers: {
+                    'X-Shopify-Access-Token': accessToken,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+              paymentMarked = true;
+              console.log('Payment marked via order update');
+            } catch (updateError: any) {
+              console.log('Direct order update failed:', updateError.response?.data);
+              // Continue without marking payment - Shopify doesn't allow it for this order type
             }
-          );
-          paymentMarked = true;
+          }
         }
       } catch (paymentError: any) {
-        console.log('Payment marking note:', paymentError.response?.data || paymentError.message);
+        console.log('Payment marking error:', paymentError.response?.data || paymentError.message);
         // If transaction creation fails, we'll still complete the order with tags
         // Some stores might have restrictions on manual transactions
       }
