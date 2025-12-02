@@ -122,7 +122,7 @@ export default function ContentFinderPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ productName }),
+        body: JSON.stringify({ type: 'creative_idea', productName }),
       });
 
       const data = await response.json();

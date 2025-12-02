@@ -397,6 +397,8 @@ export const generateContent = async (
     let prompt = '';
     let systemPrompt = 'You are a creative content strategist for e-commerce.';
 
+    let isStructured = false;
+    
     switch (type) {
       case 'hook':
         prompt = `Generate 5 attention-grabbing hooks for ${productName ? `the product "${productName}"` : `the ${niche || 'general'} niche`}. Return them as a numbered list.`;
@@ -408,13 +410,45 @@ export const generateContent = async (
         prompt = `Write a 30-second video script for ${productName ? `promoting "${productName}"` : `a ${niche || 'general'} product`}. Include hook, main content, and call-to-action.`;
         break;
       case 'creative_idea':
-        prompt = `Generate 5 creative ad campaign ideas for ${productName ? `"${productName}"` : `the ${niche || 'general'} niche`}. Return them as a numbered list with brief descriptions.`;
+        isStructured = true;
+        const productContext = productName ? `the product "${productName}"` : `the ${niche || 'general'} niche`;
+        prompt = `Generate creative content for ${productContext}. Return a JSON object with these arrays:
+- adConcepts: 5 creative ad campaign ideas with brief descriptions
+- scripts: 3 short video scripts (30 seconds each) with hook, content, and CTA
+- ugcIdeas: 3 user-generated content ideas that customers could create
+- headlines: 5 catchy headlines/hooks for ads
+
+Return ONLY valid JSON, no explanations or markdown. Example format:
+{"adConcepts":["idea1","idea2"],"scripts":["script1","script2"],"ugcIdeas":["ugc1","ugc2"],"headlines":["h1","h2"]}`;
         break;
       default:
         prompt = `Generate marketing content for ${productName || niche || 'e-commerce'}.`;
     }
 
     const response = await generateAIResponse(prompt, systemPrompt);
+
+    if (isStructured) {
+      // Parse JSON response for structured content
+      let ideas;
+      try {
+        // Try to extract JSON from the response
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          ideas = JSON.parse(jsonMatch[0]);
+        } else {
+          ideas = JSON.parse(response);
+        }
+      } catch {
+        // Fallback: create structured response from plain text
+        ideas = {
+          adConcepts: [response],
+          scripts: [],
+          ugcIdeas: [],
+          headlines: [],
+        };
+      }
+      return res.json({ success: true, ideas, type });
+    }
 
     res.json({ success: true, content: response, type });
   } catch (error) {
