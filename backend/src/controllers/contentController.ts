@@ -412,14 +412,15 @@ export const generateContent = async (
       case 'creative_idea':
         isStructured = true;
         const productContext = productName ? `the product "${productName}"` : `the ${niche || 'general'} niche`;
-        prompt = `Generate creative content for ${productContext}. Return a JSON object with these arrays:
-- adConcepts: 5 creative ad campaign ideas with brief descriptions
-- scripts: 3 short video scripts (30 seconds each) with hook, content, and CTA
-- ugcIdeas: 3 user-generated content ideas that customers could create
-- headlines: 5 catchy headlines/hooks for ads
+        prompt = `Generate creative content for ${productContext}. Return a JSON object with these arrays of STRINGS ONLY (no nested objects):
+- adConcepts: 5 creative ad campaign ideas as plain text strings
+- scripts: 3 short video scripts as plain text strings (each script should be a single string containing hook, content, and CTA)
+- ugcIdeas: 3 user-generated content ideas as plain text strings
+- headlines: 5 catchy headlines/hooks as plain text strings
 
-Return ONLY valid JSON, no explanations or markdown. Example format:
-{"adConcepts":["idea1","idea2"],"scripts":["script1","script2"],"ugcIdeas":["ugc1","ugc2"],"headlines":["h1","h2"]}`;
+IMPORTANT: Each array must contain ONLY plain text strings, NOT objects.
+Return ONLY valid JSON, no explanations or markdown.
+Example: {"adConcepts":["Create a viral unboxing video showcasing...","Launch a before/after transformation campaign..."],"scripts":["Hook: Stop scrolling! Content: This product changed my life... CTA: Click the link below!"],"ugcIdeas":["Ask customers to share their experience..."],"headlines":["This Changes Everything","You Won't Believe..."]}`;
         break;
       default:
         prompt = `Generate marketing content for ${productName || niche || 'e-commerce'}.`;
@@ -447,6 +448,30 @@ Return ONLY valid JSON, no explanations or markdown. Example format:
           headlines: [],
         };
       }
+      
+      // Sanitize: Convert any objects in arrays to strings
+      const sanitizeArray = (arr: any[]): string[] => {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(item => {
+          if (typeof item === 'string') return item;
+          if (typeof item === 'object' && item !== null) {
+            // Convert object to readable string
+            if (item.hook || item.content || item.CTA) {
+              return `Hook: ${item.hook || ''}\nContent: ${item.content || ''}\nCTA: ${item.CTA || ''}`.trim();
+            }
+            return Object.values(item).join(' - ');
+          }
+          return String(item);
+        });
+      };
+      
+      ideas = {
+        adConcepts: sanitizeArray(ideas.adConcepts),
+        scripts: sanitizeArray(ideas.scripts),
+        ugcIdeas: sanitizeArray(ideas.ugcIdeas),
+        headlines: sanitizeArray(ideas.headlines),
+      };
+      
       return res.json({ success: true, ideas, type });
     }
 
