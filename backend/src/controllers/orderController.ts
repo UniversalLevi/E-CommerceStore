@@ -1075,13 +1075,87 @@ export const markOrderCompleted = async (
       throw createError('Order not found', 404);
     }
 
-    // Build completion note
     const timestamp = new Date().toISOString();
     const completedBy = req.user.email || 'Admin';
+    let paymentMarked = false;
+
+    // If payment should be marked and order is not already paid
+    if (paymentReceived && order.financial_status !== 'paid') {
+      try {
+        // Create a transaction to mark the order as paid
+        // First, check if there's an existing authorization to capture
+        const transactionsResponse = await axios.get(
+          `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
+          {
+            headers: {
+              'X-Shopify-Access-Token': accessToken,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        const transactions = transactionsResponse.data.transactions || [];
+        const authTransaction = transactions.find(
+          (t: any) => t.kind === 'authorization' && t.status === 'success'
+        );
+
+        if (authTransaction) {
+          // Capture the existing authorization
+          await axios.post(
+            `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
+            {
+              transaction: {
+                kind: 'capture',
+                parent_id: authTransaction.id,
+                amount: order.total_price,
+                currency: order.currency,
+              },
+            },
+            {
+              headers: {
+                'X-Shopify-Access-Token': accessToken,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          paymentMarked = true;
+        } else {
+          // Create a manual payment transaction (for cash/manual payments)
+          // This marks the order as paid
+          await axios.post(
+            `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
+            {
+              transaction: {
+                kind: 'capture',
+                status: 'success',
+                amount: order.total_price,
+                currency: order.currency,
+                gateway: 'manual',
+              },
+            },
+            {
+              headers: {
+                'X-Shopify-Access-Token': accessToken,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          paymentMarked = true;
+        }
+      } catch (paymentError: any) {
+        console.log('Payment marking note:', paymentError.response?.data || paymentError.message);
+        // If transaction creation fails, we'll still complete the order with tags
+        // Some stores might have restrictions on manual transactions
+      }
+    } else if (order.financial_status === 'paid') {
+      paymentMarked = true; // Already paid
+    }
+
+    // Build completion note
     const completionNote = [
       order.note || '',
       `\n[COMPLETED - ${timestamp}]`,
-      paymentReceived ? 'Payment received and verified.' : '',
+      paymentMarked ? 'Payment received and verified.' : (paymentReceived ? 'Payment marked (manual).' : ''),
       note ? `Note: ${note}` : '',
       `Marked by: ${completedBy}`,
     ].filter(Boolean).join('\n');
@@ -1091,6 +1165,7 @@ export const markOrderCompleted = async (
     const newTags = [...new Set([
       ...existingTags,
       'completed',
+      paymentMarked ? 'paid' : '',
       paymentReceived ? 'payment-received' : '',
     ].filter(Boolean))].join(', ');
 
@@ -1136,6 +1211,8 @@ export const markOrderCompleted = async (
         totalPrice: order.total_price,
         currency: order.currency,
         paymentReceived,
+        paymentMarked,
+        previousFinancialStatus: order.financial_status,
         note,
         completedBy,
       },
@@ -1144,11 +1221,14 @@ export const markOrderCompleted = async (
 
     res.json({
       success: true,
-      message: 'Order marked as completed successfully',
+      message: paymentMarked 
+        ? 'Order marked as completed and paid successfully' 
+        : 'Order marked as completed (payment status unchanged)',
       data: {
         order: closeResponse.data.order ? transformOrder(closeResponse.data.order) : null,
         completedAt: timestamp,
         paymentReceived,
+        paymentMarked,
       },
     });
   } catch (error: any) {

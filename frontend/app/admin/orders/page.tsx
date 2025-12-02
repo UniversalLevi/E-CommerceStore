@@ -333,11 +333,20 @@ export default function AdminOrdersPage() {
     
     try {
       setActionLoading(true);
-      await api.post(`/api/orders/${order.storeId}/${order.id}/complete`, {
+      const response = await api.post<{ 
+        success: boolean; 
+        message: string; 
+        data: { paymentMarked: boolean } 
+      }>(`/api/orders/${order.storeId}/${order.id}/complete`, {
         paymentReceived: true,
         note: 'Marked as completed by admin',
       });
-      notify.success('Order marked as completed & paid!');
+      
+      if (response.data?.paymentMarked) {
+        notify.success('Order marked as completed & paid! Revenue updated.');
+      } else {
+        notify.success(response.message || 'Order marked as completed');
+      }
       await fetchAllOrders();
       setSelectedOrder(null);
     } catch (error: any) {
