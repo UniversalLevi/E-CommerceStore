@@ -108,7 +108,7 @@ export default function FindWinningProductModal({
     try {
       // Check subscription status and product credits
       const [planResponse, storesResponse] = await Promise.all([
-        api.getCurrentPlan().catch(() => ({ data: { plan: null, productsAdded: 0, productLimit: 0 } })),
+        api.getCurrentPlan().catch(() => ({ data: { plan: null, productsAdded: 0, maxProducts: 0 } })),
         api.get<{ success: boolean; data: any[] }>('/api/stores').catch(() => ({ data: [] })),
       ]);
 
@@ -117,7 +117,9 @@ export default function FindWinningProductModal({
 
       // Check if user has active plan and credits
       const hasActivePlan = planData.plan && planData.plan !== 'free';
-      const hasCredits = hasActivePlan && planData.productsAdded < planData.productLimit;
+      // maxProducts = null means unlimited, so always has credits
+      const maxProducts = planData.maxProducts;
+      const hasCredits = hasActivePlan && (maxProducts === null || planData.productsAdded < maxProducts);
 
       if (!hasActivePlan) {
         notify.error('Please subscribe to a plan to add products to your store');
@@ -127,7 +129,7 @@ export default function FindWinningProductModal({
       }
 
       if (!hasCredits) {
-        notify.error('You have reached your product limit. Please upgrade your plan.');
+        notify.error(`You have reached your product limit (${maxProducts}). Please upgrade your plan.`);
         router.push('/dashboard/billing');
         onClose();
         return;

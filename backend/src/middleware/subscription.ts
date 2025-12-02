@@ -90,6 +90,11 @@ export function checkProductLimit(req: AuthRequest, res: Response, next: NextFun
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  // Admins bypass product limits
+  if (user.role === 'admin') {
+    return next();
+  }
+
   const canAdd = canAddProduct(user);
   if (!canAdd.allowed) {
     return res.status(403).json({ 
