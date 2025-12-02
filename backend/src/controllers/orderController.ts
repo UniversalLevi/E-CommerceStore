@@ -1141,7 +1141,7 @@ export const markOrderCompleted = async (
           // Fallback: Try REST API with transaction
           try {
             const transactionsResponse = await axios.get(
-              `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
+              `https://${store!.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
               {
                 headers: {
                   'X-Shopify-Access-Token': accessToken,
@@ -1158,7 +1158,7 @@ export const markOrderCompleted = async (
             if (authTransaction) {
               // Capture existing authorization
               await axios.post(
-                `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
+                `https://${store!.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
                 {
                   transaction: {
                     kind: 'capture',
