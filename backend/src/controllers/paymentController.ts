@@ -4,6 +4,9 @@ import { AuthRequest } from '../middleware/auth';
 import { User, getSubscriptionStatus } from '../models/User';
 import { Payment } from '../models/Payment';
 import { Subscription } from '../models/Subscription';
+import { Wallet } from '../models/Wallet';
+import { WalletTransaction } from '../models/WalletTransaction';
+import { Order } from '../models/Order';
 import { razorpayService } from '../services/RazorpayService';
 import { plans, isValidPlanCode, PlanCode } from '../config/plans';
 import { createError } from '../middleware/errorHandler';
@@ -343,6 +346,16 @@ export const handleWebhook = async (
       const payment = payload.payment.entity;
       const order = payload.order.entity;
 
+      // Check if this is a wallet topup (receipt starts with 'wtp_')
+      const isWalletTopup = order.receipt && order.receipt.startsWith('wtp_');
+
+      if (isWalletTopup) {
+        // Handle wallet topup via webhook
+        await handleWalletTopupWebhook(payment, order);
+        res.status(200).json({ success: true, message: 'Wallet topup processed' });
+        return;
+      }
+
       // Replay Protection: Check if paymentId already exists
       const existingPayment = await Payment.findOne({ paymentId: payment.id });
       if (existingPayment && existingPayment.status === 'paid') {
@@ -638,4 +651,136 @@ export const getCurrentPlan = async (
     next(error);
   }
 };
+
+/**
+ * Handle wallet topup via webhook
+ * This is called when a payment.captured event is received for a wallet topup
+ */
+async function handleWalletTopupWebhook(payment: any, order: any): Promise<void> {
+  try {
+    // Extract userId from receipt: wtp_<userId_last12>_<timestamp>
+    const receipt = order.receipt;
+    const paymentId = payment.id;
+    const amount = order.amount; // in paise
+
+    // Check idempotency - prevent double-credit
+    const existingTx = await WalletTransaction.findOne({ referenceId: paymentId });
+    if (existingTx) {
+      console.log('Wallet topup already processed for payment:', paymentId);
+      return;
+    }
+
+    // Find the user's wallet - we need to find the wallet that was used to create this order
+    // Since we store receipt as wtp_<userId_last12>_<timestamp>, we need to find wallet by partial match
+    const userIdPartial = receipt.split('_')[1]; // Get the userId portion
+    
+    // Find wallets and match by last 12 chars of userId
+    const wallets = await Wallet.find({}).populate('userId', '_id');
+    let targetWallet = null;
+    
+    for (const wallet of wallets) {
+      const walletUserId = (wallet.userId as any)._id?.toString() || wallet.userId.toString();
+      if (walletUserId.slice(-12) === userIdPartial) {
+        targetWallet = wallet;
+        break;
+      }
+    }
+
+    if (!targetWallet) {
+      console.error('Wallet not found for receipt:', receipt);
+      return;
+    }
+
+    const userId = targetWallet.userId;
+    const balanceBefore = targetWallet.balance;
+    const balanceAfter = balanceBefore + amount;
+
+    // Update wallet balance atomically
+    await Wallet.findByIdAndUpdate(
+      targetWallet._id,
+      { $inc: { balance: amount } },
+      { new: true }
+    );
+
+    // Create transaction record
+    await WalletTransaction.create({
+      walletId: targetWallet._id,
+      userId,
+      amount,
+      type: 'credit',
+      reason: 'Topup - Razorpay',
+      referenceId: paymentId,
+      balanceBefore,
+      balanceAfter,
+      metadata: {
+        razorpayOrderId: order.id,
+        razorpayPaymentId: paymentId,
+        source: 'webhook',
+      },
+    });
+
+    // Create notification for user
+    await createNotification({
+      userId,
+      type: 'system_update',
+      title: 'Wallet Topped Up',
+      message: `₹${(amount / 100).toLocaleString('en-IN')} has been added to your wallet.`,
+      link: '/dashboard/wallet',
+      metadata: {
+        amount,
+        paymentId,
+      },
+    });
+
+    // Auto-resume awaiting orders
+    await autoResumeAwaitingOrders(userId, balanceAfter);
+
+    console.log('Wallet topup processed via webhook:', {
+      userId: userId.toString(),
+      amount,
+      newBalance: balanceAfter,
+    });
+  } catch (error) {
+    console.error('Error processing wallet topup webhook:', error);
+    // Don't throw - we still want to return 200 to Razorpay
+  }
+}
+
+/**
+ * Auto-resume orders that are awaiting wallet balance
+ * Called after a successful wallet topup
+ */
+async function autoResumeAwaitingOrders(
+  userId: mongoose.Types.ObjectId,
+  currentBalance: number
+): Promise<void> {
+  try {
+    // Find orders that are awaiting wallet for this user
+    const awaitingOrders = await Order.find({
+      userId,
+      zenStatus: 'awaiting_wallet',
+    }).sort({ createdAt: 1 }); // Process oldest first
+
+    for (const order of awaitingOrders) {
+      const requiredAmount = order.productCost + order.shippingCost + order.serviceFee;
+
+      if (currentBalance >= requiredAmount) {
+        // We have enough balance - this will be processed by the fulfill-via-zen endpoint
+        // For now, just log that orders are ready to be resumed
+        console.log('Order ready to be auto-resumed:', {
+          orderId: order._id,
+          shopifyOrderName: order.shopifyOrderName,
+          requiredAmount,
+          currentBalance,
+        });
+
+        // Note: The actual fulfillment will be handled when user clicks fulfill button
+        // or through a separate auto-fulfill job. We don't auto-deduct here to avoid
+        // unintended charges - user should explicitly trigger fulfillment.
+      }
+    }
+  } catch (error) {
+    console.error('Error checking awaiting orders:', error);
+  }
+}
 

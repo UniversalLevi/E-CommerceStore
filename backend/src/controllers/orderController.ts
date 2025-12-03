@@ -1,10 +1,16 @@
 import { Response, NextFunction } from 'express';
 import axios from 'axios';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { StoreConnection } from '../models/StoreConnection';
 import { AuditLog } from '../models/AuditLog';
+import { Order, IOrder, ZenStatus } from '../models/Order';
+import { ZenOrder } from '../models/ZenOrder';
+import { Wallet } from '../models/Wallet';
+import { WalletTransaction } from '../models/WalletTransaction';
 import { decrypt } from '../utils/encryption';
 import { createError } from '../middleware/errorHandler';
+import { createNotification } from '../utils/notifications';
 
 interface ShopifyOrder {
   id: number;
@@ -1508,6 +1514,669 @@ export const addOrderNote = async (
     if (error.response?.data?.errors) {
       return next(createError(`Shopify error: ${JSON.stringify(error.response.data.errors)}`, 400));
     }
+    next(error);
+  }
+};
+
+/**
+ * Sync a Shopify order to local database
+ * This creates or updates a local Order record from Shopify data
+ */
+async function syncShopifyOrderToLocal(
+  shopifyOrder: ShopifyOrder,
+  storeConnection: any,
+  userId: mongoose.Types.ObjectId
+) {
+  // Convert Shopify price strings to paise (multiply by 100)
+  const toPaise = (priceStr: string): number => Math.round(parseFloat(priceStr || '0') * 100);
+
+  const orderData = {
+    shopifyOrderId: shopifyOrder.id,
+    shopifyOrderName: shopifyOrder.name,
+    shopifyOrderNumber: shopifyOrder.order_number,
+    storeConnectionId: storeConnection._id,
+    userId,
+    customer: {
+      shopifyCustomerId: shopifyOrder.customer?.id || null,
+      email: shopifyOrder.customer?.email || shopifyOrder.email || '',
+      firstName: shopifyOrder.customer?.first_name || '',
+      lastName: shopifyOrder.customer?.last_name || '',
+      phone: '',
+    },
+    email: shopifyOrder.email || '',
+    lineItems: shopifyOrder.line_items.map((item) => ({
+      shopifyLineItemId: item.id,
+      title: item.title,
+      quantity: item.quantity,
+      price: toPaise(item.price),
+      variantTitle: item.variant_title || '',
+      sku: item.sku || '',
+      productId: null,
+      variantId: null,
+    })),
+    shippingAddress: shopifyOrder.shipping_address
+      ? {
+          firstName: '',
+          lastName: '',
+          address1: shopifyOrder.shipping_address.address1 || '',
+          address2: '',
+          city: shopifyOrder.shipping_address.city || '',
+          province: shopifyOrder.shipping_address.province || '',
+          provinceCode: '',
+          country: shopifyOrder.shipping_address.country || '',
+          countryCode: '',
+          zip: shopifyOrder.shipping_address.zip || '',
+          phone: '',
+        }
+      : null,
+    currency: shopifyOrder.currency || 'INR',
+    totalPrice: toPaise(shopifyOrder.total_price),
+    subtotalPrice: toPaise(shopifyOrder.subtotal_price),
+    totalTax: toPaise(shopifyOrder.total_tax),
+    totalShipping: 0,
+    financialStatus: shopifyOrder.financial_status || 'pending',
+    fulfillmentStatus: shopifyOrder.fulfillment_status,
+    shopifyCreatedAt: new Date(shopifyOrder.created_at),
+    shopifyUpdatedAt: new Date(shopifyOrder.updated_at),
+  };
+
+  // Upsert the order
+  const order = await Order.findOneAndUpdate(
+    { storeConnectionId: storeConnection._id, shopifyOrderId: shopifyOrder.id },
+    { $set: orderData },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  return order;
+}
+
+/**
+ * Sync order and get local record
+ * GET /api/orders/:storeId/:orderId/sync
+ */
+export const syncAndGetOrder = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { storeId, orderId } = req.params;
+    const userId = (req.user as any)._id;
+
+    // Get store connection
+    const store = await StoreConnection.findById(storeId);
+    if (!store) {
+      throw createError('Store not found', 404);
+    }
+
+    // Check ownership or admin
+    const isOwner = store.owner.toString() === userId.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw createError('You do not have access to this store', 403);
+    }
+
+    // Decrypt access token
+    const accessToken = decrypt(store.accessToken);
+    const apiVersion = store.apiVersion || '2024-01';
+
+    // Fetch order from Shopify
+    const response = await axios.get(
+      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      }
+    );
+
+    const shopifyOrder = response.data.order;
+    if (!shopifyOrder) {
+      throw createError('Order not found', 404);
+    }
+
+    // Sync to local database
+    const localOrder = await syncShopifyOrderToLocal(shopifyOrder, store, userId);
+
+    res.json({
+      success: true,
+      data: {
+        localOrder: {
+          id: localOrder._id,
+          shopifyOrderId: localOrder.shopifyOrderId,
+          shopifyOrderName: localOrder.shopifyOrderName,
+          zenStatus: localOrder.zenStatus,
+          productCost: localOrder.productCost,
+          shippingCost: localOrder.shippingCost,
+          walletChargeAmount: localOrder.walletChargeAmount,
+          totalPrice: localOrder.totalPrice,
+          currency: localOrder.currency,
+        },
+        shopifyOrder: transformOrder(shopifyOrder),
+      },
+    });
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      return next(createError('Order not found', 404));
+    }
+    next(error);
+  }
+};
+
+/**
+ * Set product and shipping costs for an order
+ * PUT /api/orders/:storeId/:orderId/costs
+ */
+export const setOrderCosts = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { storeId, orderId } = req.params;
+    const { productCost, shippingCost, serviceFee } = req.body;
+    const userId = (req.user as any)._id;
+
+    // Validate costs (in paise)
+    if (productCost !== undefined && (typeof productCost !== 'number' || productCost < 0)) {
+      throw createError('Product cost must be a non-negative number', 400);
+    }
+    if (shippingCost !== undefined && (typeof shippingCost !== 'number' || shippingCost < 0)) {
+      throw createError('Shipping cost must be a non-negative number', 400);
+    }
+    if (serviceFee !== undefined && (typeof serviceFee !== 'number' || serviceFee < 0)) {
+      throw createError('Service fee must be a non-negative number', 400);
+    }
+
+    // Get store connection
+    const store = await StoreConnection.findById(storeId);
+    if (!store) {
+      throw createError('Store not found', 404);
+    }
+
+    // Check ownership or admin
+    const isOwner = store.owner.toString() === userId.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw createError('You do not have access to this store', 403);
+    }
+
+    // Find or sync the local order
+    let localOrder = await Order.findOne({
+      storeConnectionId: storeId,
+      shopifyOrderId: parseInt(orderId),
+    });
+
+    if (!localOrder) {
+      // Fetch from Shopify and sync
+      const accessToken = decrypt(store.accessToken);
+      const apiVersion = store.apiVersion || '2024-01';
+
+      const response = await axios.get(
+        `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.data.order) {
+        throw createError('Order not found', 404);
+      }
+
+      const syncedOrder = await syncShopifyOrderToLocal(response.data.order, store, userId);
+      if (!syncedOrder) {
+        throw createError('Failed to sync order', 500);
+      }
+      localOrder = syncedOrder;
+    }
+
+    // Check if order can be modified
+    if (localOrder!.zenStatus !== 'shopify' && localOrder!.zenStatus !== 'awaiting_wallet') {
+      throw createError('Order costs cannot be modified once fulfillment has started', 400);
+    }
+
+    const order = localOrder!;
+
+    // Update costs
+    if (productCost !== undefined) order.productCost = productCost;
+    if (shippingCost !== undefined) order.shippingCost = shippingCost;
+    if (serviceFee !== undefined) order.serviceFee = serviceFee;
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: 'Order costs updated',
+      data: {
+        id: order._id,
+        shopifyOrderId: order.shopifyOrderId,
+        productCost: order.productCost,
+        shippingCost: order.shippingCost,
+        serviceFee: order.serviceFee,
+        totalRequired: order.productCost + order.shippingCost + order.serviceFee,
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Fulfill order via ZEN (deduct from wallet)
+ * POST /api/orders/:storeId/:orderId/fulfill-via-zen
+ */
+export const fulfillViaZen = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { storeId, orderId } = req.params;
+    const { productCost, shippingCost, serviceFee = 0 } = req.body;
+    const userId = (req.user as any)._id;
+
+    // Get store connection
+    const store = await StoreConnection.findById(storeId);
+    if (!store) {
+      throw createError('Store not found', 404);
+    }
+
+    // Check ownership or admin
+    const isOwner = store.owner.toString() === userId.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw createError('You do not have access to this store', 403);
+    }
+
+    // Get or create wallet
+    let wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      wallet = await Wallet.create({ userId });
+    }
+
+    // Find or sync the local order
+    let localOrder = await Order.findOne({
+      storeConnectionId: storeId,
+      shopifyOrderId: parseInt(orderId),
+    });
+
+    if (!localOrder) {
+      // Fetch from Shopify and sync
+      const accessToken = decrypt(store.accessToken);
+      const apiVersion = store.apiVersion || '2024-01';
+
+      const response = await axios.get(
+        `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
+        {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.data.order) {
+        throw createError('Order not found', 404);
+      }
+
+      const syncedOrder = await syncShopifyOrderToLocal(response.data.order, store, userId);
+      if (!syncedOrder) {
+        throw createError('Failed to sync order', 500);
+      }
+      localOrder = syncedOrder;
+    }
+
+    // TypeScript assertion - we've handled the null case above
+    const order = localOrder!;
+
+    // Check if already processed
+    if (order.zenStatus !== 'shopify' && order.zenStatus !== 'awaiting_wallet') {
+      throw createError('Order has already been processed via ZEN', 400);
+    }
+
+    // Set costs if provided
+    if (productCost !== undefined) order.productCost = productCost;
+    if (shippingCost !== undefined) order.shippingCost = shippingCost;
+    if (serviceFee !== undefined) order.serviceFee = serviceFee;
+
+    const requiredAmount = order.productCost + order.shippingCost + order.serviceFee;
+
+    if (requiredAmount <= 0) {
+      throw createError('Product cost and shipping cost must be set before fulfilling', 400);
+    }
+
+    // Check if already fulfilled via ZEN (idempotency)
+    const existingZenOrder = await ZenOrder.findOne({ orderId: order._id });
+    if (existingZenOrder) {
+      const walletNow = await Wallet.findOne({ userId });
+      return res.json({
+        success: true,
+        message: 'Order already submitted for ZEN fulfillment',
+        data: {
+          orderId: order._id,
+          zenOrderId: existingZenOrder._id,
+          zenStatus: order.zenStatus,
+          walletDeducted: existingZenOrder.walletDeductedAmount,
+          walletDeductedFormatted: `₹${(existingZenOrder.walletDeductedAmount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          newBalance: walletNow?.balance || 0,
+          newBalanceFormatted: `₹${((walletNow?.balance || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+        },
+      });
+    }
+
+    // Get current wallet balance
+    const currentWallet = await Wallet.findOne({ userId });
+    if (!currentWallet) {
+      throw createError('Wallet not found', 404);
+    }
+
+    // Check balance
+    if (currentWallet.balance < requiredAmount) {
+      // Insufficient balance - mark as awaiting
+      order.zenStatus = 'awaiting_wallet';
+      order.walletShortage = requiredAmount - currentWallet.balance;
+      await order.save();
+
+      return res.status(402).json({
+        success: false,
+        reason: 'insufficient_balance',
+        data: {
+          currentBalance: currentWallet.balance,
+          currentBalanceFormatted: `₹${(currentWallet.balance / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          requiredAmount,
+          requiredAmountFormatted: `₹${(requiredAmount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          shortage: requiredAmount - currentWallet.balance,
+          shortageFormatted: `₹${((requiredAmount - currentWallet.balance) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          orderId: order._id,
+          zenStatus: order.zenStatus,
+        },
+      });
+    }
+
+    // Create unique reference ID for idempotency
+    const referenceId = `zen_${order._id}`;
+
+    // Check if wallet transaction already exists (idempotency)
+    const existingWalletTx = await WalletTransaction.findOne({ referenceId });
+    if (existingWalletTx) {
+      // Already processed, just return the existing data
+      const zenOrderExisting = await ZenOrder.findOne({ orderId: order._id });
+      const walletNow = await Wallet.findOne({ userId });
+      return res.json({
+        success: true,
+        message: 'Order already submitted for ZEN fulfillment',
+        data: {
+          orderId: order._id,
+          zenOrderId: zenOrderExisting?._id,
+          zenStatus: order.zenStatus,
+          walletDeducted: existingWalletTx.amount,
+          walletDeductedFormatted: `₹${(existingWalletTx.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          newBalance: walletNow?.balance || 0,
+          newBalanceFormatted: `₹${((walletNow?.balance || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+        },
+      });
+    }
+
+    // Atomically deduct wallet balance - only succeeds if balance >= requiredAmount
+    const balanceBefore = currentWallet.balance;
+    const balanceAfter = balanceBefore - requiredAmount;
+
+    const deductResult = await Wallet.findOneAndUpdate(
+      { userId, balance: { $gte: requiredAmount } },
+      { $inc: { balance: -requiredAmount } },
+      { new: true }
+    );
+
+    if (!deductResult) {
+      // Race condition - balance was reduced by another request
+      const updatedWallet = await Wallet.findOne({ userId });
+      order.zenStatus = 'awaiting_wallet';
+      order.walletShortage = requiredAmount - (updatedWallet?.balance || 0);
+      await order.save();
+
+      return res.status(402).json({
+        success: false,
+        reason: 'insufficient_balance',
+        data: {
+          currentBalance: updatedWallet?.balance || 0,
+          currentBalanceFormatted: `₹${((updatedWallet?.balance || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          requiredAmount,
+          requiredAmountFormatted: `₹${(requiredAmount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          shortage: requiredAmount - (updatedWallet?.balance || 0),
+          shortageFormatted: `₹${((requiredAmount - (updatedWallet?.balance || 0)) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          orderId: order._id,
+          zenStatus: order.zenStatus,
+        },
+      });
+    }
+
+    // Create wallet transaction
+    const walletTransaction = await WalletTransaction.create({
+      walletId: currentWallet._id,
+      userId,
+      orderId: order._id,
+      amount: requiredAmount,
+      type: 'debit',
+      reason: 'Order deduction',
+      referenceId,
+      balanceBefore,
+      balanceAfter,
+      metadata: {
+        shopifyOrderId: order.shopifyOrderId,
+        shopifyOrderName: order.shopifyOrderName,
+        productCost: order.productCost,
+        shippingCost: order.shippingCost,
+        serviceFee: order.serviceFee,
+      },
+    });
+
+    // Update order
+    order.zenStatus = 'ready_for_fulfillment';
+    order.walletChargeAmount = requiredAmount;
+    order.walletChargedAt = new Date();
+    order.walletTransactionId = walletTransaction._id as mongoose.Types.ObjectId;
+    order.walletShortage = 0;
+    await order.save();
+
+    // Create ZEN order for ops
+    const zenOrder = await ZenOrder.create({
+      orderId: order._id,
+      userId,
+      storeConnectionId: store._id,
+      shopifyOrderName: order.shopifyOrderName,
+      storeName: store.storeName,
+      customerName: `${order.customer.firstName} ${order.customer.lastName}`.trim() || 'Guest',
+      customerEmail: order.email,
+      customerPhone: order.shippingAddress?.phone || '',
+      shippingAddress: order.shippingAddress
+        ? [
+            order.shippingAddress.address1,
+            order.shippingAddress.address2,
+            order.shippingAddress.city,
+            order.shippingAddress.province,
+            order.shippingAddress.zip,
+            order.shippingAddress.country,
+          ]
+            .filter(Boolean)
+            .join(', ')
+        : '',
+      sku: order.lineItems.map((li) => li.sku).filter(Boolean).join(', ') || 'N/A',
+      variants: order.lineItems.map((li) => ({
+        title: li.title,
+        sku: li.sku,
+        quantity: li.quantity,
+        price: li.price,
+      })),
+      itemCount: order.lineItems.reduce((sum, li) => sum + li.quantity, 0),
+      orderValue: order.totalPrice,
+      productCost: order.productCost,
+      shippingCost: order.shippingCost,
+      serviceFee: order.serviceFee,
+      walletDeductedAmount: requiredAmount,
+      status: 'pending',
+      walletDeductedAt: new Date(),
+      statusHistory: [
+        {
+          status: 'pending',
+          changedBy: userId,
+          changedAt: new Date(),
+          note: 'Order created via ZEN fulfillment',
+        },
+      ],
+    });
+
+    // Update local order with zen order reference
+    order.metadata = { ...order.metadata, zenOrderId: zenOrder._id };
+    await order.save();
+
+    // Update wallet transaction with zen order reference
+    walletTransaction.zenOrderId = zenOrder._id as mongoose.Types.ObjectId;
+    await walletTransaction.save();
+
+    // Create notification
+    await createNotification({
+      userId,
+      type: 'system_update',
+      title: 'Order Submitted for Fulfillment',
+      message: `Order ${order.shopifyOrderName} has been submitted for ZEN fulfillment. ₹${(requiredAmount / 100).toLocaleString('en-IN')} deducted from wallet.`,
+      link: '/dashboard/orders',
+      metadata: {
+        orderId: order._id,
+        zenOrderId: zenOrder._id,
+        amount: requiredAmount,
+      },
+    });
+
+    // Audit log
+    await AuditLog.create({
+      userId,
+      storeId: store._id,
+      action: 'ORDER_FULFILL_VIA_ZEN',
+      success: true,
+      details: {
+        orderId: order._id,
+        shopifyOrderId: order.shopifyOrderId,
+        zenOrderId: zenOrder._id,
+        walletDeducted: requiredAmount,
+        newBalance: balanceAfter,
+      },
+      ipAddress: req.ip,
+    });
+
+    res.json({
+      success: true,
+      message: 'Order submitted for ZEN fulfillment',
+      data: {
+        orderId: order._id,
+        zenOrderId: zenOrder._id,
+        zenStatus: order.zenStatus,
+        walletDeducted: requiredAmount,
+        walletDeductedFormatted: `₹${(requiredAmount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+        newBalance: balanceAfter,
+        newBalanceFormatted: `₹${(balanceAfter / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get local order with ZEN status
+ * GET /api/orders/:storeId/:orderId/zen-status
+ */
+export const getOrderZenStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { storeId, orderId } = req.params;
+    const userId = (req.user as any)._id;
+
+    // Get store connection
+    const store = await StoreConnection.findById(storeId);
+    if (!store) {
+      throw createError('Store not found', 404);
+    }
+
+    // Check ownership or admin
+    const isOwner = store.owner.toString() === userId.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      throw createError('You do not have access to this store', 403);
+    }
+
+    // Find local order
+    const localOrder = await Order.findOne({
+      storeConnectionId: storeId,
+      shopifyOrderId: parseInt(orderId),
+    }).populate('walletTransactionId');
+
+    if (!localOrder) {
+      return res.json({
+        success: true,
+        data: {
+          hasLocalOrder: false,
+          zenStatus: 'shopify',
+        },
+      });
+    }
+
+    // Get zen order if exists
+    const zenOrder = await ZenOrder.findOne({ orderId: localOrder._id });
+
+    res.json({
+      success: true,
+      data: {
+        hasLocalOrder: true,
+        orderId: localOrder._id,
+        shopifyOrderId: localOrder.shopifyOrderId,
+        zenStatus: localOrder.zenStatus,
+        productCost: localOrder.productCost,
+        shippingCost: localOrder.shippingCost,
+        serviceFee: localOrder.serviceFee,
+        requiredAmount: localOrder.productCost + localOrder.shippingCost + localOrder.serviceFee,
+        walletChargeAmount: localOrder.walletChargeAmount,
+        walletChargedAt: localOrder.walletChargedAt,
+        walletShortage: localOrder.walletShortage,
+        zenOrder: zenOrder
+          ? {
+              id: zenOrder._id,
+              status: zenOrder.status,
+              trackingNumber: zenOrder.trackingNumber,
+              courierProvider: zenOrder.courierProvider,
+              createdAt: zenOrder.createdAt,
+            }
+          : null,
+      },
+    });
+  } catch (error) {
     next(error);
   }
 };

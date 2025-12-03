@@ -13,6 +13,10 @@ import {
   addOrderNote,
   markOrderCompleted,
   reopenOrder,
+  syncAndGetOrder,
+  setOrderCosts,
+  fulfillViaZen,
+  getOrderZenStatus,
 } from '../controllers/orderController';
 
 const router = Router();
@@ -106,6 +110,42 @@ router.post(
   authenticateToken,
   requirePaidPlan,
   reopenOrder
+);
+
+// ==========================================
+// ZEN Fulfillment Routes
+// ==========================================
+
+// Sync Shopify order to local database
+router.get(
+  '/:storeId/:orderId/sync',
+  authenticateToken,
+  requirePaidPlan,
+  syncAndGetOrder
+);
+
+// Set product and shipping costs
+router.put(
+  '/:storeId/:orderId/costs',
+  authenticateToken,
+  requirePaidPlan,
+  setOrderCosts
+);
+
+// Fulfill via ZEN (deduct from wallet)
+router.post(
+  '/:storeId/:orderId/fulfill-via-zen',
+  authenticateToken,
+  requirePaidPlan,
+  fulfillViaZen
+);
+
+// Get ZEN status for an order
+router.get(
+  '/:storeId/:orderId/zen-status',
+  authenticateToken,
+  requirePaidPlan,
+  getOrderZenStatus
 );
 
 export default router;

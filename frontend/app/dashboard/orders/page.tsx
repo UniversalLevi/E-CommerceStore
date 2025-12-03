@@ -32,7 +32,13 @@ import {
   Mail,
   CreditCard,
   ChevronRight,
+  Wallet,
+  Zap,
+  Plus,
+  AlertTriangle,
 } from 'lucide-react';
+import WalletWidget from '@/components/WalletWidget';
+import { openRazorpayCheckout } from '@/lib/razorpay';
 
 interface StoreConnection {
   _id: string;
@@ -177,6 +183,21 @@ export default function OrdersPage() {
     action: '',
     orderId: null,
   });
+  
+  // ZEN Fulfillment state
+  const [zenModalOpen, setZenModalOpen] = useState(false);
+  const [zenProductCost, setZenProductCost] = useState('');
+  const [zenShippingCost, setZenShippingCost] = useState('');
+  const [zenLoading, setZenLoading] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+  const [insufficientData, setInsufficientData] = useState<{
+    shortage: number;
+    shortageFormatted: string;
+    requiredAmount: number;
+    requiredAmountFormatted: string;
+  } | null>(null);
+  const [processedZenOrders, setProcessedZenOrders] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -287,6 +308,138 @@ export default function OrdersPage() {
       notify.error(error.response?.data?.error || 'Failed to fulfill order');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // Fetch wallet balance
+  const fetchWalletBalance = useCallback(async () => {
+    try {
+      const response = await api.getWallet();
+      if (response.success) {
+        setWalletBalance(response.data.balance);
+      }
+    } catch (error) {
+      console.error('Failed to fetch wallet:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchWalletBalance();
+    }
+  }, [isAuthenticated, fetchWalletBalance]);
+
+  // Handle ZEN Fulfillment
+  const handleFulfillViaZen = async (orderId: number) => {
+    const productCostPaise = Math.round(parseFloat(zenProductCost) * 100);
+    const shippingCostPaise = Math.round(parseFloat(zenShippingCost) * 100);
+
+    if (!productCostPaise || productCostPaise <= 0) {
+      notify.error('Please enter a valid product cost');
+      return;
+    }
+    if (!shippingCostPaise || shippingCostPaise < 0) {
+      notify.error('Please enter a valid shipping cost');
+      return;
+    }
+
+    try {
+      setZenLoading(true);
+      const response = await api.fulfillViaZen(selectedStore, orderId.toString(), {
+        productCost: productCostPaise,
+        shippingCost: shippingCostPaise,
+      });
+
+      if (response.success) {
+        notify.success(`Order submitted for ZEN fulfillment! ${response.data.walletDeductedFormatted} deducted.`);
+        // Track this order as processed
+        setProcessedZenOrders(prev => new Set([...prev, orderId]));
+        setZenModalOpen(false);
+        setZenProductCost('');
+        setZenShippingCost('');
+        await fetchOrders();
+        await fetchWalletBalance();
+        setSelectedOrder(null);
+      } else if (response.reason === 'insufficient_balance') {
+        // Show insufficient balance modal
+        setInsufficientData({
+          shortage: response.data.shortage || 0,
+          shortageFormatted: response.data.shortageFormatted || '₹0',
+          requiredAmount: response.data.requiredAmount || 0,
+          requiredAmountFormatted: response.data.requiredAmountFormatted || '₹0',
+        });
+        setShowInsufficientModal(true);
+      }
+    } catch (error: any) {
+      if (error.response?.status === 402 && error.response?.data?.reason === 'insufficient_balance') {
+        setInsufficientData({
+          shortage: error.response.data.data?.shortage || 0,
+          shortageFormatted: error.response.data.data?.shortageFormatted || '₹0',
+          requiredAmount: error.response.data.data?.requiredAmount || 0,
+          requiredAmountFormatted: error.response.data.data?.requiredAmountFormatted || '₹0',
+        });
+        setShowInsufficientModal(true);
+      } else if (error.response?.status === 400 && error.response?.data?.error?.includes('already been processed')) {
+        // Order was already processed via ZEN - show info message and close modal
+        notify.success('This order has already been submitted for ZEN fulfillment.');
+        // Track this order as processed
+        setProcessedZenOrders(prev => new Set([...prev, orderId]));
+        setZenModalOpen(false);
+        setZenProductCost('');
+        setZenShippingCost('');
+        setSelectedOrder(null);
+        await fetchOrders();
+      } else {
+        notify.error(error.response?.data?.error || 'Failed to submit for ZEN fulfillment');
+      }
+    } finally {
+      setZenLoading(false);
+    }
+  };
+
+  // Handle quick topup from insufficient balance modal
+  const handleQuickTopup = async (amount: number) => {
+    try {
+      const orderResponse = await api.createWalletTopupOrder(amount);
+      if (!orderResponse.success || !orderResponse.data) {
+        throw new Error('Failed to create topup order');
+      }
+
+      const { orderId, amount: orderAmount, currency, keyId } = orderResponse.data;
+
+      await openRazorpayCheckout(
+        {
+          key: keyId,
+          amount: orderAmount,
+          currency,
+          name: 'EAZY DROPSHIPPING',
+          description: 'Wallet Top-up',
+          order_id: orderId,
+          theme: { color: '#22c55e' },
+        },
+        async (response) => {
+          try {
+            const verifyResponse = await api.verifyWalletTopup({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            if (verifyResponse.success) {
+              notify.success(`${verifyResponse.data.amountFormatted} added to wallet!`);
+              await fetchWalletBalance();
+              setShowInsufficientModal(false);
+            }
+          } catch (err: any) {
+            notify.error(err?.message || 'Payment verification failed');
+          }
+        },
+        (error) => {
+          notify.error(error?.message || 'Payment cancelled');
+        }
+      );
+    } catch (error: any) {
+      notify.error(error?.message || 'Failed to initiate topup');
     }
   };
 
@@ -670,6 +823,111 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
+                {/* ZEN Fulfillment Section */}
+                {selectedOrder.fulfillmentStatus !== 'fulfilled' && !processedZenOrders.has(selectedOrder.id) && (
+                  <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/30 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-text-primary flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-violet-400" /> Fulfill via ZEN
+                      </h3>
+                      <span className="text-xs text-violet-400 bg-violet-500/20 px-2 py-1 rounded-full">
+                        Recommended
+                      </span>
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Let us handle fulfillment. Enter your costs and we'll deduct from your wallet.
+                    </p>
+                    
+                    {/* Wallet Balance Display */}
+                    <div className="flex items-center justify-between bg-surface-base rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-emerald-400" />
+                        <span className="text-sm text-text-secondary">Wallet Balance</span>
+                      </div>
+                      <span className="font-bold text-emerald-400">
+                        ₹{(walletBalance / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+
+                    {!zenModalOpen ? (
+                      <button
+                        onClick={() => setZenModalOpen(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-lg transition-all font-medium shadow-lg shadow-violet-500/25"
+                      >
+                        <Zap className="w-4 h-4" />
+                        Fulfill via ZEN
+                      </button>
+                    ) : (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs text-text-secondary mb-1">Product Cost (₹)</label>
+                          <input
+                            type="number"
+                            value={zenProductCost}
+                            onChange={(e) => setZenProductCost(e.target.value)}
+                            placeholder="e.g., 500"
+                            className="w-full px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-text-secondary mb-1">Shipping Cost (₹)</label>
+                          <input
+                            type="number"
+                            value={zenShippingCost}
+                            onChange={(e) => setZenShippingCost(e.target.value)}
+                            placeholder="e.g., 80"
+                            className="w-full px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500 text-sm"
+                          />
+                        </div>
+                        {zenProductCost && zenShippingCost && (
+                          <div className="flex items-center justify-between bg-violet-500/10 rounded-lg p-3">
+                            <span className="text-sm text-text-secondary">Total to deduct</span>
+                            <span className="font-bold text-violet-400">
+                              ₹{(parseFloat(zenProductCost || '0') + parseFloat(zenShippingCost || '0')).toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setZenModalOpen(false);
+                              setZenProductCost('');
+                              setZenShippingCost('');
+                            }}
+                            className="flex-1 px-4 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg hover:bg-surface-hover transition-colors text-sm"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleFulfillViaZen(selectedOrder.id)}
+                            disabled={zenLoading || !zenProductCost || !zenShippingCost}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50 text-sm"
+                          >
+                            {zenLoading ? 'Processing...' : 'Submit'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ZEN Processing Indicator - Show when order is being processed via ZEN */}
+                {selectedOrder.fulfillmentStatus !== 'fulfilled' && processedZenOrders.has(selectedOrder.id) && (
+                  <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/30 rounded-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-violet-500/20 rounded-lg">
+                        <Zap className="w-5 h-5 text-violet-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-violet-400">ZEN Fulfillment in Progress</h3>
+                        <p className="text-sm text-text-secondary">
+                          This order has been submitted for ZEN fulfillment. Our team will process it shortly.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Quick Actions */}
                 <div className="bg-surface-elevated rounded-xl p-4 space-y-3">
                   <h3 className="font-semibold text-text-primary flex items-center gap-2">
@@ -712,7 +970,7 @@ export default function OrdersPage() {
                         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
                       >
                         <Truck className="w-4 h-4" />
-                        {actionLoading ? 'Fulfilling...' : 'Mark as Fulfilled (Shipped)'}
+                        {actionLoading ? 'Fulfilling...' : 'Self-Fulfill (Mark as Shipped)'}
                       </button>
                     </div>
                   )}
@@ -834,6 +1092,74 @@ export default function OrdersPage() {
         onCancel={() => setConfirmModal({ isOpen: false, action: '', orderId: null })}
       />
 
+      {/* Insufficient Balance Modal */}
+      {showInsufficientModal && insufficientData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowInsufficientModal(false)} />
+          <div className="relative bg-surface-raised border border-border-default rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in">
+            <button
+              onClick={() => setShowInsufficientModal(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-surface-hover rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-text-secondary" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-500/20 rounded-full mb-4">
+                <AlertTriangle className="w-7 h-7 text-amber-400" />
+              </div>
+              <h2 className="text-xl font-bold text-text-primary">Insufficient Balance</h2>
+              <p className="text-text-secondary text-sm mt-1">
+                You need more funds to fulfill this order
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between items-center bg-surface-elevated rounded-lg p-3">
+                <span className="text-text-secondary">Required Amount</span>
+                <span className="font-bold text-text-primary">{insufficientData.requiredAmountFormatted}</span>
+              </div>
+              <div className="flex justify-between items-center bg-surface-elevated rounded-lg p-3">
+                <span className="text-text-secondary">Current Balance</span>
+                <span className="font-bold text-emerald-400">
+                  ₹{(walletBalance / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                <span className="text-amber-400">Amount Needed</span>
+                <span className="font-bold text-amber-400">{insufficientData.shortageFormatted}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm text-text-secondary text-center">Quick add to wallet:</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  Math.ceil(insufficientData.shortage / 100) * 100, // Round up shortage to nearest ₹1
+                  50000, // ₹500
+                  100000, // ₹1000
+                ].map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => handleQuickTopup(amount)}
+                    className="py-2 px-3 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-400 rounded-lg transition-colors text-sm font-medium"
+                  >
+                    ₹{(amount / 100).toLocaleString('en-IN')}
+                  </button>
+                ))}
+              </div>
+              <Link
+                href="/dashboard/wallet"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-xl transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Go to Wallet
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx global>{`
         @keyframes slide-in-right {
           from { transform: translateX(100%); }
@@ -841,6 +1167,19 @@ export default function OrdersPage() {
         }
         .animate-slide-in-right {
           animation: slide-in-right 0.3s ease-out;
+        }
+        @keyframes scale-in {
+          from {
+            transform: scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.2s ease-out;
         }
       `}</style>
     </div>

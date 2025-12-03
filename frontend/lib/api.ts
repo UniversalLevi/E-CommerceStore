@@ -139,6 +139,163 @@ class ApiClient {
   async getCurrentPlan() {
     return this.get<{ success: boolean; data: any }>('/api/payments/current-plan');
   }
+
+  // Wallet API methods
+  async getWallet() {
+    return this.get<{
+      success: boolean;
+      data: {
+        balance: number;
+        balanceFormatted: string;
+        currency: string;
+        autoRechargeEnabled: boolean;
+        autoRechargeAmount: number | null;
+        minAutoRechargeThreshold: number;
+      };
+    }>('/api/wallet');
+  }
+
+  async getWalletTransactions(params?: {
+    limit?: number;
+    offset?: number;
+    type?: 'credit' | 'debit';
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.offset) searchParams.append('offset', params.offset.toString());
+    if (params?.type) searchParams.append('type', params.type);
+    if (params?.startDate) searchParams.append('startDate', params.startDate);
+    if (params?.endDate) searchParams.append('endDate', params.endDate);
+    
+    const queryString = searchParams.toString();
+    return this.get<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        amount: number;
+        amountFormatted: string;
+        type: 'credit' | 'debit';
+        reason: string;
+        referenceId: string;
+        orderId: any;
+        balanceBefore: number;
+        balanceAfter: number;
+        createdAt: string;
+      }>;
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    }>(`/api/wallet/transactions${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async createWalletTopupOrder(amount: number) {
+    return this.post<{
+      success: boolean;
+      data: {
+        orderId: string;
+        amount: number;
+        currency: string;
+        keyId: string;
+        walletId: string;
+      };
+    }>('/api/wallet/topup', { amount });
+  }
+
+  async verifyWalletTopup(paymentData: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) {
+    return this.post<{
+      success: boolean;
+      message: string;
+      data: {
+        balance: number;
+        balanceFormatted: string;
+        transactionId: string;
+        amount: number;
+        amountFormatted: string;
+      };
+    }>('/api/wallet/topup/verify', paymentData);
+  }
+
+  // ZEN Fulfillment API methods
+  async getOrderZenStatus(storeId: string, orderId: string) {
+    return this.get<{
+      success: boolean;
+      data: {
+        hasLocalOrder: boolean;
+        orderId?: string;
+        shopifyOrderId?: number;
+        zenStatus: string;
+        productCost?: number;
+        shippingCost?: number;
+        serviceFee?: number;
+        requiredAmount?: number;
+        walletChargeAmount?: number;
+        walletChargedAt?: string;
+        walletShortage?: number;
+        zenOrder?: {
+          id: string;
+          status: string;
+          trackingNumber: string | null;
+          courierProvider: string | null;
+          createdAt: string;
+        } | null;
+      };
+    }>(`/api/orders/${storeId}/${orderId}/zen-status`);
+  }
+
+  async setOrderCosts(storeId: string, orderId: string, costs: {
+    productCost?: number;
+    shippingCost?: number;
+    serviceFee?: number;
+  }) {
+    return this.put<{
+      success: boolean;
+      message: string;
+      data: {
+        id: string;
+        shopifyOrderId: number;
+        productCost: number;
+        shippingCost: number;
+        serviceFee: number;
+        totalRequired: number;
+      };
+    }>(`/api/orders/${storeId}/${orderId}/costs`, costs);
+  }
+
+  async fulfillViaZen(storeId: string, orderId: string, costs: {
+    productCost: number;
+    shippingCost: number;
+    serviceFee?: number;
+  }) {
+    return this.post<{
+      success: boolean;
+      message?: string;
+      reason?: string;
+      data: {
+        orderId?: string;
+        zenOrderId?: string;
+        zenStatus?: string;
+        walletDeducted?: number;
+        walletDeductedFormatted?: string;
+        newBalance?: number;
+        newBalanceFormatted?: string;
+        currentBalance?: number;
+        currentBalanceFormatted?: string;
+        requiredAmount?: number;
+        requiredAmountFormatted?: string;
+        shortage?: number;
+        shortageFormatted?: string;
+      };
+    }>(`/api/orders/${storeId}/${orderId}/fulfill-via-zen`, costs);
+  }
 }
 
 export const api = new ApiClient();

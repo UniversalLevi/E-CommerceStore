@@ -75,6 +75,12 @@ const auditLogSchema = new Schema<IAuditLog>({
       'ORDER_NOTE_ADDED',
       // Order automation
       'ORDER_AUTO_GENERATED',
+      // ZEN Fulfillment actions
+      'ORDER_FULFILL_VIA_ZEN',
+      'ZEN_ORDER_STATUS_UPDATE',
+      'ZEN_ORDER_ASSIGN',
+      'ZEN_ORDER_BULK_UPDATE',
+      'ADMIN_WALLET_ADJUST',
     ],
     index: true,
   },
