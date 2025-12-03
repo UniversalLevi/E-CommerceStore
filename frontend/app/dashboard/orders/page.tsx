@@ -1084,7 +1084,7 @@ export default function OrdersPage() {
               <p className="text-sm text-text-secondary text-center">Quick add to wallet:</p>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  Math.ceil(insufficientData.shortage / 100) * 100, // Round up shortage to nearest ₹1
+                  Math.max(10000, Math.ceil(insufficientData.shortage / 100) * 100), // Minimum ₹100, round up shortage to nearest ₹1
                   50000, // ₹500
                   100000, // ₹1000
                 ].map((amount) => (
