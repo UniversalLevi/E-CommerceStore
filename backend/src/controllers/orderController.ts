@@ -1854,10 +1854,28 @@ export const fulfillViaZen = async (
       throw createError('Order has already been processed via ZEN', 400);
     }
 
-    // Set costs if provided
-    if (productCost !== undefined) order.productCost = productCost;
-    if (shippingCost !== undefined) order.shippingCost = shippingCost;
-    if (serviceFee !== undefined) order.serviceFee = serviceFee;
+    // Automatically use product price from order if not provided
+    // Always use subtotalPrice as productCost (already in paise)
+    if (productCost !== undefined) {
+      order.productCost = productCost;
+    } else {
+      // Automatically use order's subtotalPrice as productCost
+      order.productCost = order.subtotalPrice || 0;
+    }
+    
+    // Shipping cost defaults to 0 (no shipping cost)
+    if (shippingCost !== undefined) {
+      order.shippingCost = shippingCost;
+    } else {
+      order.shippingCost = 0;
+    }
+    
+    // Service fee defaults to 0
+    if (serviceFee !== undefined) {
+      order.serviceFee = serviceFee;
+    } else {
+      order.serviceFee = 0;
+    }
 
     const requiredAmount = order.productCost + order.shippingCost + order.serviceFee;
 
