@@ -29,7 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} ${playfairDisplay.variable}`}>
+      <body className={`${inter.className} ${playfairDisplay.variable} relative`}>
         <AppErrorBoundary>
           <AuthProvider>
             {children}

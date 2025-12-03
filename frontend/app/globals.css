@@ -51,6 +51,8 @@ body {
   @apply bg-black text-white;
   background-color: var(--surface-base);
   color: var(--text-primary);
+  position: relative;
+  min-height: 100vh;
 }
 
 /* Ensure all text is visible */

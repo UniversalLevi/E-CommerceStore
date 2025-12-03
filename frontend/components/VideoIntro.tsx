@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface VideoIntroProps {
   onComplete: () => void;
 }
+
+const MAX_DURATION = 7000; // 7 seconds max
 
 export default function VideoIntro({ onComplete }: VideoIntroProps) {
   const [isPlaying, setIsPlaying] = useState(true);
@@ -12,55 +14,76 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
   const [showText, setShowText] = useState(true);
   const [showButton, setShowButton] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const completedRef = useRef(false);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    // Show button after 2.5 seconds
-    const buttonTimer = setTimeout(() => {
-      setShowButton(true);
-    }, 2500);
-
-    const handleVideoEnd = () => {
-      setIsFading(true);
-      // Wait for fade animation to complete
-      setTimeout(() => {
-        setIsPlaying(false);
-        onComplete();
-      }, 40); // Match the fade duration
-    };
-
-    const handleVideoError = () => {
-      // If video fails to load, skip intro
-      setIsPlaying(false);
-      onComplete();
-    };
-
-    video.addEventListener('ended', handleVideoEnd);
-    video.addEventListener('error', handleVideoError);
-
-    // Ensure video plays
-    video.play().catch((error) => {
-      console.warn('Video autoplay failed:', error);
-      // If autoplay fails, skip intro
-      setIsPlaying(false);
-      onComplete();
-    });
-
-    return () => {
-      clearTimeout(buttonTimer);
-      video.removeEventListener('ended', handleVideoEnd);
-      video.removeEventListener('error', handleVideoError);
-    };
-  }, [onComplete]);
-
-  const handleStart = () => {
+  // Memoized complete handler to prevent duplicate calls
+  const handleComplete = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
+    
     setIsFading(true);
     setTimeout(() => {
       setIsPlaying(false);
       onComplete();
-    }, 800);
+    }, 400);
+  }, [onComplete]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    // Show button after 2 seconds
+    const buttonTimer = setTimeout(() => {
+      setShowButton(true);
+    }, 2000);
+
+    // Auto-complete after 7 seconds maximum
+    const maxDurationTimer = setTimeout(() => {
+      handleComplete();
+    }, MAX_DURATION);
+
+    const handleVideoEnd = () => {
+      handleComplete();
+    };
+
+    const handleVideoError = () => {
+      // If video fails to load, skip intro immediately
+      if (!completedRef.current) {
+        completedRef.current = true;
+        setIsPlaying(false);
+        onComplete();
+      }
+    };
+
+    if (video) {
+      video.addEventListener('ended', handleVideoEnd);
+      video.addEventListener('error', handleVideoError);
+
+      // Try to play video, if fails skip intro
+      video.play().catch(() => {
+        // Autoplay failed - skip intro immediately
+        if (!completedRef.current) {
+          completedRef.current = true;
+          setIsPlaying(false);
+          onComplete();
+        }
+      });
+    } else {
+      // No video element - skip intro
+      handleComplete();
+    }
+
+    return () => {
+      clearTimeout(buttonTimer);
+      clearTimeout(maxDurationTimer);
+      if (video) {
+        video.removeEventListener('ended', handleVideoEnd);
+        video.removeEventListener('error', handleVideoError);
+      }
+    };
+  }, [onComplete, handleComplete]);
+
+  const handleStart = () => {
+    handleComplete();
   };
 
   if (!isPlaying) {
@@ -69,8 +92,8 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] bg-black transition-opacity duration-[800ms] ease-in-out ${
-        isFading ? 'opacity-0' : 'opacity-100'
+      className={`fixed inset-0 z-[9999] bg-black transition-opacity duration-[400ms] ease-in-out ${
+        isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
       <video
@@ -118,7 +141,7 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
                 -6px 0 12px rgba(0, 0, 0, 1)
               `.replace(/\s+/g, ' ').trim(),
               letterSpacing: '0.02em',
-              animation: 'fadeInUpSmooth 1.6s ease-out forwards, pulse 4s ease-in-out infinite 1.6s',
+              animation: 'fadeInUpSmooth 1.6s ease-out forwards',
               filter: 'drop-shadow(0 0 8px rgba(0, 0, 0, 1)) drop-shadow(0 0 16px rgba(0, 0, 0, 0.9))',
               willChange: 'transform, opacity',
             }}
@@ -127,7 +150,7 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
           </h1>
         )}
 
-        {/* Start Button - appears after 2-3 seconds */}
+        {/* Start Button - appears after 2 seconds */}
         {showButton && (
           <button
             onClick={handleStart}
@@ -146,7 +169,7 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
         )}
       </div>
       
-      {/* Optional: Add a skip button */}
+      {/* Skip button */}
       <button
         onClick={handleStart}
         className="absolute bottom-4 right-4 md:bottom-8 md:right-8 z-10 bg-black/50 hover:bg-black/70 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition-all backdrop-blur-sm border border-white/20 text-sm md:text-base min-h-[44px]"
@@ -157,4 +180,3 @@ export default function VideoIntro({ onComplete }: VideoIntroProps) {
     </div>
   );
 }
-
