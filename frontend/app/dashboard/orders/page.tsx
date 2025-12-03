@@ -185,9 +185,6 @@ export default function OrdersPage() {
   });
   
   // ZEN Fulfillment state
-  const [zenModalOpen, setZenModalOpen] = useState(false);
-  const [zenProductCost, setZenProductCost] = useState('');
-  const [zenShippingCost, setZenShippingCost] = useState('');
   const [zenLoading, setZenLoading] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
@@ -331,15 +328,13 @@ export default function OrdersPage() {
 
   // Handle ZEN Fulfillment
   const handleFulfillViaZen = async (orderId: number) => {
-    const productCostPaise = Math.round(parseFloat(zenProductCost) * 100);
-    const shippingCostPaise = Math.round(parseFloat(zenShippingCost) * 100);
+    if (!selectedOrder) return;
+
+    // Calculate product cost from order subtotal (convert to paise)
+    const productCostPaise = Math.round(parseFloat(selectedOrder.subtotalPrice || '0') * 100);
 
     if (!productCostPaise || productCostPaise <= 0) {
-      notify.error('Please enter a valid product cost');
-      return;
-    }
-    if (!shippingCostPaise || shippingCostPaise < 0) {
-      notify.error('Please enter a valid shipping cost');
+      notify.error('Order has no product cost');
       return;
     }
 
@@ -347,16 +342,13 @@ export default function OrdersPage() {
       setZenLoading(true);
       const response = await api.fulfillViaZen(selectedStore, orderId.toString(), {
         productCost: productCostPaise,
-        shippingCost: shippingCostPaise,
+        shippingCost: 0, // No shipping cost
       });
 
       if (response.success) {
         notify.success(`Order submitted for ZEN fulfillment! ${response.data.walletDeductedFormatted} deducted.`);
         // Track this order as processed
         setProcessedZenOrders(prev => new Set([...prev, orderId]));
-        setZenModalOpen(false);
-        setZenProductCost('');
-        setZenShippingCost('');
         await fetchOrders();
         await fetchWalletBalance();
         setSelectedOrder(null);
@@ -380,13 +372,10 @@ export default function OrdersPage() {
         });
         setShowInsufficientModal(true);
       } else if (error.response?.status === 400 && error.response?.data?.error?.includes('already been processed')) {
-        // Order was already processed via ZEN - show info message and close modal
+        // Order was already processed via ZEN - show info message
         notify.success('This order has already been submitted for ZEN fulfillment.');
         // Track this order as processed
         setProcessedZenOrders(prev => new Set([...prev, orderId]));
-        setZenModalOpen(false);
-        setZenProductCost('');
-        setZenShippingCost('');
         setSelectedOrder(null);
         await fetchOrders();
       } else {
@@ -835,79 +824,39 @@ export default function OrdersPage() {
                       </span>
                     </div>
                     <p className="text-sm text-text-secondary">
-                      Let us handle fulfillment. Enter your costs and we'll deduct from your wallet.
+                      Let us handle fulfillment. Product cost will be deducted from your wallet.
                     </p>
                     
-                    {/* Wallet Balance Display */}
-                    <div className="flex items-center justify-between bg-surface-base rounded-lg p-3">
-                      <div className="flex items-center gap-2">
-                        <Wallet className="w-4 h-4 text-emerald-400" />
-                        <span className="text-sm text-text-secondary">Wallet Balance</span>
+                    {/* Cost and Wallet Balance Display */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between bg-surface-base rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-violet-400" />
+                          <span className="text-sm text-text-secondary">Product Cost</span>
+                        </div>
+                        <span className="font-bold text-violet-400">
+                          {formatCurrency(selectedOrder.subtotalPrice, selectedOrder.currency)}
+                        </span>
                       </div>
-                      <span className="font-bold text-emerald-400">
-                        ₹{(walletBalance / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </span>
+                      <div className="flex items-center justify-between bg-surface-base rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <Wallet className="w-4 h-4 text-emerald-400" />
+                          <span className="text-sm text-text-secondary">Wallet Balance</span>
+                        </div>
+                        <span className="font-bold text-emerald-400">
+                          ₹{(walletBalance / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
                     </div>
 
-                    {!zenModalOpen ? (
-                      <button
-                        onClick={() => setZenModalOpen(true)}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-lg transition-all font-medium shadow-lg shadow-violet-500/25"
-                      >
-                        <Zap className="w-4 h-4" />
-                        Fulfill via ZEN
-                      </button>
-                    ) : (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs text-text-secondary mb-1">Product Cost (₹)</label>
-                          <input
-                            type="number"
-                            value={zenProductCost}
-                            onChange={(e) => setZenProductCost(e.target.value)}
-                            placeholder="e.g., 500"
-                            className="w-full px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-text-secondary mb-1">Shipping Cost (₹)</label>
-                          <input
-                            type="number"
-                            value={zenShippingCost}
-                            onChange={(e) => setZenShippingCost(e.target.value)}
-                            placeholder="e.g., 80"
-                            className="w-full px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500 text-sm"
-                          />
-                        </div>
-                        {zenProductCost && zenShippingCost && (
-                          <div className="flex items-center justify-between bg-violet-500/10 rounded-lg p-3">
-                            <span className="text-sm text-text-secondary">Total to deduct</span>
-                            <span className="font-bold text-violet-400">
-                              ₹{(parseFloat(zenProductCost || '0') + parseFloat(zenShippingCost || '0')).toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              setZenModalOpen(false);
-                              setZenProductCost('');
-                              setZenShippingCost('');
-                            }}
-                            className="flex-1 px-4 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg hover:bg-surface-hover transition-colors text-sm"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => handleFulfillViaZen(selectedOrder.id)}
-                            disabled={zenLoading || !zenProductCost || !zenShippingCost}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-lg transition-colors font-medium disabled:opacity-50 text-sm"
-                          >
-                            {zenLoading ? 'Processing...' : 'Submit'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    <button
+                      onClick={() => handleFulfillViaZen(selectedOrder.id)}
+                      disabled={zenLoading}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white rounded-lg transition-all font-medium shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Zap className="w-4 h-4" />
+                      {zenLoading ? 'Processing...' : `Fulfill via ZEN (${formatCurrency(selectedOrder.subtotalPrice, selectedOrder.currency)})`}
+                    </button>
                   </div>
                 )}
 
