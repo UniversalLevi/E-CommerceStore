@@ -7,23 +7,51 @@ import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
 
-// Valid status transitions
-const VALID_TRANSITIONS: Record<ZenOrderStatus, ZenOrderStatus[]> = {
-  pending: ['sourcing', 'cancelled', 'failed'],
-  sourcing: ['sourced', 'cancelled', 'failed'],
-  sourced: ['packing', 'cancelled', 'failed'],
-  packing: ['packed', 'cancelled', 'failed'],
-  packed: ['ready_for_dispatch', 'cancelled', 'failed'],
-  ready_for_dispatch: ['dispatched', 'cancelled', 'failed'],
-  dispatched: ['shipped', 'rto_initiated', 'cancelled', 'failed'],
-  shipped: ['out_for_delivery', 'rto_initiated', 'delivered'],
-  out_for_delivery: ['delivered', 'rto_initiated'],
-  delivered: [], // Terminal state
-  rto_initiated: ['rto_delivered', 'returned'],
-  rto_delivered: ['returned'],
-  returned: [], // Terminal state
-  cancelled: [], // Terminal state
-  failed: ['pending'], // Can retry from failed
+// Valid status transitions - flexible for admin operations
+// Admins can move forward freely but cannot revert from terminal states
+const TERMINAL_STATES: ZenOrderStatus[] = ['delivered', 'returned', 'cancelled'];
+
+// Forward progression order
+const STATUS_ORDER: ZenOrderStatus[] = [
+  'pending',
+  'sourcing',
+  'sourced',
+  'packing',
+  'packed',
+  'ready_for_dispatch',
+  'dispatched',
+  'shipped',
+  'out_for_delivery',
+  'delivered',
+];
+
+// RTO progression
+const RTO_PROGRESSION: ZenOrderStatus[] = ['rto_initiated', 'rto_delivered', 'returned'];
+
+// Get all valid transitions for a status (more permissive for admin)
+const getValidTransitions = (currentStatus: ZenOrderStatus): ZenOrderStatus[] => {
+  // Terminal states cannot transition
+  if (TERMINAL_STATES.includes(currentStatus)) {
+    return [];
+  }
+
+  // From failed, can go back to pending to retry
+  if (currentStatus === 'failed') {
+    return ['pending', 'cancelled'];
+  }
+
+  // RTO progression
+  if (RTO_PROGRESSION.includes(currentStatus)) {
+    const currentIndex = RTO_PROGRESSION.indexOf(currentStatus);
+    const forwardStates = RTO_PROGRESSION.slice(currentIndex + 1);
+    return [...forwardStates, 'cancelled', 'failed'];
+  }
+
+  // Main progression - allow jumping forward to any state + rto + cancel/fail
+  const currentIndex = STATUS_ORDER.indexOf(currentStatus);
+  const forwardStates = STATUS_ORDER.slice(currentIndex + 1);
+  
+  return [...forwardStates, 'rto_initiated', 'cancelled', 'failed'];
 };
 
 /**
@@ -262,10 +290,10 @@ export const updateZenOrderStatus = async (
     }
 
     // Validate transition
-    const validTransitions = VALID_TRANSITIONS[zenOrder.status];
+    const validTransitions = getValidTransitions(zenOrder.status);
     if (!validTransitions.includes(status)) {
       throw createError(
-        `Invalid status transition from ${zenOrder.status} to ${status}. Valid transitions: ${validTransitions.join(', ')}`,
+        `Invalid status transition from ${zenOrder.status} to ${status}. Valid transitions: ${validTransitions.join(', ') || 'none (terminal state)'}`,
         400
       );
     }
@@ -604,8 +632,8 @@ export const bulkUpdateZenOrders = async (
               results.failed.push({ id, error: 'Status required for status update' });
               continue;
             }
-            const validTransitions = VALID_TRANSITIONS[zenOrder.status];
-            if (!validTransitions.includes(status)) {
+            const bulkValidTransitions = getValidTransitions(zenOrder.status);
+            if (!bulkValidTransitions.includes(status)) {
               results.failed.push({
                 id,
                 error: `Invalid transition from ${zenOrder.status} to ${status}`,
