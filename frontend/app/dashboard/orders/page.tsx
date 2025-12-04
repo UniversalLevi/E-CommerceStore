@@ -84,6 +84,11 @@ interface Order {
     zip: string;
     formatted: string;
   } | null;
+  zenStatus?: string;
+  zenOrder?: {
+    status: string;
+    trackingNumber: string | null;
+  } | null;
 }
 
 interface OrderStats {
@@ -253,8 +258,43 @@ export default function OrdersPage() {
         stats: OrderStats;
         store: { id: string; name: string; domain: string };
       }>(url);
-      
-      setOrders(response.data);
+
+      const shopifyOrders = response.data;
+
+      // Fetch ZEN status for each order in parallel
+      const zenStatuses = await Promise.all(
+        shopifyOrders.map(async (order) => {
+          try {
+            const zenResponse = await api.getOrderZenStatus(selectedStore, order.id.toString());
+            if (zenResponse.success && zenResponse.data?.hasLocalOrder) {
+              return {
+                orderId: order.id,
+                zenStatus: zenResponse.data.zenStatus,
+                zenOrder: zenResponse.data.zenOrder,
+              };
+            }
+          } catch {
+            // Ignore errors and treat as non-ZEN order
+          }
+          return {
+            orderId: order.id,
+            zenStatus: 'shopify',
+            zenOrder: null,
+          };
+        })
+      );
+
+      // Merge ZEN info into orders
+      const ordersWithZen = shopifyOrders.map((order) => {
+        const zenInfo = zenStatuses.find((z) => z.orderId === order.id);
+        return {
+          ...order,
+          zenStatus: zenInfo?.zenStatus || 'shopify',
+          zenOrder: zenInfo?.zenOrder || null,
+        };
+      });
+
+      setOrders(ordersWithZen);
       setStats(response.stats);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
@@ -730,6 +770,7 @@ export default function OrdersPage() {
                           <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase">Total</th>
                           <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase">Payment</th>
                           <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase">Fulfillment</th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase">ZEN</th>
                           <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase">Date</th>
                           <th className="px-6 py-4 text-left text-xs font-semibold text-text-secondary uppercase">Actions</th>
                         </tr>
@@ -756,6 +797,16 @@ export default function OrdersPage() {
                             </td>
                             <td className="px-6 py-4">{getFinancialStatusBadge(order.financialStatus)}</td>
                             <td className="px-6 py-4">{getFulfillmentStatusBadge(order.fulfillmentStatus)}</td>
+                            <td className="px-6 py-4">
+                              {order.zenStatus && order.zenStatus !== 'shopify' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-violet-500/15 text-violet-300 border-violet-500/40">
+                                  <Zap className="w-3.5 h-3.5" />
+                                  {order.zenStatus.replace(/_/g, ' ')}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-text-muted">-</span>
+                              )}
+                            </td>
                             <td className="px-6 py-4 text-sm text-text-muted">{formatDate(order.createdAt)}</td>
                             <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                               <button
