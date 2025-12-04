@@ -224,6 +224,59 @@ class ApiClient {
     }>('/api/wallet/topup/verify', paymentData);
   }
 
+  async getPayoutMethods() {
+    return this.get<{
+      success: boolean;
+      data: any[];
+    }>('/api/wallet/payout-methods');
+  }
+
+  async upsertPayoutMethod(payload: any) {
+    return this.post<{
+      success: boolean;
+      data: any;
+    }>('/api/wallet/payout-methods', payload);
+  }
+
+  async deletePayoutMethod(id: string) {
+    return this.delete<{
+      success: boolean;
+      message: string;
+    }>(`/api/wallet/payout-methods/${id}`);
+  }
+
+  async requestWithdrawal(payload: {
+    amount: number; // in paise
+    payoutMethodId?: string;
+    userNote?: string;
+  }) {
+    return this.post<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>('/api/wallet/withdraw', payload);
+  }
+
+  async getUserWithdrawals(params: { limit?: number; offset?: number } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.offset) searchParams.set('offset', String(params.offset));
+
+    const query = searchParams.toString();
+    const url = query ? `/api/wallet/withdrawals?${query}` : '/api/wallet/withdrawals';
+
+    return this.get<{
+      success: boolean;
+      data: any[];
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    }>(url);
+  }
+
   // ZEN Fulfillment API methods
   async getOrderZenStatus(storeId: string, orderId: string) {
     return this.get<{
@@ -295,6 +348,49 @@ class ApiClient {
         shortageFormatted?: string;
       };
     }>(`/api/orders/${storeId}/${orderId}/fulfill-via-zen`, costs);
+  }
+
+  // Admin withdrawal methods
+  async adminGetWithdrawals(params: {
+    status?: string;
+    userId?: string;
+    limit?: number;
+    offset?: number;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.status) searchParams.set('status', params.status);
+    if (params.userId) searchParams.set('userId', params.userId);
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.offset) searchParams.set('offset', String(params.offset));
+
+    const query = searchParams.toString();
+    const url = query ? `/api/wallet/admin/withdrawals?${query}` : '/api/wallet/admin/withdrawals';
+
+    return this.get<{
+      success: boolean;
+      data: any[];
+      pagination: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore: boolean;
+      };
+    }>(url);
+  }
+
+  async adminUpdateWithdrawalStatus(
+    withdrawalId: string,
+    payload: {
+      status: 'pending' | 'processing' | 'approved' | 'rejected' | 'paid' | 'failed';
+      adminNote?: string;
+      txRef?: string;
+    }
+  ) {
+    return this.post<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(`/api/wallet/admin/withdrawals/${withdrawalId}/status`, payload);
   }
 }
 

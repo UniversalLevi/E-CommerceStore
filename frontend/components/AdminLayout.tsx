@@ -48,6 +48,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: '/admin/stores', label: 'Stores' },
     { href: '/admin/niches', label: 'Niches' },
     { href: '/admin/products', label: 'Products' },
+    { href: '/admin/wallets', label: 'Wallets' },
+    { href: '/admin/withdrawals', label: 'Withdrawals' },
     { href: '/admin/audit', label: 'Audit Logs' },
   ];
 

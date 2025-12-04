@@ -42,6 +42,43 @@ interface Transaction {
   createdAt: string;
 }
 
+interface PayoutMethod {
+  _id: string;
+  type: 'bank' | 'upi' | 'crypto';
+  label: string;
+  isDefault: boolean;
+  bankAccount?: {
+    bankName: string;
+    accountHolderName: string;
+    accountNumber: string;
+    ifsc: string;
+  };
+  upi?: {
+    upiId: string;
+  };
+  crypto?: {
+    network: string;
+    address: string;
+    asset?: string;
+  };
+}
+
+interface Withdrawal {
+  id: string;
+  amount: number;
+  feeAmount: number;
+  grossAmount: number;
+  amountFormatted: string;
+  feeFormatted: string;
+  grossFormatted: string;
+  status: string;
+  currency: string;
+  payoutMethod: PayoutMethod;
+  createdAt: string;
+  processedAt?: string;
+  txRef?: string;
+}
+
 const TOPUP_AMOUNTS = [
   { value: 50000, label: '₹500' },
   { value: 100000, label: '₹1,000' },
@@ -59,6 +96,9 @@ export default function WalletPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
   
   // Pagination
   const [page, setPage] = useState(0);
@@ -75,6 +115,25 @@ export default function WalletPage() {
   const [customAmount, setCustomAmount] = useState('');
   const [isCustom, setIsCustom] = useState(false);
   const [topupLoading, setTopupLoading] = useState(false);
+
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('1000'); // in rupees
+  const [selectedPayoutMethodId, setSelectedPayoutMethodId] = useState<string | 'default'>('default');
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+
+  // Payout method form
+  const [showPayoutForm, setShowPayoutForm] = useState(false);
+  const [payoutType, setPayoutType] = useState<'bank' | 'upi' | 'crypto'>('bank');
+  const [payoutLabel, setPayoutLabel] = useState('');
+  const [bankBankName, setBankBankName] = useState('');
+  const [bankAccountHolderName, setBankAccountHolderName] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankIfsc, setBankIfsc] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [cryptoNetwork, setCryptoNetwork] = useState('');
+  const [cryptoAddress, setCryptoAddress] = useState('');
+  const [cryptoAsset, setCryptoAsset] = useState('USDT');
+  const [payoutSaving, setPayoutSaving] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -119,6 +178,31 @@ export default function WalletPage() {
     }
   }, [page, typeFilter]);
 
+  const fetchPayoutMethods = useCallback(async () => {
+    try {
+      const response = await api.getPayoutMethods();
+      if (response.success) {
+        setPayoutMethods(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch payout methods:', error);
+    }
+  }, []);
+
+  const fetchWithdrawals = useCallback(async () => {
+    try {
+      setWithdrawalsLoading(true);
+      const response = await api.getUserWithdrawals({ limit: 20, offset: 0 });
+      if (response.success) {
+        setWithdrawals(response.data as Withdrawal[]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch withdrawals:', error);
+    } finally {
+      setWithdrawalsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchWallet();
@@ -130,6 +214,138 @@ export default function WalletPage() {
       fetchTransactions();
     }
   }, [isAuthenticated, fetchTransactions]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchPayoutMethods();
+      fetchWithdrawals();
+    }
+  }, [isAuthenticated, fetchPayoutMethods, fetchWithdrawals]);
+
+  const handleRequestWithdrawal = async () => {
+    const rupees = parseInt(withdrawAmount || '0', 10);
+
+    if (!rupees || rupees < 1000) {
+      notify.error('Minimum withdrawal amount is ₹1,000');
+      return;
+    }
+
+    const amountPaise = rupees * 100;
+
+    if (!wallet || wallet.balance < amountPaise) {
+      notify.error('Insufficient wallet balance');
+      return;
+    }
+
+    const defaultMethod = payoutMethods.find((m) => m.isDefault);
+    const methodId =
+      selectedPayoutMethodId === 'default' ? defaultMethod?._id : selectedPayoutMethodId;
+
+    if (!methodId) {
+      notify.error('Please add and select a payout method first');
+      return;
+    }
+
+    try {
+      setWithdrawLoading(true);
+      const response = await api.requestWithdrawal({
+        amount: amountPaise,
+        payoutMethodId: methodId,
+      });
+
+      if (response.success) {
+        notify.success(
+          `Withdrawal request created for ₹${rupees.toLocaleString('en-IN')}. 8% fee will be applied.`
+        );
+        setShowWithdrawModal(false);
+        fetchWallet();
+        fetchWithdrawals();
+      }
+    } catch (error: any) {
+      notify.error(error?.response?.data?.error || error?.message || 'Failed to request withdrawal');
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
+
+  const handleSavePayoutMethod = async () => {
+    if (!payoutLabel.trim()) {
+      notify.error('Please enter a label for this payout method');
+      return;
+    }
+
+    try {
+      setPayoutSaving(true);
+      const payload: any = {
+        type: payoutType,
+        label: payoutLabel.trim(),
+        isDefault: payoutMethods.length === 0, // first method becomes default
+      };
+
+      if (payoutType === 'bank') {
+        if (!bankBankName || !bankAccountHolderName || !bankAccountNumber || !bankIfsc) {
+          notify.error('Please fill all bank account details');
+          setPayoutSaving(false);
+          return;
+        }
+        payload.bankAccount = {
+          bankName: bankBankName,
+          accountHolderName: bankAccountHolderName,
+          accountNumber: bankAccountNumber,
+          ifsc: bankIfsc,
+        };
+      } else if (payoutType === 'upi') {
+        if (!upiId) {
+          notify.error('Please enter UPI ID');
+          setPayoutSaving(false);
+          return;
+        }
+        payload.upi = { upiId };
+      } else if (payoutType === 'crypto') {
+        if (!cryptoNetwork || !cryptoAddress) {
+          notify.error('Please enter crypto network and address');
+          setPayoutSaving(false);
+          return;
+        }
+        payload.crypto = {
+          network: cryptoNetwork,
+          address: cryptoAddress,
+          asset: cryptoAsset,
+        };
+      }
+
+      const response = await api.upsertPayoutMethod(payload);
+      if (response.success) {
+        notify.success('Payout method saved');
+        setShowPayoutForm(false);
+        // reset form
+        setPayoutLabel('');
+        setBankBankName('');
+        setBankAccountHolderName('');
+        setBankAccountNumber('');
+        setBankIfsc('');
+        setUpiId('');
+        setCryptoNetwork('');
+        setCryptoAddress('');
+        setCryptoAsset('USDT');
+        fetchPayoutMethods();
+      }
+    } catch (error: any) {
+      notify.error(error?.response?.data?.error || error?.message || 'Failed to save payout method');
+    } finally {
+      setPayoutSaving(false);
+    }
+  };
+
+  const handleDeletePayoutMethod = async (id: string) => {
+    try {
+      await api.deletePayoutMethod(id);
+      notify.success('Payout method deleted');
+      fetchPayoutMethods();
+    } catch (error: any) {
+      notify.error(error?.response?.data?.error || error?.message || 'Failed to delete payout method');
+    }
+  };
 
   const handleTopup = async () => {
     const amount = isCustom ? parseInt(customAmount) * 100 : topupAmount;
@@ -266,6 +482,9 @@ export default function WalletPage() {
                 <p className="text-text-muted text-sm mt-2">
                   Currency: {wallet?.currency || 'INR'}
                 </p>
+                <p className="text-text-muted text-xs mt-1">
+                  Minimum withdrawal: ₹1,000 • Fee: 8%
+                </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
@@ -275,7 +494,227 @@ export default function WalletPage() {
                   <Plus className="w-5 h-5" />
                   Add Money
                 </button>
+                <button
+                  onClick={() => setShowWithdrawModal(true)}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-surface-elevated hover:bg-surface-hover text-text-primary font-semibold rounded-xl border border-border-default transition-colors"
+                >
+                  <ArrowUpRight className="w-5 h-5" />
+                  Withdraw
+                </button>
               </div>
+            </div>
+          </div>
+
+          {/* Payout Methods */}
+          <div className="bg-surface-raised border border-border-default rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-text-primary">Payout Methods</h2>
+                <p className="text-sm text-text-muted">
+                  Add your preferred way to withdraw money: bank transfer, UPI, or crypto.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowPayoutForm((v) => !v)}
+                className="px-4 py-2 rounded-lg bg-surface-elevated border border-border-default text-sm text-text-primary hover:bg-surface-hover transition-colors"
+              >
+                {showPayoutForm ? 'Close' : 'Add Method'}
+              </button>
+            </div>
+
+            {showPayoutForm && (
+              <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-text-secondary">
+                    Method Type
+                  </label>
+                  <select
+                    value={payoutType}
+                    onChange={(e) => setPayoutType(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="bank">Bank Transfer</option>
+                    <option value="upi">UPI</option>
+                    <option value="crypto">Crypto</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-text-secondary">
+                    Label (for your reference)
+                  </label>
+                  <input
+                    type="text"
+                    value={payoutLabel}
+                    onChange={(e) => setPayoutLabel(e.target.value)}
+                    placeholder="e.g. HDFC main account, personal UPI, Binance USDT"
+                    className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {payoutType === 'bank' && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-text-secondary">
+                        Bank Name
+                      </label>
+                      <input
+                        type="text"
+                        value={bankBankName}
+                        onChange={(e) => setBankBankName(e.target.value)}
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-text-secondary">
+                        Account Holder Name
+                      </label>
+                      <input
+                        type="text"
+                        value={bankAccountHolderName}
+                        onChange={(e) => setBankAccountHolderName(e.target.value)}
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-text-secondary">
+                        Account Number
+                      </label>
+                      <input
+                        type="text"
+                        value={bankAccountNumber}
+                        onChange={(e) => setBankAccountNumber(e.target.value)}
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-text-secondary">
+                        IFSC Code
+                      </label>
+                      <input
+                        type="text"
+                        value={bankIfsc}
+                        onChange={(e) => setBankIfsc(e.target.value.toUpperCase())}
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {payoutType === 'upi' && (
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="block text-sm font-medium text-text-secondary">
+                      UPI ID
+                    </label>
+                    <input
+                      type="text"
+                      value={upiId}
+                      onChange={(e) => setUpiId(e.target.value)}
+                      placeholder="yourname@upi"
+                      className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                )}
+
+                {payoutType === 'crypto' && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-text-secondary">
+                        Network
+                      </label>
+                      <input
+                        type="text"
+                        value={cryptoNetwork}
+                        onChange={(e) => setCryptoNetwork(e.target.value)}
+                        placeholder="e.g. TRC20, ERC20, Polygon"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-text-secondary">
+                        Asset
+                      </label>
+                      <input
+                        type="text"
+                        value={cryptoAsset}
+                        onChange={(e) => setCryptoAsset(e.target.value)}
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="block text-sm font-medium text-text-secondary">
+                        Wallet Address
+                      </label>
+                      <input
+                        type="text"
+                        value={cryptoAddress}
+                        onChange={(e) => setCryptoAddress(e.target.value)}
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {showPayoutForm && (
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={handleSavePayoutMethod}
+                  disabled={payoutSaving}
+                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold rounded-lg text-sm transition-colors disabled:opacity-50"
+                >
+                  {payoutSaving ? 'Saving...' : 'Save Payout Method'}
+                </button>
+              </div>
+            )}
+
+            <div className="border-t border-border-default pt-4 mt-2 space-y-2">
+              {payoutMethods.length === 0 ? (
+                <p className="text-sm text-text-muted">
+                  No payout methods added yet. Use the <span className="font-medium">Add Method</span>{' '}
+                  button above to add your bank, UPI, or crypto details. These will be sent to the
+                  admin team for manual withdrawals.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {payoutMethods.map((m) => (
+                    <div
+                      key={m._id}
+                      className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-surface-elevated border border-border-default"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-text-primary">
+                          {m.label}{' '}
+                          <span className="text-xs text-text-muted">
+                            ({m.type.toUpperCase()}){m.isDefault ? ' • Default' : ''}
+                          </span>
+                        </p>
+                        {m.type === 'bank' && m.bankAccount && (
+                          <p className="text-xs text-text-muted">
+                            {m.bankAccount.bankName} • A/C ****
+                            {m.bankAccount.accountNumber.slice(-4)} • IFSC {m.bankAccount.ifsc}
+                          </p>
+                        )}
+                        {m.type === 'upi' && m.upi && (
+                          <p className="text-xs text-text-muted">UPI: {m.upi.upiId}</p>
+                        )}
+                        {m.type === 'crypto' && m.crypto && (
+                          <p className="text-xs text-text-muted">
+                            {m.crypto.asset || 'Crypto'} • {m.crypto.network} •{' '}
+                            {m.crypto.address.slice(0, 6)}...{m.crypto.address.slice(-4)}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleDeletePayoutMethod(m._id)}
+                        className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded-lg hover:bg-rose-500/10 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -323,7 +762,7 @@ export default function WalletPage() {
           </div>
 
           {/* Transactions */}
-          <div className="bg-surface-raised border border-border-default rounded-xl overflow-hidden">
+          <div className="bg-surface-raised border border-border-default rounded-xl overflow-hidden mb-8">
             <div className="px-6 py-4 border-b border-border-default">
               <h2 className="text-lg font-semibold text-text-primary">Transaction History</h2>
               <p className="text-sm text-text-muted">{totalTransactions} total transactions</p>
@@ -404,6 +843,67 @@ export default function WalletPage() {
                     <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Withdrawals History */}
+          <div className="bg-surface-raised border border-border-default rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-border-default flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-text-primary">Withdrawals</h2>
+                <p className="text-sm text-text-muted">
+                  Manual withdrawals processed by the EAZY team
+                </p>
+              </div>
+            </div>
+
+            {withdrawalsLoading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto" />
+                <p className="mt-4 text-text-secondary">Loading withdrawals...</p>
+              </div>
+            ) : withdrawals.length === 0 ? (
+              <div className="p-8 text-center">
+                <ArrowUpRight className="w-10 h-10 text-text-muted mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-text-primary">No withdrawals yet</h3>
+                <p className="text-text-secondary mt-1 text-sm">
+                  When you request withdrawals, they will appear here with their status.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border-default">
+                {withdrawals.map((w) => (
+                  <div key={w.id} className="px-6 py-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-semibold text-text-primary">{w.amountFormatted}</p>
+                      <p className="text-xs text-text-muted">
+                        Fee: {w.feeFormatted} • Debited: {w.grossFormatted}
+                      </p>
+                      {w.payoutMethod && (
+                        <p className="text-xs text-text-muted mt-1">
+                          {w.payoutMethod.type.toUpperCase()} • {w.payoutMethod.label}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
+                          w.status === 'paid'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                            : w.status === 'pending'
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                            : 'bg-surface-elevated text-text-secondary border border-border-default'
+                        }`}
+                      >
+                        {w.status.toUpperCase()}
+                      </p>
+                      <p className="text-xs text-text-muted mt-1">
+                        {formatDate(w.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -495,6 +995,95 @@ export default function WalletPage() {
 
             <p className="text-center text-text-muted text-xs mt-4">
               Secured by Razorpay. Min ₹100, Max ₹1,00,000
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Withdraw Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowWithdrawModal(false)} />
+          <div className="relative bg-surface-raised border border-border-default rounded-2xl p-6 w-full max-w-md mx-4 animate-scale-in">
+            <button
+              onClick={() => setShowWithdrawModal(false)}
+              className="absolute top-4 right-4 p-2 hover:bg-surface-hover rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-text-secondary" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-emerald-500/20 rounded-full mb-4">
+                <ArrowUpRight className="w-7 h-7 text-emerald-400" />
+              </div>
+              <h2 className="text-xl font-bold text-text-primary">Withdraw from Wallet</h2>
+              <p className="text-text-secondary text-sm mt-1">
+                Minimum ₹1,000 per withdrawal. Fee: 8%.
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  min={1000}
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  className="w-full px-4 py-3 bg-surface-base border border-border-default text-text-primary rounded-xl focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  Payout Method
+                </label>
+                {payoutMethods.length === 0 ? (
+                  <p className="text-xs text-amber-400">
+                    You have no payout methods configured. Please contact support to set one up.
+                  </p>
+                ) : (
+                  <select
+                    value={selectedPayoutMethodId}
+                    onChange={(e) => setSelectedPayoutMethodId(e.target.value as any)}
+                    className="w-full px-4 py-3 bg-surface-base border border-border-default text-text-primary rounded-xl focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="default">Default method</option>
+                    {payoutMethods.map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.label} ({m.type.toUpperCase()})
+                        {m.isDefault ? ' • Default' : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="bg-surface-elevated rounded-xl p-4 text-sm text-text-secondary space-y-1">
+                <p>
+                  You will receive the amount in your selected payout method after manual
+                  processing by the EAZY team.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleRequestWithdrawal}
+              disabled={
+                withdrawLoading ||
+                !withdrawAmount ||
+                parseInt(withdrawAmount || '0', 10) < 1000 ||
+                payoutMethods.length === 0
+              }
+              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-black font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25"
+            >
+              {withdrawLoading ? 'Requesting...' : 'Request Withdrawal'}
+            </button>
+
+            <p className="text-center text-text-muted text-xs mt-4">
+              Funds are processed manually. Typical processing time: 1-3 business days.
             </p>
           </div>
         </div>

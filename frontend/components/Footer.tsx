@@ -135,11 +135,6 @@ export default function Footer() {
                     className="group text-text-secondary hover:text-white transition-colors text-sm flex items-center gap-2"
                   >
                     <span className="animated-underline">{link.label}</span>
-                    {link.badge && (
-                      <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded">
-                        {link.badge}
-                      </span>
-                    )}
                   </Link>
                 </li>
               ))}
@@ -161,11 +156,6 @@ export default function Footer() {
                     className="group text-text-secondary hover:text-white transition-colors text-sm flex items-center gap-2"
                   >
                     <span className="animated-underline">{link.label}</span>
-                    {link.badge && (
-                      <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-xs rounded">
-                        {link.badge}
-                      </span>
-                    )}
                   </Link>
                 </li>
               ))}

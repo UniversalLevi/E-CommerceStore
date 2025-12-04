@@ -43,6 +43,7 @@ const navItems: NavItem[] = [
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/zen-orders', label: 'ZEN Orders', icon: Zap },
   { href: '/admin/wallets', label: 'Wallets', icon: Wallet },
+  { href: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet },
   { href: '/admin/auto-orders', label: 'Auto Place Order', icon: Sparkles },
   { href: '/admin/niches', label: 'Niches', icon: Layers },
   { href: '/admin/products', label: 'Products', icon: Package },

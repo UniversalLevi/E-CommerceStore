@@ -52,7 +52,11 @@ export interface Product {
   _id: string;
   title: string;
   description: string;
-  price: number;
+  price: number;          // final price (basePrice + profit + shippingPrice)
+  basePrice?: number;     // base product cost
+  profit?: number;        // profit margin
+  shippingPrice?: number; // shipping cost component
+  costPrice?: number;     // legacy field, kept for backward compatibility
   category?: string; // Keep for backward compatibility
   niche: string | Niche; // ObjectId or populated object
   images: string[];

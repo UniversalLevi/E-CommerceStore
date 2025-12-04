@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { Wallet } from '../models/Wallet';
 import { WalletTransaction } from '../models/WalletTransaction';
+import { PayoutMethod } from '../models/PayoutMethod';
+import { WithdrawalRequest } from '../models/WithdrawalRequest';
 import { razorpayService } from '../services/RazorpayService';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
@@ -10,6 +12,10 @@ import { createNotification } from '../utils/notifications';
 // Minimum and maximum topup amounts in paise
 const MIN_TOPUP_AMOUNT = 10000; // ₹100
 const MAX_TOPUP_AMOUNT = 10000000; // ₹1,00,000
+
+// Withdrawal rules
+const MIN_WITHDRAW_AMOUNT = 100000; // ₹1,000 in paise
+const WITHDRAW_FEE_PERCENT = 8; // 8%
 
 /**
  * Get wallet balance and settings
@@ -555,6 +561,565 @@ export const adminGetUserTransactions = async (
         offset: offsetNum,
         hasMore: offsetNum + limitNum < total,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get payout methods for the authenticated user
+ * GET /api/wallet/payout-methods
+ */
+export const getPayoutMethods = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const userId = (req.user as any)._id;
+    const methods = await PayoutMethod.find({ userId })
+      .sort({ isDefault: -1, createdAt: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      data: methods,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Create or update a payout method
+ * POST /api/wallet/payout-methods
+ */
+export const upsertPayoutMethod = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const userId = (req.user as any)._id;
+    const { id, type, label, bankAccount, upi, crypto, isDefault } = req.body;
+
+    if (!type || !['bank', 'upi', 'crypto'].includes(type)) {
+      throw createError('Invalid payout method type', 400);
+    }
+
+    if (!label || typeof label !== 'string') {
+      throw createError('Label is required', 400);
+    }
+
+    // Basic validation per type
+    if (type === 'bank') {
+      if (
+        !bankAccount ||
+        !bankAccount.bankName ||
+        !bankAccount.accountHolderName ||
+        !bankAccount.accountNumber ||
+        !bankAccount.ifsc
+      ) {
+        throw createError('Complete bank account details are required', 400);
+      }
+    }
+
+    if (type === 'upi') {
+      if (!upi || !upi.upiId) {
+        throw createError('UPI ID is required', 400);
+      }
+    }
+
+    if (type === 'crypto') {
+      if (!crypto || !crypto.network || !crypto.address) {
+        throw createError('Crypto network and address are required', 400);
+      }
+    }
+
+    let method;
+
+    if (id) {
+      method = await PayoutMethod.findOne({ _id: id, userId });
+      if (!method) {
+        throw createError('Payout method not found', 404);
+      }
+
+      method.type = type;
+      method.label = label;
+      method.bankAccount = type === 'bank' ? bankAccount : undefined;
+      method.upi = type === 'upi' ? upi : undefined;
+      method.crypto = type === 'crypto' ? crypto : undefined;
+      method.isDefault = !!isDefault;
+      await method.save();
+    } else {
+      method = await PayoutMethod.create({
+        userId,
+        type,
+        label,
+        bankAccount: type === 'bank' ? bankAccount : undefined,
+        upi: type === 'upi' ? upi : undefined,
+        crypto: type === 'crypto' ? crypto : undefined,
+        isDefault: !!isDefault,
+      });
+    }
+
+    // If this is default, unset others
+    if (method.isDefault) {
+      await PayoutMethod.updateMany(
+        { userId, _id: { $ne: method._id } },
+        { $set: { isDefault: false } }
+      );
+    }
+
+    res.json({
+      success: true,
+      data: method,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete payout method
+ * DELETE /api/wallet/payout-methods/:id
+ */
+export const deletePayoutMethod = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const userId = (req.user as any)._id;
+    const { id } = req.params;
+
+    const method = await PayoutMethod.findOneAndDelete({ _id: id, userId });
+    if (!method) {
+      throw createError('Payout method not found', 404);
+    }
+
+    res.json({
+      success: true,
+      message: 'Payout method deleted',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Request withdrawal (user)
+ * POST /api/wallet/withdraw
+ */
+export const requestWithdrawal = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const userId = (req.user as any)._id;
+    const { amount, payoutMethodId, userNote } = req.body;
+
+    if (!amount || typeof amount !== 'number' || amount <= 0) {
+      throw createError('Amount must be a positive number (in paise)', 400);
+    }
+
+    if (amount < MIN_WITHDRAW_AMOUNT) {
+      throw createError(
+        `Minimum withdrawal amount is ₹${MIN_WITHDRAW_AMOUNT / 100}`,
+        400
+      );
+    }
+
+    // Get wallet
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      throw createError('Wallet not found', 404);
+    }
+
+    // Get payout method (default if not provided)
+    let method;
+    if (payoutMethodId) {
+      method = await PayoutMethod.findOne({ _id: payoutMethodId, userId });
+    } else {
+      method = await PayoutMethod.findOne({ userId, isDefault: true });
+    }
+
+    if (!method) {
+      throw createError('No payout method found. Please add one before withdrawing.', 400);
+    }
+
+    // Calculate fee (deducted from requested amount)
+    const feeAmount = Math.round((amount * WITHDRAW_FEE_PERCENT) / 100);
+    // Amount debited from wallet is the full requested amount
+    const debitedAmount = amount;
+
+    if (wallet.balance < debitedAmount) {
+      throw createError(
+        `Insufficient balance. You need at least ₹${(debitedAmount / 100).toLocaleString(
+          'en-IN',
+          { minimumFractionDigits: 2 }
+        )} for this withdrawal.`,
+        400
+      );
+    }
+
+    // Atomically deduct from wallet with balance check
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      { _id: wallet._id, balance: { $gte: debitedAmount } },
+      { $inc: { balance: -debitedAmount } },
+      { new: true }
+    );
+
+    if (!updatedWallet) {
+      throw createError('Insufficient balance for withdrawal', 400);
+    }
+
+    const balanceAfter = updatedWallet.balance;
+    const balanceBefore = balanceAfter + debitedAmount;
+
+    // grossAmount is what user receives (amount - fee)
+    const grossAmount = amount - feeAmount;
+
+    // Create withdrawal request
+    const withdrawalDoc = await WithdrawalRequest.create({
+      userId,
+      walletId: wallet._id,
+      payoutMethodId: method._id,
+      amount, // amount debited from wallet
+      feeAmount,
+      grossAmount,
+      currency: wallet.currency,
+      status: 'pending',
+      userNote: userNote || '',
+    });
+
+    // Create wallet transaction (debit, locked)
+    await WalletTransaction.create({
+      walletId: wallet._id,
+      userId,
+      orderId: null,
+      zenOrderId: null,
+      amount: debitedAmount,
+      type: 'debit',
+      reason: 'Withdrawal request',
+      referenceId: String((withdrawalDoc as any)._id),
+      balanceBefore,
+      balanceAfter,
+      metadata: {
+        withdrawalId: withdrawalDoc._id,
+        payoutMethodType: method.type,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Withdrawal request created successfully',
+      data: {
+        id: withdrawalDoc._id,
+        amount,
+        feeAmount,
+        grossAmount,
+        amountFormatted: `₹${(amount / 100).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+        })}`,
+        feeFormatted: `₹${(feeAmount / 100).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+        })}`,
+        grossFormatted: `₹${(grossAmount / 100).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+        })}`,
+        status: withdrawalDoc.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get user's withdrawal requests
+ * GET /api/wallet/withdrawals
+ */
+export const getUserWithdrawals = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const userId = (req.user as any)._id;
+    const { limit = '20', offset = '0' } = req.query;
+
+    const limitNum = Math.min(parseInt(limit as string) || 20, 100);
+    const offsetNum = parseInt(offset as string) || 0;
+
+    const [withdrawals, total] = await Promise.all([
+      WithdrawalRequest.find({ userId })
+        .sort({ createdAt: -1 })
+        .skip(offsetNum)
+        .limit(limitNum)
+        .populate('payoutMethodId')
+        .lean(),
+      WithdrawalRequest.countDocuments({ userId }),
+    ]);
+
+    res.json({
+      success: true,
+      data: withdrawals.map((w) => ({
+        id: w._id,
+        amount: w.amount,
+        feeAmount: w.feeAmount,
+        grossAmount: w.grossAmount,
+        amountFormatted: `₹${(w.amount / 100).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+        })}`,
+        feeFormatted: `₹${(w.feeAmount / 100).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+        })}`,
+        grossFormatted: `₹${(w.grossAmount / 100).toLocaleString('en-IN', {
+          minimumFractionDigits: 2,
+        })}`,
+        status: w.status,
+        currency: w.currency,
+        payoutMethod: w.payoutMethodId,
+        createdAt: w.createdAt,
+        processedAt: w.processedAt,
+        txRef: w.txRef,
+      })),
+      pagination: {
+        total,
+        limit: limitNum,
+        offset: offsetNum,
+        hasMore: offsetNum + limitNum < total,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Admin: List withdrawal requests
+ * GET /api/wallet/admin/withdrawals
+ */
+export const adminListWithdrawals = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    if (req.user.role !== 'admin') {
+      throw createError('Admin access required', 403);
+    }
+
+    const { status, userId, limit = '50', offset = '0' } = req.query;
+
+    const limitNum = Math.min(parseInt(limit as string) || 50, 100);
+    const offsetNum = parseInt(offset as string) || 0;
+
+    const query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (userId) {
+      query.userId = new mongoose.Types.ObjectId(userId as string);
+    }
+
+    const [withdrawals, total] = await Promise.all([
+      WithdrawalRequest.find(query)
+        .sort({ createdAt: -1 })
+        .skip(offsetNum)
+        .limit(limitNum)
+        .populate('userId', 'name email')
+        .populate('payoutMethodId')
+        .lean(),
+      WithdrawalRequest.countDocuments(query),
+    ]);
+
+    res.json({
+      success: true,
+      data: withdrawals,
+      pagination: {
+        total,
+        limit: limitNum,
+        offset: offsetNum,
+        hasMore: offsetNum + limitNum < total,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Admin: Update withdrawal status
+ * POST /api/wallet/admin/withdrawals/:id/status
+ */
+export const adminUpdateWithdrawalStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    if (req.user.role !== 'admin') {
+      throw createError('Admin access required', 403);
+    }
+
+    const { id } = req.params;
+    const { status, adminNote, txRef } = req.body;
+
+    if (!status || !['pending', 'processing', 'approved', 'rejected', 'paid', 'failed'].includes(status)) {
+      throw createError('Invalid status', 400);
+    }
+
+    const withdrawal = await WithdrawalRequest.findById(id);
+    if (!withdrawal) {
+      throw createError('Withdrawal request not found', 404);
+    }
+
+    // Prevent modification of rejected or paid withdrawals
+    if (withdrawal.status === 'rejected') {
+      throw createError('Cannot modify a rejected withdrawal request', 400);
+    }
+    if (withdrawal.status === 'paid') {
+      throw createError('Cannot modify a paid withdrawal request', 400);
+    }
+
+    // If moving to rejected/failed from pending/processing/approved, optionally refund wallet
+    const shouldRefundWallet =
+      ['rejected', 'failed'].includes(status) &&
+      ['pending', 'processing', 'approved'].includes(withdrawal.status);
+
+    if (shouldRefundWallet) {
+      const wallet = await Wallet.findById(withdrawal.walletId);
+      if (!wallet) {
+        throw createError('Wallet not found for withdrawal', 500);
+      }
+
+      // Refund the full amount that was debited (not grossAmount which is amount - fee)
+      const refundAmount = withdrawal.amount;
+
+      const balanceBefore = wallet.balance;
+      const balanceAfter = balanceBefore + refundAmount;
+
+      // Credit wallet back
+      await WalletTransaction.create({
+        walletId: wallet._id,
+        userId: withdrawal.userId,
+        orderId: null,
+        zenOrderId: null,
+        amount: refundAmount,
+        type: 'credit',
+        reason: 'Withdrawal reversed',
+        referenceId: `withdrawal_refund_${String((withdrawal as any)._id)}`,
+        balanceBefore,
+        balanceAfter,
+        metadata: {
+          withdrawalId: withdrawal._id,
+          previousStatus: withdrawal.status,
+        },
+      });
+
+      wallet.balance = balanceAfter;
+      await wallet.save();
+    }
+
+    const previousStatus = withdrawal.status;
+    withdrawal.status = status;
+    if (adminNote !== undefined) {
+      withdrawal.adminNote = adminNote;
+    }
+    if (txRef !== undefined) {
+      withdrawal.txRef = txRef;
+    }
+    if (['approved', 'paid', 'rejected', 'failed'].includes(status)) {
+      withdrawal.processedAt = new Date();
+    }
+
+    await withdrawal.save();
+
+    // Send notification to user about status change
+    const statusMessages: Record<string, { title: string; message: string }> = {
+      pending: {
+        title: 'Withdrawal Request Received',
+        message: 'Your withdrawal request has been received and is under review.',
+      },
+      processing: {
+        title: 'Withdrawal Being Processed',
+        message: 'Your withdrawal request is being processed. You will receive the funds shortly.',
+      },
+      approved: {
+        title: 'Withdrawal Approved',
+        message: 'Your withdrawal request has been approved and will be processed soon.',
+      },
+      paid: {
+        title: 'Withdrawal Completed',
+        message: `Your withdrawal of ₹${((withdrawal.amount - withdrawal.feeAmount) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })} has been successfully processed.`,
+      },
+      rejected: {
+        title: 'Withdrawal Request Rejected',
+        message: `Your withdrawal request has been rejected. ₹${(withdrawal.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })} has been refunded to your wallet.`,
+      },
+      failed: {
+        title: 'Withdrawal Failed',
+        message: `Your withdrawal request failed. ₹${(withdrawal.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })} has been refunded to your wallet.`,
+      },
+    };
+
+    const statusInfo = statusMessages[status];
+    if (statusInfo) {
+      await createNotification({
+        userId: withdrawal.userId,
+        type: 'withdrawal_status',
+        title: statusInfo.title,
+        message: statusInfo.message + (adminNote ? ` Note: ${adminNote}` : ''),
+        link: '/dashboard/wallet',
+        metadata: {
+          withdrawalId: String((withdrawal as any)._id),
+          status,
+          previousStatus,
+          amount: withdrawal.amount,
+          feeAmount: withdrawal.feeAmount,
+          grossAmount: withdrawal.amount - withdrawal.feeAmount,
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Withdrawal status updated',
+      data: withdrawal,
     });
   } catch (error) {
     next(error);
