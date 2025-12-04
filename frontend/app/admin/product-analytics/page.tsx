@@ -277,14 +277,20 @@ export default function ProductAnalyticsPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | undefined | null) => {
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      return '₹0';
+    }
     return `₹${amount.toLocaleString('en-IN', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     })}`;
   };
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number | undefined | null) => {
+    if (num === undefined || num === null || isNaN(num)) {
+      return '0';
+    }
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toString();
@@ -300,6 +306,17 @@ export default function ProductAnalyticsPage() {
 
   if (authLoading || loading) {
     return <LoadingScreen />;
+  }
+
+  // Ensure we have data before rendering to prevent undefined errors
+  if (!summary) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-text-secondary mb-4">Loading analytics data...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -468,7 +485,7 @@ export default function ProductAnalyticsPage() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={nicheRevenue} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis type="number" stroke="#666" tickFormatter={(v) => formatCurrency(v)} />
+              <XAxis type="number" stroke="#666" tickFormatter={(v) => formatCurrency(v as number)} />
               <YAxis
                 dataKey="nicheName"
                 type="category"
@@ -659,7 +676,9 @@ export default function ProductAnalyticsPage() {
                 <div className="flex justify-between">
                   <span className="text-text-muted">Margin:</span>
                   <span className="text-amber-400 font-medium">
-                    {product.profitMargin.toFixed(1)}%
+                    {product.profitMargin !== undefined && product.profitMargin !== null
+                      ? product.profitMargin.toFixed(1)
+                      : '0.0'}%
                   </span>
                 </div>
               </div>
@@ -890,7 +909,9 @@ export default function ProductAnalyticsPage() {
                               : 'bg-red-500/20 text-red-400'
                           }`}
                         >
-                          {product.profitMargin.toFixed(1)}%
+                          {product.profitMargin !== undefined && product.profitMargin !== null
+                            ? product.profitMargin.toFixed(1)
+                            : '0.0'}%
                         </span>
                       </td>
                       <td className="py-3 px-4 text-text-secondary text-sm">
