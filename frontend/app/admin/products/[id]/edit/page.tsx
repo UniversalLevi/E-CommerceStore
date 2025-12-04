@@ -288,9 +288,9 @@ export default function EditProductPage() {
                     ].filter(Boolean);
 
                     return (
-                      <option key={niche._id} value={niche._id}>
+                    <option key={niche._id} value={niche._id}>
                         {labelParts.join(' ')}
-                      </option>
+                    </option>
                     );
                   })}
                 </select>
