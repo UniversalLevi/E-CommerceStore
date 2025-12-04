@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, DragEvent } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
@@ -25,12 +25,10 @@ export default function ImageUploader({
 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
+  const processFiles = async (files: FileList | File[]) => {
     const filesArray = Array.from(files);
     const filesToUpload = multiple ? filesArray : [filesArray[0]];
     
@@ -90,6 +88,35 @@ export default function ImageUploader({
     }
   };
 
+  const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await processFiles(files);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    await processFiles(files);
+  };
+
   const removeImage = (index: number) => {
     const newUrls = value.filter((_, i) => i !== index);
     onChange(newUrls);
@@ -101,10 +128,17 @@ export default function ImageUploader({
         {label} {required && '*'}
       </label>
 
-      {/* Upload Button */}
+      {/* Upload Button with Drag & Drop */}
       <div
         onClick={() => fileInputRef.current?.click()}
-        className="border-2 border-dashed border-border-default rounded-lg p-6 text-center cursor-pointer hover:border-primary-500 transition-colors bg-surface-elevated"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200 ${
+          isDragging
+            ? 'border-violet-500 bg-violet-500/10 scale-[1.02]'
+            : 'border-border-default hover:border-primary-500 bg-surface-elevated'
+        } ${uploading || value.length >= maxFiles ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <input
           ref={fileInputRef}
@@ -115,9 +149,17 @@ export default function ImageUploader({
           className="hidden"
           disabled={uploading || value.length >= maxFiles}
         />
-        <Upload className="h-8 w-8 mx-auto mb-2 text-text-muted" />
+        <Upload
+          className={`h-8 w-8 mx-auto mb-2 transition-transform duration-200 ${
+            isDragging ? 'text-violet-400 scale-110' : 'text-text-muted'
+          }`}
+        />
         <p className="text-sm text-text-secondary">
-          {uploading ? 'Uploading...' : `Click to upload ${multiple ? 'images' : 'an image'}`}
+          {uploading
+            ? 'Uploading...'
+            : isDragging
+            ? 'Drop images here'
+            : `Drag & drop or click to upload ${multiple ? 'images' : 'an image'}`}
         </p>
         <p className="text-xs text-text-muted mt-1">
           PNG, JPG, GIF up to 5MB {multiple && `(max ${maxFiles} files)`}
