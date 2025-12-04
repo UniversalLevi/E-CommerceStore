@@ -483,6 +483,59 @@ export const updateTracking = async (
 };
 
 /**
+ * Update RTO address (Admin)
+ * POST /api/admin/zen-orders/:zenOrderId/rto-address
+ */
+export const updateRtoAddress = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    if (req.user.role !== 'admin') {
+      throw createError('Admin access required', 403);
+    }
+
+    const { zenOrderId } = req.params;
+    const { name, phone, addressLine1, addressLine2, city, state, pincode, country } = req.body;
+
+    const zenOrder = await ZenOrder.findById(zenOrderId);
+    if (!zenOrder) {
+      throw createError('ZEN order not found', 404);
+    }
+
+    // Update RTO address
+    zenOrder.rtoAddress = {
+      name: name || '',
+      phone: phone || '',
+      addressLine1: addressLine1 || '',
+      addressLine2: addressLine2 || '',
+      city: city || '',
+      state: state || '',
+      pincode: pincode || '',
+      country: country || 'India',
+    };
+
+    await zenOrder.save();
+
+    res.json({
+      success: true,
+      message: 'RTO address updated successfully',
+      data: {
+        id: zenOrder._id,
+        rtoAddress: zenOrder.rtoAddress,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Add internal note (Admin)
  * POST /api/admin/zen-orders/:zenOrderId/notes
  */

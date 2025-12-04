@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -132,6 +132,73 @@ export default function ZenOrdersPage() {
   const [courierProvider, setCourierProvider] = useState('');
   const [trackingLoading, setTrackingLoading] = useState(false);
 
+  // RTO Address
+  const [rtoAddress, setRtoAddress] = useState({
+    name: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: 'India',
+  });
+  const [rtoAddressLoading, setRtoAddressLoading] = useState(false);
+
+  // Location options (can be extended later)
+  const COUNTRY_OPTIONS = useMemo(
+    () => ['India'],
+    []
+  );
+
+  const STATE_OPTIONS = useMemo(
+    () =>
+      ({
+        India: [
+          'Andhra Pradesh',
+          'Assam',
+          'Bihar',
+          'Delhi',
+          'Gujarat',
+          'Haryana',
+          'Karnataka',
+          'Kerala',
+          'Madhya Pradesh',
+          'Maharashtra',
+          'Punjab',
+          'Rajasthan',
+          'Tamil Nadu',
+          'Telangana',
+          'Uttar Pradesh',
+          'West Bengal',
+        ],
+      } as Record<string, string[]>),
+    []
+  );
+
+  const CITY_OPTIONS = useMemo(
+    () =>
+      ({
+        Karnataka: ['Bengaluru', 'Mysuru', 'Mangaluru'],
+        Maharashtra: ['Mumbai', 'Pune', 'Nagpur'],
+        Delhi: ['New Delhi'],
+        'Tamil Nadu': ['Chennai', 'Coimbatore', 'Madurai'],
+        Telangana: ['Hyderabad'],
+        'Uttar Pradesh': ['Lucknow', 'Noida', 'Ghaziabad'],
+        Gujarat: ['Ahmedabad', 'Surat', 'Vadodara'],
+        'West Bengal': ['Kolkata'],
+      } as Record<string, string[]>),
+    []
+  );
+
+  const availableStates = useMemo(() => {
+    return STATE_OPTIONS[rtoAddress.country] || [];
+  }, [STATE_OPTIONS, rtoAddress.country]);
+
+  const availableCities = useMemo(() => {
+    return CITY_OPTIONS[rtoAddress.state] || [];
+  }, [CITY_OPTIONS, rtoAddress.state]);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -188,6 +255,16 @@ export default function ZenOrdersPage() {
         setOrderDetail(response.data);
         setTrackingNumber(response.data.trackingNumber || '');
         setCourierProvider(response.data.courierProvider || '');
+        setRtoAddress(response.data.rtoAddress || {
+          name: '',
+          phone: '',
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          state: '',
+          pincode: '',
+          country: 'India',
+        });
       }
     } catch (error) {
       console.error('Failed to fetch order detail:', error);
@@ -255,6 +332,26 @@ export default function ZenOrdersPage() {
       }
     } catch (error) {
       notify.error('Failed to update priority');
+    }
+  };
+
+  const handleRtoAddressUpdate = async () => {
+    if (!selectedOrder) return;
+    try {
+      setRtoAddressLoading(true);
+      const response = await api.post<{ success: boolean; message: string }>(
+        `/api/admin/zen-orders/${selectedOrder.id}/rto-address`,
+        rtoAddress
+      );
+
+      if (response.success) {
+        notify.success('RTO address updated');
+        fetchOrderDetail(selectedOrder.id);
+      }
+    } catch (error: any) {
+      notify.error(error?.response?.data?.error || 'Failed to update RTO address');
+    } finally {
+      setRtoAddressLoading(false);
     }
   };
 
@@ -636,6 +733,120 @@ export default function ZenOrdersPage() {
                         <p className="text-text-secondary text-sm">{selectedOrder.shippingAddress}</p>
                       </div>
                     )}
+
+                    {/* RTO Address */}
+                    <div className="bg-surface-elevated rounded-xl p-4 space-y-3">
+                      <h3 className="font-semibold text-text-primary flex items-center gap-2">
+                        <MapPin className="w-4 h-4" /> RTO Address
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Name"
+                          value={rtoAddress.name}
+                          onChange={(e) => setRtoAddress({ ...rtoAddress, name: e.target.value })}
+                          className="col-span-2 px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Phone"
+                          value={rtoAddress.phone}
+                          onChange={(e) => setRtoAddress({ ...rtoAddress, phone: e.target.value })}
+                          className="px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Pincode"
+                          value={rtoAddress.pincode}
+                          onChange={(e) => setRtoAddress({ ...rtoAddress, pincode: e.target.value })}
+                          className="px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Address Line 1"
+                          value={rtoAddress.addressLine1}
+                          onChange={(e) => setRtoAddress({ ...rtoAddress, addressLine1: e.target.value })}
+                          className="col-span-2 px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Address Line 2"
+                          value={rtoAddress.addressLine2}
+                          onChange={(e) => setRtoAddress({ ...rtoAddress, addressLine2: e.target.value })}
+                          className="col-span-2 px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500"
+                        />
+                        {/* Country */}
+                        <select
+                          value={rtoAddress.country}
+                          onChange={(e) => {
+                            const newCountry = e.target.value;
+                            setRtoAddress({
+                              ...rtoAddress,
+                              country: newCountry,
+                              state: '',
+                              city: '',
+                            });
+                          }}
+                          className="col-span-2 px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500"
+                        >
+                          <option value="">Select Country</option>
+                          {COUNTRY_OPTIONS.map((country) => (
+                            <option key={country} value={country}>
+                              {country}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* State */}
+                        <select
+                          value={rtoAddress.state}
+                          onChange={(e) => {
+                            const newState = e.target.value;
+                            setRtoAddress({
+                              ...rtoAddress,
+                              state: newState,
+                              city: '',
+                            });
+                          }}
+                          disabled={!rtoAddress.country}
+                          className="px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
+                        >
+                          <option value="">Select State</option>
+                          {availableStates.map((state) => (
+                            <option key={state} value={state}>
+                              {state}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* City */}
+                        <select
+                          value={rtoAddress.city}
+                          onChange={(e) => {
+                            setRtoAddress({
+                              ...rtoAddress,
+                              city: e.target.value,
+                            });
+                          }}
+                          disabled={!rtoAddress.state}
+                          className="px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
+                        >
+                          <option value="">Select City</option>
+                          {availableCities.map((city) => (
+                            <option key={city} value={city}>
+                              {city}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        onClick={handleRtoAddressUpdate}
+                        disabled={rtoAddressLoading}
+                        className="w-full py-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {rtoAddressLoading ? 'Updating...' : 'Update RTO Address'}
+                      </button>
+                    </div>
 
                     {/* Pricing */}
                     <div className="bg-surface-elevated rounded-xl p-4 space-y-2">

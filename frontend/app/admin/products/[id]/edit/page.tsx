@@ -15,7 +15,9 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
-    price: string;
+    basePrice: string;
+    profit: string;
+    shippingPrice: string;
     category: string;
     niche: string;
     images: string[];
@@ -23,7 +25,9 @@ export default function EditProductPage() {
   }>({
     title: '',
     description: '',
-    price: '',
+    basePrice: '',
+    profit: '0',
+    shippingPrice: '0',
     category: '',
     niche: '',
     images: [],
@@ -72,7 +76,9 @@ export default function EditProductPage() {
       setFormData({
         title: product.title,
         description: product.description,
-        price: product.price.toString(),
+        basePrice: (product.basePrice || product.costPrice || 0).toString(),
+        profit: (product.profit || 0).toString(),
+        shippingPrice: (product.shippingPrice || 0).toString(),
         category: product.category || '',
         niche: nicheId || '',
         images: Array.isArray(product.images) ? product.images : [],
@@ -93,7 +99,9 @@ export default function EditProductPage() {
     try {
       const productData = {
         ...formData,
-        price: parseFloat(formData.price),
+        basePrice: parseFloat(formData.basePrice),
+        profit: parseFloat(formData.profit) || 0,
+        shippingPrice: parseFloat(formData.shippingPrice) || 0,
         images: formData.images,
       };
 
@@ -175,34 +183,85 @@ export default function EditProductPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Price ($) *
+                  Base Price ($) *
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.price}
+                  value={formData.basePrice}
                   onChange={(e) =>
-                    setFormData({ ...formData, price: e.target.value })
+                    setFormData({ ...formData, basePrice: e.target.value })
                   }
                   required
                   className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 />
+                <p className="mt-1 text-xs text-text-muted">Cost price of the product</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Category
+                  Profit ($)
                 </label>
                 <input
-                  type="text"
-                  value={formData.category}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.profit}
                   onChange={(e) =>
-                    setFormData({ ...formData, category: e.target.value })
+                    setFormData({ ...formData, profit: e.target.value })
                   }
                   className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 />
+                <p className="mt-1 text-xs text-text-muted">Profit margin</p>
               </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Shipping Price ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.shippingPrice}
+                  onChange={(e) =>
+                    setFormData({ ...formData, shippingPrice: e.target.value })
+                  }
+                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                />
+                <p className="mt-1 text-xs text-text-muted">Shipping cost</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Final Price ($)
+                </label>
+                <div className="w-full px-4 py-2 bg-surface-elevated/50 border border-border-default text-text-primary rounded-lg">
+                  ${(
+                    (parseFloat(formData.basePrice) || 0) +
+                    (parseFloat(formData.profit) || 0) +
+                    (parseFloat(formData.shippingPrice) || 0)
+                  ).toFixed(2)}
+                </div>
+                <p className="mt-1 text-xs text-text-muted">Auto-calculated: Base + Profit + Shipping</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Category
+              </label>
+              <input
+                type="text"
+                value={formData.category}
+                onChange={(e) =>
+                  setFormData({ ...formData, category: e.target.value })
+                }
+                className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              />
             </div>
 
             <div>

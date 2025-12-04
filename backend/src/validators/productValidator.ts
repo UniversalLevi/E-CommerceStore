@@ -6,7 +6,10 @@ export const createProductSchema = z.object({
     .min(3, 'Title must be at least 3 characters')
     .max(200, 'Title cannot exceed 200 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  price: z.number().positive('Price must be a positive number'),
+  price: z.number().positive('Price must be a positive number').optional(), // Auto-calculated
+  basePrice: z.number().positive('Base price must be a positive number'),
+  profit: z.number().min(0, 'Profit cannot be negative').default(0),
+  shippingPrice: z.number().min(0, 'Shipping price cannot be negative').default(0),
   category: z.string().min(2, 'Category is required'),
   niche: z.string().min(1, 'Niche is required'),
   images: z
@@ -25,7 +28,10 @@ export const updateProductSchema = z.object({
     .string()
     .min(10, 'Description must be at least 10 characters')
     .optional(),
-  price: z.number().positive('Price must be a positive number').optional(),
+  price: z.number().positive('Price must be a positive number').optional(), // Auto-calculated
+  basePrice: z.number().positive('Base price must be a positive number').optional(),
+  profit: z.number().min(0, 'Profit cannot be negative').optional(),
+  shippingPrice: z.number().min(0, 'Shipping price cannot be negative').optional(),
   category: z.string().min(2, 'Category is required').optional(),
   images: z
     .array(z.string().url('Each image must be a valid URL'))

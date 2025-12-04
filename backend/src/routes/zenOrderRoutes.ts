@@ -5,6 +5,7 @@ import {
   updateZenOrderStatus,
   assignStaff,
   updateTracking,
+  updateRtoAddress,
   addInternalNote,
   updateFlags,
   bulkUpdateZenOrders,
@@ -40,6 +41,7 @@ router.post('/:zenOrderId/assign', assignStaff);
 
 // Update tracking
 router.post('/:zenOrderId/tracking', updateTracking);
+router.post('/:zenOrderId/rto-address', updateRtoAddress);
 
 // Add internal note
 router.post('/:zenOrderId/notes', addInternalNote);

@@ -74,6 +74,18 @@ export interface IZenOrder extends Document {
   estimatedDeliveryDate: Date | null;
   actualDeliveryDate: Date | null;
 
+  // RTO Address (for return to origin orders)
+  rtoAddress: {
+    name: string;
+    phone: string;
+    addressLine1: string;
+    addressLine2: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  } | null;
+
   // Internal notes
   internalNotes: string;
   attachments: string[]; // URLs to uploaded files
@@ -291,6 +303,18 @@ const zenOrderSchema = new Schema<IZenOrder>(
     actualDeliveryDate: {
       type: Date,
       default: null,
+    },
+
+    // RTO Address (for return to origin orders)
+    rtoAddress: {
+      name: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      addressLine1: { type: String, default: '' },
+      addressLine2: { type: String, default: '' },
+      city: { type: String, default: '' },
+      state: { type: String, default: '' },
+      pincode: { type: String, default: '' },
+      country: { type: String, default: 'India' },
     },
 
     // Internal notes

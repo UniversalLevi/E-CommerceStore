@@ -45,6 +45,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/activity', label: 'Activity', icon: Activity },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/dashboard/help', label: 'Help', icon: HelpCircle },
+  { href: '/dashboard/guide', label: 'Step-by-Step Guide', icon: HelpCircle },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

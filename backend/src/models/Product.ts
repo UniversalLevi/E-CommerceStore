@@ -3,13 +3,16 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IProduct extends Document {
   title: string;
   description: string;
-  price: number;
+  price: number; // Final selling price (basePrice + profit + shippingPrice)
+  basePrice: number; // Base cost price
+  profit: number; // Profit margin
+  shippingPrice: number; // Shipping cost
   category?: string; // Keep for backward compatibility
   niche: mongoose.Types.ObjectId; // Required reference to Niche
   images: string[];
   active: boolean;
   // AI features fields
-  costPrice?: number;
+  costPrice?: number; // Legacy field, kept for backward compatibility
   tags?: string[];
   supplierLink?: string;
   rating?: number;
@@ -45,6 +48,21 @@ const productSchema = new Schema<IProduct>(
       type: Number,
       required: [true, 'Product price is required'],
       min: [0, 'Price cannot be negative'],
+    },
+    basePrice: {
+      type: Number,
+      required: [true, 'Base price is required'],
+      min: [0, 'Base price cannot be negative'],
+    },
+    profit: {
+      type: Number,
+      default: 0,
+      min: [0, 'Profit cannot be negative'],
+    },
+    shippingPrice: {
+      type: Number,
+      default: 0,
+      min: [0, 'Shipping price cannot be negative'],
     },
     category: {
       type: String,
@@ -138,6 +156,15 @@ productSchema.index({ title: 'text', description: 'text' });
 productSchema.index({ tags: 1 });
 productSchema.index({ beginnerFriendly: 1 });
 productSchema.index({ qualityScore: -1 }); // Descending for top products
+
+// Pre-save hook: Calculate price from basePrice + profit + shippingPrice
+productSchema.pre('save', function (next) {
+  // Auto-calculate price if basePrice, profit, and shippingPrice are set
+  if (this.basePrice !== undefined && this.profit !== undefined && this.shippingPrice !== undefined) {
+    this.price = this.basePrice + this.profit + this.shippingPrice;
+  }
+  next();
+});
 
 // Pre-save hook: Validate niche exists and is not deleted
 productSchema.pre('save', async function (next) {
