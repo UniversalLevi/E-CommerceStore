@@ -10,6 +10,10 @@ import { HealthCheckService } from './services/HealthCheckService';
 
 const app = express();
 
+// Trust proxy (important for detecting HTTPS behind reverse proxy)
+// This allows req.protocol to correctly detect HTTPS when behind nginx/load balancer
+app.set('trust proxy', true);
+
 // Middleware
 app.use(morgan('dev'));
 app.use(cors({

@@ -60,11 +60,29 @@ export const uploadImage = async (
     }
 
     // Generate public URL - files are served from backend
-    // Construct backend URL from request or use environment variable
-    const protocol = req.protocol || 'http';
-    const host = req.get('host') || 'localhost:5000';
-    const backendUrl = process.env.BACKEND_URL || `${protocol}://${host}`;
-    const fileUrl = `${backendUrl}/uploads/${req.file.filename}`;
+    // Priority: 1. BACKEND_URL env var, 2. Detect from request headers, 3. Fallback
+    
+    let baseUrl: string;
+    
+    if (process.env.BACKEND_URL) {
+      // Use explicit backend URL from environment
+      baseUrl = process.env.BACKEND_URL;
+    } else {
+      // Detect protocol from headers (handles reverse proxies)
+      // Check X-Forwarded-Proto first (common in production with reverse proxy)
+      const forwardedProto = req.get('X-Forwarded-Proto');
+      const isHttps = forwardedProto === 'https' || 
+                      (forwardedProto === undefined && req.protocol === 'https') ||
+                      (process.env.NODE_ENV === 'production' && forwardedProto !== 'http');
+      
+      const protocol = isHttps ? 'https' : (req.protocol || 'http');
+      const host = req.get('host') || req.get('X-Forwarded-Host') || 'localhost:5000';
+      baseUrl = `${protocol}://${host}`;
+    }
+    
+    // Ensure baseUrl doesn't end with a slash
+    baseUrl = baseUrl.replace(/\/$/, '');
+    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
     res.json({
       success: true,

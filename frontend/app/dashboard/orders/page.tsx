@@ -258,7 +258,7 @@ export default function OrdersPage() {
         stats: OrderStats;
         store: { id: string; name: string; domain: string };
       }>(url);
-
+      
       const shopifyOrders = response.data;
 
       // Fetch ZEN status for each order in parallel

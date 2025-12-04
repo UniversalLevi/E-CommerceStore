@@ -4,6 +4,7 @@ import { useState, useRef, ChangeEvent } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
+import { ensureHttps } from '@/lib/imageUtils';
 
 interface ImageUploaderProps {
   value: string[];
@@ -68,7 +69,9 @@ export default function ImageUploader({
         );
 
         if (response.success && response.url) {
-          onChange([...value, response.url]);
+          // Ensure URL uses HTTPS to prevent mixed content warnings
+          const safeUrl = ensureHttps(response.url);
+          onChange([...value, safeUrl]);
           notify.success('Image uploaded successfully');
         }
       } catch (error: any) {
@@ -133,9 +136,16 @@ export default function ImageUploader({
                   </div>
                 ) : (
                   <img
-                    src={url}
+                    src={ensureHttps(url)}
                     alt={`Upload ${index + 1}`}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback: try HTTPS if HTTP fails
+                      const target = e.target as HTMLImageElement;
+                      if (target.src.startsWith('http://')) {
+                        target.src = target.src.replace('http://', 'https://');
+                      }
+                    }}
                   />
                 )}
               </div>
