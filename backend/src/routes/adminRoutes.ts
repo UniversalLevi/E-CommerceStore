@@ -18,6 +18,7 @@ import {
 } from '../controllers/adminController';
 import revenueRoutes from './revenueRoutes';
 import subscriptionRoutes from './subscriptionRoutes';
+import productAnalyticsRoutes from './productAnalyticsRoutes';
 import { sendNotification, getNotificationHistory, getNotificationDetails } from '../controllers/notificationController';
 
 const router = Router();
@@ -49,6 +50,9 @@ router.delete('/contacts/:id', deleteContact);
 
 // Revenue routes
 router.use('/revenue', revenueRoutes);
+
+// Product analytics routes
+router.use('/product-analytics', productAnalyticsRoutes);
 
 // Subscription management routes
 router.use('/subscriptions', subscriptionRoutes);
