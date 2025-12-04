@@ -392,6 +392,118 @@ class ApiClient {
       data: any;
     }>(`/api/wallet/admin/withdrawals/${withdrawalId}/status`, payload);
   }
+
+  // Email Sender API methods
+  async getSmtpAccounts() {
+    return this.get<{
+      success: boolean;
+      data: any[];
+    }>('/api/admin/email-sender/smtp-accounts');
+  }
+
+  async createSmtpAccount(payload: any) {
+    return this.post<{
+      success: boolean;
+      data: any;
+    }>('/api/admin/email-sender/smtp-accounts', payload);
+  }
+
+  async updateSmtpAccount(id: string, payload: any) {
+    return this.put<{
+      success: boolean;
+      data: any;
+    }>(`/api/admin/email-sender/smtp-accounts/${id}`, payload);
+  }
+
+  async deleteSmtpAccount(id: string) {
+    return this.delete<{
+      success: boolean;
+      message: string;
+    }>(`/api/admin/email-sender/smtp-accounts/${id}`);
+  }
+
+  async testSmtpAccount(id: string) {
+    return this.post<{
+      success: boolean;
+      message: string;
+    }>(`/api/admin/email-sender/smtp-accounts/${id}/test`);
+  }
+
+  async getEmailTemplates() {
+    return this.get<{
+      success: boolean;
+      data: any[];
+    }>('/api/admin/email-sender/templates');
+  }
+
+  async createEmailTemplate(payload: any) {
+    return this.post<{
+      success: boolean;
+      data: any;
+    }>('/api/admin/email-sender/templates', payload);
+  }
+
+  async updateEmailTemplate(id: string, payload: any) {
+    return this.put<{
+      success: boolean;
+      data: any;
+    }>(`/api/admin/email-sender/templates/${id}`, payload);
+  }
+
+  async deleteEmailTemplate(id: string) {
+    return this.delete<{
+      success: boolean;
+      message: string;
+    }>(`/api/admin/email-sender/templates/${id}`);
+  }
+
+  async sendBulkEmails(payload: {
+    recipients: string[];
+    subject?: string;
+    htmlContent?: string;
+    plainTextContent?: string;
+    smtpAccountId?: string;
+    templateId?: string;
+  }) {
+    return this.post<{
+      success: boolean;
+      data: {
+        sent: number;
+        failed: number;
+        total: number;
+        errors: Array<{ email: string; error: string }>;
+      };
+    }>('/api/admin/email-sender/send', payload);
+  }
+
+  async getEmailLogs(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    recipient?: string;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.status) searchParams.set('status', params.status);
+    if (params.recipient) searchParams.set('recipient', params.recipient);
+
+    const query = searchParams.toString();
+    const url = query ? `/api/admin/email-sender/logs?${query}` : '/api/admin/email-sender/logs';
+
+    return this.get<{
+      success: boolean;
+      data: {
+        logs: any[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      };
+    }>(url);
+  }
 }
 
 export const api = new ApiClient();

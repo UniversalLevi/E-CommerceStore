@@ -23,6 +23,7 @@ import {
   Wallet,
   Zap,
   BarChart3,
+  Mail,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
   { href: '/admin/niches', label: 'Niches', icon: Layers },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/product-analytics', label: 'Product Analytics', icon: BarChart3 },
+  { href: '/admin/email-sender', label: 'Email Sender', icon: Mail },
   { href: '/admin/revenue', label: 'Revenue', icon: LineChart },
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: BadgeCheck },
   { href: '/admin/mentorship/applications', label: 'Mentorship', icon: UserCheck },

@@ -19,6 +19,7 @@ import {
 import revenueRoutes from './revenueRoutes';
 import subscriptionRoutes from './subscriptionRoutes';
 import productAnalyticsRoutes from './productAnalyticsRoutes';
+import emailSenderRoutes from './emailSenderRoutes';
 import { sendNotification, getNotificationHistory, getNotificationDetails } from '../controllers/notificationController';
 
 const router = Router();
@@ -53,6 +54,9 @@ router.use('/revenue', revenueRoutes);
 
 // Product analytics routes
 router.use('/product-analytics', productAnalyticsRoutes);
+
+// Email sender routes
+router.use('/email-sender', emailSenderRoutes);
 
 // Subscription management routes
 router.use('/subscriptions', subscriptionRoutes);
