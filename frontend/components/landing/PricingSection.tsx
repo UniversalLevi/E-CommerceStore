@@ -107,6 +107,7 @@ export default function PricingSection({ plans, loading, onGetStarted, formatPri
 
   return (
     <section 
+      id="pricing-plans"
       ref={containerRef}
       className="py-24 md:py-32 bg-black relative overflow-hidden"
     >

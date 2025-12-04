@@ -129,7 +129,7 @@ export default function RefundPage() {
       <div className="container mx-auto px-4 max-w-4xl relative z-10">
         <div className="glass-card border border-white/10 rounded-2xl shadow-2xl p-8 md:p-12">
           <h1 className="text-4xl font-bold mb-2"><span className="text-gradient-purple">Refund Policy</span></h1>
-          <p className="text-text-secondary mb-8">Last updated: {new Date().toLocaleDateString()}</p>
+          <p className="text-text-secondary mb-8">Last updated: 04/12/2025</p>
 
           <div className="space-y-3">
             {sections.map((section, index) => (
