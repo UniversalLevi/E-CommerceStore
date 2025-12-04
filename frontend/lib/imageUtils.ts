@@ -4,18 +4,29 @@
  */
 export function ensureHttps(url: string | undefined | null): string {
   if (!url) return '';
-  
+
   // If it's already HTTPS or a relative URL, return as-is
   if (url.startsWith('https://') || url.startsWith('//') || url.startsWith('/')) {
     return url;
   }
-  
-  // Convert HTTP to HTTPS
+
+  // For localhost / 127.0.0.1 we should NOT use HTTPS in dev
+  if (
+    url.startsWith('http://localhost') ||
+    url.startsWith('http://127.0.0.1') ||
+    url.startsWith('https://localhost') ||
+    url.startsWith('https://127.0.0.1')
+  ) {
+    // Always normalize localhost URLs to HTTP to avoid SSL protocol errors
+    return url.replace(/^https:\/\//i, 'http://');
+  }
+
+  // Convert HTTP to HTTPS for non-localhost URLs
   if (url.startsWith('http://')) {
     return url.replace('http://', 'https://');
   }
-  
-  // If it's a relative URL or data URL, return as-is
+
+  // If it's some other URL (data:, etc.), return as-is
   return url;
 }
 

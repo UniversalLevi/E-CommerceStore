@@ -71,13 +71,31 @@ export const uploadImage = async (
       // Detect protocol from headers (handles reverse proxies)
       // Check X-Forwarded-Proto first (common in production with reverse proxy)
       const forwardedProto = req.get('X-Forwarded-Proto');
-      const isHttps = forwardedProto === 'https' || 
-                      (forwardedProto === undefined && req.protocol === 'https') ||
-                      (process.env.NODE_ENV === 'production' && forwardedProto !== 'http');
-      
-      const protocol = isHttps ? 'https' : (req.protocol || 'http');
       const host = req.get('host') || req.get('X-Forwarded-Host') || 'localhost:5000';
+
+      const isLocalhost =
+        host.includes('localhost') || host.includes('127.0.0.1');
+
+      let protocol: string;
+
+      if (isLocalhost) {
+        // For localhost/127.0.0.1 always use HTTP to avoid SSL errors in dev
+        protocol = 'http';
+      } else {
+        const isHttps =
+          forwardedProto === 'https' ||
+          (forwardedProto === undefined && req.protocol === 'https') ||
+          (process.env.NODE_ENV === 'production' && forwardedProto !== 'http');
+
+        protocol = isHttps ? 'https' : (req.protocol || 'http');
+      }
+
       baseUrl = `${protocol}://${host}`;
+    }
+
+    // If BACKEND_URL was set to an https://localhost URL, force it back to http for dev
+    if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+      baseUrl = baseUrl.replace(/^https:\/\//i, 'http://');
     }
     
     // Ensure baseUrl doesn't end with a slash

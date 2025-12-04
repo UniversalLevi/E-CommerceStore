@@ -139,13 +139,6 @@ export default function ImageUploader({
                     src={ensureHttps(url)}
                     alt={`Upload ${index + 1}`}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback: try HTTPS if HTTP fails
-                      const target = e.target as HTMLImageElement;
-                      if (target.src.startsWith('http://')) {
-                        target.src = target.src.replace('http://', 'https://');
-                      }
-                    }}
                   />
                 )}
               </div>

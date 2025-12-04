@@ -280,13 +280,19 @@ export default function EditProductPage() {
                   className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                 >
                   <option value="">Select a niche</option>
-                  {niches.map((niche) => (
-                    <option key={niche._id} value={niche._id}>
-                      {niche.icon && <span>{niche.icon} </span>}
-                      {niche.name}
-                      {niche.isDefault && ' (Default)'}
-                    </option>
-                  ))}
+                  {niches.map((niche) => {
+                    const labelParts = [
+                      niche.icon || '',
+                      niche.name,
+                      niche.isDefault ? ' (Default)' : '',
+                    ].filter(Boolean);
+
+                    return (
+                      <option key={niche._id} value={niche._id}>
+                        {labelParts.join(' ')}
+                      </option>
+                    );
+                  })}
                 </select>
               )}
               {!formData.niche && !loadingNiches && (

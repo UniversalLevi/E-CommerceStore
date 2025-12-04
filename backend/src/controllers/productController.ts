@@ -149,6 +149,14 @@ export const createProduct = async (
       }
     }
 
+    // Calculate price from basePrice + profit + shippingPrice if not provided
+    if (!productData.price && productData.basePrice !== undefined) {
+      const basePrice = Number(productData.basePrice) || 0;
+      const profit = Number(productData.profit) || 0;
+      const shippingPrice = Number(productData.shippingPrice) || 0;
+      productData.price = basePrice + profit + shippingPrice;
+    }
+
     const product = await Product.create(productData);
 
     // Update niche counts (post-save hook handles this, but we can also call explicitly)
@@ -183,6 +191,14 @@ export const updateProduct = async (
     const existing = await Product.findById(id);
     if (!existing) {
       throw createError('Product not found', 404);
+    }
+
+    // Calculate price from basePrice + profit + shippingPrice if any of them are being updated
+    if (updates.basePrice !== undefined || updates.profit !== undefined || updates.shippingPrice !== undefined) {
+      const basePrice = updates.basePrice !== undefined ? Number(updates.basePrice) : existing.basePrice;
+      const profit = updates.profit !== undefined ? Number(updates.profit) : (existing.profit || 0);
+      const shippingPrice = updates.shippingPrice !== undefined ? Number(updates.shippingPrice) : (existing.shippingPrice || 0);
+      updates.price = basePrice + profit + shippingPrice;
     }
 
     // Validate niche if being changed
