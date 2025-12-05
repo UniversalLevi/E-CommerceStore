@@ -99,8 +99,9 @@ export default function AdminSendNotificationPage() {
   };
 
   const selectAll = () => {
-    const filtered = filteredUsers.map((u) => u._id);
-    setSelectedUserIds(filtered);
+    // Select ALL users in the system (all loaded users)
+    const allUserIds = users.map((u) => u._id);
+    setSelectedUserIds(allUserIds);
   };
 
   const deselectAll = () => {
@@ -253,7 +254,7 @@ export default function AdminSendNotificationPage() {
             </div>
             <div className="flex items-center gap-2">
               <Button onClick={selectAll} variant="ghost" className="text-sm">
-                Select All ({filteredUsers.length})
+                Select All ({users.length})
               </Button>
               <Button onClick={deselectAll} variant="ghost" className="text-sm">
                 Clear
