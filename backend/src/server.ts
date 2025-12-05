@@ -59,6 +59,8 @@ import walletRoutes from './routes/walletRoutes';
 import zenOrderRoutes from './routes/zenOrderRoutes';
 import customerRoutes from './routes/customerRoutes';
 import userEmailSenderRoutes from './routes/userEmailSenderRoutes';
+import videoMutatorRoutes from './routes/videoMutatorRoutes';
+import videoMutatorAdminRoutes from './routes/videoMutatorAdminRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -81,6 +83,8 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/admin/zen-orders', zenOrderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/email-sender', userEmailSenderRoutes);
+app.use('/api/video-mutator', videoMutatorRoutes);
+app.use('/api/admin/video-mutator', authenticateToken, requireAdmin, videoMutatorAdminRoutes);
 // Content and ad builder routes
 app.use('/api', contentRoutes);
 // Niche routes (separate namespaces to prevent route overlap)
@@ -99,6 +103,10 @@ const startServer = async () => {
     
     // Start health check service
     HealthCheckService.start();
+    
+    // Start video cleanup service (deletes videos older than 3 days)
+    const { startVideoCleanupService } = await import('./services/videoCleanupService');
+    startVideoCleanupService();
     
     app.listen(config.port, () => {
       console.log(`🚀 Server running on http://localhost:${config.port}`);

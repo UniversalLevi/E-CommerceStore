@@ -19,6 +19,7 @@ import {
   ShoppingCart,
   Wallet,
   Mail,
+  Video,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
   { href: '/dashboard/products', label: 'My Products', icon: Package },
   { href: '/dashboard/ad-builder/instagram', label: 'Ad Builder', icon: Megaphone },
+  { href: '/dashboard/video-mutator', label: 'Video Mutator', icon: Video },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/mentorship', label: 'Mentorship', icon: Users },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },

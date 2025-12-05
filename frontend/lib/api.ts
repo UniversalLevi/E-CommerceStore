@@ -623,6 +623,136 @@ class ApiClient {
       };
     }>(url);
   }
+
+  // ========== VIDEO MUTATOR API ==========
+
+  async uploadVideoForMutation(file: File) {
+    const formData = new FormData();
+    formData.append('video', file);
+    return this.post<{
+      success: boolean;
+      message: string;
+      data: {
+        jobId: string;
+        originalFileName: string;
+        status: string;
+      };
+    }>('/api/video-mutator/upload', formData);
+  }
+
+  async getVideoMutatorJobs(params: { page?: number; limit?: number } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    const url = query ? `/api/video-mutator/jobs?${query}` : '/api/video-mutator/jobs';
+    return this.get<{
+      success: boolean;
+      data: {
+        jobs: any[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      };
+    }>(url);
+  }
+
+  async getVideoMutatorJob(jobId: string) {
+    return this.get<{
+      success: boolean;
+      data: any;
+    }>(`/api/video-mutator/jobs/${jobId}`);
+  }
+
+  async getVideoMutatorStats() {
+    return this.get<{
+      success: boolean;
+      data: {
+        totalJobs: number;
+        completedJobs: number;
+        failedJobs: number;
+        pendingJobs: number;
+        processingJobs: number;
+        totalOriginalSize: number;
+        totalMutatedSize: number;
+        avgProcessingTime: number;
+      };
+    }>('/api/video-mutator/stats');
+  }
+
+  async retryVideoMutatorJob(jobId: string) {
+    return this.post<{
+      success: boolean;
+      message: string;
+      data: {
+        jobId: string;
+        status: string;
+      };
+    }>(`/api/video-mutator/jobs/${jobId}/retry`);
+  }
+
+  async deleteVideoMutatorJob(jobId: string) {
+    return this.delete<{
+      success: boolean;
+      message: string;
+    }>(`/api/video-mutator/jobs/${jobId}`);
+  }
+
+  // Admin video mutator
+  async adminGetVideoMutatorJobs(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    userId?: string;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.status) searchParams.set('status', params.status);
+    if (params.userId) searchParams.set('userId', params.userId);
+    const query = searchParams.toString();
+    const url = query ? `/api/admin/video-mutator/jobs?${query}` : '/api/admin/video-mutator/jobs';
+    return this.get<{
+      success: boolean;
+      data: {
+        jobs: any[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      };
+    }>(url);
+  }
+
+  async adminGetVideoMutatorStats() {
+    return this.get<{
+      success: boolean;
+      data: {
+        totalJobs: number;
+        completedJobs: number;
+        failedJobs: number;
+        pendingJobs: number;
+        processingJobs: number;
+        totalOriginalSize: number;
+        totalMutatedSize: number;
+        avgProcessingTime: number;
+        uniqueUsers: number;
+        recentJobs: any[];
+      };
+    }>('/api/admin/video-mutator/stats');
+  }
+
+  async adminDeleteVideoMutatorJob(jobId: string) {
+    return this.delete<{
+      success: boolean;
+      message: string;
+    }>(`/api/admin/video-mutator/jobs/${jobId}`);
+  }
 }
 
 export const api = new ApiClient();

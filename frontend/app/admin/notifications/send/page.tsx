@@ -31,6 +31,7 @@ export default function AdminSendNotificationPage() {
   const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
   const [notificationDetails, setNotificationDetails] = useState<any[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [totalUserCount, setTotalUserCount] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -50,12 +51,39 @@ export default function AdminSendNotificationPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await api.get<{
+      // Fetch ALL users by using a very high limit (or paginate)
+      // First get total count, then fetch all
+      const firstPage = await api.get<{
         success: boolean;
-        data: { users: User[] };
-      }>('/api/admin/users?limit=1000');
+        data: { users: User[]; total: number };
+      }>('/api/admin/users?limit=100&page=1');
 
-      setUsers(response.data.users);
+      const totalUsers = firstPage.data.total || firstPage.data.users.length;
+      setTotalUserCount(totalUsers);
+      
+      if (totalUsers <= 100) {
+        setUsers(firstPage.data.users);
+      } else {
+        // Fetch all users in batches
+        const allUsers: User[] = [...firstPage.data.users];
+        const totalPages = Math.ceil(totalUsers / 100);
+        
+        const fetchPromises = [];
+        for (let page = 2; page <= totalPages; page++) {
+          fetchPromises.push(
+            api.get<{ success: boolean; data: { users: User[] } }>(
+              `/api/admin/users?limit=100&page=${page}`
+            )
+          );
+        }
+        
+        const responses = await Promise.all(fetchPromises);
+        responses.forEach(response => {
+          allUsers.push(...response.data.users);
+        });
+        
+        setUsers(allUsers);
+      }
     } catch (error: any) {
       console.error('Error fetching users:', error);
       notify.error('Failed to load users');
@@ -216,10 +244,16 @@ export default function AdminSendNotificationPage() {
         {/* User Selection */}
         <div className="bg-surface-raised border border-border-default rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-text-primary">Select Users</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-text-primary">Select Users</h2>
+              <p className="text-sm text-text-muted">
+                {users.length} users loaded {totalUserCount > users.length && `(of ${totalUserCount})`}
+                {selectedUserIds.length > 0 && ` • ${selectedUserIds.length} selected`}
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Button onClick={selectAll} variant="ghost" className="text-sm">
-                Select All
+                Select All ({filteredUsers.length})
               </Button>
               <Button onClick={deselectAll} variant="ghost" className="text-sm">
                 Clear
