@@ -55,10 +55,18 @@ export default function AdminSendNotificationPage() {
       // First get total count, then fetch all
       const firstPage = await api.get<{
         success: boolean;
-        data: { users: User[]; total: number };
+        data: { 
+          users: User[]; 
+          pagination: { 
+            total: number; 
+            page: number; 
+            limit: number; 
+            pages: number;
+          };
+        };
       }>('/api/admin/users?limit=100&page=1');
 
-      const totalUsers = firstPage.data.total || firstPage.data.users.length;
+      const totalUsers = firstPage.data.pagination?.total || firstPage.data.users.length;
       setTotalUserCount(totalUsers);
       
       if (totalUsers <= 100) {
@@ -71,7 +79,18 @@ export default function AdminSendNotificationPage() {
         const fetchPromises = [];
         for (let page = 2; page <= totalPages; page++) {
           fetchPromises.push(
-            api.get<{ success: boolean; data: { users: User[] } }>(
+            api.get<{ 
+              success: boolean; 
+              data: { 
+                users: User[]; 
+                pagination: { 
+                  total: number; 
+                  page: number; 
+                  limit: number; 
+                  pages: number;
+                };
+              };
+            }>(
               `/api/admin/users?limit=100&page=${page}`
             )
           );
