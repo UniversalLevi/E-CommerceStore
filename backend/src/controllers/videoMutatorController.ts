@@ -116,12 +116,36 @@ async function videoHasAudio(inputPath: string): Promise<boolean> {
   });
 }
 
+// Check if ffmpeg is installed
+async function checkFFmpegAvailable(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const ffmpeg = spawn('ffmpeg', ['-version']);
+    ffmpeg.on('close', (code) => {
+      resolve(code === 0);
+    });
+    ffmpeg.on('error', () => {
+      resolve(false);
+    });
+  });
+}
+
 // Process video using ffmpeg
 async function processVideoWithFFmpeg(
   inputPath: string,
   outputPath: string,
   params: ReturnType<typeof generateMutationParams>
 ): Promise<void> {
+  // Check if ffmpeg is available
+  const ffmpegAvailable = await checkFFmpegAvailable();
+  if (!ffmpegAvailable) {
+    throw new Error(
+      'FFmpeg is not installed on the server. Please install it using: ' +
+      'Ubuntu/Debian: sudo apt-get update && sudo apt-get install -y ffmpeg | ' +
+      'CentOS/RHEL: sudo yum install -y ffmpeg | ' +
+      'Or visit: https://ffmpeg.org/download.html'
+    );
+  }
+
   // Check if video has audio
   const hasAudio = await videoHasAudio(inputPath);
 
@@ -186,8 +210,17 @@ async function processVideoWithFFmpeg(
       }
     });
 
-    ffmpeg.on('error', (err) => {
-      reject(new Error(`FFmpeg error: ${err.message}`));
+    ffmpeg.on('error', (err: any) => {
+      if (err.code === 'ENOENT') {
+        reject(new Error(
+          'FFmpeg is not installed on the server. Please install it using: ' +
+          'Ubuntu/Debian: sudo apt-get update && sudo apt-get install -y ffmpeg | ' +
+          'CentOS/RHEL: sudo yum install -y ffmpeg | ' +
+          'See FFMPEG_INSTALLATION.md for detailed instructions'
+        ));
+      } else {
+        reject(new Error(`FFmpeg error: ${err.message}`));
+      }
     });
   });
 }
