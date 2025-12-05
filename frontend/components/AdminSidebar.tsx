@@ -51,6 +51,7 @@ const navItems: NavItem[] = [
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/product-analytics', label: 'Product Analytics', icon: BarChart3 },
   { href: '/admin/email-sender', label: 'Email Sender', icon: Mail },
+  { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/revenue', label: 'Revenue', icon: LineChart },
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: BadgeCheck },
   { href: '/admin/mentorship/applications', label: 'Mentorship', icon: UserCheck },

@@ -504,6 +504,125 @@ class ApiClient {
       };
     }>(url);
   }
+
+  async sendEmailsToCustomers(payload: {
+    storeIds?: string[];
+    subject?: string;
+    htmlContent?: string;
+    plainTextContent?: string;
+    smtpAccountId?: string;
+    templateId?: string;
+    acceptsMarketingOnly?: boolean;
+  }) {
+    return this.post<{
+      success: boolean;
+      data: {
+        sent: number;
+        failed: number;
+        total: number;
+        errors: Array<{ email: string; error: string }>;
+      };
+    }>('/api/admin/email-sender/send-to-customers', payload);
+  }
+
+  // Customer management
+  async syncCustomers(storeId: string) {
+    return this.post<{
+      success: boolean;
+      message: string;
+      data: {
+        total: number;
+        created: number;
+        updated: number;
+        skipped: number;
+      };
+    }>(`/api/customers/sync/${storeId}`);
+  }
+
+  async getCustomers(params: {
+    storeId?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+    acceptsMarketing?: boolean;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.storeId) searchParams.set('storeId', params.storeId);
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.search) searchParams.set('search', params.search);
+    if (params.acceptsMarketing) searchParams.set('acceptsMarketing', String(params.acceptsMarketing));
+
+    const query = searchParams.toString();
+    const url = query ? `/api/customers?${query}` : '/api/customers';
+
+    return this.get<{
+      success: boolean;
+      data: {
+        customers: any[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      };
+    }>(url);
+  }
+
+  async getCustomerStats(params: { storeId?: string } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.storeId) searchParams.set('storeId', params.storeId);
+
+    const query = searchParams.toString();
+    const url = query ? `/api/customers/stats?${query}` : '/api/customers/stats';
+
+    return this.get<{
+      success: boolean;
+      data: {
+        total: number;
+        withEmail: number;
+        withPhone: number;
+        acceptsMarketing: number;
+        totalSpent: number;
+        totalOrders: number;
+      };
+    }>(url);
+  }
+
+  // Admin customer management
+  async adminGetCustomers(params: {
+    storeIds?: string[];
+    page?: number;
+    limit?: number;
+    search?: string;
+    acceptsMarketing?: boolean;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    if (params.storeIds && params.storeIds.length > 0) {
+      params.storeIds.forEach((id) => searchParams.append('storeIds', id));
+    }
+    if (params.page) searchParams.set('page', String(params.page));
+    if (params.limit) searchParams.set('limit', String(params.limit));
+    if (params.search) searchParams.set('search', params.search);
+    if (params.acceptsMarketing) searchParams.set('acceptsMarketing', String(params.acceptsMarketing));
+
+    const query = searchParams.toString();
+    const url = query ? `/api/admin/customers?${query}` : '/api/admin/customers';
+
+    return this.get<{
+      success: boolean;
+      data: {
+        customers: any[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      };
+    }>(url);
+  }
 }
 
 export const api = new ApiClient();

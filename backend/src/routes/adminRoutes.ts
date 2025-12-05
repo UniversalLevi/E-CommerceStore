@@ -21,6 +21,7 @@ import subscriptionRoutes from './subscriptionRoutes';
 import productAnalyticsRoutes from './productAnalyticsRoutes';
 import emailSenderRoutes from './emailSenderRoutes';
 import { sendNotification, getNotificationHistory, getNotificationDetails } from '../controllers/notificationController';
+import { getAllCustomers } from '../controllers/customerController';
 
 const router = Router();
 
@@ -65,6 +66,9 @@ router.use('/subscriptions', subscriptionRoutes);
 router.post('/notifications/send', sendNotification);
 router.get('/notifications/history', getNotificationHistory);
 router.get('/notifications/details', getNotificationDetails);
+
+// Customer management routes
+router.get('/customers', getAllCustomers);
 
 export default router;
 

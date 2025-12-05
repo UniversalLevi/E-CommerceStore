@@ -57,6 +57,8 @@ import contentRoutes from './routes/contentRoutes';
 import autoOrderRoutes from './routes/fakeOrderRoutes';
 import walletRoutes from './routes/walletRoutes';
 import zenOrderRoutes from './routes/zenOrderRoutes';
+import customerRoutes from './routes/customerRoutes';
+import userEmailSenderRoutes from './routes/userEmailSenderRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -77,6 +79,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/auto-orders', autoOrderRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/admin/zen-orders', zenOrderRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/email-sender', userEmailSenderRoutes);
 // Content and ad builder routes
 app.use('/api', contentRoutes);
 // Niche routes (separate namespaces to prevent route overlap)

@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { SmtpAccount } from '../models/SmtpAccount';
 import { EmailTemplate } from '../models/EmailTemplate';
 import { EmailLog } from '../models/EmailLog';
+import { Customer } from '../models/Customer';
 import { asyncHandler } from '../utils/asyncHandler';
 import { createError } from '../middleware/errorHandler';
 import nodemailer from 'nodemailer';
@@ -394,6 +395,157 @@ export const getEmailLogs = asyncHandler(
           pages: Math.ceil(total / Number(limit)),
         },
       },
+    });
+  }
+);
+
+// Send emails to customers
+export const sendEmailsToCustomers = asyncHandler(
+  async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    const { storeIds, subject, htmlContent, plainTextContent, smtpAccountId, templateId, acceptsMarketingOnly } =
+      req.body;
+
+    if (!subject && !templateId) {
+      throw createError('Subject or template ID is required', 400);
+    }
+
+    // Build customer query
+    const customerQuery: any = {};
+    
+    if (req.user!.role === 'admin') {
+      // Admin can send to all customers or filter by stores
+      if (storeIds && Array.isArray(storeIds) && storeIds.length > 0) {
+        customerQuery.storeConnectionId = { $in: storeIds };
+      }
+    } else {
+      // Regular users can only send to their own customers
+      customerQuery.owner = req.user!._id;
+      if (storeIds && Array.isArray(storeIds) && storeIds.length > 0) {
+        customerQuery.storeConnectionId = { $in: storeIds };
+      }
+    }
+
+    // Filter by acceptsMarketing if requested
+    if (acceptsMarketingOnly === true) {
+      customerQuery.acceptsMarketing = true;
+    }
+
+    // Only get customers with email addresses
+    customerQuery.email = { $exists: true, $nin: [null, ''] };
+
+    // Get SMTP account
+    let account;
+    if (smtpAccountId) {
+      account = await SmtpAccount.findOne({
+        _id: smtpAccountId,
+        createdBy: req.user!._id,
+        active: true,
+      });
+    } else {
+      account = await SmtpAccount.findOne({
+        createdBy: req.user!._id,
+        isDefault: true,
+        active: true,
+      });
+    }
+
+    if (!account) {
+      throw createError('No active SMTP account found', 404);
+    }
+
+    // Get template if provided
+    let template = null;
+    if (templateId) {
+      template = await EmailTemplate.findOne({
+        _id: templateId,
+        createdBy: req.user!._id,
+      });
+    } else {
+      template = await EmailTemplate.findOne({
+        createdBy: req.user!._id,
+        isDefault: true,
+      });
+    }
+
+    const finalSubject = subject || template?.subject || 'No Subject';
+    const finalHtmlContent = htmlContent || template?.htmlContent || '';
+    const finalPlainTextContent = plainTextContent || template?.plainTextContent || '';
+
+    if (!finalHtmlContent) {
+      throw createError('HTML content is required', 400);
+    }
+
+    // Get all customers matching the query
+    const customers = await Customer.find(customerQuery).select('email').lean();
+
+    if (customers.length === 0) {
+      throw createError('No customers found matching the criteria', 404);
+    }
+
+    // Extract unique email addresses
+    const recipients = [...new Set(customers.map((c) => c.email).filter(Boolean))];
+
+    // Create transporter
+    const transporter = createTransporter(account);
+
+    // Send emails
+    const results = {
+      sent: 0,
+      failed: 0,
+      total: recipients.length,
+      errors: [] as Array<{ email: string; error: string }>,
+    };
+
+    for (const email of recipients) {
+      if (!email || !email.includes('@')) {
+        results.failed++;
+        results.errors.push({ email: email || 'unknown', error: 'Invalid email address' });
+        continue;
+      }
+
+      try {
+        const mailOptions = {
+          from: `"${account.name}" <${account.email}>`,
+          to: email,
+          subject: finalSubject,
+          html: finalHtmlContent,
+          text: finalPlainTextContent || finalHtmlContent.replace(/<[^>]*>/g, ''),
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        // Log success
+        await EmailLog.create({
+          recipient: email,
+          subject: finalSubject,
+          smtpAccountId: account._id,
+          templateId: template?._id,
+          status: 'sent',
+          sentAt: new Date(),
+          sentBy: req.user!._id,
+        });
+
+        results.sent++;
+      } catch (error: any) {
+        // Log failure
+        await EmailLog.create({
+          recipient: email,
+          subject: finalSubject,
+          smtpAccountId: account._id,
+          templateId: template?._id,
+          status: 'failed',
+          errorMessage: error.message,
+          sentBy: req.user!._id,
+        });
+
+        results.failed++;
+        results.errors.push({ email, error: error.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: results,
     });
   }
 );

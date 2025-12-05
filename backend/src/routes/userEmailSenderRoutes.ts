@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth';
 import {
   getSmtpAccounts,
   createSmtpAccount,
@@ -15,6 +16,9 @@ import {
 } from '../controllers/emailSenderController';
 
 const router = Router();
+
+// All routes require authentication (but not admin)
+router.use(authenticateToken);
 
 // SMTP Account routes
 router.get('/smtp-accounts', getSmtpAccounts);

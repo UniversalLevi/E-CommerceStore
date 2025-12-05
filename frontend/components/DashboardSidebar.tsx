@@ -18,6 +18,7 @@ import {
   Users,
   ShoppingCart,
   Wallet,
+  Mail,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -35,6 +36,7 @@ interface DashboardSidebarProps {
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/stores', label: 'My Stores', icon: Store },
+  { href: '/dashboard/customers', label: 'Customers', icon: Mail },
   { href: '/dashboard/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
   { href: '/dashboard/products', label: 'My Products', icon: Package },
