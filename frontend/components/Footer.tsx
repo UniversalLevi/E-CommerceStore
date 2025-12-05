@@ -6,9 +6,7 @@ import { motion, useInView } from 'framer-motion';
 import { 
   Twitter, 
   Instagram,
-  Mail,
   MapPin,
-  Phone,
   Heart,
 } from 'lucide-react';
 
@@ -40,8 +38,6 @@ const socialLinks = [
 ];
 
 const contactInfo = [
-  { icon: Mail, label: 'agarwalvarun3169@gmail.com' },
-  { icon: Phone, label: '+91 79806 45580' },
   { icon: MapPin, label: 'Mumbai, India' },
 ];
 
