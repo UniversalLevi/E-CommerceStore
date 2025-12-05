@@ -122,7 +122,11 @@ const stats = [
   { value: '₹50L+', label: 'Revenue Generated' },
 ];
 
-export default function TestimonialsSection() {
+interface TestimonialsSectionProps {
+  onGetStarted: () => void;
+}
+
+export default function TestimonialsSection({ onGetStarted }: TestimonialsSectionProps) {
   const containerRef = useRef<HTMLElement>(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.1 });
   const [activeIndex, setActiveIndex] = useState(0);
@@ -411,6 +415,7 @@ export default function TestimonialsSection() {
             Ready to write your success story?
           </p>
           <motion.button
+            onClick={onGetStarted}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-xl shadow-purple-500/25"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

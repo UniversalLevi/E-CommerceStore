@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { 
   Check, 
@@ -347,12 +348,14 @@ export default function PricingSection({ plans, loading, onGetStarted, formatPri
           <p className="text-text-secondary mb-4">
             Need a custom solution for your enterprise?
           </p>
-          <motion.button
-            className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 font-semibold transition-colors"
-            whileHover={{ x: 4 }}
-          >
-            Contact Sales <ArrowRight className="w-4 h-4" />
-          </motion.button>
+          <Link href="/coming-soon">
+            <motion.button
+              className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 font-semibold transition-colors"
+              whileHover={{ x: 4 }}
+            >
+              Contact Sales <ArrowRight className="w-4 h-4" />
+            </motion.button>
+          </Link>
         </motion.div>
       </div>
     </section>

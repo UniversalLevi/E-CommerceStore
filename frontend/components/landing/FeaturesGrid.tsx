@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 import IconBadge, { IconBadgeVariant } from '@/components/IconBadge';
 import type { LucideIcon } from 'lucide-react';
@@ -25,6 +26,7 @@ interface Feature {
 
 interface FeaturesGridProps {
   features: Feature[];
+  onGetStarted: () => void;
 }
 
 const additionalFeatures = [
@@ -86,7 +88,7 @@ const additionalFeatures = [
   },
 ];
 
-export default function FeaturesGrid({ features }: FeaturesGridProps) {
+export default function FeaturesGrid({ features, onGetStarted }: FeaturesGridProps) {
   const containerRef = useRef<HTMLElement>(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.1 });
 
@@ -281,19 +283,22 @@ export default function FeaturesGrid({ features }: FeaturesGridProps) {
               
               <div className="flex flex-wrap justify-center gap-4">
                 <motion.button
+                  onClick={onGetStarted}
                   className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-6 py-3 rounded-full font-semibold transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   Get Started Free
                 </motion.button>
-                <motion.button
-                  className="bg-white/5 hover:bg-white/10 text-white border border-white/20 px-6 py-3 rounded-full font-semibold transition-all"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  View All Features
-                </motion.button>
+                <Link href="/coming-soon">
+                  <motion.button
+                    className="bg-white/5 hover:bg-white/10 text-white border border-white/20 px-6 py-3 rounded-full font-semibold transition-all"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    View All Features
+                  </motion.button>
+                </Link>
               </div>
             </div>
           </div>

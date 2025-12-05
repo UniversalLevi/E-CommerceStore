@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { 
   HelpCircle, 
@@ -247,18 +248,19 @@ export default function FAQSection() {
               ].map((contact) => {
                 const Icon = contact.icon;
                 return (
-                  <motion.button
-                    key={contact.label}
-                    className="group p-5 glass-card rounded-xl border border-white/10 hover:border-white/20 transition-all text-left"
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${contact.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    <h4 className="font-semibold text-white mb-1">{contact.label}</h4>
-                    <p className="text-sm text-text-secondary">{contact.desc}</p>
-                  </motion.button>
+                  <Link key={contact.label} href="/contact">
+                    <motion.button
+                      className="group p-5 glass-card rounded-xl border border-white/10 hover:border-white/20 transition-all text-left w-full"
+                      whileHover={{ y: -4, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${contact.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                      <h4 className="font-semibold text-white mb-1">{contact.label}</h4>
+                      <p className="text-sm text-text-secondary">{contact.desc}</p>
+                    </motion.button>
+                  </Link>
                 );
               })}
             </div>

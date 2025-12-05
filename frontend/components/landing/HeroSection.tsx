@@ -262,14 +262,16 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </motion.button>
                 
-                <motion.button
-                  className="group bg-white/5 backdrop-blur-md hover:bg-white/10 text-white border-2 border-white/20 hover:border-white/40 px-8 py-4 rounded-full font-semibold text-lg transition-all min-h-[56px] flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Play className="w-5 h-5" />
-                  <span>Watch Demo</span>
-                </motion.button>
+                <Link href="/coming-soon">
+                  <motion.button
+                    className="group bg-white/5 backdrop-blur-md hover:bg-white/10 text-white border-2 border-white/20 hover:border-white/40 px-8 py-4 rounded-full font-semibold text-lg transition-all min-h-[56px] flex items-center justify-center gap-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Play className="w-5 h-5" />
+                    <span>Get Demo</span>
+                  </motion.button>
+                </Link>
               </motion.div>
 
               {/* Trust Badges */}

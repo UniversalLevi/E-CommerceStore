@@ -166,19 +166,19 @@ export default function Home() {
         <StatsSection />
 
         {/* How It Works */}
-        <HowItWorks />
+        <HowItWorks onGetStarted={handleGetStarted} />
 
         {/* Store Preview */}
         <StorePreview />
 
         {/* Features Grid */}
-        <FeaturesGrid features={featuresWithGradients} />
+        <FeaturesGrid features={featuresWithGradients} onGetStarted={handleGetStarted} />
 
         {/* Templates Section */}
         <TemplatesSection />
 
         {/* Testimonials Section */}
-        <TestimonialsSection />
+        <TestimonialsSection onGetStarted={handleGetStarted} />
 
         {/* Pricing Section */}
         <PricingSection 

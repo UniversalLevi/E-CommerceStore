@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { 
   Store, 
@@ -270,20 +271,24 @@ export default function TemplatesSection() {
                     animate={{ opacity: hoveredTemplate === template.id ? 1 : 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <motion.button
-                      className="px-4 py-2 bg-white text-black rounded-lg font-semibold text-sm flex items-center gap-2"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Eye className="w-4 h-4" /> Preview
-                    </motion.button>
-                    <motion.button
-                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold text-sm"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      Use This
-                    </motion.button>
+                    <Link href="/coming-soon">
+                      <motion.button
+                        className="px-4 py-2 bg-white text-black rounded-lg font-semibold text-sm flex items-center gap-2"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Eye className="w-4 h-4" /> Preview
+                      </motion.button>
+                    </Link>
+                    <Link href="/coming-soon">
+                      <motion.button
+                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold text-sm"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Use This
+                      </motion.button>
+                    </Link>
                   </motion.div>
 
                   {/* Bottom Gradient */}
@@ -318,12 +323,14 @@ export default function TemplatesSection() {
                     ))}
                   </div>
                   
-                  <motion.button 
-                    className={`${template.accentColor} hover:text-white font-semibold text-sm flex items-center gap-2 group-hover:gap-3 transition-all`}
-                    whileHover={{ x: 4 }}
-                  >
-                    View Template <ArrowRight className="w-4 h-4" />
-                  </motion.button>
+                  <Link href="/coming-soon">
+                    <motion.button 
+                      className={`${template.accentColor} hover:text-white font-semibold text-sm flex items-center gap-2 group-hover:gap-3 transition-all`}
+                      whileHover={{ x: 4 }}
+                    >
+                      View Template <ArrowRight className="w-4 h-4" />
+                    </motion.button>
+                  </Link>
                 </div>
               </motion.div>
             ))}
@@ -337,15 +344,17 @@ export default function TemplatesSection() {
           transition={{ delay: 0.8, duration: 0.6 }}
           className="text-center mt-12"
         >
-          <motion.button
-            className="group inline-flex items-center gap-2 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/40 rounded-full font-semibold text-white transition-all"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <ShoppingBag className="w-5 h-5" />
-            View All Templates
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </motion.button>
+          <Link href="/coming-soon">
+            <motion.button
+              className="group inline-flex items-center gap-2 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/40 rounded-full font-semibold text-white transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ShoppingBag className="w-5 h-5" />
+              View All Templates
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </motion.button>
+          </Link>
           <p className="text-text-muted text-sm mt-4">
             50+ templates available • New templates added weekly
           </p>

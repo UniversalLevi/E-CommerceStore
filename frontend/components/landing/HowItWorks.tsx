@@ -25,6 +25,10 @@ interface Step {
   glowColor: string;
 }
 
+interface HowItWorksProps {
+  onGetStarted: () => void;
+}
+
 const steps: Step[] = [
   {
     number: 1,
@@ -90,7 +94,7 @@ const processFeatures = [
   { icon: BarChart3, label: 'Built-in Analytics' },
 ];
 
-export default function HowItWorks() {
+export default function HowItWorks({ onGetStarted }: HowItWorksProps) {
   const containerRef = useRef<HTMLElement>(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.1 });
   
@@ -322,6 +326,7 @@ export default function HowItWorks() {
             Ready to get started? It takes less than 5 minutes.
           </p>
           <motion.button
+            onClick={onGetStarted}
             className="group bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-8 py-4 rounded-full font-bold text-lg transition-all shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

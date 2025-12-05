@@ -1,7 +1,9 @@
 'use client';
 
 import { useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowRight, 
   Sparkles, 
@@ -24,8 +26,18 @@ const benefits = [
 ];
 
 export default function CTASection({ onGetStarted }: CTASectionProps) {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const containerRef = useRef<HTMLElement>(null);
   const isInView = useInView(containerRef, { once: true, amount: 0.3 });
+
+  const handleScheduleDemo = () => {
+    if (isAuthenticated) {
+      router.push('/dashboard/mentorship');
+    } else {
+      router.push('/login');
+    }
+  };
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -190,6 +202,7 @@ export default function CTASection({ onGetStarted }: CTASectionProps) {
                 </motion.button>
                 
                 <motion.button
+                  onClick={handleScheduleDemo}
                   className="bg-white/5 hover:bg-white/10 text-white border-2 border-white/20 hover:border-white/40 px-10 py-5 rounded-full font-semibold text-lg transition-all"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
