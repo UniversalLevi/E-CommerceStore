@@ -60,4 +60,5 @@ out/
 **/public/uploads/
 backend/public/uploads/
 frontend/public/uploads/
-
+backend/uploads/
+backend/uploads/**
