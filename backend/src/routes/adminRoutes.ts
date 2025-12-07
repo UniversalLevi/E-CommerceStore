@@ -5,8 +5,10 @@ import {
   getSystemHealth,
   listUsers,
   getUserDetails,
+  getComprehensiveUserData,
   updateUserRole,
   toggleUserStatus,
+  updateUserInfo,
   deleteUser,
   getAuditLogs,
   exportAuditLogs,
@@ -15,6 +17,7 @@ import {
   replyToContact,
   updateContactStatus,
   deleteContact,
+  updateOrderZenStatus,
 } from '../controllers/adminController';
 import revenueRoutes from './revenueRoutes';
 import subscriptionRoutes from './subscriptionRoutes';
@@ -35,8 +38,10 @@ router.get('/health', getSystemHealth);
 // User management routes
 router.get('/users', listUsers);
 router.get('/users/:id', getUserDetails);
+router.get('/users/:id/comprehensive', getComprehensiveUserData);
 router.put('/users/:id/role', updateUserRole);
 router.put('/users/:id/status', toggleUserStatus);
+router.put('/users/:id/update', updateUserInfo);
 router.delete('/users/:id', deleteUser);
 
 // Audit log routes
@@ -69,6 +74,9 @@ router.get('/notifications/details', getNotificationDetails);
 
 // Customer management routes
 router.get('/customers', getAllCustomers);
+
+// Order management routes
+router.put('/orders/:orderId/zen-status', updateOrderZenStatus);
 
 export default router;
 

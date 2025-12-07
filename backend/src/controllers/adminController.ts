@@ -5,6 +5,11 @@ import { StoreConnection } from '../models/StoreConnection';
 import { AuditLog } from '../models/AuditLog';
 import { Product } from '../models/Product';
 import { Contact } from '../models/Contact';
+import { Order } from '../models/Order';
+import { ZenOrder } from '../models/ZenOrder';
+import { Wallet } from '../models/Wallet';
+import { WalletTransaction } from '../models/WalletTransaction';
+import { Payment } from '../models/Payment';
 import mongoose from 'mongoose';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
@@ -436,6 +441,327 @@ export const getUserDetails = async (
           totalPasswordChanges: passwordChanges.length,
           lastPasswordChange: passwordChanges[0]?.timestamp || null,
         },
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get comprehensive user database information (Admin)
+ * GET /api/admin/users/:id/comprehensive
+ */
+export const getComprehensiveUserData = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    // Get user with all fields (excluding password)
+    const user = await User.findById(id)
+      .select('-password -resetPasswordToken -emailVerificationToken')
+      .lean();
+
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    // Fetch all related data in parallel
+    const [
+      stores,
+      orders,
+      zenOrders,
+      wallet,
+      walletTransactions,
+      payments,
+      products,
+      auditLogs,
+    ] = await Promise.all([
+      // Stores
+      StoreConnection.find({ owner: id })
+        .select('-accessToken -apiKey -apiSecret')
+        .sort({ createdAt: -1 })
+        .lean(),
+
+      // Orders
+      Order.find({ userId: id })
+        .populate('storeConnectionId', 'storeName shopDomain')
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean(),
+
+      // ZEN Orders
+      ZenOrder.find({ userId: id })
+        .populate('orderId')
+        .populate('assignedPicker', 'name email')
+        .populate('assignedPacker', 'name email')
+        .populate('assignedQc', 'name email')
+        .populate('assignedCourierPerson', 'name email')
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean(),
+
+      // Wallet
+      Wallet.findOne({ userId: id }).lean(),
+
+      // Wallet Transactions
+      WalletTransaction.find({ userId: id })
+        .populate('orderId', 'shopifyOrderName')
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean(),
+
+      // Payments
+      Payment.find({ userId: id })
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean(),
+
+      // Products added by user
+      Product.find({ addedBy: id })
+        .select('name price niche active')
+        .populate('niche', 'name')
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean(),
+
+      // Recent audit logs
+      AuditLog.find({ userId: id })
+        .sort({ timestamp: -1 })
+        .limit(50)
+        .lean(),
+    ]);
+
+    // Calculate statistics
+    const stats = {
+      // Store stats
+      totalStores: stores.length,
+      activeStores: stores.filter((s: any) => s.status === 'active').length,
+      
+      // Order stats
+      totalOrders: await Order.countDocuments({ userId: id }),
+      ordersByStatus: await Order.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(id) } },
+        { $group: { _id: '$zenStatus', count: { $sum: 1 } } },
+      ]),
+      
+      // ZEN Order stats
+      totalZenOrders: await ZenOrder.countDocuments({ userId: id }),
+      zenOrdersByStatus: await ZenOrder.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(id) } },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      
+      // Wallet stats
+      walletBalance: wallet?.balance || 0,
+      totalWalletTransactions: await WalletTransaction.countDocuments({ userId: id }),
+      totalCredits: await WalletTransaction.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(id), type: 'credit' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+      totalDebits: await WalletTransaction.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(id), type: 'debit' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+      
+      // Payment stats
+      totalPayments: await Payment.countDocuments({ userId: id }),
+      successfulPayments: await Payment.countDocuments({ userId: id, status: 'paid' }),
+      totalRevenue: await Payment.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(id), status: 'paid' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]),
+      
+      // Product stats
+      totalProducts: await Product.countDocuments({ addedBy: id }),
+      activeProducts: await Product.countDocuments({ addedBy: id, active: true }),
+    };
+
+    // Get subscription status
+    const subscriptionStatus = user.isLifetime
+      ? 'lifetime'
+      : user.plan && user.planExpiresAt && user.planExpiresAt > new Date()
+      ? 'active'
+      : user.plan
+      ? 'expired'
+      : 'none';
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          ...user,
+          subscriptionStatus,
+        },
+        stores,
+        orders,
+        zenOrders,
+        wallet,
+        walletTransactions,
+        payments,
+        products,
+        auditLogs,
+        stats: {
+          ...stats,
+          totalCredits: stats.totalCredits[0]?.total || 0,
+          totalDebits: stats.totalDebits[0]?.total || 0,
+          totalRevenue: stats.totalRevenue[0]?.total || 0,
+        },
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Update Order zenStatus (Admin)
+ * PUT /api/admin/orders/:orderId/zen-status
+ */
+/**
+ * Update user information (Admin)
+ * PUT /api/admin/users/:id/update
+ */
+export const updateUserInfo = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { name, email, mobile, country, isActive, plan, planExpiresAt, isLifetime } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    // Update fields
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email;
+    if (mobile !== undefined) user.mobile = mobile;
+    if (country !== undefined) user.country = country;
+    if (isActive !== undefined) user.isActive = isActive;
+    if (plan !== undefined) user.plan = plan;
+    if (planExpiresAt !== undefined) user.planExpiresAt = planExpiresAt ? new Date(planExpiresAt) : null;
+    if (isLifetime !== undefined) user.isLifetime = isLifetime;
+
+    await user.save();
+
+    // Create audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      action: 'UPDATE_USER_INFO',
+      success: true,
+      details: {
+        targetUserId: id,
+        targetEmail: user.email,
+        updatedFields: Object.keys(req.body),
+      },
+      ipAddress: req.ip,
+      timestamp: new Date(),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'User information updated successfully',
+      data: {
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          country: user.country,
+          isActive: user.isActive,
+          plan: user.plan,
+          planExpiresAt: user.planExpiresAt,
+          isLifetime: user.isLifetime,
+        },
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+export const updateOrderZenStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { orderId } = req.params;
+    const { zenStatus, note } = req.body;
+
+    if (!zenStatus) {
+      throw createError('zenStatus is required', 400);
+    }
+
+    const validStatuses = [
+      'shopify',
+      'awaiting_wallet',
+      'ready_for_fulfillment',
+      'sourcing',
+      'packing',
+      'ready_for_dispatch',
+      'dispatched',
+      'shipped',
+      'out_for_delivery',
+      'delivered',
+      'rto_initiated',
+      'rto_delivered',
+      'returned',
+      'failed',
+    ];
+
+    if (!validStatuses.includes(zenStatus)) {
+      throw createError(`Invalid zenStatus. Must be one of: ${validStatuses.join(', ')}`, 400);
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      throw createError('Order not found', 404);
+    }
+
+    const oldStatus = order.zenStatus;
+    order.zenStatus = zenStatus;
+
+    // Add internal note if provided
+    if (note) {
+      order.internalNotes.push({
+        note: `Status changed from ${oldStatus} to ${zenStatus}${note ? `: ${note}` : ''}`,
+        createdBy: (req.user as any)._id,
+        createdAt: new Date(),
+      });
+    }
+
+    await order.save();
+
+    // Create audit log
+    await AuditLog.create({
+      userId: (req.user as any)._id,
+      action: 'UPDATE_ORDER_ZEN_STATUS',
+      success: true,
+      details: {
+        orderId: order._id,
+        shopifyOrderName: order.shopifyOrderName,
+        previousStatus: oldStatus,
+        newStatus: zenStatus,
+        note,
+      },
+      ipAddress: req.ip,
+      timestamp: new Date(),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Order zenStatus updated successfully',
+      data: {
+        orderId: order._id,
+        zenStatus: order.zenStatus,
       },
     });
   } catch (error: any) {

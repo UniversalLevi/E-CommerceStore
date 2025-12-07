@@ -45,6 +45,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const navItems = [
     { href: '/admin/dashboard', label: 'Dashboard' },
     { href: '/admin/users', label: 'Users' },
+    { href: '/admin/users/database', label: 'User Database' },
     { href: '/admin/stores', label: 'Stores' },
     { href: '/admin/niches', label: 'Niches' },
     { href: '/admin/products', label: 'Products' },

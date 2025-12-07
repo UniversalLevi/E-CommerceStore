@@ -71,6 +71,7 @@ const auditLogSchema = new Schema<IAuditLog>({
       'ORDER_OPEN',
       'ORDER_COMPLETED',
       'ORDER_REOPENED',
+      'UPDATE_ORDER_ZEN_STATUS',
       'FULFILLMENT_CANCEL',
       'ORDER_NOTE_ADDED',
       // Order automation
@@ -81,6 +82,7 @@ const auditLogSchema = new Schema<IAuditLog>({
       'ZEN_ORDER_ASSIGN',
       'ZEN_ORDER_BULK_UPDATE',
       'ADMIN_WALLET_ADJUST',
+      'UPDATE_USER_INFO',
     ],
     index: true,
   },

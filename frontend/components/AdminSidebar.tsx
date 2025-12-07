@@ -25,6 +25,7 @@ import {
   BarChart3,
   Mail,
   Video,
+  Database,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -42,6 +43,7 @@ interface AdminSidebarProps {
 const navItems: NavItem[] = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/users/database', label: 'User Database', icon: Database },
   { href: '/admin/stores', label: 'Stores', icon: Store },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/zen-orders', label: 'ZEN Orders', icon: Zap },
