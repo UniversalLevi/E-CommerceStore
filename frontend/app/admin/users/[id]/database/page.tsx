@@ -30,6 +30,12 @@ import {
   Box,
   AlertCircle,
   Info,
+  PhoneCall,
+  Plus,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
+  Trash2,
 } from 'lucide-react';
 
 interface ComprehensiveUserData {
@@ -182,6 +188,29 @@ export default function UserDatabasePage() {
     courierProvider: '',
   });
 
+  // Call log state
+  const [callLogs, setCallLogs] = useState<Array<{
+    _id: string;
+    calledBy: { _id: string; email: string; name?: string };
+    calledTo: { _id: string; email: string; name?: string; mobile?: string };
+    result: 'positive' | 'negative' | 'custom';
+    customResult?: string;
+    notes?: string;
+    callDuration?: number;
+    createdAt: string;
+  }>>([]);
+  const [loadingCallLogs, setLoadingCallLogs] = useState(false);
+  const [showCallLogForm, setShowCallLogForm] = useState(false);
+  const [callLogForm, setCallLogForm] = useState({
+    result: 'positive' as 'positive' | 'negative' | 'custom',
+    customResult: '',
+    notes: '',
+    callDuration: '',
+  });
+  const [submittingCallLog, setSubmittingCallLog] = useState(false);
+  const [editingCallLogId, setEditingCallLogId] = useState<string | null>(null);
+  const [deletingCallLogId, setDeletingCallLogId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -193,8 +222,158 @@ export default function UserDatabasePage() {
   useEffect(() => {
     if (userId && isAuthenticated && authUser?.role === 'admin') {
       fetchData();
+      fetchCallLogs();
     }
   }, [userId, isAuthenticated, authUser]);
+
+  const fetchCallLogs = async () => {
+    try {
+      setLoadingCallLogs(true);
+      const response = await api.get<{
+        success: boolean;
+        data: {
+          user: any;
+          callLogs: Array<{
+            _id: string;
+            calledBy: { _id: string; email: string; name?: string };
+            calledTo: { _id: string; email: string; name?: string; mobile?: string };
+            result: 'positive' | 'negative' | 'custom';
+            customResult?: string;
+            notes?: string;
+            callDuration?: number;
+            createdAt: string;
+          }>;
+          total: number;
+        };
+      }>(`/api/admin/call-logs/user/${userId}`);
+      setCallLogs(response.data.callLogs || []);
+    } catch (error: any) {
+      console.error('Error fetching call logs:', error);
+    } finally {
+      setLoadingCallLogs(false);
+    }
+  };
+
+  const handleCreateCallLog = async () => {
+    if (!userId) return;
+
+    if (callLogForm.result === 'custom' && !callLogForm.customResult.trim()) {
+      notify.error('Please enter a custom result');
+      return;
+    }
+
+    try {
+      setSubmittingCallLog(true);
+      const response = await api.post<{
+        success: boolean;
+        message: string;
+        data: any;
+      }>('/api/admin/call-logs', {
+        calledTo: userId,
+        result: callLogForm.result,
+        customResult: callLogForm.result === 'custom' ? callLogForm.customResult : undefined,
+        notes: callLogForm.notes || undefined,
+        callDuration: callLogForm.callDuration ? parseInt(callLogForm.callDuration, 10) : undefined,
+      });
+
+      notify.success(response.message || 'Call log created successfully');
+      
+      // Refresh call logs
+      await fetchCallLogs();
+
+      // Reset form
+      setShowCallLogForm(false);
+      setCallLogForm({
+        result: 'positive',
+        customResult: '',
+        notes: '',
+        callDuration: '',
+      });
+    } catch (error: any) {
+      console.error('Error creating call log:', error);
+      notify.error(error.response?.data?.message || 'Failed to create call log');
+    } finally {
+      setSubmittingCallLog(false);
+    }
+  };
+
+  const handleEditCallLog = (log: typeof callLogs[0]) => {
+    setEditingCallLogId(log._id);
+    setCallLogForm({
+      result: log.result,
+      customResult: log.customResult || '',
+      notes: log.notes || '',
+      callDuration: log.callDuration?.toString() || '',
+    });
+    setShowCallLogForm(true);
+  };
+
+  const handleUpdateCallLog = async () => {
+    if (!editingCallLogId) return;
+
+    if (callLogForm.result === 'custom' && !callLogForm.customResult.trim()) {
+      notify.error('Please enter a custom result');
+      return;
+    }
+
+    try {
+      setSubmittingCallLog(true);
+      const response = await api.put<{
+        success: boolean;
+        message: string;
+        data: any;
+      }>(`/api/admin/call-logs/${editingCallLogId}`, {
+        result: callLogForm.result,
+        customResult: callLogForm.result === 'custom' ? callLogForm.customResult : undefined,
+        notes: callLogForm.notes || undefined,
+        callDuration: callLogForm.callDuration ? parseInt(callLogForm.callDuration, 10) : undefined,
+      });
+
+      notify.success(response.message || 'Call log updated successfully');
+      
+      // Refresh call logs
+      await fetchCallLogs();
+
+      // Reset form
+      setShowCallLogForm(false);
+      setEditingCallLogId(null);
+      setCallLogForm({
+        result: 'positive',
+        customResult: '',
+        notes: '',
+        callDuration: '',
+      });
+    } catch (error: any) {
+      console.error('Error updating call log:', error);
+      notify.error(error.response?.data?.message || 'Failed to update call log');
+    } finally {
+      setSubmittingCallLog(false);
+    }
+  };
+
+  const handleDeleteCallLog = async (logId: string) => {
+    if (!confirm('Are you sure you want to delete this call log? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setDeletingCallLogId(logId);
+      const response = await api.delete<{
+        success: boolean;
+        message: string;
+      }>(`/api/admin/call-logs/${logId}`);
+
+      notify.success(response.message || 'Call log deleted successfully');
+      
+      // Refresh call logs
+      await fetchCallLogs();
+    } catch (error: any) {
+      console.error('Error deleting call log:', error);
+      notify.error(error.response?.data?.message || 'Failed to delete call log');
+    } finally {
+      setDeletingCallLogId(null);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -804,6 +983,253 @@ export default function UserDatabasePage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Call Logs Section */}
+        <div className="bg-surface-raised border border-border-default rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
+              <PhoneCall className="w-5 h-5" />
+              Call Logs ({callLogs.length})
+            </h2>
+            <button
+              onClick={() => {
+                if (showCallLogForm && !editingCallLogId) {
+                  setShowCallLogForm(false);
+                } else {
+                  setShowCallLogForm(true);
+                  setEditingCallLogId(null);
+                  setCallLogForm({
+                    result: 'positive',
+                    customResult: '',
+                    notes: '',
+                    callDuration: '',
+                  });
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-black rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Log Call
+            </button>
+          </div>
+
+          {/* Call Log Form */}
+          {showCallLogForm && (
+            <div className="mb-6 p-5 bg-surface-elevated rounded-lg border border-border-default space-y-4">
+              <h4 className="text-lg font-semibold text-text-primary mb-2">
+                {editingCallLogId ? 'Edit Call Log' : 'Create New Call Log'}
+              </h4>
+              <div>
+                <label className="text-sm font-medium text-text-secondary mb-2 block">
+                  Conversation Result
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCallLogForm({ ...callLogForm, result: 'positive' })}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                      callLogForm.result === 'positive'
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
+                        : 'bg-surface-base border-border-default text-text-secondary hover:bg-surface-hover'
+                    }`}
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                    Positive
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCallLogForm({ ...callLogForm, result: 'negative' })}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                      callLogForm.result === 'negative'
+                        ? 'bg-red-500/20 text-red-400 border-red-500/50'
+                        : 'bg-surface-base border-border-default text-text-secondary hover:bg-surface-hover'
+                    }`}
+                  >
+                    <ThumbsDown className="w-4 h-4" />
+                    Negative
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCallLogForm({ ...callLogForm, result: 'custom' })}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                      callLogForm.result === 'custom'
+                        ? 'bg-blue-500/20 text-blue-400 border-blue-500/50'
+                        : 'bg-surface-base border-border-default text-text-secondary hover:bg-surface-hover'
+                    }`}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Custom
+                  </button>
+                </div>
+              </div>
+
+              {callLogForm.result === 'custom' && (
+                <div>
+                  <label className="text-sm font-medium text-text-secondary mb-2 block">
+                    Custom Result
+                  </label>
+                  <input
+                    type="text"
+                    value={callLogForm.customResult}
+                    onChange={(e) => setCallLogForm({ ...callLogForm, customResult: e.target.value })}
+                    placeholder="Enter custom result..."
+                    className="w-full px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-medium text-text-secondary mb-2 block">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={callLogForm.notes}
+                  onChange={(e) => setCallLogForm({ ...callLogForm, notes: e.target.value })}
+                  placeholder="Add notes about the conversation..."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-text-secondary mb-2 block">
+                  Call Duration (seconds, optional)
+                </label>
+                <input
+                  type="number"
+                  value={callLogForm.callDuration}
+                  onChange={(e) => setCallLogForm({ ...callLogForm, callDuration: e.target.value })}
+                  placeholder="e.g., 300"
+                  min="0"
+                  className="w-full px-3 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={editingCallLogId ? handleUpdateCallLog : handleCreateCallLog}
+                  disabled={submittingCallLog || (callLogForm.result === 'custom' && !callLogForm.customResult.trim())}
+                  className="flex-1 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-black rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {submittingCallLog ? 'Saving...' : editingCallLogId ? 'Update Call Log' : 'Save Call Log'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCallLogForm(false);
+                    setEditingCallLogId(null);
+                    setCallLogForm({
+                      result: 'positive',
+                      customResult: '',
+                      notes: '',
+                      callDuration: '',
+                    });
+                  }}
+                  className="px-4 py-2 bg-surface-base hover:bg-surface-hover border border-border-default text-text-primary rounded-lg font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Call Logs List */}
+          {loadingCallLogs ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+            </div>
+          ) : callLogs.length === 0 ? (
+            <div className="text-center py-8 text-text-secondary">
+              <PhoneCall className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No call logs yet</p>
+              <p className="text-xs mt-1">Click "Log Call" to record a conversation</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {callLogs.map((log) => (
+                <div
+                  key={log._id}
+                  className="p-4 bg-surface-elevated rounded-lg border border-border-default"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-text-primary">
+                          {log.calledBy.name || log.calledBy.email}
+                        </span>
+                        <span className="text-xs text-text-muted">→</span>
+                        <span className="text-sm text-text-primary">
+                          {log.calledTo.name || log.calledTo.email || log.calledTo.mobile}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
+                          log.result === 'positive'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
+                            : log.result === 'negative'
+                            ? 'bg-red-500/20 text-red-400 border-red-500/50'
+                            : 'bg-blue-500/20 text-blue-400 border-blue-500/50'
+                        }`}>
+                          {log.result === 'positive' ? (
+                            <span className="flex items-center gap-1">
+                              <ThumbsUp className="w-3 h-3" />
+                              Positive
+                            </span>
+                          ) : log.result === 'negative' ? (
+                            <span className="flex items-center gap-1">
+                              <ThumbsDown className="w-3 h-3" />
+                              Negative
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <MessageSquare className="w-3 h-3" />
+                              {log.customResult || 'Custom'}
+                            </span>
+                          )}
+                        </span>
+                        {log.callDuration && (
+                          <span className="text-xs text-text-muted">
+                            {Math.floor(log.callDuration / 60)}m {log.callDuration % 60}s
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <span className="text-xs text-text-muted whitespace-nowrap">
+                        {formatDate(log.createdAt)}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleEditCallLog(log)}
+                          className="p-1.5 hover:bg-surface-hover rounded-lg transition-colors text-primary-500 hover:text-primary-400"
+                          title="Edit call log"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCallLog(log._id)}
+                          disabled={deletingCallLogId === log._id}
+                          className="p-1.5 hover:bg-surface-hover rounded-lg transition-colors text-red-500 hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Delete call log"
+                        >
+                          {deletingCallLogId === log._id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {log.notes && (
+                    <p className="text-sm text-text-secondary mt-2 pl-2 border-l-2 border-border-default">
+                      {log.notes}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Tracking Update Modal */}

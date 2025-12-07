@@ -25,6 +25,7 @@ import productAnalyticsRoutes from './productAnalyticsRoutes';
 import emailSenderRoutes from './emailSenderRoutes';
 import { sendNotification, getNotificationHistory, getNotificationDetails } from '../controllers/notificationController';
 import { getAllCustomers } from '../controllers/customerController';
+import { createCallLog, getUserCallLogs, getAllCallLogs, updateCallLog, deleteCallLog } from '../controllers/callLogController';
 
 const router = Router();
 
@@ -77,6 +78,13 @@ router.get('/customers', getAllCustomers);
 
 // Order management routes
 router.put('/orders/:orderId/zen-status', updateOrderZenStatus);
+
+// Call log routes
+router.post('/call-logs', createCallLog);
+router.get('/call-logs', getAllCallLogs);
+router.get('/call-logs/user/:userId', getUserCallLogs);
+router.put('/call-logs/:id', updateCallLog);
+router.delete('/call-logs/:id', deleteCallLog);
 
 export default router;
 
