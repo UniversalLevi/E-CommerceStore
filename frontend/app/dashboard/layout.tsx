@@ -20,10 +20,16 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
-    } else if (!loading && user?.role === 'admin') {
-      router.push('/admin/dashboard');
+      return;
     }
-  }, [loading, isAuthenticated, user, router]);
+    if (!loading && user?.role === 'admin') {
+      // Only redirect if we're not already on an admin page
+      if (!pathname?.startsWith('/admin')) {
+        router.push('/admin/dashboard');
+      }
+      return;
+    }
+  }, [loading, isAuthenticated, user, router, pathname]);
 
   // Close sidebar when route changes on mobile
   useEffect(() => {

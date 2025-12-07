@@ -293,14 +293,18 @@ export default function AdminContactsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <button
                           onClick={() => setSelectedContact(contact)}
-                          className="text-primary-500 hover:text-primary-400"
+                          className={`${contact.status === 'resolved' ? 'text-text-muted cursor-not-allowed' : 'text-primary-500 hover:text-primary-400'}`}
+                          disabled={contact.status === 'resolved'}
+                          title={contact.status === 'resolved' ? 'Cannot edit resolved contacts' : 'View/Reply'}
                         >
-                          View/Reply
+                          View{contact.status === 'resolved' ? '' : '/Reply'}
                         </button>
                         <select
                           value={contact.status}
                           onChange={(e) => handleStatusChange(contact._id, e.target.value)}
-                          className="text-sm bg-surface-elevated border border-border-default text-text-primary rounded px-2 py-1 focus:ring-2 focus:ring-primary-500"
+                          disabled={contact.status === 'resolved'}
+                          className={`text-sm bg-surface-elevated border border-border-default text-text-primary rounded px-2 py-1 focus:ring-2 focus:ring-primary-500 ${contact.status === 'resolved' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          title={contact.status === 'resolved' ? 'Cannot change status of resolved contacts' : 'Change status'}
                         >
                           <option value="pending">Pending</option>
                           <option value="replied">Replied</option>
@@ -421,15 +425,21 @@ export default function AdminContactsPage() {
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   rows={6}
-                  className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                  placeholder="Type your reply here..."
+                  disabled={selectedContact.status === 'resolved'}
+                  className={`w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary placeholder:text-text-muted rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none ${selectedContact.status === 'resolved' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder={selectedContact.status === 'resolved' ? 'Cannot reply to resolved contacts' : 'Type your reply here...'}
                 />
+                {selectedContact.status === 'resolved' && (
+                  <p className="text-xs text-text-muted mt-2">
+                    This contact has been resolved and cannot be edited or replied to.
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={handleReply}
-                  disabled={!replyText.trim() || replying}
+                  disabled={!replyText.trim() || replying || selectedContact.status === 'resolved'}
                   className="flex-1 bg-primary-500 hover:bg-primary-400 text-black py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {replying ? 'Sending...' : 'Send Reply'}

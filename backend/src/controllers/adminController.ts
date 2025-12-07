@@ -1073,6 +1073,11 @@ export const replyToContact = async (
       throw createError('Contact not found', 404);
     }
 
+    // Prevent replying to resolved contacts
+    if (contact.status === 'resolved') {
+      throw createError('Cannot reply to a resolved contact', 400);
+    }
+
     // Update contact with reply
     contact.adminReply = reply.trim();
     contact.repliedBy = (req.user as any)._id;
@@ -1199,23 +1204,30 @@ export const updateContactStatus = async (
       throw createError('Invalid contact ID', 400);
     }
 
-    const contact = await Contact.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    )
-      .populate('userId', 'email')
-      .populate('repliedBy', 'email')
-      .lean();
+    const contact = await Contact.findById(id);
 
     if (!contact) {
       throw createError('Contact not found', 404);
     }
 
+    // Prevent changing status of resolved contacts
+    if (contact.status === 'resolved') {
+      throw createError('Cannot modify status of a resolved contact', 400);
+    }
+
+    // Update contact status
+    contact.status = status;
+    await contact.save();
+
+    const updatedContact = await Contact.findById(id)
+      .populate('userId', 'email')
+      .populate('repliedBy', 'email')
+      .lean();
+
     res.status(200).json({
       success: true,
       message: 'Contact status updated successfully',
-      data: contact,
+      data: updatedContact,
     });
   } catch (error: any) {
     next(error);
