@@ -1,6 +1,7 @@
 /**
- * Seed Script: Create White and Black templates in the database
+ * Seed Script: Create Minimal, White, and Black templates in the database
  * Run with: npx ts-node src/scripts/seedTemplates.ts
+ * Or: npm run seed:templates
  */
 
 import mongoose from 'mongoose';
@@ -22,6 +23,13 @@ async function seedTemplates() {
     }
 
     const templates = [
+      {
+        name: 'Minimal Clean Theme',
+        slug: 'minimal',
+        description: 'A clean and modern minimalist layout perfect for showcasing products with elegance and simplicity',
+        category: 'minimal',
+        previewImage: '',
+      },
       {
         name: 'White Clean Theme',
         slug: 'white',

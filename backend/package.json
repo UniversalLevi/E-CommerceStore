@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "seed": "ts-node src/scripts/seedProducts.ts",
     "seed:niches": "ts-node src/scripts/seedNiches.ts",
+    "seed:templates": "ts-node src/scripts/seedTemplates.ts",
     "migrate:niches": "ts-node src/scripts/assignNichesToProducts.ts",
     "migrate:analytics": "ts-node src/scripts/migrateProductAnalytics.ts",
     "create-admin": "ts-node src/scripts/createAdmin.ts",
