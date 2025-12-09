@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId;
-  type: 'store_connection' | 'product_added' | 'store_test' | 'system_update' | 'mentorship_application' | 'admin_sent' | 'withdrawal_status';
+  type: 'store_connection' | 'product_added' | 'store_test' | 'system_update' | 'mentorship_application' | 'admin_sent' | 'withdrawal_status' | 'template_applied';
   title: string;
   message: string;
   read: boolean;
@@ -22,7 +22,7 @@ const notificationSchema = new Schema<INotification>(
     },
     type: {
       type: String,
-      enum: ['store_connection', 'product_added', 'store_test', 'system_update', 'mentorship_application', 'admin_sent', 'withdrawal_status'],
+      enum: ['store_connection', 'product_added', 'store_test', 'system_update', 'mentorship_application', 'admin_sent', 'withdrawal_status', 'template_applied'],
       required: true,
       index: true,
     },

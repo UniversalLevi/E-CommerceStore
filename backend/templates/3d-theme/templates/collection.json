@@ -1,0 +1,29 @@
+{
+  "name": "Collection template",
+  "theme": "3D high animation and responsive theme with dark and glowing white theme with animations",
+  "layout": "theme",
+  "sections": [
+    {
+      "type": "header",
+      "settings": {
+        "background_color": "#000",
+        "text_color": "#fff"
+      }
+    },
+    {
+      "type": "collection",
+      "settings": {
+        "grid_style": "3d",
+        "animation_type": "high",
+        "responsive": true
+      }
+    },
+    {
+      "type": "footer",
+      "settings": {
+        "background_color": "#000",
+        "text_color": "#fff"
+      }
+    }
+  ]
+}

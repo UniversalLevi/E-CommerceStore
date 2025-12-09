@@ -1,0 +1,42 @@
+{
+  "sections": [
+    {
+      "type": "hero-section",
+      "data": {
+        "headline": "Welcome to Our Store",
+        "subheadline": "Discover amazing products for your home",
+        "ctaText": "Shop Now",
+        "ctaUrl": "/collections/all"
+      }
+    },
+    {
+      "type": "featured-products",
+      "data": {
+        "title": "Featured Products",
+        "products": [
+          {
+            "id": 123456789,
+            "title": "Product 1",
+            "image": "product1.jpg",
+            "price": 19.99,
+            "url": "/products/product-1"
+          },
+          {
+            "id": 234567890,
+            "title": "Product 2",
+            "image": "product2.jpg",
+            "price": 29.99,
+            "url": "/products/product-2"
+          },
+          {
+            "id": 345678901,
+            "title": "Product 3",
+            "image": "product3.jpg",
+            "price": 39.99,
+            "url": "/products/product-3"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "sections": [
+    {
+      "type": "3d_high_animation",
+      "settings": {
+        "theme": "dark",
+        "color": "glowing_white",
+        "animations": true
+      }
+    }
+  ]
+}

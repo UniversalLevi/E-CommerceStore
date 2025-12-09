@@ -1,0 +1,70 @@
+{% schema %}
+{
+  "name": "Main Product",
+  "settings": [],
+  "presets": [
+    {
+      "name": "3D High Animation",
+      "category": "Product",
+      "settings": []
+    }
+  ]
+}
+{% endschema %}
+
+<section class='main-product'>
+  <div class="product-container">
+    <div class="product-image">
+      <img src="{{ product.featured_image | img_url: '800x' }}" alt="{{ product.title }}">
+    </div>
+    <div class="product-details">
+      <h2>{{ product.title }}</h2>
+      <p>{{ product.description }}</p>
+      <p>{{ product.price | money }}</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .main-product {
+    background-color: #000;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .product-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .product-image {
+    flex: 1;
+    padding: 20px;
+  }
+
+  .product-image img {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid #fff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+
+  .product-details {
+    flex: 1;
+    padding: 20px;
+    text-align: left;
+  }
+
+  .product-details h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  .product-details p {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+</style>

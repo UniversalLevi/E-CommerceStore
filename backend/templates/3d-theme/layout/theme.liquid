@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  {% include 'head' %}
+</head>
+<body>
+  {% include 'header' %}
+  
+  <div class="main-hero">
+    <div class="main-hero__content">
+      <h1>Welcome to our 3D High Animation Theme</h1>
+      <p>Discover the future of online shopping with our immersive 3D experience.</p>
+    </div>
+  </div>
+  
+  <div class="main-product">
+    <div class="main-product__image">
+      <img src="{{ section.settings.product_image | img_url: '800x' }}" alt="{{ section.settings.product_name }}">
+    </div>
+    <div class="main-product__info">
+      <h2>{{ section.settings.product_name }}</h2>
+      <p>{{ section.settings.product_description }}</p>
+      <a href="{{ section.settings.product_link }}" class="btn">Shop Now</a>
+    </div>
+  </div>
+  
+  <div class="main-collection">
+    <h2>Explore Our Collections</h2>
+    {% for collection in collections %}
+      <div class="collection">
+        <img src="{{ collection.image.src | img_url: '400x' }}" alt="{{ collection.title }}">
+        <h3>{{ collection.title }}</h3>
+        <a href="{{ collection.url }}" class="btn">View Collection</a>
+      </div>
+    {% endfor %}
+  </div>
+  
+  {% include 'footer' %}
+</body>
+</html>

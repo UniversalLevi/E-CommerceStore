@@ -1,0 +1,89 @@
+:root {
+  --primary-color: #ffffff;
+  --secondary-color: #000000;
+}
+
+/* Base styles */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Header styles */
+.header {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  padding: 20px;
+  text-align: center;
+}
+
+/* Navigation styles */
+.navbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  list-style: none;
+}
+
+.navbar li {
+  margin: 0 10px;
+}
+
+.navbar a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.navbar a:hover {
+  color: #ffcc00;
+}
+
+/* Responsive CSS styles */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+  }
+
+  .navbar {
+    flex-direction: column;
+  }
+
+  .navbar li {
+    margin: 10px 0;
+  }
+}
+
+/* 3D high animation styles */
+.animation {
+  position: relative;
+  perspective: 1000px;
+}
+
+.animation:hover .animated {
+  transform: rotateY(180deg);
+  transition: transform 0.8s;
+}
+
+.animated {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  transform: rotateY(0deg);
+  transition: transform 0.8s;
+}
+
+/* Glowing white theme styles */
+.glowing {
+  color: var(--primary-color);
+  text-shadow: 0 0 10px #ffff00;
+  transition: text-shadow 0.5s;
+}
+
+.glowing:hover {
+  text-shadow: 0 0 20px #ffff00;
+}

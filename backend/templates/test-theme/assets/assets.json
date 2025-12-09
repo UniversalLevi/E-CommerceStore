@@ -1,0 +1,37 @@
+{
+  "name": "Test Theme",
+  "sections": [
+    {
+      "type": "header",
+      "name": "Header Section",
+      "settings": [
+        {
+          "type": "text",
+          "id": "header_title",
+          "label": "Header Title"
+        },
+        {
+          "type": "image_picker",
+          "id": "header_logo",
+          "label": "Header Logo"
+        }
+      ]
+    },
+    {
+      "type": "footer",
+      "name": "Footer Section",
+      "settings": [
+        {
+          "type": "richtext",
+          "id": "footer_content",
+          "label": "Footer Content"
+        },
+        {
+          "type": "url",
+          "id": "footer_link",
+          "label": "Footer Link"
+        }
+      ]
+    }
+  ]
+}

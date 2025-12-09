@@ -753,6 +753,31 @@ class ApiClient {
       message: string;
     }>(`/api/admin/video-mutator/jobs/${jobId}`);
   }
+
+  // ========== TEMPLATES API ==========
+
+  async getTemplates(category?: string) {
+    const params = category ? `?category=${category}` : '';
+    return this.get<{ success: boolean; data: any[] }>(`/api/templates${params}`);
+  }
+
+  async applyTemplate(templateId: string, storeId?: string) {
+    return this.post<{ success: boolean; message: string; data: any }>(
+      `/api/templates/${templateId}/apply`,
+      { storeId }
+    );
+  }
+
+  async getStoreThemes(storeId: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/templates/store-themes/${storeId}`);
+  }
+
+  async setDefaultTheme(storeId: string, themeId: number) {
+    return this.post<{ success: boolean; message: string; data: any }>(
+      '/api/templates/set-default-theme',
+      { storeId, themeId }
+    );
+  }
 }
 
 export const api = new ApiClient();

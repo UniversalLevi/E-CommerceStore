@@ -1,0 +1,38 @@
+{
+  "default": "settings",
+  "sections": [
+    {
+      "type": "text",
+      "id": "3d_theme_settings",
+      "label": "3D Theme Settings",
+      "info": "Customize the 3D theme settings here"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "animation_speed",
+      "label": "Animation Speed",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "default": 5
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_glow_effect",
+      "label": "Enable Glow Effect",
+      "default": true
+    }
+  ]
+}

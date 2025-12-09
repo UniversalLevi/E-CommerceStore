@@ -1,0 +1,19 @@
+{
+  "name": "Theme settings",
+  "features": [
+    "Responsive",
+    "Modern UI",
+    "Cart",
+    "Products",
+    "Navigation",
+    "Footer"
+  ],
+  "animations": {
+    "type": "select",
+    "label": "Animation Style",
+    "options": [
+      "3D High",
+      "Glowing White"
+    ]
+  }
+}

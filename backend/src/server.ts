@@ -61,6 +61,8 @@ import customerRoutes from './routes/customerRoutes';
 import userEmailSenderRoutes from './routes/userEmailSenderRoutes';
 import videoMutatorRoutes from './routes/videoMutatorRoutes';
 import videoMutatorAdminRoutes from './routes/videoMutatorAdminRoutes';
+import templateRoutes from './routes/templateRoutes';
+import templateAdminRoutes from './routes/templateAdminRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -92,6 +94,9 @@ app.use('/api/niches', nicheRoutes);
 app.use('/api/admin/niches', authenticateToken, requireAdmin, nicheAdminRoutes);
 // Mentorship routes (admin only)
 app.use('/api/admin/mentorship', mentorshipRoutes);
+// Template routes
+app.use('/api/templates', templateRoutes);
+app.use('/api/admin/templates', templateAdminRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

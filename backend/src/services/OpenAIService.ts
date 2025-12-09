@@ -360,6 +360,333 @@ Generate product copy as JSON:
 }
 
 /**
+ * Generate template code using OpenAI
+ */
+export async function generateTemplateCode(
+  prompt: string,
+  codeType: 'liquid' | 'json' | 'css' | 'js',
+  context?: {
+    templateName?: string;
+    existingCode?: string;
+    filePath?: string;
+  }
+): Promise<string> {
+  const startTime = Date.now();
+  const client = getOpenAIClient();
+  
+  if (!client) {
+    // Fallback code based on type
+    return getFallbackCode(codeType, prompt);
+  }
+
+  try {
+    const systemPrompt = getSystemPromptForCodeType(codeType);
+    const userPrompt = buildUserPrompt(prompt, codeType, context);
+
+    const response = await client.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.7,
+      max_tokens: codeType === 'json' ? 2000 : 4000,
+    });
+
+    const content = response.choices[0]?.message?.content || '';
+    const latency = Date.now() - startTime;
+
+    console.log(`[AI Request] Template code generation (${codeType}), latency: ${latency}ms`);
+
+    // Clean up the response
+    let cleanedCode = content.trim();
+    
+    // Remove markdown code blocks if present
+    cleanedCode = cleanedCode.replace(/^```[\w]*\n?/gm, '').replace(/\n?```$/gm, '');
+    
+    // For JSON, try to parse and reformat
+    if (codeType === 'json') {
+      try {
+        const parsed = JSON.parse(cleanedCode);
+        cleanedCode = JSON.stringify(parsed, null, 2);
+      } catch {
+        // If parsing fails, return as-is
+      }
+    }
+
+    return cleanedCode;
+  } catch (error: any) {
+    console.error(`[AI Error] Failed to generate template code:`, error.message);
+    return getFallbackCode(codeType, prompt);
+  }
+}
+
+/**
+ * Get system prompt based on code type
+ */
+function getSystemPromptForCodeType(codeType: 'liquid' | 'json' | 'css' | 'js'): string {
+  const basePrompt = `You are an expert Shopify theme developer. Generate clean, production-ready code following best practices.`;
+
+  switch (codeType) {
+    case 'liquid':
+      return `${basePrompt}
+- Generate Shopify Liquid template code
+- Include proper schema blocks for theme editor customization
+- Use Shopify Liquid filters and objects correctly
+- Include proper comments
+- Ensure mobile responsiveness
+- Follow Shopify theme development best practices
+- Output ONLY the code, no explanations or markdown`;
+    
+    case 'json':
+      return `${basePrompt}
+- Generate valid JSON for Shopify theme templates
+- Follow Shopify theme JSON structure
+- Include proper section configurations
+- Use correct Shopify schema format
+- Output ONLY valid JSON, no markdown or explanations`;
+    
+    case 'css':
+      return `${basePrompt}
+- Generate modern, clean CSS
+- Use CSS variables for theming
+- Ensure mobile responsiveness with media queries
+- Follow BEM naming conventions
+- Include smooth transitions and animations
+- Output ONLY CSS code, no markdown or explanations`;
+    
+    case 'js':
+      return `${basePrompt}
+- Generate vanilla JavaScript (no frameworks)
+- Include proper error handling
+- Use modern ES6+ syntax
+- Add JSDoc comments for functions
+- Ensure browser compatibility
+- Output ONLY JavaScript code, no markdown or explanations`;
+    
+    default:
+      return basePrompt;
+  }
+}
+
+/**
+ * Build user prompt with context
+ */
+function buildUserPrompt(
+  prompt: string,
+  codeType: 'liquid' | 'json' | 'css' | 'js',
+  context?: {
+    templateName?: string;
+    existingCode?: string;
+    filePath?: string;
+  }
+): string {
+  let userPrompt = `Generate ${codeType.toUpperCase()} code for: ${prompt}`;
+
+  if (context?.templateName) {
+    userPrompt += `\n\nTemplate name: ${context.templateName}`;
+  }
+
+  if (context?.filePath) {
+    userPrompt += `\n\nFile path: ${context.filePath}`;
+    
+    // Add context based on file path
+    if (context.filePath.includes('sections/')) {
+      userPrompt += `\n\nThis is a Shopify section file. Sections are reusable components that can be added to templates through the theme editor. Include a schema block with customizable settings.`;
+    } else if (context.filePath.includes('templates/')) {
+      userPrompt += `\n\nThis is a Shopify template file. Templates define the structure of specific pages (product, collection, cart, etc.). Use {% layout 'theme' %} and include appropriate sections.`;
+    } else if (context.filePath.includes('layout/')) {
+      userPrompt += `\n\nThis is a Shopify layout file. Layouts wrap around templates and include the HTML structure, head section, header, footer, and scripts. Include proper Shopify Liquid tags and theme settings.`;
+    } else if (context.filePath.includes('assets/')) {
+      if (context.filePath.endsWith('.css')) {
+        userPrompt += `\n\nThis is a CSS file for a Shopify theme. Use CSS variables for theming, ensure mobile responsiveness, and follow Shopify theme conventions.`;
+      } else if (context.filePath.endsWith('.js')) {
+        userPrompt += `\n\nThis is a JavaScript file for a Shopify theme. Use vanilla JavaScript (no frameworks), ensure browser compatibility, and handle Shopify-specific functionality like cart updates.`;
+      }
+    } else if (context.filePath.includes('config/')) {
+      userPrompt += `\n\nThis is a Shopify theme config file. Include settings_schema.json for theme customization options or settings_data.json for default settings.`;
+    }
+  }
+
+  if (context?.existingCode && context.existingCode.trim().length > 0) {
+    userPrompt += `\n\nExisting code to modify or extend:\n\`\`\`\n${context.existingCode.substring(0, 2000)}\n\`\`\``;
+    userPrompt += `\n\nUse the existing code structure and patterns as a reference. Maintain consistency with the existing code style and conventions.`;
+  } else if (context?.filePath) {
+    // If no existing code but we have file path, provide guidance
+    if (context.filePath.includes('sections/')) {
+      userPrompt += `\n\nCreate a complete section with proper schema block. Include settings for customization in the theme editor.`;
+    }
+  }
+
+  return userPrompt;
+}
+
+/**
+ * Get fallback code when AI is unavailable
+ */
+function getFallbackCode(codeType: 'liquid' | 'json' | 'css' | 'js', prompt: string): string {
+  switch (codeType) {
+    case 'liquid':
+      return `{% comment %}
+  ${prompt}
+{% endcomment %}
+
+<section class="custom-section">
+  <div class="container">
+    <!-- Your content here -->
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Custom Section",
+  "settings": []
+}
+{% endschema %}`;
+    
+    case 'json':
+      return JSON.stringify({
+        sections: {},
+        order: []
+      }, null, 2);
+    
+    case 'css':
+      return `/* ${prompt} */
+.custom-section {
+  /* Add your styles here */
+}`;
+    
+    case 'js':
+      return `// ${prompt}
+(function() {
+  'use strict';
+  // Your JavaScript code here
+})();`;
+    
+    default:
+      return `// ${prompt}`;
+  }
+}
+
+/**
+ * Generate complete theme structure with AI
+ */
+export async function generateCompleteTheme(
+  prompt: string,
+  templateName: string
+): Promise<{
+  layout: { path: string; content: string };
+  sections: Array<{ path: string; content: string }>;
+  templates: Array<{ path: string; content: string }>;
+  assets: Array<{ path: string; content: string }>;
+  config: Array<{ path: string; content: string }>;
+  pages: Array<{ path: string; content: string }>;
+}> {
+  const client = getOpenAIClient();
+  
+  if (!client) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  try {
+    const systemPrompt = `You are an expert Shopify theme developer. Generate a complete Shopify theme.
+
+Required files:
+1. layout/theme.liquid - Main layout with HTML, head, header, footer
+2. sections/header.liquid - Header with logo, nav, cart
+3. sections/footer.liquid - Footer with links
+4. sections/main-hero.liquid - Hero section
+5. sections/main-product.liquid - Product section
+6. sections/main-collection.liquid - Collection section
+7. templates/index.json - Homepage template
+8. templates/product.json - Product template
+9. templates/collection.json - Collection template
+10. assets/base.css - Responsive CSS
+11. assets/theme.js - Cart/interaction JS
+12. config/settings_schema.json - Theme settings
+13. config/settings_data.json - Default settings
+14. pages/home.json - Homepage content
+
+Rules: Complete functional code. Shopify Liquid syntax. Schema blocks in sections. Responsive CSS. Valid JSON.
+
+Output JSON format:
+{
+  "layout": {"path": "layout/theme.liquid", "content": "..."},
+  "sections": [{"path": "sections/header.liquid", "content": "..."}, ...],
+  "templates": [{"path": "templates/index.json", "content": "..."}, ...],
+  "assets": [{"path": "assets/base.css", "content": "..."}, ...],
+  "config": [{"path": "config/settings_schema.json", "content": "..."}, ...],
+  "pages": [{"path": "pages/home.json", "content": "..."}]
+}`;
+
+    const userPrompt = `Generate complete Shopify theme: ${prompt}
+Template: ${templateName}
+Features: Responsive, modern UI, cart, products, navigation, footer.`;
+
+    // Use gpt-4 if available, otherwise use gpt-3.5-turbo with lower max_tokens
+    const model = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+    const maxTokens = model.includes('gpt-4') ? 8000 : 4000;
+    
+    const response = await client.chat.completions.create({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.7,
+      max_tokens: maxTokens,
+      response_format: { type: 'json_object' },
+    });
+
+    const content = response.choices[0]?.message?.content || '{}';
+    
+    if (!content || content.trim() === '{}') {
+      throw new Error('AI returned empty response. Please try again with a more detailed prompt.');
+    }
+    
+    let parsed: any;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseError: any) {
+      console.error('[AI Error] Failed to parse JSON response:', parseError.message);
+      console.error('[AI Error] Response content:', content.substring(0, 500));
+      throw new Error('AI returned invalid JSON. Please try again.');
+    }
+
+    // Validate that we have at least some content
+    const hasContent = 
+      (parsed.layout && parsed.layout.content) ||
+      (parsed.sections && parsed.sections.length > 0) ||
+      (parsed.templates && parsed.templates.length > 0) ||
+      (parsed.assets && parsed.assets.length > 0);
+
+    if (!hasContent) {
+      throw new Error('AI response did not contain any theme files. Please try again with a more detailed prompt.');
+    }
+
+    // Validate and structure the response
+    const result = {
+      layout: parsed.layout || { path: 'layout/theme.liquid', content: '' },
+      sections: Array.isArray(parsed.sections) ? parsed.sections : [],
+      templates: Array.isArray(parsed.templates) ? parsed.templates : [],
+      assets: Array.isArray(parsed.assets) ? parsed.assets : [],
+      config: Array.isArray(parsed.config) ? parsed.config : [],
+      pages: Array.isArray(parsed.pages) ? parsed.pages : [],
+    };
+
+    console.log(`[AI Theme Generation] Generated ${result.sections.length} sections, ${result.templates.length} templates, ${result.assets.length} assets`);
+
+    return result;
+  } catch (error: any) {
+    console.error(`[AI Error] Failed to generate complete theme:`, error.message);
+    if (error.message.includes('max_tokens')) {
+      throw new Error('Response too long. Please use a more concise prompt or upgrade to GPT-4.');
+    }
+    throw new Error(`Failed to generate theme: ${error.message}`);
+  }
+}
+
+/**
  * Clear cache (useful for testing or cache invalidation)
  */
 export function clearAICache(): void {

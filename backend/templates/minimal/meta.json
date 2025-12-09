@@ -1,0 +1,19 @@
+{
+  "id": "minimal",
+  "name": "Minimal Clean Theme",
+  "description": "A clean and modern minimalist layout perfect for showcasing products with elegance and simplicity",
+  "category": "minimal",
+  "version": "1.0.0",
+  "author": "Admin",
+  "previewImage": "/templatePreviews/minimal.png",
+  "features": [
+    "Clean hero section",
+    "Featured products grid",
+    "Newsletter signup",
+    "Custom footer",
+    "Mobile responsive"
+  ],
+  "createdAt": "2025-12-09",
+  "updatedAt": "2025-12-09"
+}
+

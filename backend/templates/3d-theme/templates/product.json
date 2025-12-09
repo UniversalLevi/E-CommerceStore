@@ -1,0 +1,21 @@
+{
+  "name": "Product template",
+  "theme": {
+    "style": "3D high animation",
+    "layout": "responsive",
+    "color": {
+      "background": "dark",
+      "text": "glowing white"
+    },
+    "animations": true
+  },
+  "sections": [
+    {
+      "type": "product",
+      "settings": {
+        "layout": "3D",
+        "animationSpeed": "high"
+      }
+    }
+  ]
+}

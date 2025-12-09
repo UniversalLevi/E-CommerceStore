@@ -1,0 +1,259 @@
+{% comment %}
+  Newsletter Section - Minimal Theme
+  A clean email signup section
+{% endcomment %}
+
+<section class="newsletter-section" id="newsletter-{{ section.id }}">
+  <div class="newsletter-container">
+    <div class="newsletter-content">
+      {% if section.settings.heading != blank %}
+        <h2 class="newsletter-heading">{{ section.settings.heading }}</h2>
+      {% endif %}
+      
+      {% if section.settings.text != blank %}
+        <p class="newsletter-text">{{ section.settings.text }}</p>
+      {% endif %}
+      
+      {% form 'customer', class: 'newsletter-form' %}
+        {% if form.errors %}
+          <div class="form-error">
+            {{ form.errors | default_errors }}
+          </div>
+        {% endif %}
+        
+        {% if form.posted_successfully? %}
+          <div class="form-success">
+            {{ section.settings.success_message | default: 'Thank you for subscribing!' }}
+          </div>
+        {% else %}
+          <input type="hidden" name="contact[tags]" value="newsletter">
+          <div class="newsletter-input-wrapper">
+            <input 
+              type="email" 
+              name="contact[email]" 
+              class="newsletter-input"
+              placeholder="{{ section.settings.placeholder | default: 'Enter your email' }}"
+              required
+              autocomplete="email"
+            >
+            <button type="submit" class="newsletter-button">
+              {{ section.settings.button_label | default: 'Subscribe' }}
+            </button>
+          </div>
+        {% endif %}
+      {% endform %}
+      
+      {% if section.settings.disclaimer != blank %}
+        <p class="newsletter-disclaimer">{{ section.settings.disclaimer }}</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<style>
+  #newsletter-{{ section.id }} {
+    padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;
+    background-color: {{ section.settings.background_color }};
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    text-align: center;
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-heading {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 300;
+    color: {{ section.settings.text_color }};
+    margin: 0 0 1rem 0;
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: {{ section.settings.text_color }};
+    opacity: 0.8;
+    margin: 0 0 2rem 0;
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-form {
+    margin-bottom: 1rem;
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-input-wrapper {
+    display: flex;
+    gap: 0;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: 1px solid {{ section.settings.text_color }};
+    border-right: none;
+    background: transparent;
+    color: {{ section.settings.text_color }};
+    font-size: 0.875rem;
+    outline: none;
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-input::placeholder {
+    color: {{ section.settings.text_color }};
+    opacity: 0.5;
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-button {
+    padding: 1rem 2rem;
+    background-color: {{ section.settings.button_background }};
+    color: {{ section.settings.button_text_color }};
+    border: 1px solid {{ section.settings.button_background }};
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-button:hover {
+    background-color: transparent;
+    color: {{ section.settings.button_background }};
+    border-color: {{ section.settings.button_background }};
+  }
+  
+  #newsletter-{{ section.id }} .newsletter-disclaimer {
+    font-size: 0.75rem;
+    color: {{ section.settings.text_color }};
+    opacity: 0.5;
+    margin: 1.5rem 0 0 0;
+  }
+  
+  #newsletter-{{ section.id }} .form-error {
+    background-color: #fee2e2;
+    color: #dc2626;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+  }
+  
+  #newsletter-{{ section.id }} .form-success {
+    background-color: #dcfce7;
+    color: #16a34a;
+    padding: 1rem;
+    font-size: 0.875rem;
+  }
+  
+  @media (max-width: 640px) {
+    #newsletter-{{ section.id }} .newsletter-input-wrapper {
+      flex-direction: column;
+    }
+    
+    #newsletter-{{ section.id }} .newsletter-input {
+      border-right: 1px solid {{ section.settings.text_color }};
+      border-bottom: none;
+    }
+    
+    #newsletter-{{ section.id }} .newsletter-container {
+      padding: 0 1rem;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Newsletter",
+  "tag": "section",
+  "class": "newsletter-wrapper",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Join Our Newsletter"
+    },
+    {
+      "type": "textarea",
+      "id": "text",
+      "label": "Text",
+      "default": "Subscribe to receive updates, access to exclusive deals, and more."
+    },
+    {
+      "type": "text",
+      "id": "placeholder",
+      "label": "Input Placeholder",
+      "default": "Enter your email"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Button Label",
+      "default": "Subscribe"
+    },
+    {
+      "type": "text",
+      "id": "success_message",
+      "label": "Success Message",
+      "default": "Thank you for subscribing!"
+    },
+    {
+      "type": "textarea",
+      "id": "disclaimer",
+      "label": "Disclaimer",
+      "default": "By subscribing, you agree to our Privacy Policy and consent to receive updates."
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 10,
+      "unit": "px",
+      "label": "Padding Top",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 10,
+      "unit": "px",
+      "label": "Padding Bottom",
+      "default": 60
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#1a1a1a"
+    },
+    {
+      "type": "color",
+      "id": "button_background",
+      "label": "Button Background",
+      "default": "#1a1a1a"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button Text Color",
+      "default": "#ffffff"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Newsletter"
+    }
+  ]
+}
+{% endschema %}
+

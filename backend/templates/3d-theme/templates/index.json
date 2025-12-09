@@ -1,0 +1,29 @@
+{
+  "name": "Homepage template",
+  "theme": "3D high animation and responsive theme with dark and glowing white theme with animations",
+  "sections": [
+    {
+      "type": "header",
+      "settings": {
+        "background_color": "dark",
+        "text_color": "white",
+        "animation": "glowing"
+      }
+    },
+    {
+      "type": "slider",
+      "settings": {
+        "animation_type": "3D",
+        "responsive": true
+      }
+    },
+    {
+      "type": "footer",
+      "settings": {
+        "background_color": "dark",
+        "text_color": "white",
+        "animation": "glowing"
+      }
+    }
+  ]
+}

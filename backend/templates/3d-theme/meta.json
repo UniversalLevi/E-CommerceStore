@@ -1,0 +1,33 @@
+{
+  "id": "3d-theme",
+  "name": "3d theme",
+  "description": "a realistic 3d theme",
+  "category": "custom",
+  "version": "1.0.0",
+  "author": "admin@gmail.com",
+  "previewImage": "",
+  "features": [
+    "3D animations",
+    "Responsive design",
+    "Dark and glowing white theme with animations"
+  ],
+  "createdAt": "2025-12-09",
+  "updatedAt": "2025-12-09",
+  "sections": [
+    {
+      "type": "header",
+      "name": "Header",
+      "settings": []
+    },
+    {
+      "type": "footer",
+      "name": "Footer",
+      "settings": []
+    },
+    {
+      "type": "custom",
+      "name": "3D Animation Section",
+      "settings": []
+    }
+  ]
+}

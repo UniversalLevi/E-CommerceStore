@@ -1,0 +1,402 @@
+{% comment %}
+  Custom Footer Section - Minimal Theme
+  A clean, organized footer with multiple columns
+{% endcomment %}
+
+<footer class="custom-footer" id="footer-{{ section.id }}">
+  <div class="footer-container">
+    <div class="footer-grid">
+      <!-- Brand Column -->
+      <div class="footer-column footer-brand">
+        {% if section.settings.logo != blank %}
+          <img 
+            src="{{ section.settings.logo | image_url: width: 200 }}"
+            alt="{{ shop.name }}"
+            class="footer-logo"
+            loading="lazy"
+          >
+        {% else %}
+          <h3 class="footer-shop-name">{{ shop.name }}</h3>
+        {% endif %}
+        
+        {% if section.settings.brand_description != blank %}
+          <p class="footer-brand-text">{{ section.settings.brand_description }}</p>
+        {% endif %}
+        
+        <div class="footer-social">
+          {% if section.settings.social_facebook != blank %}
+            <a href="{{ section.settings.social_facebook }}" target="_blank" rel="noopener" class="social-link" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+          {% endif %}
+          {% if section.settings.social_instagram != blank %}
+            <a href="{{ section.settings.social_instagram }}" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            </a>
+          {% endif %}
+          {% if section.settings.social_twitter != blank %}
+            <a href="{{ section.settings.social_twitter }}" target="_blank" rel="noopener" class="social-link" aria-label="Twitter">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+          {% endif %}
+          {% if section.settings.social_youtube != blank %}
+            <a href="{{ section.settings.social_youtube }}" target="_blank" rel="noopener" class="social-link" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Links Columns -->
+      {% for block in section.blocks %}
+        {% if block.type == 'link_column' %}
+          <div class="footer-column">
+            {% if block.settings.heading != blank %}
+              <h4 class="footer-column-heading">{{ block.settings.heading }}</h4>
+            {% endif %}
+            <ul class="footer-links">
+              {% if block.settings.menu != blank %}
+                {% for link in linklists[block.settings.menu].links %}
+                  <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+                {% endfor %}
+              {% endif %}
+            </ul>
+          </div>
+        {% endif %}
+      {% endfor %}
+      
+      <!-- Contact Column -->
+      {% if section.settings.show_contact %}
+        <div class="footer-column">
+          <h4 class="footer-column-heading">{{ section.settings.contact_heading | default: 'Contact' }}</h4>
+          <ul class="footer-contact">
+            {% if section.settings.contact_email != blank %}
+              <li>
+                <a href="mailto:{{ section.settings.contact_email }}">{{ section.settings.contact_email }}</a>
+              </li>
+            {% endif %}
+            {% if section.settings.contact_phone != blank %}
+              <li>
+                <a href="tel:{{ section.settings.contact_phone | remove: ' ' }}">{{ section.settings.contact_phone }}</a>
+              </li>
+            {% endif %}
+            {% if section.settings.contact_address != blank %}
+              <li class="address">{{ section.settings.contact_address }}</li>
+            {% endif %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+    
+    <div class="footer-bottom">
+      <p class="copyright">
+        &copy; {{ 'now' | date: '%Y' }} {{ shop.name }}. {{ section.settings.copyright_text | default: 'All rights reserved.' }}
+      </p>
+      
+      {% if section.settings.show_payment_icons %}
+        <div class="payment-icons">
+          {{ shop.enabled_payment_types | payment_type_svg_tag }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</footer>
+
+<style>
+  #footer-{{ section.id }} {
+    background-color: {{ section.settings.background_color }};
+    color: {{ section.settings.text_color }};
+    padding: 4rem 0 2rem;
+  }
+  
+  #footer-{{ section.id }} .footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  
+  #footer-{{ section.id }} .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr repeat(auto-fit, minmax(150px, 1fr));
+    gap: 3rem;
+    margin-bottom: 3rem;
+  }
+  
+  #footer-{{ section.id }} .footer-logo {
+    max-width: 150px;
+    height: auto;
+    margin-bottom: 1rem;
+  }
+  
+  #footer-{{ section.id }} .footer-shop-name {
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin: 0 0 1rem 0;
+  }
+  
+  #footer-{{ section.id }} .footer-brand-text {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    opacity: 0.7;
+    margin: 0 0 1.5rem 0;
+    max-width: 300px;
+  }
+  
+  #footer-{{ section.id }} .footer-social {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  #footer-{{ section.id }} .social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: {{ section.settings.text_color }};
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+  
+  #footer-{{ section.id }} .social-link:hover {
+    opacity: 1;
+  }
+  
+  #footer-{{ section.id }} .social-link svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  #footer-{{ section.id }} .footer-column-heading {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 0 1.5rem 0;
+  }
+  
+  #footer-{{ section.id }} .footer-links,
+  #footer-{{ section.id }} .footer-contact {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  #footer-{{ section.id }} .footer-links li,
+  #footer-{{ section.id }} .footer-contact li {
+    margin-bottom: 0.75rem;
+  }
+  
+  #footer-{{ section.id }} .footer-links a,
+  #footer-{{ section.id }} .footer-contact a {
+    color: {{ section.settings.text_color }};
+    text-decoration: none;
+    font-size: 0.875rem;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+  
+  #footer-{{ section.id }} .footer-links a:hover,
+  #footer-{{ section.id }} .footer-contact a:hover {
+    opacity: 1;
+  }
+  
+  #footer-{{ section.id }} .footer-contact .address {
+    font-size: 0.875rem;
+    opacity: 0.7;
+    line-height: 1.5;
+  }
+  
+  #footer-{{ section.id }} .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  #footer-{{ section.id }} .copyright {
+    font-size: 0.75rem;
+    opacity: 0.5;
+    margin: 0;
+  }
+  
+  #footer-{{ section.id }} .payment-icons {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  #footer-{{ section.id }} .payment-icons svg {
+    height: 24px;
+    width: auto;
+  }
+  
+  @media (max-width: 768px) {
+    #footer-{{ section.id }} .footer-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    #footer-{{ section.id }} .footer-brand {
+      grid-column: span 2;
+    }
+    
+    #footer-{{ section.id }} .footer-bottom {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+    
+    #footer-{{ section.id }} .footer-container {
+      padding: 0 1rem;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Custom Footer",
+  "tag": "section",
+  "class": "custom-footer-wrapper",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo"
+    },
+    {
+      "type": "textarea",
+      "id": "brand_description",
+      "label": "Brand Description",
+      "default": "We create minimal, modern products designed for everyday life."
+    },
+    {
+      "type": "header",
+      "content": "Social Media"
+    },
+    {
+      "type": "url",
+      "id": "social_facebook",
+      "label": "Facebook URL"
+    },
+    {
+      "type": "url",
+      "id": "social_instagram",
+      "label": "Instagram URL"
+    },
+    {
+      "type": "url",
+      "id": "social_twitter",
+      "label": "Twitter/X URL"
+    },
+    {
+      "type": "url",
+      "id": "social_youtube",
+      "label": "YouTube URL"
+    },
+    {
+      "type": "header",
+      "content": "Contact Information"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_contact",
+      "label": "Show Contact Column",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "contact_heading",
+      "label": "Contact Heading",
+      "default": "Contact"
+    },
+    {
+      "type": "text",
+      "id": "contact_email",
+      "label": "Email",
+      "default": "hello@example.com"
+    },
+    {
+      "type": "text",
+      "id": "contact_phone",
+      "label": "Phone",
+      "default": "+1 (555) 123-4567"
+    },
+    {
+      "type": "textarea",
+      "id": "contact_address",
+      "label": "Address"
+    },
+    {
+      "type": "header",
+      "content": "Footer Bottom"
+    },
+    {
+      "type": "text",
+      "id": "copyright_text",
+      "label": "Copyright Text",
+      "default": "All rights reserved."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_payment_icons",
+      "label": "Show Payment Icons",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#1a1a1a"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#ffffff"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "link_column",
+      "name": "Link Column",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "Heading",
+          "default": "Quick Links"
+        },
+        {
+          "type": "link_list",
+          "id": "menu",
+          "label": "Menu"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom Footer",
+      "blocks": [
+        {
+          "type": "link_column",
+          "settings": {
+            "heading": "Shop"
+          }
+        },
+        {
+          "type": "link_column",
+          "settings": {
+            "heading": "Support"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
+
