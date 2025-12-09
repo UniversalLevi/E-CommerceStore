@@ -31,6 +31,16 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Reset modal state when opened
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+      setSelectedNiche('');
+      setNicheSearch('');
+      setSelectedGoal('');
+    }
+  }, [isOpen]);
+
   // Fetch niches on mount
   useEffect(() => {
     if (isOpen && step === 2) {
@@ -102,7 +112,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog as="div" className="relative z-50" onClose={() => {}}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -332,11 +342,6 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
                     )}
                   </div>
                   <div className="flex gap-3">
-                    {step < 4 && (
-                      <Button variant="ghost" onClick={onClose}>
-                        Skip
-                      </Button>
-                    )}
                     {step < totalSteps ? (
                       <Button onClick={handleNext} loading={saving} disabled={saving}>
                         {step === 3 ? 'Save & Continue' : 'Next'}

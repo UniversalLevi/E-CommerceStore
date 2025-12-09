@@ -8,10 +8,10 @@ import { api } from '@/lib/api';
 import OnboardingModal from '@/components/OnboardingModal';
 import SubscriptionStatus from '@/components/SubscriptionStatus';
 import IconBadge from '@/components/IconBadge';
-import { Link2, ShoppingBag, Store, BarChart3 } from 'lucide-react';
+import { Link2, ShoppingBag, Store, BarChart3, CheckCircle2 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { user, loading, logout, isAuthenticated } = useAuth();
+  const { user, loading, logout, isAuthenticated, refreshUser } = useAuth();
   const router = useRouter();
   const [stores, setStores] = useState<any[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -39,8 +39,8 @@ export default function DashboardPage() {
   };
 
   const checkOnboarding = () => {
-    const dismissed = localStorage.getItem('onboarding_dismissed');
-    if (!dismissed && stores.length === 0) {
+    // Check if user has completed onboarding
+    if (!user?.onboarding) {
       setShowOnboarding(true);
     }
   };
@@ -74,6 +74,43 @@ export default function DashboardPage() {
           <div className="mb-6">
             <SubscriptionStatus />
           </div>
+
+          {/* Onboarding Status */}
+          {user.onboarding ? (
+            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl p-4 md:p-6 mb-4 md:mb-6 border border-green-500/30">
+              <div className="flex items-start gap-4">
+                <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h3 className="text-lg md:text-xl font-bold text-text-primary mb-2">
+                    Onboarding Completed
+                  </h3>
+                  <p className="text-sm md:text-base text-text-secondary">
+                    You have already completed the onboarding process. Your preferences have been saved.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl p-4 md:p-6 mb-4 md:mb-6 border border-purple-500/30">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                <IconBadge icon={Link2} label="Onboarding" size="md" variant="primary" className="mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-lg md:text-xl font-bold text-text-primary mb-2">
+                    Complete Your Onboarding
+                  </h3>
+                  <p className="text-sm md:text-base text-text-secondary mb-4">
+                    Complete the onboarding process to personalize your experience and get product recommendations tailored to your needs.
+                  </p>
+                  <button
+                    onClick={() => setShowOnboarding(true)}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white px-4 md:px-6 py-2 rounded-lg transition-all font-medium shadow-lg shadow-purple-500/20"
+                  >
+                    Complete Onboarding
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Store Connection Prompt */}
           <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl p-4 md:p-6 mb-4 md:mb-6 border border-purple-500/30">
@@ -208,11 +245,15 @@ export default function DashboardPage() {
       <OnboardingModal
         isOpen={showOnboarding}
         onClose={() => {
-          setShowOnboarding(false);
-          localStorage.setItem('onboarding_dismissed', 'true');
+          // Modal cannot be closed if onboarding is not completed
+          if (user?.onboarding) {
+            setShowOnboarding(false);
+          }
         }}
-        onComplete={() => {
+        onComplete={async () => {
           setShowOnboarding(false);
+          // Refresh user data to get updated onboarding status
+          await refreshUser();
         }}
       />
 

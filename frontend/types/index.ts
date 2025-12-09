@@ -15,6 +15,11 @@ export interface User {
   planExpiresAt?: string | null;
   isLifetime?: boolean;
   productsAdded?: number;
+  onboarding?: {
+    nicheId: string;
+    goal: 'dropship' | 'brand' | 'start_small';
+    answeredAt: string;
+  };
 }
 
 export interface Niche {
