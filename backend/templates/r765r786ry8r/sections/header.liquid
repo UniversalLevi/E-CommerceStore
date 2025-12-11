@@ -1,0 +1,49 @@
+{% comment %}
+  Header Section
+  
+  Example AI prompts:
+  - "Create a responsive header with logo, navigation menu, and cart icon"
+  - "Add a sticky header with smooth scroll behavior"
+  - "Create a mobile hamburger menu with slide-out navigation"
+{% endcomment %}
+
+<header class="header" data-section-id="{{ section.id }}">
+  <div class="page-width">
+    <div class="header__container">
+      <div class="header__logo">
+        {% if section.settings.logo != blank %}
+          <img src="{{ section.settings.logo | image_url: width: 200 }}" alt="{{ shop.name }}">
+        {% else %}
+          <a href="{{ routes.root_url }}">{{ shop.name }}</a>
+        {% endif %}
+      </div>
+      
+      <nav class="header__nav">
+        {% for link in linklists.main-menu.links %}
+          <a href="{{ link.url }}" class="header__nav-link">{{ link.title }}</a>
+        {% endfor %}
+      </nav>
+      
+      <div class="header__actions">
+        <a href="{{ routes.cart_url }}" class="header__cart">
+          Cart ({{ cart.item_count }})
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+{% schema %}
+{
+  "name": "Header",
+  "tag": "header",
+  "class": "section-header",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo"
+    }
+  ]
+}
+{% endschema %}

@@ -161,9 +161,10 @@ export default function AdminContactsPage() {
       archived: 'bg-text-muted/20 text-text-muted border border-border-default',
     };
 
+    const safeStatus = status || 'pending';
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status as keyof typeof colors] || colors.pending}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[safeStatus as keyof typeof colors] || colors.pending}`}>
+        {safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1)}
       </span>
     );
   };

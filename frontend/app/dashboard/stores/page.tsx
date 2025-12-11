@@ -130,9 +130,10 @@ export default function MyStoresPage() {
       revoked: 'bg-gray-700 text-gray-300',
     };
 
+    const safeStatus = status || 'invalid';
     return (
-      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status as keyof typeof colors] || colors.invalid}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[safeStatus as keyof typeof colors] || colors.invalid}`}>
+        {safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1)}
       </span>
     );
   };

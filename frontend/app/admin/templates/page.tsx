@@ -308,11 +308,13 @@ export default function AdminTemplatesPage() {
                 <div className="absolute top-3 left-3 flex gap-2">
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full text-white ${
-                      categoryColors[template.category]
+                      categoryColors[template.category] || categoryColors.custom
                     }`}
                   >
-                    {template.category.charAt(0).toUpperCase() +
-                      template.category.slice(1)}
+                    {template.category
+                      ? template.category.charAt(0).toUpperCase() +
+                        template.category.slice(1)
+                      : 'Custom'}
                   </span>
                   {template.isDeleted ? (
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-600 text-white flex items-center gap-1">

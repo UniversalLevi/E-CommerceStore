@@ -213,7 +213,7 @@ export default function WriteProductDescriptionModal({
                                 : 'bg-surface-base border-border-default text-text-primary hover:border-primary-500'
                             }`}
                           >
-                            {t.charAt(0).toUpperCase() + t.slice(1)}
+                            {t && t.length > 0 ? t.charAt(0).toUpperCase() + t.slice(1) : t}
                           </button>
                         ))}
                       </div>
@@ -234,7 +234,7 @@ export default function WriteProductDescriptionModal({
                                 : 'bg-surface-base border-border-default text-text-primary hover:border-primary-500'
                             }`}
                           >
-                            {l.charAt(0).toUpperCase() + l.slice(1)}
+                            {l && l.length > 0 ? l.charAt(0).toUpperCase() + l.slice(1) : l}
                           </button>
                         ))}
                       </div>
