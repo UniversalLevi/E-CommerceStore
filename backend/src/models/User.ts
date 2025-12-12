@@ -210,10 +210,8 @@ userSchema.pre('validate', function (next) {
   next();
 });
 
-// Ensure sparse indexes for email and mobile to allow multiple null values
-// Drop existing indexes if they exist and recreate with sparse option
-userSchema.index({ email: 1 }, { unique: true, sparse: true });
-userSchema.index({ mobile: 1 }, { unique: true, sparse: true });
+// Note: Sparse unique indexes for email and mobile are defined in the schema itself
+// with { unique: true, sparse: true } - no need for additional index() calls
 
 // Helper functions for subscription status
 export function getSubscriptionStatus(user: IUser): 'active' | 'expired' | 'none' {

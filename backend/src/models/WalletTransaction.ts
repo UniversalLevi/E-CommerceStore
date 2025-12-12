@@ -70,8 +70,7 @@ const walletTransactionSchema = new Schema<IWalletTransaction>(
     referenceId: {
       type: String,
       default: null,
-      index: true,
-      sparse: true, // Allow multiple nulls
+      // Index defined below with unique constraint
     },
     metadata: {
       type: Schema.Types.Mixed,

@@ -33,8 +33,7 @@ const MentorshipApplicationSchema = new Schema<IMentorshipApplication>(
   }
 );
 
-MentorshipApplicationSchema.index({ email: 1 });
-MentorshipApplicationSchema.index({ status: 1 });
+// Note: email and status simple indexes already defined in schema with { index: true }
 MentorshipApplicationSchema.index({ createdAt: -1 });
 
 export default mongoose.models.MentorshipApplication ||

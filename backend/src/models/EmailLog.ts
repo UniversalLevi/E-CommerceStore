@@ -60,10 +60,10 @@ const emailLogSchema = new Schema<IEmailLog>(
   }
 );
 
-// Indexes
+// Compound indexes (simple indexes already defined in schema)
 emailLogSchema.index({ sentBy: 1, createdAt: -1 });
 emailLogSchema.index({ status: 1, createdAt: -1 });
-emailLogSchema.index({ recipient: 1 });
+// Note: recipient index already defined in schema with { index: true }
 
 export const EmailLog = mongoose.model<IEmailLog>('EmailLog', emailLogSchema);
 
