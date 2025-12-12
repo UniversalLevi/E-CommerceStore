@@ -231,16 +231,24 @@ export async function deleteTemplateFile(slug: string, filePath: string): Promis
 /**
  * Create a new template with default structure
  */
-export async function createTemplate(slug: string, metadata: TemplateMetadata): Promise<void> {
+export async function createTemplate(slug: string, metadata: TemplateMetadata, allowExisting: boolean = true): Promise<void> {
   if (!validateSlug(slug)) {
     throw new Error('Invalid template slug');
   }
   
   const templatePath = getTemplatePath(slug);
   
-  // Check if template already exists
+  // Check if template already exists on filesystem
+  // If allowExisting is true, we'll just update/use the existing folder
+  // This handles cases where folder exists but DB record doesn't
   if (await templateExists(slug)) {
-    throw new Error('Template already exists');
+    if (!allowExisting) {
+      throw new Error('Template already exists');
+    }
+    // Just update the metadata and continue
+    await saveTemplateMetadata(slug, metadata);
+    console.log(`[Template] Using existing template folder: ${slug}`);
+    return;
   }
   
   // Create directory structure
