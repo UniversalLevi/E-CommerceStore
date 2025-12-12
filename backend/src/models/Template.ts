@@ -5,7 +5,7 @@ export interface ITemplate extends Document {
   slug: string; // Folder name in filesystem
   description: string;
   previewImage: string; // URL to preview image
-  category: 'minimal' | 'modern' | 'luxury' | 'bold' | 'custom';
+  category: 'minimal' | 'modern' | 'luxury' | 'bold' | 'custom' | 'niche';
   isActive: boolean; // Whether users can select it
   isDeleted: boolean; // Soft delete flag
   createdBy: mongoose.Types.ObjectId;
@@ -43,7 +43,7 @@ const templateSchema = new Schema<ITemplate>(
     },
     category: {
       type: String,
-      enum: ['minimal', 'modern', 'luxury', 'bold', 'custom'],
+      enum: ['minimal', 'modern', 'luxury', 'bold', 'custom', 'niche'],
       default: 'custom',
     },
     isActive: {

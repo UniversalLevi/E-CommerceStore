@@ -33,8 +33,8 @@ const CONFIG = {
   SKIP_IF_EXISTS: true,
   // Delay between generations (ms) to avoid rate limits
   DELAY_BETWEEN_GENERATIONS: 2000,
-  // Template category
-  CATEGORY: 'niche' as const,
+  // Template category (must match Template model enum)
+  CATEGORY: 'niche' as 'niche',
 };
 
 interface GenerationResult {
