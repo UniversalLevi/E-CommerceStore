@@ -1,0 +1,44 @@
+{
+  "sections": {
+    "hero": {
+      "type": "hero-banner",
+      "settings": {
+        "heading": "Discover the Art of Simplicity",
+        "subheading": "Explore our curated selection of modern essentials",
+        "button_label": "Explore Now",
+        "button_link": "/collections/all",
+        "height": 70,
+        "overlay_opacity": 20,
+        "text_alignment": "center",
+        "text_color": "#ffffff"
+      }
+    },
+    "featured-products": {
+      "type": "featured-products",
+      "settings": {
+        "heading": "Editor's Picks",
+        "subheading": "Handpicked items for you",
+        "products_to_show": 6,
+        "columns": 3,
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "content_alignment": "left",
+        "show_view_all": true,
+        "view_all_text": "View all products"
+      }
+    },
+    "collection-list": {
+      "type": "collection-list",
+      "settings": {
+        "heading": "Minimalist Collections",
+        "collections_to_show": 4,
+        "columns": 4
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "featured-products",
+    "collection-list"
+  ]
+}

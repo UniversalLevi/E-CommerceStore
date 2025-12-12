@@ -1,0 +1,15 @@
+{
+  "current": {
+    "colors_text": "#ffffff",
+    "colors_background_1": "#252525",
+    "colors_background_2": "#333333",
+    "colors_accent_1": "#ffffff",
+    "colors_accent_2": "#7e7e7e",
+    "colors_solid_button_labels": "#ffffff",
+    "type_header_font": "playfair_display_n4",
+    "type_body_font": "montserrat_n7",
+    "page_width": 1400,
+    "spacing_sections": 50,
+    "logo_width": 120
+  }
+}
