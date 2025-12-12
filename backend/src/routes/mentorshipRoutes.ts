@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 import {
+  createMentorshipApplication,
   getMentorshipApplications,
   getMentorshipApplication,
   updateMentorshipApplication,
@@ -9,14 +10,14 @@ import {
 
 const router = Router();
 
-// All mentorship admin routes require authentication and admin role
-router.use(authenticateToken);
-router.use(requireAdmin);
+// Public route - anyone can submit a mentorship application
+router.post('/applications', createMentorshipApplication);
 
-router.get('/applications', getMentorshipApplications);
-router.get('/applications/:id', getMentorshipApplication);
-router.put('/applications/:id', updateMentorshipApplication);
-router.post('/applications/:id/reply', sendMentorshipReply);
+// Admin routes - require authentication and admin role
+router.get('/applications', authenticateToken, requireAdmin, getMentorshipApplications);
+router.get('/applications/:id', authenticateToken, requireAdmin, getMentorshipApplication);
+router.put('/applications/:id', authenticateToken, requireAdmin, updateMentorshipApplication);
+router.post('/applications/:id/reply', authenticateToken, requireAdmin, sendMentorshipReply);
 
 export default router;
 

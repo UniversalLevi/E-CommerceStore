@@ -1,9 +1,95 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { MentorshipApplication } from '../models/MentorshipApplication';
 import { AuditLog } from '../models/AuditLog';
+import { Notification } from '../models/Notification';
+import { User } from '../models/User';
 import { createError } from '../middleware/errorHandler';
 import { sendEmail } from '../utils/email';
+
+/**
+ * Create a new mentorship application (public endpoint)
+ */
+export const createMentorshipApplication = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { name, phone, email, incomeGoal, businessStage, whyMentorship } = req.body;
+
+    // Validation
+    if (!name || !name.trim()) {
+      throw createError('Name is required', 400);
+    }
+    if (!phone || !phone.trim()) {
+      throw createError('Phone is required', 400);
+    }
+    if (!email || !email.trim()) {
+      throw createError('Email is required', 400);
+    }
+    if (!whyMentorship || !whyMentorship.trim()) {
+      throw createError('Please explain why you want mentorship', 400);
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw createError('Invalid email format', 400);
+    }
+
+    // Create the application
+    const application = await MentorshipApplication.create({
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim().toLowerCase(),
+      incomeGoal: incomeGoal?.trim() || undefined,
+      businessStage: businessStage?.trim() || undefined,
+      whyMentorship: whyMentorship.trim(),
+      status: 'pending',
+    });
+
+    const applicationId = (application._id as any).toString();
+
+    // Notify all admin users
+    try {
+      const admins = await User.find({ role: 'admin' }).select('_id').lean();
+      const notifications = admins.map((admin) => ({
+        userId: admin._id,
+        type: 'mentorship_application' as const,
+        title: 'New Mentorship Application',
+        message: `${name} (${email}) submitted a mentorship application`,
+        link: `/admin/mentorship/applications/${applicationId}`,
+        metadata: {
+          applicationId,
+          applicantName: name,
+          applicantEmail: email,
+        },
+        read: false,
+      }));
+
+      if (notifications.length > 0) {
+        await Notification.insertMany(notifications);
+      }
+    } catch (notificationError) {
+      console.error('Failed to create admin notifications:', notificationError);
+      // Don't fail the request if notifications fail
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Application submitted successfully',
+      application: {
+        _id: applicationId,
+        name: application.name,
+        email: application.email,
+        status: application.status,
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
 
 /**
  * Get all mentorship applications (admin only)

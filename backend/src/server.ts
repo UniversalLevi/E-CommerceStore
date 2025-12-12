@@ -92,7 +92,8 @@ app.use('/api', contentRoutes);
 // Niche routes (separate namespaces to prevent route overlap)
 app.use('/api/niches', nicheRoutes);
 app.use('/api/admin/niches', authenticateToken, requireAdmin, nicheAdminRoutes);
-// Mentorship routes (admin only)
+// Mentorship routes (public POST, admin for GET/PUT)
+app.use('/api/mentorship', mentorshipRoutes);
 app.use('/api/admin/mentorship', mentorshipRoutes);
 // Template routes
 app.use('/api/templates', templateRoutes);
