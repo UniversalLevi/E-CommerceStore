@@ -58,7 +58,10 @@ const categoryLabels: Record<string, { label: string; color: string; bgColor: st
   luxury: { label: 'Luxury', color: 'text-amber-300', bgColor: 'bg-amber-700' },
   bold: { label: 'Bold', color: 'text-rose-300', bgColor: 'bg-rose-700' },
   custom: { label: 'Custom', color: 'text-purple-300', bgColor: 'bg-purple-700' },
+  niche: { label: 'Niche', color: 'text-green-300', bgColor: 'bg-green-700' },
 };
+
+const defaultCategory = { label: 'Template', color: 'text-gray-300', bgColor: 'bg-gray-700' };
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -424,7 +427,7 @@ export default function TemplatesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template) => {
-            const category = categoryLabels[template.category];
+            const category = categoryLabels[template.category] || defaultCategory;
             
             return (
               <div
