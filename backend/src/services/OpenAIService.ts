@@ -786,13 +786,24 @@ export async function generateCompleteTheme(
   };
 
   const sections = [
+    // Core layout sections
     { path: 'sections/header.liquid', content: readFile('sections/header.liquid') },
     { path: 'sections/footer.liquid', content: readFile('sections/footer.liquid') },
+    // Homepage sections
     { path: 'sections/hero-banner.liquid', content: readFile('sections/hero-banner.liquid') },
     { path: 'sections/featured-products.liquid', content: readFile('sections/featured-products.liquid') },
     { path: 'sections/collection-list.liquid', content: readFile('sections/collection-list.liquid') },
+    // Product & Collection sections
     { path: 'sections/main-product.liquid', content: readFile('sections/main-product.liquid') },
     { path: 'sections/main-collection.liquid', content: readFile('sections/main-collection.liquid') },
+    { path: 'sections/main-list-collections.liquid', content: readFile('sections/main-list-collections.liquid') },
+    // Page sections
+    { path: 'sections/main-page.liquid', content: readFile('sections/main-page.liquid') },
+    { path: 'sections/contact-form.liquid', content: readFile('sections/contact-form.liquid') },
+    // Utility sections
+    { path: 'sections/main-cart.liquid', content: readFile('sections/main-cart.liquid') },
+    { path: 'sections/main-search.liquid', content: readFile('sections/main-search.liquid') },
+    { path: 'sections/main-404.liquid', content: readFile('sections/main-404.liquid') },
   ];
 
   // Create customized template JSONs with AI settings
@@ -838,9 +849,19 @@ export async function generateCompleteTheme(
   };
 
   const templates = [
+    // Homepage
     { path: 'templates/index.json', content: JSON.stringify(indexTemplate, null, 2) },
+    // Product & Collection templates
     { path: 'templates/product.json', content: readFile('templates/product.json') },
     { path: 'templates/collection.json', content: readFile('templates/collection.json') },
+    { path: 'templates/list-collections.json', content: readFile('templates/list-collections.json') },
+    // Page templates
+    { path: 'templates/page.json', content: readFile('templates/page.json') },
+    { path: 'templates/page.contact.json', content: readFile('templates/page.contact.json') },
+    // Utility templates
+    { path: 'templates/cart.json', content: readFile('templates/cart.json') },
+    { path: 'templates/search.json', content: readFile('templates/search.json') },
+    { path: 'templates/404.json', content: readFile('templates/404.json') },
   ];
 
   // Create customized settings_data.json with AI colors

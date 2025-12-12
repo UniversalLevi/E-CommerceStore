@@ -1,0 +1,368 @@
+<section class="contact-form" data-section-id="{{ section.id }}">
+  <div class="page-width">
+    <div class="contact-form__wrapper">
+      <div class="contact-form__header">
+        <h1 class="contact-form__title h1">{{ section.settings.heading | default: page.title | default: 'Contact Us' }}</h1>
+        {%- if section.settings.subheading != blank -%}
+          <p class="contact-form__subheading">{{ section.settings.subheading }}</p>
+        {%- endif -%}
+      </div>
+
+      <div class="contact-form__grid">
+        <div class="contact-form__form-wrapper">
+          {%- form 'contact', id: 'ContactForm', class: 'contact-form__form' -%}
+            {%- if form.posted_successfully? -%}
+              <div class="contact-form__success">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="48" height="48">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2>Thank you for your message!</h2>
+                <p>We'll get back to you as soon as possible.</p>
+              </div>
+            {%- else -%}
+              {%- if form.errors -%}
+                <div class="contact-form__errors">
+                  <p><strong>Please fix the following errors:</strong></p>
+                  <ul>
+                    {%- for field in form.errors -%}
+                      <li>{{ form.errors.messages[field] }}</li>
+                    {%- endfor -%}
+                  </ul>
+                </div>
+              {%- endif -%}
+
+              <div class="contact-form__field">
+                <label for="ContactForm-name" class="contact-form__label">Name</label>
+                <input
+                  type="text"
+                  id="ContactForm-name"
+                  name="contact[{{ 'templates.contact.form.name' | t }}]"
+                  value="{{ form.name }}"
+                  placeholder="Your name"
+                  class="contact-form__input"
+                  autocomplete="name"
+                  required
+                >
+              </div>
+
+              <div class="contact-form__field">
+                <label for="ContactForm-email" class="contact-form__label">Email</label>
+                <input
+                  type="email"
+                  id="ContactForm-email"
+                  name="contact[email]"
+                  value="{{ form.email }}"
+                  placeholder="your@email.com"
+                  class="contact-form__input"
+                  autocomplete="email"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  required
+                >
+              </div>
+
+              <div class="contact-form__field">
+                <label for="ContactForm-phone" class="contact-form__label">Phone (optional)</label>
+                <input
+                  type="tel"
+                  id="ContactForm-phone"
+                  name="contact[{{ 'templates.contact.form.phone' | t }}]"
+                  value="{{ form.phone }}"
+                  placeholder="Your phone number"
+                  class="contact-form__input"
+                  autocomplete="tel"
+                >
+              </div>
+
+              <div class="contact-form__field">
+                <label for="ContactForm-message" class="contact-form__label">Message</label>
+                <textarea
+                  id="ContactForm-message"
+                  name="contact[{{ 'templates.contact.form.comment' | t }}]"
+                  placeholder="How can we help you?"
+                  class="contact-form__textarea"
+                  rows="6"
+                  required
+                >{{ form.body }}</textarea>
+              </div>
+
+              <button type="submit" class="contact-form__submit button">
+                Send Message
+              </button>
+            {%- endif -%}
+          {%- endform -%}
+        </div>
+
+        {%- if section.settings.show_contact_info -%}
+          <div class="contact-form__info">
+            {%- if section.settings.address != blank -%}
+              <div class="contact-form__info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <div>
+                  <h3>Address</h3>
+                  <p>{{ section.settings.address }}</p>
+                </div>
+              </div>
+            {%- endif -%}
+
+            {%- if section.settings.email != blank -%}
+              <div class="contact-form__info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <div>
+                  <h3>Email</h3>
+                  <p><a href="mailto:{{ section.settings.email }}">{{ section.settings.email }}</a></p>
+                </div>
+              </div>
+            {%- endif -%}
+
+            {%- if section.settings.phone != blank -%}
+              <div class="contact-form__info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                <div>
+                  <h3>Phone</h3>
+                  <p><a href="tel:{{ section.settings.phone }}">{{ section.settings.phone }}</a></p>
+                </div>
+              </div>
+            {%- endif -%}
+
+            {%- if section.settings.hours != blank -%}
+              <div class="contact-form__info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h3>Hours</h3>
+                  <p>{{ section.settings.hours }}</p>
+                </div>
+              </div>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .contact-form {
+    padding: var(--spacing-sections-mobile) 0;
+  }
+
+  @media screen and (min-width: 750px) {
+    .contact-form {
+      padding: var(--spacing-sections-desktop) 0;
+    }
+  }
+
+  .contact-form__header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .contact-form__title {
+    margin: 0 0 0.5rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+
+  .contact-form__subheading {
+    margin: 0;
+    opacity: 0.7;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .contact-form__grid {
+    display: grid;
+    gap: 3rem;
+  }
+
+  @media screen and (min-width: 990px) {
+    .contact-form__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+    }
+  }
+
+  .contact-form__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .contact-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .contact-form__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .contact-form__input,
+  .contact-form__textarea {
+    padding: 1rem;
+    font-size: 1rem;
+    border: 1px solid rgba(var(--color-base-text), 0.2);
+    background-color: transparent;
+    color: rgb(var(--color-base-text));
+    border-radius: 4px;
+    transition: border-color 0.2s ease;
+  }
+
+  .contact-form__input:focus,
+  .contact-form__textarea:focus {
+    outline: none;
+    border-color: rgb(var(--color-base-accent-1));
+  }
+
+  .contact-form__textarea {
+    resize: vertical;
+    min-height: 150px;
+  }
+
+  .contact-form__submit {
+    align-self: flex-start;
+    padding: 1rem 3rem;
+  }
+
+  .contact-form__success {
+    text-align: center;
+    padding: 3rem;
+    background-color: rgba(var(--color-base-accent-1), 0.1);
+    border-radius: 8px;
+  }
+
+  .contact-form__success svg {
+    color: rgb(var(--color-base-accent-1));
+    margin-bottom: 1rem;
+  }
+
+  .contact-form__success h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.5rem;
+  }
+
+  .contact-form__success p {
+    margin: 0;
+    opacity: 0.7;
+  }
+
+  .contact-form__errors {
+    padding: 1rem;
+    background-color: #fee2e2;
+    border: 1px solid #ef4444;
+    border-radius: 4px;
+    color: #dc2626;
+  }
+
+  .contact-form__errors p {
+    margin: 0 0 0.5rem;
+  }
+
+  .contact-form__errors ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+
+  .contact-form__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .contact-form__info-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .contact-form__info-item svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .contact-form__info-item h3 {
+    margin: 0 0 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .contact-form__info-item p {
+    margin: 0;
+    opacity: 0.8;
+  }
+
+  .contact-form__info-item a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .contact-form__info-item a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Contact Form",
+  "tag": "section",
+  "class": "section-contact-form",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Contact Us"
+    },
+    {
+      "type": "textarea",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "We'd love to hear from you. Send us a message and we'll respond as soon as possible."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_contact_info",
+      "label": "Show contact information",
+      "default": true
+    },
+    {
+      "type": "textarea",
+      "id": "address",
+      "label": "Address"
+    },
+    {
+      "type": "text",
+      "id": "email",
+      "label": "Email"
+    },
+    {
+      "type": "text",
+      "id": "phone",
+      "label": "Phone"
+    },
+    {
+      "type": "text",
+      "id": "hours",
+      "label": "Business hours"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Contact Form"
+    }
+  ]
+}
+{% endschema %}
+
