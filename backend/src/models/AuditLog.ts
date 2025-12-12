@@ -63,6 +63,7 @@ const auditLogSchema = new Schema<IAuditLog>({
       'VERIFY_EMAIL',
       'LINK_MOBILE',
       'MENTORSHIP_REPLY_SENT',
+      'UPDATE_MENTORSHIP_APPLICATION',
       // Order management actions
       'ORDER_VIEW',
       'ORDER_FULFILL',
