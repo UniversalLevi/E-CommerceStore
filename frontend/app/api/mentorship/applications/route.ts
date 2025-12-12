@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDatabase from '@/lib/db';
 import MentorshipApplication from '@/lib/models/MentorshipApplication';
-import User from '@/lib/models/User';
-import Notification from '@/lib/models/Notification';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 
 const applicationSchema = z.object({
@@ -16,32 +15,49 @@ const applicationSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
     const validated = applicationSchema.parse(body);
 
     await connectDatabase();
+    
     const application = new MentorshipApplication(validated);
     await application.save();
 
-    // Notify all admin users
+    // Notify all admin users using raw MongoDB query to avoid model conflicts
     try {
-      const admins = await User.find({ role: 'admin' }).select('_id').lean();
-      const notifications = admins.map((admin) => ({
-        userId: admin._id,
-        type: 'mentorship_application' as const,
-        title: 'New Mentorship Application',
-        message: `${validated.name} (${validated.email}) submitted a mentorship application`,
-        link: `/admin/mentorship/applications/${application._id}`,
-        metadata: {
-          applicationId: application._id.toString(),
-          applicantName: validated.name,
-          applicantEmail: validated.email,
-        },
-        read: false,
-      }));
+      const db = mongoose.connection.db;
+      if (db) {
+        const admins = await db.collection('users').find({ role: 'admin' }).project({ _id: 1 }).toArray();
+        
+        if (admins.length > 0) {
+          const notifications = admins.map((admin) => ({
+            userId: admin._id,
+            type: 'mentorship_application',
+            title: 'New Mentorship Application',
+            message: `${validated.name} (${validated.email}) submitted a mentorship application`,
+            link: `/admin/mentorship/applications/${application._id}`,
+            metadata: {
+              applicationId: application._id.toString(),
+              applicantName: validated.name,
+              applicantEmail: validated.email,
+            },
+            read: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }));
 
-      if (notifications.length > 0) {
-        await Notification.insertMany(notifications);
+          await db.collection('notifications').insertMany(notifications);
+        }
       }
     } catch (notificationError) {
       // Log but don't fail the request if notifications fail
@@ -61,7 +77,7 @@ export async function POST(req: NextRequest) {
     }
     console.error('Error submitting application:', error);
     return NextResponse.json(
-      { error: 'Failed to submit application' },
+      { error: error.message || 'Failed to submit application' },
       { status: 500 }
     );
   }

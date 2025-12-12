@@ -1,0 +1,164 @@
+/* Base CSS - Dawn-based Theme */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 62.5%;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  font-size: 1.5rem;
+  line-height: 1.6;
+  font-family: var(--font-body-family);
+  font-style: var(--font-body-style);
+  font-weight: var(--font-body-weight);
+  color: rgb(var(--color-base-text));
+  background-color: rgb(var(--color-base-background-1));
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6,
+.h0, .h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: var(--font-heading-family);
+  font-style: var(--font-heading-style);
+  font-weight: var(--font-heading-weight);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.h0 {
+  font-size: clamp(3rem, 6vw, 5rem);
+}
+
+.h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Utility Classes */
+.visually-hidden {
+  position: absolute !important;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  word-wrap: normal !important;
+}
+
+.list-unstyled {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-width {
+  max-width: var(--page-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+@media screen and (min-width: 750px) {
+  .page-width {
+    padding: 0 5rem;
+  }
+}
+
+.rte {
+  line-height: 1.7;
+}
+
+.rte p {
+  margin: 0 0 1rem;
+}
+
+.rte p:last-child {
+  margin-bottom: 0;
+}
+
+/* Buttons */
+.button {
+  display: inline-block;
+  padding: 1rem 2rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgb(var(--color-base-solid-button-labels));
+  background-color: rgb(var(--color-base-accent-1));
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Skip to content */
+.skip-to-content-link:focus {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 9999;
+  padding: 1rem 2rem;
+  background-color: rgb(var(--color-base-background-1));
+  color: rgb(var(--color-base-text));
+  clip: auto;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* Form Elements */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid rgb(var(--color-base-accent-1));
+  outline-offset: 2px;
+}
+
+/* Content for layout */
+.content-for-layout {
+  flex-grow: 1;
+}
+
+
+
+/* AI-generated custom styles */
+/* Add glowing effects, neon highlights, gradients, and minimal geometric elements to enhance the futuristic high-tech theme */

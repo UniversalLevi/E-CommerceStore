@@ -1,0 +1,76 @@
+<section class="main-page" data-section-id="{{ section.id }}">
+  <div class="page-width">
+    <div class="main-page__header">
+      <h1 class="main-page__title h1">{{ page.title }}</h1>
+    </div>
+    
+    <div class="main-page__content rte">
+      {{ page.content }}
+    </div>
+  </div>
+</section>
+
+<style>
+  .main-page {
+    padding: var(--spacing-sections-mobile) 0;
+  }
+
+  @media screen and (min-width: 750px) {
+    .main-page {
+      padding: var(--spacing-sections-desktop) 0;
+    }
+  }
+
+  .main-page__header {
+    margin-bottom: 2rem;
+  }
+
+  .main-page__title {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+
+  .main-page__content {
+    max-width: 800px;
+  }
+
+  .main-page__content p {
+    margin: 0 0 1.5rem;
+    line-height: 1.8;
+  }
+
+  .main-page__content h2,
+  .main-page__content h3 {
+    margin: 2rem 0 1rem;
+  }
+
+  .main-page__content ul,
+  .main-page__content ol {
+    margin: 0 0 1.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .main-page__content li {
+    margin-bottom: 0.5rem;
+  }
+
+  .main-page__content img {
+    max-width: 100%;
+    height: auto;
+    margin: 1.5rem 0;
+  }
+
+  .main-page__content a {
+    color: rgb(var(--color-base-accent-1));
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Page Content",
+  "tag": "section",
+  "class": "section-main-page",
+  "settings": []
+}
+{% endschema %}
+

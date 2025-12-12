@@ -1,0 +1,44 @@
+{
+  "sections": {
+    "hero": {
+      "type": "hero-banner",
+      "settings": {
+        "heading": "Unleash The Future",
+        "subheading": "Discover our cutting-edge collection",
+        "button_label": "Explore Now",
+        "button_link": "/collections/all",
+        "height": 70,
+        "overlay_opacity": 30,
+        "text_alignment": "center",
+        "text_color": "#ffffff"
+      }
+    },
+    "featured-products": {
+      "type": "featured-products",
+      "settings": {
+        "heading": "Featured Tech",
+        "subheading": "Explore the latest gadgets and innovations",
+        "products_to_show": 8,
+        "columns": 4,
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "content_alignment": "left",
+        "show_view_all": true,
+        "view_all_text": "View all products"
+      }
+    },
+    "collection-list": {
+      "type": "collection-list",
+      "settings": {
+        "heading": "Shop by Category",
+        "collections_to_show": 6,
+        "columns": 3
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "featured-products",
+    "collection-list"
+  ]
+}
