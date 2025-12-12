@@ -1,0 +1,17 @@
+{
+  "current": {
+    "colors_text": "#1a1a1a",
+    "colors_background_1": "#ffffff",
+    "colors_background_2": "#f5f5f5",
+    "colors_accent_1": "#1a1a1a",
+    "colors_accent_2": "#4a90d9",
+    "colors_solid_button_labels": "#ffffff",
+    "type_header_font": "assistant_n4",
+    "type_body_font": "assistant_n4",
+    "page_width": 1400,
+    "spacing_sections": 50,
+    "logo_width": 120,
+    "checkout_accent_color": "#1a1a1a"
+  }
+}
+

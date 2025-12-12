@@ -1,0 +1,77 @@
+{% comment %}
+  Footer Section
+  
+  Example AI prompts:
+  - "Create a footer with multiple columns, links, and social media icons"
+  - "Add newsletter signup form to the footer"
+  - "Create a footer with payment icons and copyright notice"
+{% endcomment %}
+
+<footer class="footer" data-section-id="{{ section.id }}">
+  <div class="page-width">
+    <div class="footer__container">
+      <div class="footer__column">
+        <h3 class="footer__heading">{{ section.settings.heading_1 | default: 'About' }}</h3>
+        <p>{{ section.settings.text_1 | default: 'About our store' }}</p>
+      </div>
+      
+      <div class="footer__column">
+        <h3 class="footer__heading">{{ section.settings.heading_2 | default: 'Quick Links' }}</h3>
+        <ul class="footer__links">
+          {% for link in linklists.footer.links %}
+            <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      
+      <div class="footer__column">
+        <h3 class="footer__heading">{{ section.settings.heading_3 | default: 'Contact' }}</h3>
+        <p>{{ section.settings.text_3 | default: 'Contact us' }}</p>
+      </div>
+    </div>
+    
+    <div class="footer__bottom">
+      <p>&copy; {{ 'now' | date: '%Y' }} {{ shop.name }}. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Footer",
+  "tag": "footer",
+  "class": "section-footer",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading_1",
+      "label": "Column 1 Heading",
+      "default": "About"
+    },
+    {
+      "type": "textarea",
+      "id": "text_1",
+      "label": "Column 1 Text",
+      "default": "About our store"
+    },
+    {
+      "type": "text",
+      "id": "heading_2",
+      "label": "Column 2 Heading",
+      "default": "Quick Links"
+    },
+    {
+      "type": "text",
+      "id": "heading_3",
+      "label": "Column 3 Heading",
+      "default": "Contact"
+    },
+    {
+      "type": "textarea",
+      "id": "text_3",
+      "label": "Column 3 Text",
+      "default": "Contact us"
+    }
+  ]
+}
+{% endschema %}

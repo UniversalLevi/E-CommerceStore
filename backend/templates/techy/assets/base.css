@@ -1,0 +1,199 @@
+/* 
+  Base CSS - Custom Styles
+  
+  Example AI prompts:
+  - "Create modern CSS with smooth animations and responsive design"
+  - "Create CSS for a minimalist e-commerce theme"
+  - "Create CSS with custom color variables and component styles"
+*/
+
+:root {
+  --color-primary: #000000;
+  --color-secondary: #ffffff;
+  --color-accent: #ff6b6b;
+  --color-background: #ffffff;
+  --color-text: #000000;
+  --spacing-unit: 1rem;
+  --border-radius: 4px;
+  --transition-speed: 0.3s;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  line-height: 1.6;
+}
+
+.page-width {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  transition: all var(--transition-speed);
+  border: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Header Styles */
+.header {
+  background-color: var(--color-background);
+  border-bottom: 1px solid #e0e0e0;
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header__logo a {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: var(--color-primary);
+}
+
+.header__nav {
+  display: flex;
+  gap: 2rem;
+}
+
+.header__nav-link {
+  text-decoration: none;
+  color: var(--color-text);
+  transition: color var(--transition-speed);
+}
+
+.header__nav-link:hover {
+  color: var(--color-accent);
+}
+
+.header__cart {
+  text-decoration: none;
+  color: var(--color-text);
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius);
+}
+
+/* Hero Section Styles */
+.main-hero-section {
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.main-hero-section__heading {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+.main-hero-section__subheading {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  color: #666;
+}
+
+.main-hero-section__button {
+  margin-top: 1rem;
+}
+
+/* Footer Styles */
+.footer {
+  background-color: #f5f5f5;
+  padding: 3rem 0 1rem;
+  margin-top: 4rem;
+}
+
+.footer__container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.footer__heading {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+.footer__links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer__links li {
+  margin-bottom: 0.5rem;
+}
+
+.footer__links a {
+  text-decoration: none;
+  color: var(--color-text);
+  transition: color var(--transition-speed);
+}
+
+.footer__links a:hover {
+  color: var(--color-accent);
+}
+
+.footer__bottom {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid #e0e0e0;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .header__nav {
+    display: none;
+  }
+  
+  .main-hero-section__heading {
+    font-size: 2rem;
+  }
+  
+  .main-hero-section__subheading {
+    font-size: 1rem;
+  }
+  
+  .footer__container {
+    grid-template-columns: 1fr;
+  }
+}

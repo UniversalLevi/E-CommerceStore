@@ -1,0 +1,335 @@
+<section class="main-collection" data-section-id="{{ section.id }}">
+  <div class="page-width">
+    <div class="main-collection__header">
+      <h1 class="main-collection__title h1">{{ collection.title }}</h1>
+      {%- if collection.description != blank -%}
+        <div class="main-collection__description rte">{{ collection.description }}</div>
+      {%- endif -%}
+      <p class="main-collection__count">{{ collection.products_count }} {{ collection.products_count | pluralize: 'product', 'products' }}</p>
+    </div>
+
+    {%- paginate collection.products by section.settings.products_per_page -%}
+      <div class="main-collection__grid">
+        {%- if collection.products.size > 0 -%}
+          {%- for product in collection.products -%}
+            <div class="main-collection__item">
+              <a href="{{ product.url }}" class="product-card">
+                <div class="product-card__image-wrapper">
+                  {%- if product.featured_image != blank -%}
+                    <img
+                      src="{{ product.featured_image | image_url: width: 600 }}"
+                      alt="{{ product.featured_image.alt | default: product.title }}"
+                      class="product-card__image"
+                      loading="lazy"
+                      width="300"
+                      height="400"
+                    >
+                    {%- if product.images[1] != blank and section.settings.show_secondary_image -%}
+                      <img
+                        src="{{ product.images[1] | image_url: width: 600 }}"
+                        alt="{{ product.images[1].alt | default: product.title }}"
+                        class="product-card__image product-card__image--secondary"
+                        loading="lazy"
+                        width="300"
+                        height="400"
+                      >
+                    {%- endif -%}
+                  {%- else -%}
+                    <div class="product-card__placeholder">
+                      {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+                    </div>
+                  {%- endif -%}
+
+                  {%- if product.available == false -%}
+                    <span class="product-card__badge product-card__badge--sold-out">Sold out</span>
+                  {%- elsif product.compare_at_price > product.price -%}
+                    <span class="product-card__badge product-card__badge--sale">Sale</span>
+                  {%- endif -%}
+                </div>
+
+                <div class="product-card__info">
+                  <h3 class="product-card__title">{{ product.title }}</h3>
+                  
+                  {%- if section.settings.show_vendor -%}
+                    <p class="product-card__vendor">{{ product.vendor }}</p>
+                  {%- endif -%}
+
+                  <div class="product-card__price">
+                    {%- if product.compare_at_price > product.price -%}
+                      <span class="product-card__price--compare">{{ product.compare_at_price | money }}</span>
+                    {%- endif -%}
+                    <span class="product-card__price--current{% if product.compare_at_price > product.price %} product-card__price--sale{% endif %}">
+                      {{ product.price | money }}
+                    </span>
+                  </div>
+                </div>
+              </a>
+            </div>
+          {%- endfor -%}
+        {%- else -%}
+          <div class="main-collection__empty">
+            <p>No products in this collection.</p>
+            <a href="{{ routes.all_products_collection_url }}" class="button">Browse all products</a>
+          </div>
+        {%- endif -%}
+      </div>
+
+      {%- if paginate.pages > 1 -%}
+        <nav class="main-collection__pagination pagination" aria-label="Pagination">
+          <ul class="pagination__list list-unstyled">
+            {%- if paginate.previous -%}
+              <li>
+                <a href="{{ paginate.previous.url }}" class="pagination__link" aria-label="Previous page">
+                  &larr; Previous
+                </a>
+              </li>
+            {%- endif -%}
+
+            {%- for part in paginate.parts -%}
+              <li>
+                {%- if part.is_link -%}
+                  <a href="{{ part.url }}" class="pagination__link">{{ part.title }}</a>
+                {%- else -%}
+                  <span class="pagination__current" aria-current="page">{{ part.title }}</span>
+                {%- endif -%}
+              </li>
+            {%- endfor -%}
+
+            {%- if paginate.next -%}
+              <li>
+                <a href="{{ paginate.next.url }}" class="pagination__link" aria-label="Next page">
+                  Next &rarr;
+                </a>
+              </li>
+            {%- endif -%}
+          </ul>
+        </nav>
+      {%- endif -%}
+    {%- endpaginate -%}
+  </div>
+</section>
+
+<style>
+  .main-collection {
+    padding: var(--spacing-sections-mobile) 0;
+  }
+
+  @media screen and (min-width: 750px) {
+    .main-collection {
+      padding: var(--spacing-sections-desktop) 0;
+    }
+  }
+
+  .main-collection__header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .main-collection__title {
+    margin: 0 0 1rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+
+  .main-collection__description {
+    max-width: 600px;
+    margin: 0 auto 1rem;
+    opacity: 0.8;
+  }
+
+  .main-collection__count {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.6;
+  }
+
+  .main-collection__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  @media screen and (min-width: 750px) {
+    .main-collection__grid {
+      grid-template-columns: repeat({{ section.settings.columns | default: 4 }}, 1fr);
+      gap: 2rem;
+    }
+  }
+
+  .product-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .product-card__image-wrapper {
+    position: relative;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+    background-color: rgba(var(--color-base-text), 0.03);
+    margin-bottom: 1rem;
+  }
+
+  .product-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+  }
+
+  .product-card__image--secondary {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+
+  .product-card:hover .product-card__image--secondary {
+    opacity: 1;
+  }
+
+  .product-card:hover .product-card__image:not(.product-card__image--secondary) {
+    opacity: 0;
+  }
+
+  .product-card__placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .product-card__placeholder svg {
+    width: 60%;
+    height: 60%;
+    opacity: 0.3;
+  }
+
+  .product-card__badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .product-card__badge--sold-out {
+    background-color: rgb(var(--color-base-text));
+    color: rgb(var(--color-base-background-1));
+  }
+
+  .product-card__badge--sale {
+    background-color: #dc2626;
+    color: #fff;
+  }
+
+  .product-card__title {
+    margin: 0 0 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .product-card__vendor {
+    margin: 0 0 0.5rem;
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+
+  .product-card__price {
+    font-size: 0.875rem;
+  }
+
+  .product-card__price--compare {
+    text-decoration: line-through;
+    opacity: 0.5;
+    margin-right: 0.5rem;
+  }
+
+  .product-card__price--sale {
+    color: #dc2626;
+  }
+
+  .main-collection__empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .pagination {
+    margin-top: 3rem;
+  }
+
+  .pagination__list {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pagination__link,
+  .pagination__current {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 0.75rem;
+    text-decoration: none;
+    color: rgb(var(--color-base-text));
+  }
+
+  .pagination__link:hover {
+    background-color: rgba(var(--color-base-text), 0.05);
+  }
+
+  .pagination__current {
+    font-weight: 600;
+    background-color: rgb(var(--color-base-text));
+    color: rgb(var(--color-base-background-1));
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Collection Page",
+  "tag": "section",
+  "class": "section-main-collection",
+  "settings": [
+    {
+      "type": "range",
+      "id": "products_per_page",
+      "min": 8,
+      "max": 48,
+      "step": 4,
+      "default": 16,
+      "label": "Products per page"
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "min": 2,
+      "max": 5,
+      "step": 1,
+      "default": 4,
+      "label": "Columns on desktop"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_secondary_image",
+      "default": true,
+      "label": "Show second image on hover"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_vendor",
+      "default": false,
+      "label": "Show vendor"
+    }
+  ]
+}
+{% endschema %}
+

@@ -1,0 +1,22 @@
+{
+  "id": "_master",
+  "name": "Master Template",
+  "description": "Dawn-based master template with pre-validated dynamic sections. Used as the foundation for AI-customized themes.",
+  "category": "modern",
+  "version": "1.0.0",
+  "author": "EAZY DROPSHIPPING",
+  "previewImage": "",
+  "features": [
+    "Dynamic product loops",
+    "Dynamic collection loops",
+    "Responsive design",
+    "Mobile-first approach",
+    "Online Store 2.0 compatible",
+    "Section settings",
+    "Configurable colors",
+    "Configurable typography"
+  ],
+  "createdAt": "2025-12-12T00:00:00.000Z",
+  "updatedAt": "2025-12-12T00:00:00.000Z"
+}
+
