@@ -271,7 +271,7 @@ export default function TemplatesSection() {
                     animate={{ opacity: hoveredTemplate === template.id ? 1 : 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Link href="/coming-soon">
+                    <Link href="/dashboard/templates">
                       <motion.button
                         className="px-4 py-2 bg-white text-black rounded-lg font-semibold text-sm flex items-center gap-2"
                         whileHover={{ scale: 1.05 }}
@@ -280,7 +280,7 @@ export default function TemplatesSection() {
                         <Eye className="w-4 h-4" /> Preview
                       </motion.button>
                     </Link>
-                    <Link href="/coming-soon">
+                    <Link href="/dashboard/templates">
                       <motion.button
                         className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold text-sm"
                         whileHover={{ scale: 1.05 }}
@@ -323,7 +323,7 @@ export default function TemplatesSection() {
                     ))}
                   </div>
                   
-                  <Link href="/coming-soon">
+                  <Link href="/dashboard/templates">
                     <motion.button 
                       className={`${template.accentColor} hover:text-white font-semibold text-sm flex items-center gap-2 group-hover:gap-3 transition-all`}
                       whileHover={{ x: 4 }}
@@ -344,7 +344,7 @@ export default function TemplatesSection() {
           transition={{ delay: 0.8, duration: 0.6 }}
           className="text-center mt-12"
         >
-          <Link href="/coming-soon">
+          <Link href="/dashboard/templates">
             <motion.button
               className="group inline-flex items-center gap-2 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/40 rounded-full font-semibold text-white transition-all"
               whileHover={{ scale: 1.05 }}
