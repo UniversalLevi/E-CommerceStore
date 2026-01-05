@@ -280,12 +280,9 @@ export async function detectNiche(productName: string): Promise<{
     }
   }
 
-  if (niches.length === 0 && !uncategorizedNiche) {
-    return {
-      nicheId: uncategorizedNiche._id.toString(),
-      nicheName: uncategorizedNiche.name,
-      error: 'No active niches found, using Uncategorized',
-    };
+  // Ensure we have uncategorizedNiche at this point
+  if (!uncategorizedNiche) {
+    return { nicheId: null, nicheName: null, error: 'Could not find or create Uncategorized niche' };
   }
 
   if (!client) {
