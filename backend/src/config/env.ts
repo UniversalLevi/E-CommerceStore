@@ -35,6 +35,12 @@ const envSchema = Joi.object({
   OPENAI_API_KEY: Joi.string().allow('').optional(),
   OPENAI_MODEL: Joi.string().default('gpt-3.5-turbo'),
   AI_CACHE_TTL: Joi.string().default('3600'),
+  // WhatsApp Business API configuration (optional)
+  ENABLE_WHATSAPP_BULK_ADD: Joi.string().valid('true', 'false').default('false'),
+  WHATSAPP_PHONE_NUMBER_ID: Joi.string().allow('').optional(),
+  WHATSAPP_ACCESS_TOKEN: Joi.string().allow('').optional(),
+  WHATSAPP_VERIFY_TOKEN: Joi.string().allow('').optional(),
+  WHATSAPP_BUSINESS_ACCOUNT_ID: Joi.string().allow('').optional(),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);
@@ -70,6 +76,13 @@ export const config = {
     apiKey: value.OPENAI_API_KEY || '',
     model: value.OPENAI_MODEL || 'gpt-3.5-turbo',
     cacheTtl: parseInt(value.AI_CACHE_TTL || '3600', 10),
+  },
+  whatsapp: {
+    enabled: value.ENABLE_WHATSAPP_BULK_ADD === 'true',
+    phoneNumberId: value.WHATSAPP_PHONE_NUMBER_ID || '',
+    accessToken: value.WHATSAPP_ACCESS_TOKEN || '',
+    verifyToken: value.WHATSAPP_VERIFY_TOKEN || '',
+    businessAccountId: value.WHATSAPP_BUSINESS_ACCOUNT_ID || '',
   },
 };
 

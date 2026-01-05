@@ -27,6 +27,7 @@ import {
   Video,
   Database,
   Palette,
+  MessageCircle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -54,6 +55,7 @@ const navItems: NavItem[] = [
   { href: '/admin/auto-orders', label: 'Auto Place Order', icon: Sparkles },
   { href: '/admin/niches', label: 'Niches', icon: Layers },
   { href: '/admin/products', label: 'Products', icon: Package },
+  { href: '/admin/whatsapp-drafts', label: 'WhatsApp Drafts', icon: MessageCircle },
   { href: '/admin/product-analytics', label: 'Product Analytics', icon: BarChart3 },
   { href: '/admin/email-sender', label: 'Email Sender', icon: Mail },
   { href: '/admin/video-mutator', label: 'Video Mutator', icon: Video },

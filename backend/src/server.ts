@@ -63,6 +63,7 @@ import videoMutatorRoutes from './routes/videoMutatorRoutes';
 import videoMutatorAdminRoutes from './routes/videoMutatorAdminRoutes';
 import templateRoutes from './routes/templateRoutes';
 import templateAdminRoutes from './routes/templateAdminRoutes';
+import whatsappRoutes from './routes/whatsappRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -98,6 +99,8 @@ app.use('/api/admin/mentorship', mentorshipRoutes);
 // Template routes
 app.use('/api/templates', templateRoutes);
 app.use('/api/admin/templates', templateAdminRoutes);
+// WhatsApp Bulk Product Intake routes
+app.use('/api/whatsapp', whatsappRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

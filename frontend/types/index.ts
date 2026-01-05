@@ -148,3 +148,41 @@ export interface PaymentOrderResponse {
   };
 }
 
+// WhatsApp Product Draft types
+export type WhatsAppDraftStatus = 'incoming' | 'enriched' | 'approved' | 'rejected';
+
+export interface WhatsAppProductDraft {
+  _id: string;
+  whatsapp_message_id: string;
+  original_image_url: string;
+  generated_image_urls: string[];
+  images_ai_generated: boolean;
+  original_name: string;
+  ai_name: string;
+  cost_price: number;
+  profit_margin: number;
+  shipping_fee: number;
+  final_price: number;
+  ai_description: string;
+  description_source: 'ai_whatsapp_intake';
+  detected_niche?: {
+    _id: string;
+    name: string;
+    icon?: string;
+  };
+  status: WhatsAppDraftStatus;
+  needs_review: boolean;
+  error_log: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WhatsAppDraftStats {
+  incoming: number;
+  enriched: number;
+  approved: number;
+  rejected: number;
+  total: number;
+  pending_review: number;
+}
+
