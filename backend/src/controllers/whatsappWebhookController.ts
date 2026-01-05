@@ -15,32 +15,36 @@ import {
   calculateFinalPrice,
   WhatsAppWebhookPayload,
   WhatsAppMessage,
+  ParsedProductData,
 } from '../services/whatsappIntakeService';
 import { enrichProduct } from '../services/aiEnrichmentService';
 import mongoose from 'mongoose';
 
-// In-memory store for pending image messages (awaiting text)
-// Maps phone number -> { imageId, messageId, timestamp }
-const pendingImages = new Map<string, {
-  imageId: string;
-  messageId: string;
+// In-memory store for pending messages (awaiting matching message)
+// Maps phone number -> { type: 'image' | 'text', data, timestamp }
+const pendingMessages = new Map<string, {
+  type: 'image' | 'text';
+  imageId?: string;
+  imageMessageId?: string;
+  textData?: ParsedProductData;
+  textMessageId?: string;
   timestamp: number;
 }>();
 
-// Clean up old pending images (older than 5 minutes)
-const PENDING_TIMEOUT = 5 * 60 * 1000;
+// Clean up old pending messages (older than 10 minutes)
+const PENDING_TIMEOUT = 10 * 60 * 1000;
 
-function cleanupPendingImages() {
+function cleanupPendingMessages() {
   const now = Date.now();
-  for (const [phone, data] of pendingImages.entries()) {
+  for (const [phone, data] of pendingMessages.entries()) {
     if (now - data.timestamp > PENDING_TIMEOUT) {
-      pendingImages.delete(phone);
+      pendingMessages.delete(phone);
     }
   }
 }
 
 // Run cleanup every minute
-setInterval(cleanupPendingImages, 60 * 1000);
+setInterval(cleanupPendingMessages, 60 * 1000);
 
 /**
  * Verify webhook (GET request from Meta)
@@ -134,25 +138,47 @@ async function processMessage(message: WhatsAppMessage): Promise<void> {
   const senderPhone = message.from;
 
   if (message.type === 'image') {
-    // Store pending image, waiting for text
-    pendingImages.set(senderPhone, {
-      imageId: message.image!.id,
-      messageId: message.id,
-      timestamp: Date.now(),
-    });
-
-    // If caption is provided with the image, process immediately
+    // Check if there's pending text from this sender
+    const pending = pendingMessages.get(senderPhone);
+    
+    // If caption is provided with the image, try to process immediately
     if (message.image?.caption) {
-      const parsedData = parseProductText(message.image.caption);
+      const parsedData = await parseProductText(message.image.caption);
       if (parsedData) {
+        // If we have both image and text (caption), create draft immediately
         await createProductDraft(
           message.id,
           message.image.id,
           parsedData.productName,
           parsedData.costPrice
         );
-        pendingImages.delete(senderPhone);
+        pendingMessages.delete(senderPhone);
+        console.log(`[WhatsApp Webhook] Product draft created from image with caption: ${parsedData.productName}`);
+        return;
       }
+    }
+
+    // If we have pending text, create draft with both
+    if (pending && pending.type === 'text' && pending.textData && message.image) {
+      await createProductDraft(
+        message.id,
+        message.image.id,
+        pending.textData.productName,
+        pending.textData.costPrice
+      );
+      pendingMessages.delete(senderPhone);
+      console.log(`[WhatsApp Webhook] Product draft created (text first, then image): ${pending.textData.productName}`);
+      return;
+    }
+
+    // Store pending image, waiting for text
+    if (message.image) {
+      pendingMessages.set(senderPhone, {
+        type: 'image',
+        imageId: message.image.id,
+        imageMessageId: message.id,
+        timestamp: Date.now(),
+      });
     }
 
     console.log(`[WhatsApp Webhook] Image received from ${senderPhone}, waiting for text`);
@@ -161,7 +187,7 @@ async function processMessage(message: WhatsAppMessage): Promise<void> {
 
   if (message.type === 'text') {
     const textBody = message.text!.body;
-    const parsedData = parseProductText(textBody);
+    const parsedData = await parseProductText(textBody);
 
     if (!parsedData) {
       console.log(`[WhatsApp Webhook] Could not parse product data from text`);
@@ -169,23 +195,31 @@ async function processMessage(message: WhatsAppMessage): Promise<void> {
     }
 
     // Check for pending image from this sender
-    const pendingImage = pendingImages.get(senderPhone);
+    const pending = pendingMessages.get(senderPhone);
     
-    if (!pendingImage) {
-      console.log(`[WhatsApp Webhook] Text received but no pending image from ${senderPhone}`);
+    if (pending && pending.type === 'image' && pending.imageId) {
+      // Create draft with both image and text data
+      await createProductDraft(
+        pending.imageMessageId || message.id,
+        pending.imageId,
+        parsedData.productName,
+        parsedData.costPrice
+      );
+
+      pendingMessages.delete(senderPhone);
+      console.log(`[WhatsApp Webhook] Product draft created (image first, then text): ${parsedData.productName}`);
       return;
     }
 
-    // Create draft with both image and text data
-    await createProductDraft(
-      pendingImage.messageId,
-      pendingImage.imageId,
-      parsedData.productName,
-      parsedData.costPrice
-    );
+    // Store pending text, waiting for image
+    pendingMessages.set(senderPhone, {
+      type: 'text',
+      textData: parsedData,
+      textMessageId: message.id,
+      timestamp: Date.now(),
+    });
 
-    pendingImages.delete(senderPhone);
-    console.log(`[WhatsApp Webhook] Product draft created for: ${parsedData.productName}`);
+    console.log(`[WhatsApp Webhook] Text received from ${senderPhone}, waiting for image`);
   }
 }
 

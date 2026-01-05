@@ -74,11 +74,23 @@ export function isWhatsAppEnabled(): boolean {
 
 /**
  * Parse product text message to extract name and cost price
- * Expected format:
- * Product Name: <text>
- * Cost Price: <number>
+ * First tries structured format, then falls back to AI extraction for natural language
  */
-export function parseProductText(text: string): ParsedProductData | null {
+export async function parseProductText(text: string): Promise<ParsedProductData | null> {
+  // First, try structured format (fast path)
+  const structuredResult = parseStructuredFormat(text);
+  if (structuredResult) {
+    return structuredResult;
+  }
+
+  // If structured format fails, try AI extraction
+  return await parseWithAI(text);
+}
+
+/**
+ * Parse structured format: "Product Name: ..." and "Cost Price: ..."
+ */
+function parseStructuredFormat(text: string): ParsedProductData | null {
   const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
   
   let productName: string | null = null;
@@ -111,6 +123,140 @@ export function parseProductText(text: string): ParsedProductData | null {
   }
 
   return { productName, costPrice };
+}
+
+/**
+ * Use AI to extract product name and cost price from natural language
+ */
+async function parseWithAI(text: string): Promise<ParsedProductData | null> {
+  // Try simple regex patterns first (faster, no API call)
+  const simpleResult = parseSimplePatterns(text);
+  if (simpleResult) {
+    return simpleResult;
+  }
+
+  // If simple patterns fail and OpenAI is available, use AI
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn('[WhatsApp Intake] OpenAI not available, cannot parse unstructured text');
+    return null;
+  }
+
+  try {
+    const OpenAI = (await import('openai')).default;
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are a product information extractor. Extract the product name and cost price from the user's message. 
+Return ONLY a valid JSON object with this exact format:
+{"productName": "extracted product name", "costPrice": number}
+
+Rules:
+- Extract the product name even if it's mentioned casually (e.g., "wireless headphones", "bluetooth speaker")
+- Extract the cost price in any currency (convert to number, ignore currency symbols)
+- If price is not found, use null for costPrice
+- If product name cannot be determined, return null for productName
+- Be lenient - extract any product description as the name if no clear name exists`,
+        },
+        {
+          role: 'user',
+          content: text,
+        },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      return null;
+    }
+
+    const parsed = JSON.parse(content);
+    const productName = parsed.productName?.trim();
+    const costPrice = parsed.costPrice;
+
+    if (!productName || productName === 'null' || productName.length === 0) {
+      return null;
+    }
+
+    if (costPrice === null || costPrice === undefined || isNaN(costPrice) || costPrice < 0) {
+      return null;
+    }
+
+    return {
+      productName,
+      costPrice: parseFloat(costPrice),
+    };
+  } catch (error: any) {
+    console.error('[WhatsApp Intake] AI parsing failed:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Try simple regex patterns to extract product info without AI
+ */
+function parseSimplePatterns(text: string): ParsedProductData | null {
+  // Patterns to match common formats:
+  // "Product: name, Price: 500"
+  // "name - 500"
+  // "name ₹500"
+  // "name Rs 500"
+  // "name $50"
+  
+  let productName: string | null = null;
+  let costPrice: number | null = null;
+
+  // Pattern 1: "Product: <name>, Price: <amount>" or "Product: <name> Price: <amount>"
+  const pattern1 = /(?:product|item|name)\s*:?\s*([^,\n]+?)(?:\s*,\s*|\s+)(?:price|cost|amount)\s*:?\s*[₹$Rs.]?\s*([\d,.]+)/i;
+  const match1 = text.match(pattern1);
+  if (match1) {
+    productName = match1[1].trim();
+    costPrice = parseFloat(match1[2].replace(/,/g, ''));
+    if (productName && costPrice && !isNaN(costPrice) && costPrice > 0) {
+      return { productName, costPrice };
+    }
+  }
+
+  // Pattern 2: "<name> - <price>" or "<name> ₹<price>" or "<name> Rs <price>"
+  const pattern2 = /^(.+?)\s*[-–—]\s*[₹$Rs.]?\s*([\d,.]+)$/i;
+  const match2 = text.match(pattern2);
+  if (match2) {
+    productName = match2[1].trim();
+    costPrice = parseFloat(match2[2].replace(/,/g, ''));
+    if (productName && costPrice && !isNaN(costPrice) && costPrice > 0) {
+      return { productName, costPrice };
+    }
+  }
+
+  // Pattern 3: Find price anywhere and product name before it
+  const pricePattern = /[₹$Rs.]?\s*([\d,.]+)\s*(?:rupees?|rs|inr|usd|dollars?)?/i;
+  const priceMatch = text.match(pricePattern);
+  if (priceMatch) {
+    costPrice = parseFloat(priceMatch[1].replace(/,/g, ''));
+    if (costPrice && !isNaN(costPrice) && costPrice > 0) {
+      // Try to find product name before the price
+      const beforePrice = text.substring(0, priceMatch.index || 0).trim();
+      // Remove common words and extract meaningful product name
+      const cleaned = beforePrice
+        .replace(/^(this|is|a|an|the|product|item)\s+/i, '')
+        .replace(/\s+(cost|price|is|for|at)\s*$/i, '')
+        .trim();
+      
+      if (cleaned.length > 3) {
+        productName = cleaned;
+        return { productName, costPrice };
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
