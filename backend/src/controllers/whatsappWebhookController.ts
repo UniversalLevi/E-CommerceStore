@@ -314,14 +314,19 @@ async function runEnrichmentAsync(
     
     const enrichmentResult = await enrichProduct(productName, imageUrl);
 
-    // Ensure we have a niche - if detection failed, get the first available niche
+    // Ensure we have a niche - should always be set now (defaults to Uncategorized)
     let nicheId = enrichmentResult.detected_niche_id;
     if (!nicheId) {
       const { Niche } = await import('../models/Niche');
-      const firstNiche = await Niche.findOne({ active: true, deleted: false });
-      if (firstNiche) {
-        nicheId = (firstNiche._id as any).toString();
-        console.log(`[WhatsApp Webhook] Using fallback niche for draft ${draftId}: ${firstNiche.name}`);
+      // Try to get Uncategorized niche first
+      let fallbackNiche = await Niche.findOne({ isDefault: true, active: true, deleted: false });
+      if (!fallbackNiche) {
+        // If Uncategorized doesn't exist, get any active niche
+        fallbackNiche = await Niche.findOne({ active: true, deleted: false });
+      }
+      if (fallbackNiche) {
+        nicheId = (fallbackNiche._id as any).toString();
+        console.log(`[WhatsApp Webhook] Using fallback niche for draft ${draftId}: ${fallbackNiche.name}`);
       }
     }
 
@@ -347,10 +352,15 @@ async function runEnrichmentAsync(
   } catch (error: any) {
     console.error(`[WhatsApp Webhook] Enrichment failed for draft ${draftId}:`, error.message);
     
-    // Try to assign a default niche even on failure
+    // Try to assign Uncategorized niche even on failure
     try {
       const { Niche } = await import('../models/Niche');
-      const firstNiche = await Niche.findOne({ active: true, deleted: false });
+      // Try to get Uncategorized niche first
+      let fallbackNiche = await Niche.findOne({ isDefault: true, active: true, deleted: false });
+      if (!fallbackNiche) {
+        // If Uncategorized doesn't exist, get any active niche
+        fallbackNiche = await Niche.findOne({ active: true, deleted: false });
+      }
       
       const updateData: any = {
         needs_review: true,
@@ -358,8 +368,8 @@ async function runEnrichmentAsync(
         $push: { error_log: `Enrichment failed: ${error.message}` },
       };
 
-      if (firstNiche) {
-        updateData.detected_niche = firstNiche._id;
+      if (fallbackNiche) {
+        updateData.detected_niche = fallbackNiche._id;
       }
 
       await WhatsAppProductDraft.findByIdAndUpdate(draftId, updateData);

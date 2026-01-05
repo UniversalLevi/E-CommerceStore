@@ -249,21 +249,51 @@ export async function detectNiche(productName: string): Promise<{
   // Get all active niches from database
   const niches = await Niche.find({ active: true, deleted: false }).lean();
   
-  if (niches.length === 0) {
-    console.warn('[AI Enrichment] No active niches found in database');
-    return { nicheId: null, nicheName: null, error: 'No active niches found' };
+  // Find or create Uncategorized niche
+  let uncategorizedNiche = niches.find((n: any) => n.isDefault);
+  
+  if (!uncategorizedNiche) {
+    // Create Uncategorized niche if it doesn't exist
+    try {
+      const newNiche = await Niche.create({
+        name: 'Uncategorized',
+        slug: 'uncategorized',
+        description: 'Products that have not been assigned to a specific niche',
+        isDefault: true,
+        active: true,
+        order: 0,
+        priority: 0,
+        featured: false,
+        showOnHomePage: false,
+        defaultSortMode: 'newest',
+      });
+      uncategorizedNiche = newNiche.toObject();
+      console.log('[AI Enrichment] Created Uncategorized niche');
+    } catch (error: any) {
+      console.error('[AI Enrichment] Failed to create Uncategorized niche:', error.message);
+      // If creation fails and no niches exist, return error
+      if (niches.length === 0) {
+        return { nicheId: null, nicheName: null, error: 'No niches available and could not create Uncategorized' };
+      }
+      // Otherwise use first niche as temporary fallback
+      uncategorizedNiche = niches[0];
+    }
   }
 
-  // Always use first niche as absolute fallback
-  const absoluteFallback = niches[0];
+  if (niches.length === 0 && !uncategorizedNiche) {
+    return {
+      nicheId: uncategorizedNiche._id.toString(),
+      nicheName: uncategorizedNiche.name,
+      error: 'No active niches found, using Uncategorized',
+    };
+  }
 
   if (!client) {
-    // Return first niche as fallback
-    const fallbackNiche = niches[0];
+    // Return Uncategorized if OpenAI not available
     return {
-      nicheId: fallbackNiche._id.toString(),
-      nicheName: fallbackNiche.name,
-      error: 'OpenAI client not available, using fallback niche',
+      nicheId: uncategorizedNiche._id.toString(),
+      nicheName: uncategorizedNiche.name,
+      error: 'OpenAI client not available, using Uncategorized',
     };
   }
 
@@ -280,7 +310,7 @@ export async function detectNiche(productName: string): Promise<{
 Available niches:
 ${nicheList}
 
-Respond with ONLY the exact niche name from the list above. If uncertain, respond with the closest match.`,
+Respond with ONLY the exact niche name from the list above. If uncertain or no good match, respond with "Uncategorized".`,
         },
         {
           role: 'user',
@@ -305,19 +335,18 @@ Respond with ONLY the exact niche name from the list above. If uncertain, respon
       };
     }
 
-    // Fallback to first niche if no match
-    const fallbackNiche = niches[0];
+    // Always fallback to Uncategorized if no match
     return {
-      nicheId: fallbackNiche._id.toString(),
-      nicheName: fallbackNiche.name,
-      error: `Could not match niche "${detectedNicheName}", using fallback`,
+      nicheId: uncategorizedNiche._id.toString(),
+      nicheName: uncategorizedNiche.name,
+      error: `Could not match niche "${detectedNicheName}", using Uncategorized`,
     };
   } catch (error: any) {
     console.error('[AI Enrichment] Niche detection failed:', error.message);
-    const fallbackNiche = niches[0];
+    // Always return Uncategorized on error
     return {
-      nicheId: fallbackNiche._id.toString(),
-      nicheName: fallbackNiche.name,
+      nicheId: uncategorizedNiche._id.toString(),
+      nicheName: uncategorizedNiche.name,
       error: error.message,
     };
   }
