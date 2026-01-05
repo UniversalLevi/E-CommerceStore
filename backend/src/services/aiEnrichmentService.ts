@@ -34,7 +34,8 @@ export interface EnrichmentResult {
 }
 
 /**
- * Generate 4 product image variations using DALL-E 3
+ * Generate 3 product image variations using DALL-E 3
+ * Images will be similar to the original product with variations in background, angle, and lighting
  * @param originalImageUrl - URL or path to the original product image
  * @param productName - Product name for context
  * @returns Array of generated image URLs
@@ -52,12 +53,11 @@ export async function generateImageVariations(
     return { urls: [], errors };
   }
 
-  // DALL-E 3 prompts for different product shots
+  // DALL-E 3 prompts for product variations - keeping the same product but changing background, angle, or lighting
   const prompts = [
-    `Professional e-commerce product photo of ${productName}, pure white background, studio lighting, high resolution, clean minimalist style`,
-    `Lifestyle product photography of ${productName}, modern home setting, natural lighting, aspirational mood, Instagram-worthy`,
-    `Product photography of ${productName} from a 45-degree angle, soft shadows, e-commerce ready, professional studio shot`,
-    `Close-up detail shot of ${productName}, macro photography style, showing texture and quality, professional product photography`,
+    `Exact same ${productName} product as shown, but with a clean pure white studio background, professional e-commerce photography, same product design and appearance, only background changed`,
+    `Same ${productName} product rotated to a 45-degree side angle view, same product design and colors, different perspective, professional product photography, white or light gray background`,
+    `Identical ${productName} product with a subtle lifestyle background (soft blurred modern room or desk setting), same product appearance, natural lighting, e-commerce ready`,
   ];
 
   const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'ai-generated');
@@ -67,7 +67,7 @@ export async function generateImageVariations(
 
   for (let i = 0; i < prompts.length; i++) {
     try {
-      console.log(`[AI Enrichment] Generating image ${i + 1}/4 for: ${productName}`);
+      console.log(`[AI Enrichment] Generating image ${i + 1}/3 for: ${productName}`);
       
       const response = await client.images.generate({
         model: 'dall-e-3',
@@ -149,12 +149,13 @@ export async function generateOptimizedName(originalName: string): Promise<{
         {
           role: 'system',
           content: `You are an e-commerce SEO expert. Rewrite product names to be:
+- Short and concise (3-6 words maximum)
 - Professional and SEO-friendly
-- 5-12 words long
+- Clear and descriptive
 - Free of brand violations or trademarks
 - Appealing to Indian dropshipping customers
 - Without emojis or special characters
-Return ONLY the optimized product name, nothing else.`,
+Keep it brief - avoid long descriptive phrases. Return ONLY the optimized product name, nothing else.`,
         },
         {
           role: 'user',
