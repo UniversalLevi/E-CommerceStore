@@ -267,7 +267,7 @@ export async function detectNiche(productName: string): Promise<{
         showOnHomePage: false,
         defaultSortMode: 'newest',
       });
-      uncategorizedNiche = newNiche.toObject();
+      uncategorizedNiche = newNiche.toObject() as any;
       console.log('[AI Enrichment] Created Uncategorized niche');
     } catch (error: any) {
       console.error('[AI Enrichment] Failed to create Uncategorized niche:', error.message);
