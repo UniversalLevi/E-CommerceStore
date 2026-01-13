@@ -335,7 +335,7 @@ async function runEnrichmentAsync(
       ai_name: enrichmentResult.ai_name,
       ai_description: enrichmentResult.ai_description,
       generated_image_urls: enrichmentResult.generated_image_urls,
-      images_ai_generated: false, // Using image manipulation, not AI generation
+      images_ai_generated: false, // Only original image is used, no variations
       status: 'enriched',
       needs_review: enrichmentResult.needs_review,
       error_log: enrichmentResult.errors,

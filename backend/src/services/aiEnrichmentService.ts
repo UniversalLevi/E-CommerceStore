@@ -1,7 +1,4 @@
 import OpenAI from 'openai';
-import fs from 'fs';
-import path from 'path';
-import sharp from 'sharp';
 import { Niche } from '../models/Niche';
 
 let openaiClient: OpenAI | null = null;
@@ -34,70 +31,18 @@ export interface EnrichmentResult {
 }
 
 /**
- * Create a flipped/manipulated version of the original product image
- * Only uses the original WhatsApp image - no AI generation
- * @param originalImageUrl - URL or path to the original product image (relative to public folder)
+ * Generate image variations - now returns empty array (only original image is used)
+ * @param originalImageUrl - URL or path to the original product image (not used, kept for compatibility)
  * @param productName - Product name for context (not used, kept for compatibility)
- * @returns Array with one manipulated image URL
+ * @returns Empty array - no variations generated, only original image is used
  */
 export async function generateImageVariations(
   originalImageUrl: string,
   productName: string
 ): Promise<{ urls: string[]; errors: string[] }> {
-  const errors: string[] = [];
-  const generatedUrls: string[] = [];
-
-  try {
-    // Resolve the original image path (originalImageUrl is relative like /uploads/whatsapp/wa-123.jpg)
-    const publicDir = path.join(process.cwd(), 'public');
-    const originalImagePath = path.join(publicDir, originalImageUrl.replace(/^\//, ''));
-
-    if (!fs.existsSync(originalImagePath)) {
-      errors.push(`Original image not found: ${originalImagePath}`);
-      return { urls: [], errors };
-    }
-
-    // Create output directory for manipulated images
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'whatsapp');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    // Create flipped version (horizontal flip)
-    const timestamp = Date.now();
-    const filename = `wa-flipped-${timestamp}.jpg`;
-    const flippedPath = path.join(uploadsDir, filename);
-
-    console.log(`[AI Enrichment] Creating flipped version for: ${productName}`);
-
-    // Determine if we should flip horizontally or vertically based on image dimensions
-    const metadata = await sharp(originalImagePath).metadata();
-    const shouldFlipHorizontally = (metadata.width || 0) >= (metadata.height || 0);
-
-    if (shouldFlipHorizontally) {
-      // Horizontal flip (flop) for landscape images
-      await sharp(originalImagePath)
-        .flop()
-        .jpeg({ quality: 95 })
-        .toFile(flippedPath);
-    } else {
-      // Vertical flip (flip) for portrait images
-      await sharp(originalImagePath)
-        .flip()
-        .jpeg({ quality: 95 })
-        .toFile(flippedPath);
-    }
-
-    generatedUrls.push(`/uploads/whatsapp/${filename}`);
-    console.log(`[AI Enrichment] Created flipped version: ${filename}`);
-
-  } catch (error: any) {
-    const errorMsg = `Image manipulation failed: ${error.message}`;
-    console.error(`[AI Enrichment] ${errorMsg}`);
-    errors.push(errorMsg);
-  }
-
-  return { urls: generatedUrls, errors };
+  // No image variations - only the original WhatsApp image is used
+  console.log(`[AI Enrichment] Using only original image for: ${productName} (no variations)`);
+  return { urls: [], errors: [] };
 }
 
 /**
@@ -364,7 +309,7 @@ export async function enrichProduct(
   }
 
   console.log(`[AI Enrichment] Completed enrichment for: ${originalName}`, {
-    manipulatedImages: imageResult.urls.length,
+    generatedImages: imageResult.urls.length,
     hasErrors: errors.length > 0,
     needsReview,
   });
