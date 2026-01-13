@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
-import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 import { Niche } from '../models/Niche';
 
 let openaiClient: OpenAI | null = null;
@@ -34,96 +34,67 @@ export interface EnrichmentResult {
 }
 
 /**
- * Generate 3 product image variations using DALL-E 3
- * Images will be similar to the original product with variations in background, angle, and lighting
- * @param originalImageUrl - URL or path to the original product image
- * @param productName - Product name for context
- * @returns Array of generated image URLs
+ * Create a flipped/manipulated version of the original product image
+ * Only uses the original WhatsApp image - no AI generation
+ * @param originalImageUrl - URL or path to the original product image (relative to public folder)
+ * @param productName - Product name for context (not used, kept for compatibility)
+ * @returns Array with one manipulated image URL
  */
 export async function generateImageVariations(
   originalImageUrl: string,
   productName: string
 ): Promise<{ urls: string[]; errors: string[] }> {
-  const client = getOpenAIClient();
   const errors: string[] = [];
   const generatedUrls: string[] = [];
 
-  if (!client) {
-    errors.push('OpenAI client not available for image generation');
-    return { urls: [], errors };
-  }
+  try {
+    // Resolve the original image path (originalImageUrl is relative like /uploads/whatsapp/wa-123.jpg)
+    const publicDir = path.join(process.cwd(), 'public');
+    const originalImagePath = path.join(publicDir, originalImageUrl.replace(/^\//, ''));
 
-  // DALL-E 3 prompts for product variations - keeping the same product but changing background, angle, or lighting
-  const prompts = [
-    `Exact same ${productName} product as shown, but with a clean pure white studio background, professional e-commerce photography, same product design and appearance, only background changed`,
-    `Same ${productName} product rotated to a 45-degree side angle view, same product design and colors, different perspective, professional product photography, white or light gray background`,
-    `Identical ${productName} product with a subtle lifestyle background (soft blurred modern room or desk setting), same product appearance, natural lighting, e-commerce ready`,
-  ];
-
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'ai-generated');
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-
-  for (let i = 0; i < prompts.length; i++) {
-    try {
-      console.log(`[AI Enrichment] Generating image ${i + 1}/3 for: ${productName}`);
-      
-      const response = await client.images.generate({
-        model: 'dall-e-3',
-        prompt: prompts[i],
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard',
-      });
-
-      const imageUrl = response.data?.[0]?.url;
-      if (imageUrl) {
-        // Download and save the image locally
-        const imageResponse = await axios.get(imageUrl, {
-          responseType: 'arraybuffer',
-        });
-
-        const filename = `ai-${Date.now()}-${i + 1}.png`;
-        const filePath = path.join(uploadsDir, filename);
-        fs.writeFileSync(filePath, imageResponse.data);
-
-        generatedUrls.push(`/uploads/ai-generated/${filename}`);
-      }
-    } catch (error: any) {
-      const errorMsg = `Image generation ${i + 1} failed: ${error.message}`;
-      console.error(`[AI Enrichment] ${errorMsg}`);
-      errors.push(errorMsg);
-
-      // Retry once
-      try {
-        console.log(`[AI Enrichment] Retrying image ${i + 1}...`);
-        const retryResponse = await client.images.generate({
-          model: 'dall-e-3',
-          prompt: prompts[i],
-          n: 1,
-          size: '1024x1024',
-          quality: 'standard',
-        });
-
-        const retryImageUrl = retryResponse.data?.[0]?.url;
-        if (retryImageUrl) {
-          const imageResponse = await axios.get(retryImageUrl, {
-            responseType: 'arraybuffer',
-          });
-
-          const filename = `ai-${Date.now()}-${i + 1}-retry.png`;
-          const filePath = path.join(uploadsDir, filename);
-          fs.writeFileSync(filePath, imageResponse.data);
-
-          generatedUrls.push(`/uploads/ai-generated/${filename}`);
-          // Remove the error if retry succeeded
-          errors.pop();
-        }
-      } catch (retryError: any) {
-        console.error(`[AI Enrichment] Retry also failed: ${retryError.message}`);
-      }
+    if (!fs.existsSync(originalImagePath)) {
+      errors.push(`Original image not found: ${originalImagePath}`);
+      return { urls: [], errors };
     }
+
+    // Create output directory for manipulated images
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'whatsapp');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Create flipped version (horizontal flip)
+    const timestamp = Date.now();
+    const filename = `wa-flipped-${timestamp}.jpg`;
+    const flippedPath = path.join(uploadsDir, filename);
+
+    console.log(`[AI Enrichment] Creating flipped version for: ${productName}`);
+
+    // Determine if we should flip horizontally or vertically based on image dimensions
+    const metadata = await sharp(originalImagePath).metadata();
+    const shouldFlipHorizontally = (metadata.width || 0) >= (metadata.height || 0);
+
+    if (shouldFlipHorizontally) {
+      // Horizontal flip (flop) for landscape images
+      await sharp(originalImagePath)
+        .flop()
+        .jpeg({ quality: 95 })
+        .toFile(flippedPath);
+    } else {
+      // Vertical flip (flip) for portrait images
+      await sharp(originalImagePath)
+        .flip()
+        .jpeg({ quality: 95 })
+        .toFile(flippedPath);
+    }
+
+    generatedUrls.push(`/uploads/whatsapp/${filename}`);
+    console.log(`[AI Enrichment] Created flipped version: ${filename}`);
+
+  } catch (error: any) {
+    const errorMsg = `Image manipulation failed: ${error.message}`;
+    console.error(`[AI Enrichment] ${errorMsg}`);
+    errors.push(errorMsg);
   }
 
   return { urls: generatedUrls, errors };
@@ -393,7 +364,7 @@ export async function enrichProduct(
   }
 
   console.log(`[AI Enrichment] Completed enrichment for: ${originalName}`, {
-    generatedImages: imageResult.urls.length,
+    manipulatedImages: imageResult.urls.length,
     hasErrors: errors.length > 0,
     needsReview,
   });
