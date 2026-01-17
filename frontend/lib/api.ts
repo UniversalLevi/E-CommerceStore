@@ -125,6 +125,7 @@ class ApiClient {
       success: boolean; 
       data: { 
         subscriptionId: string;
+        mainSubscriptionId: string;
         orderId: string; 
         amount: number; 
         currency: string; 
@@ -139,7 +140,7 @@ class ApiClient {
   }
 
   async verifyPayment(paymentData: {
-    razorpay_order_id: string;
+    razorpay_order_id?: string; // Optional for subscription payments
     razorpay_payment_id: string;
     razorpay_signature: string;
     planCode: string;

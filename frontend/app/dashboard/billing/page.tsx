@@ -109,7 +109,7 @@ export default function BillingPage() {
             // Note: For subscription payments, order_id might not be in response
             // But we still pass it if available for verification
             const verifyResponse = await api.verifyPayment({
-              razorpay_order_id: response.razorpay_order_id || undefined, // Optional for subscription payments
+              ...(response.razorpay_order_id && { razorpay_order_id: response.razorpay_order_id }), // Optional for subscription payments
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               planCode: planCode,

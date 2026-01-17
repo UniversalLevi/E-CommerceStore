@@ -15,7 +15,7 @@ interface RazorpayOptions {
   currency: string;
   name: string;
   description: string;
-  order_id: string;
+  order_id?: string; // Optional - not required when subscription_id is present
   subscription_id?: string; // For UPI autopay mandate
   handler: (response: RazorpayResponse) => void;
   prefill?: {

@@ -43,6 +43,8 @@ export default function SubscriptionStatus() {
     switch (status) {
       case 'active':
         return 'bg-gradient-to-r from-purple-600 to-blue-600 text-white border-transparent shadow-lg shadow-purple-500/20';
+      case 'trialing':
+        return 'bg-gradient-to-r from-green-600 to-teal-600 text-white border-transparent shadow-lg shadow-green-500/20';
       case 'expired':
         return 'bg-red-500/20 text-red-300 border-red-500/30';
       default:
@@ -54,6 +56,8 @@ export default function SubscriptionStatus() {
     switch (status) {
       case 'active':
         return 'Active';
+      case 'trialing':
+        return 'Trial Active';
       case 'expired':
         return 'Expired';
       default:
@@ -86,8 +90,22 @@ export default function SubscriptionStatus() {
         </span>
       </div>
 
-      {subscription.status === 'active' && (
+      {(subscription.status === 'active' || subscription.status === 'trialing') && (
         <>
+          {subscription.status === 'trialing' && subscription.trialEndsAt && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-green-400 font-semibold">Trial Active</span>
+                <span className="text-text-secondary">
+                  Ends: {new Date(subscription.trialEndsAt).toLocaleDateString()}
+                </span>
+              </div>
+              <p className="text-xs text-text-secondary mt-1">
+                Full amount will be auto-debited after trial ends
+              </p>
+            </div>
+          )}
+
           <div className="mb-4">
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-text-secondary">Product Usage</span>
@@ -105,7 +123,7 @@ export default function SubscriptionStatus() {
 
           {subscription.planExpiresAt && !subscription.isLifetime && (
             <div className="text-sm text-text-secondary mb-4">
-              Expires: {new Date(subscription.planExpiresAt).toLocaleDateString()}
+              {subscription.status === 'trialing' ? 'Trial ends' : 'Expires'}: {new Date(subscription.planExpiresAt).toLocaleDateString()}
             </div>
           )}
 
@@ -115,7 +133,7 @@ export default function SubscriptionStatus() {
         </>
       )}
 
-      {subscription.status !== 'active' && (
+      {subscription.status !== 'active' && subscription.status !== 'trialing' && (
         <div className="mb-4">
           <p className="text-text-secondary text-sm mb-3">
             {subscription.status === 'expired'

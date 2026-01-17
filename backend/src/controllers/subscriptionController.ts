@@ -36,9 +36,10 @@ export const listSubscriptions = async (
     const filter: any = {};
 
     if (req.query.status) {
-      // If status is 'active', include both 'active' and 'manually_granted'
+      // If status is 'active', include 'active', 'trialing', and 'manually_granted'
+      // This ensures trial users are also shown in the subscriptions list
       if (req.query.status === 'active') {
-        filter.status = { $in: ['active', 'manually_granted'] };
+        filter.status = { $in: ['active', 'trialing', 'manually_granted'] };
       } else {
         filter.status = req.query.status;
       }
@@ -63,19 +64,45 @@ export const listSubscriptions = async (
       }
     }
 
-    // Get subscriptions
-    const subscriptions = await Subscription.find(filter)
-      .populate('userId', 'email')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    // Get only the most recent subscription per user (one entry per user, not per purchase)
+    // Use aggregation to group by userId and get the latest subscription
+    const aggregationPipeline: any[] = [
+      { $match: filter },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: '$userId',
+          subscription: { $first: '$$ROOT' }, // Get the most recent subscription for each user
+        },
+      },
+      { $replaceRoot: { newRoot: '$subscription' } }, // Replace root with subscription document
+      { $sort: { createdAt: -1 } }, // Sort final results by creation date
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+    ];
+
+    // Get total count of unique users (before pagination)
+    const uniqueUsersCount = await Subscription.distinct('userId', filter);
+    const total = uniqueUsersCount.length;
+
+    // Apply pagination
+    aggregationPipeline.push({ $skip: skip }, { $limit: limit });
+
+    // Execute aggregation
+    const subscriptions = await Subscription.aggregate(aggregationPipeline);
 
     // Format subscriptions
     const formattedSubscriptions = subscriptions.map((sub: any) => ({
-      id: sub._id,
-      userId: sub.userId?._id || sub.userId,
-      userEmail: sub.userId?.email || 'Unknown',
+      id: sub._id?.toString() || sub._id,
+      userId: sub.userId?.toString ? sub.userId.toString() : (sub.userId || '').toString(),
+      userEmail: sub.user?.email || 'Unknown',
       planCode: sub.planCode,
       planName: plans[sub.planCode as keyof typeof plans]?.name || sub.planCode,
       status: sub.status,
@@ -91,8 +118,6 @@ export const listSubscriptions = async (
       createdAt: sub.createdAt,
       updatedAt: sub.updatedAt,
     }));
-
-    const total = await Subscription.countDocuments(filter);
 
     // Log audit
     try {
