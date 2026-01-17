@@ -150,6 +150,7 @@ export default function BillingPage() {
     if (days === null) return 'Lifetime';
     if (days === 30) return '30 days';
     if (days === 90) return '3 months';
+    if (days === 150) return '5 months';
     return `${days} days`;
   };
 

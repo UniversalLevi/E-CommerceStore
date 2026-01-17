@@ -24,8 +24,8 @@ async function createRazorpayPlans() {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    // Monthly Plan: ₹999/month after 30-day trial
-    console.log('Creating Monthly Plan (₹999/month, 30-day trial)...');
+    // Monthly Plan: ₹999/month after 7-day trial
+    console.log('Creating Monthly Plan (₹999/month, 7-day trial)...');
     const monthlyPlan = await razorpay.plans.create({
       period: 'monthly',
       interval: 1,
@@ -33,22 +33,22 @@ async function createRazorpayPlans() {
         name: 'Monthly Plan',
         amount: 99900, // ₹999 in paise
         currency: 'INR',
-        description: '₹999/month after 30-day free trial',
+        description: '₹999/month after 7-day free trial',
       },
     });
     console.log(`✅ Monthly Plan created: ${monthlyPlan.id}`);
     console.log(`   Add to .env: RAZORPAY_PLAN_MONTHLY_ID=${monthlyPlan.id}\n`);
 
-    // Pro Plan: ₹4999 one-time after 7-day trial
-    console.log('Creating Pro Plan (₹4999 one-time, 7-day trial)...');
+    // Pro Plan: ₹3999 for 5 months after 7-day trial
+    console.log('Creating Pro Plan (₹3999 for 5 months, 7-day trial)...');
     const proPlan = await razorpay.plans.create({
-      period: 'yearly', // Required even for one-time
+      period: 'yearly', // Required even for fixed duration
       interval: 1,
       item: {
         name: 'Pro Plan',
-        amount: 499900, // ₹4999 in paise
+        amount: 399900, // ₹3999 in paise
         currency: 'INR',
-        description: '₹4999 one-time after 7-day free trial',
+        description: '₹3999 for 5 months after 7-day free trial',
       },
     });
     console.log(`✅ Pro Plan created: ${proPlan.id}`);
