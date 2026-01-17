@@ -12,7 +12,7 @@ export interface IPayment extends Document {
   razorpayOrderId: string;
   subscriptionId?: mongoose.Types.ObjectId;
   planName?: string;
-  metadata?: object;
+  metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }

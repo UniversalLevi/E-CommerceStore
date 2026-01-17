@@ -7,6 +7,9 @@ import {
   grantSubscription,
   revokeSubscription,
   updateSubscription,
+  getCurrentSubscription,
+  cancelSubscription,
+  getSubscriptionStatus,
 } from '../controllers/subscriptionController';
 
 const router = Router();

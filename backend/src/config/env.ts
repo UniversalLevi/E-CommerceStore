@@ -31,6 +31,11 @@ const envSchema = Joi.object({
   RAZORPAY_KEY_ID: Joi.string().required(),
   RAZORPAY_KEY_SECRET: Joi.string().required(),
   RAZORPAY_WEBHOOK_SECRET: Joi.string().required(),
+  // Razorpay Plan IDs (created via API)
+  RAZORPAY_PLAN_MONTHLY_ID: Joi.string().allow('').optional(),
+  RAZORPAY_PLAN_PRO_ID: Joi.string().allow('').optional(),
+  RAZORPAY_PLAN_LIFETIME_ID: Joi.string().allow('').optional(),
+  RAZORPAY_PLAN_TOKEN_ID: Joi.string().allow('').optional(), // ₹20 token charge plan
   // OpenAI configuration (optional - fallback will be used if not set)
   OPENAI_API_KEY: Joi.string().allow('').optional(),
   OPENAI_MODEL: Joi.string().default('gpt-3.5-turbo'),
@@ -71,6 +76,10 @@ export const config = {
     keyId: value.RAZORPAY_KEY_ID,
     keySecret: value.RAZORPAY_KEY_SECRET,
     webhookSecret: value.RAZORPAY_WEBHOOK_SECRET,
+    planMonthlyId: value.RAZORPAY_PLAN_MONTHLY_ID || '',
+    planProId: value.RAZORPAY_PLAN_PRO_ID || '',
+    planLifetimeId: value.RAZORPAY_PLAN_LIFETIME_ID || '',
+    planTokenId: value.RAZORPAY_PLAN_TOKEN_ID || '', // ₹20 token charge plan
   },
   openai: {
     apiKey: value.OPENAI_API_KEY || '',

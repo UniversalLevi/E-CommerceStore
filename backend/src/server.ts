@@ -64,6 +64,7 @@ import videoMutatorAdminRoutes from './routes/videoMutatorAdminRoutes';
 import templateRoutes from './routes/templateRoutes';
 import templateAdminRoutes from './routes/templateAdminRoutes';
 import whatsappRoutes from './routes/whatsappRoutes';
+import userSubscriptionRoutes from './routes/userSubscriptionRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -78,6 +79,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/subscriptions', userSubscriptionRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', orderRoutes);

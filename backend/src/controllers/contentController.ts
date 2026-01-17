@@ -92,7 +92,7 @@ export const generateRecommendations = async (
     }
 
     // Check subscription (admin bypass)
-    if (req.user.role !== 'admin' && !isPaidUser(req.user)) {
+    if (req.user.role !== 'admin' && !(await isPaidUser(req.user))) {
       throw createError('Subscription required', 403);
     }
 

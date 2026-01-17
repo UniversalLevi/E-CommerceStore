@@ -1,21 +1,25 @@
 export const plans = {
   starter_30: {
-    price: 99900, // in paise (₹999)
-    durationDays: 30,
+    price: 99900, // in paise (₹999) - full amount after trial
+    trialDays: 30, // 30-day free trial
+    durationDays: 30, // Monthly subscription duration
     isLifetime: false,
     maxProducts: 5,
-    name: 'Starter Monthly',
+    name: 'Monthly Plan',
+    razorpayPlanId: process.env.RAZORPAY_PLAN_MONTHLY_ID || '', // Set via env
     features: [
       'Basic product addition (up to 5 products)',
       'Limited stores',
     ],
   },
   growth_90: {
-    price: 249900, // in paise (₹2499)
-    durationDays: 90,
+    price: 499900, // in paise (₹4999) - one-time after trial
+    trialDays: 7, // 7-day free trial
+    durationDays: null, // One-time payment
     isLifetime: false,
     maxProducts: 15,
-    name: 'Growth Quarterly',
+    name: 'Pro Plan',
+    razorpayPlanId: process.env.RAZORPAY_PLAN_PRO_ID || '', // Set via env
     features: [
       'Medium product addition (up to 15 products)',
       'Multiple stores',
@@ -23,11 +27,13 @@ export const plans = {
     ],
   },
   lifetime: {
-    price: 999900, // in paise (₹9999)
+    price: 999900, // in paise (₹9999) - one-time after trial
+    trialDays: 7, // 7-day free trial
     durationDays: null,
     isLifetime: true,
     maxProducts: null, // null = unlimited
-    name: 'Lifetime',
+    name: 'Lifetime Plan',
+    razorpayPlanId: process.env.RAZORPAY_PLAN_LIFETIME_ID || '', // Set via env
     features: [
       'Unlimited products',
       'All features forever',
@@ -35,6 +41,9 @@ export const plans = {
     ],
   },
 } as const;
+
+// Token charge amount for mandate consent (₹20)
+export const TOKEN_CHARGE_AMOUNT = 2000; // in paise
 
 export type PlanCode = keyof typeof plans;
 

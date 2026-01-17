@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ISubscriptionHistory {
-  action: 'manual_granted' | 'manual_revoke' | 'manual_upgrade' | 'manual_extension' | 'payment_received' | 'auto_renewal' | 'subscription_activated' | 'subscription_cancelled' | 'subscription_expired';
+  action: 'manual_granted' | 'manual_revoke' | 'manual_upgrade' | 'manual_extension' | 'payment_received' | 'auto_renewal' | 'subscription_activated' | 'subscription_cancelled' | 'subscription_expired' | 'trial_started' | 'trial_ended';
   timestamp: Date;
   adminId?: mongoose.Types.ObjectId;
   notes?: string;
@@ -11,13 +11,16 @@ export interface ISubscription extends Document {
   userId: mongoose.Types.ObjectId;
   planCode: 'starter_30' | 'growth_90' | 'lifetime';
   razorpaySubscriptionId?: string;
+  razorpayPlanId?: string; // Razorpay plan ID reference
   razorpayPaymentId?: string;
-  status: 'active' | 'cancelled' | 'expired' | 'trial' | 'manually_granted';
+  tokenPaymentId?: string; // Payment ID for ₹20 token charge
+  status: 'active' | 'cancelled' | 'expired' | 'trial' | 'trialing' | 'manually_granted';
   startDate: Date;
+  trialEndsAt?: Date; // When trial period ends
   endDate?: Date | null;
   renewalDate?: Date;
   amountPaid: number; // in paise
-  source: 'razorpay' | 'manual';
+  source: 'razorpay' | 'manual' | 'legacy';
   adminNote?: string;
   history: ISubscriptionHistory[];
   createdAt: Date;
@@ -38,6 +41,8 @@ const subscriptionHistorySchema = new Schema<ISubscriptionHistory>({
       'subscription_activated',
       'subscription_cancelled',
       'subscription_expired',
+      'trial_started',
+      'trial_ended',
     ],
   },
   timestamp: {
@@ -72,14 +77,26 @@ const subscriptionSchema = new Schema<ISubscription>(
       sparse: true,
       index: true,
     },
+    razorpayPlanId: {
+      type: String,
+      sparse: true,
+    },
     razorpayPaymentId: {
       type: String,
+    },
+    tokenPaymentId: {
+      type: String,
+      sparse: true,
     },
     status: {
       type: String,
       required: true,
-      enum: ['active', 'cancelled', 'expired', 'trial', 'manually_granted'],
+      enum: ['active', 'cancelled', 'expired', 'trial', 'trialing', 'manually_granted'],
       default: 'active',
+      index: true,
+    },
+    trialEndsAt: {
+      type: Date,
       index: true,
     },
     startDate: {
@@ -101,7 +118,7 @@ const subscriptionSchema = new Schema<ISubscription>(
     source: {
       type: String,
       required: true,
-      enum: ['razorpay', 'manual'],
+      enum: ['razorpay', 'manual', 'legacy'],
       default: 'razorpay',
     },
     adminNote: {

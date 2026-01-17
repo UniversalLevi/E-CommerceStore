@@ -665,3 +665,163 @@ export const updateSubscription = async (
   }
 };
 
+/**
+ * Get current user's subscription with trial info
+ * GET /api/subscriptions/current
+ */
+export const getCurrentSubscription = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const subscription = await Subscription.findOne({
+      userId: (req.user as any)._id,
+      status: { $in: ['active', 'trialing', 'manually_granted'] },
+    }).sort({ createdAt: -1 });
+
+    if (!subscription) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          subscription: null,
+        },
+      });
+    }
+
+    const plan = plans[subscription.planCode as PlanCode];
+
+    res.status(200).json({
+      success: true,
+      data: {
+        subscription: {
+          id: subscription._id,
+          planCode: subscription.planCode,
+          planName: plan?.name || subscription.planCode,
+          status: subscription.status,
+          startDate: subscription.startDate,
+          trialEndsAt: subscription.trialEndsAt,
+          endDate: subscription.endDate,
+          amountPaid: subscription.amountPaid,
+          razorpaySubscriptionId: subscription.razorpaySubscriptionId,
+          history: subscription.history,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Cancel subscription
+ * POST /api/subscriptions/:id/cancel
+ */
+export const cancelSubscription = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { id } = req.params;
+
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: (req.user as any)._id,
+    });
+
+    if (!subscription) {
+      throw createError('Subscription not found', 404);
+    }
+
+    if (!subscription.razorpaySubscriptionId) {
+      throw createError('Subscription cannot be cancelled - no Razorpay subscription ID', 400);
+    }
+
+    // Cancel via Razorpay API
+    await razorpayService.cancelSubscription(subscription.razorpaySubscriptionId);
+
+    // Update subscription status
+    subscription.status = 'cancelled';
+    subscription.history.push({
+      action: 'subscription_cancelled',
+      timestamp: new Date(),
+      notes: 'Subscription cancelled by user',
+    });
+    await subscription.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Subscription cancelled successfully',
+      data: {
+        subscription: {
+          id: subscription._id,
+          status: subscription.status,
+        },
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get subscription status from Razorpay
+ * GET /api/subscriptions/:id/status
+ */
+export const getSubscriptionStatus = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const { id } = req.params;
+
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: (req.user as any)._id,
+    });
+
+    if (!subscription) {
+      throw createError('Subscription not found', 404);
+    }
+
+    if (!subscription.razorpaySubscriptionId) {
+      throw createError('No Razorpay subscription ID found', 400);
+    }
+
+    // Fetch from Razorpay
+    const razorpaySubscription = await razorpayService.getSubscription(subscription.razorpaySubscriptionId);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        razorpayStatus: razorpaySubscription.status,
+        razorpaySubscription: {
+          id: razorpaySubscription.id,
+          status: razorpaySubscription.status,
+          current_start: razorpaySubscription.current_start,
+          current_end: razorpaySubscription.current_end,
+          ended_at: razorpaySubscription.ended_at,
+          quantity: razorpaySubscription.quantity,
+          notes: razorpaySubscription.notes,
+        },
+        localStatus: subscription.status,
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};

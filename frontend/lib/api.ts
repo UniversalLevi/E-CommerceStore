@@ -120,16 +120,39 @@ class ApiClient {
     );
   }
 
+  async createTrialSubscription(planCode: string) {
+    return this.post<{ 
+      success: boolean; 
+      data: { 
+        subscriptionId: string;
+        orderId: string; 
+        amount: number; 
+        currency: string; 
+        keyId: string;
+        trialDays: number;
+        trialEndsAt: string;
+      } 
+    }>(
+      '/api/payments/create-trial-subscription',
+      { planCode }
+    );
+  }
+
   async verifyPayment(paymentData: {
     razorpay_order_id: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
     planCode: string;
+    subscription_id?: string;
   }) {
     return this.post<{ success: boolean; message: string; data: any }>(
       '/api/payments/verify',
       paymentData
     );
+  }
+
+  async getSubscriptionStatus() {
+    return this.get<{ success: boolean; data: any }>('/api/subscriptions/current');
   }
 
   async getPaymentHistory() {

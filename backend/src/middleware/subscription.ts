@@ -2,14 +2,31 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth';
 import { IUser } from '../models/User';
 import { getSubscriptionStatus } from '../models/User';
+import { Subscription } from '../models/Subscription';
 import { plans, PlanCode } from '../config/plans';
 
 /**
- * Check if user has an active paid subscription
+ * Check if user has an active paid subscription (including trial)
  */
-export function isPaidUser(user: IUser): boolean {
+export async function isPaidUser(user: IUser): Promise<boolean> {
   if (user.isLifetime) return true;
   if (user.planExpiresAt && user.planExpiresAt > new Date()) return true;
+  
+  // Check for trialing subscription
+  if (user.plan) {
+    const subscription = await Subscription.findOne({
+      userId: (user as any)._id,
+      status: { $in: ['active', 'trialing', 'manually_granted'] },
+    }).lean();
+    
+    if (subscription && subscription.status === 'trialing') {
+      // Check if trial hasn't ended
+      if (subscription.trialEndsAt && subscription.trialEndsAt > new Date()) {
+        return true;
+      }
+    }
+  }
+  
   return false;
 }
 
@@ -24,9 +41,37 @@ export function getMaxProducts(user: IUser): number | null {
 }
 
 /**
- * Check if user can add a product
+ * Check if user can add a product (including during trial)
  */
-export function canAddProduct(user: IUser): { allowed: boolean; reason?: string; maxProducts?: number | null; productsAdded?: number } {
+export async function canAddProduct(user: IUser): Promise<{ allowed: boolean; reason?: string; maxProducts?: number | null; productsAdded?: number }> {
+  // Check for trialing subscription first
+  if (user.plan) {
+    const subscription = await Subscription.findOne({
+      userId: (user as any)._id,
+      status: { $in: ['active', 'trialing', 'manually_granted'] },
+    }).lean();
+    
+    if (subscription && subscription.status === 'trialing') {
+      // Check if trial hasn't ended
+      if (subscription.trialEndsAt && subscription.trialEndsAt > new Date()) {
+        // User is in trial - allow access
+        const maxProducts = getMaxProducts(user);
+        if (maxProducts === null) {
+          return { allowed: true, maxProducts: null, productsAdded: user.productsAdded };
+        }
+        if (user.productsAdded >= maxProducts) {
+          return { 
+            allowed: false, 
+            reason: `Product limit reached (${maxProducts} products). Please upgrade to add more products.`,
+            maxProducts,
+            productsAdded: user.productsAdded
+          };
+        }
+        return { allowed: true, maxProducts, productsAdded: user.productsAdded };
+      }
+    }
+  }
+  
   const status = getSubscriptionStatus(user);
   if (status !== 'active') {
     return { 
@@ -55,10 +100,10 @@ export function canAddProduct(user: IUser): { allowed: boolean; reason?: string;
 }
 
 /**
- * Middleware to require active paid subscription
+ * Middleware to require active paid subscription (including trial)
  * Note: Admins are always allowed access regardless of subscription
  */
-export function requirePaidPlan(req: AuthRequest, res: Response, next: NextFunction) {
+export async function requirePaidPlan(req: AuthRequest, res: Response, next: NextFunction) {
   const user = req.user;
   
   if (!user) {
@@ -70,7 +115,8 @@ export function requirePaidPlan(req: AuthRequest, res: Response, next: NextFunct
     return next();
   }
 
-  if (!isPaidUser(user)) {
+  const hasAccess = await isPaidUser(user);
+  if (!hasAccess) {
     return res.status(403).json({ 
       error: 'Subscription required',
       message: 'Subscription required. Please upgrade to continue.',
@@ -81,9 +127,9 @@ export function requirePaidPlan(req: AuthRequest, res: Response, next: NextFunct
 }
 
 /**
- * Middleware to check product limit before adding product
+ * Middleware to check product limit before adding product (including during trial)
  */
-export function checkProductLimit(req: AuthRequest, res: Response, next: NextFunction) {
+export async function checkProductLimit(req: AuthRequest, res: Response, next: NextFunction) {
   const user = req.user;
   
   if (!user) {
@@ -95,7 +141,7 @@ export function checkProductLimit(req: AuthRequest, res: Response, next: NextFun
     return next();
   }
 
-  const canAdd = canAddProduct(user);
+  const canAdd = await canAddProduct(user);
   if (!canAdd.allowed) {
     return res.status(403).json({ 
       error: canAdd.reason || 'Product limit reached',

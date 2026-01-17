@@ -25,7 +25,7 @@ class RazorpayService {
   }
 
   /**
-   * Create a Razorpay order
+   * Create a Razorpay order for UPI autopay token charge
    */
   async createOrder(amount: number, currency: string = 'INR', receipt?: string) {
     try {
@@ -37,9 +37,11 @@ class RazorpayService {
         amount: amount, // amount in paise
         currency: currency,
         receipt: receipt || `receipt_${Date.now()}`,
+        // Note: Payment method (UPI) is selected by user during checkout
+        // The frontend checkout will restrict to UPI for autopay mandate
       };
 
-      console.log('Creating Razorpay order with options:', { ...options, receipt: options.receipt });
+      console.log('Creating Razorpay order for UPI autopay token charge:', { ...options, receipt: options.receipt });
       const order = await this.razorpay.orders.create(options);
       console.log('Razorpay order created successfully:', order.id);
       return order;
@@ -132,6 +134,116 @@ class RazorpayService {
    */
   getKeyId(): string {
     return config.razorpay.keyId;
+  }
+
+  /**
+   * Create a Razorpay plan (one-time setup)
+   */
+  async createPlan(params: {
+    period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    interval: number;
+    item: {
+      name: string;
+      amount: number; // in paise
+      currency: string;
+      description: string;
+    };
+  }) {
+    try {
+      if (!this.razorpay) {
+        throw new Error('Razorpay client not initialized');
+      }
+
+      const plan = await this.razorpay.plans.create(params);
+      console.log('Razorpay plan created successfully:', plan.id);
+      return plan;
+    } catch (error: any) {
+      console.error('Razorpay plan creation error:', error);
+      throw new Error(`Failed to create Razorpay plan: ${error.message || error.error?.description || 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Create a Razorpay subscription with trial period (UPI autopay)
+   */
+  async createSubscription(params: {
+    planId: string;
+    startAt: number; // Unix timestamp when subscription should start (after trial)
+    totalCount: number; // 1 for one-time, high number for recurring
+    customerNotify?: number; // 1 to notify customer
+    addons?: Array<{ item: { name: string; amount: number; currency: string } }>; // Upfront charges/addons
+  }) {
+    try {
+      if (!this.razorpay) {
+        throw new Error('Razorpay client not initialized');
+      }
+
+      const subscriptionParams: any = {
+        plan_id: params.planId,
+        customer_notify: params.customerNotify ?? 1,
+        total_count: params.totalCount,
+        start_at: params.startAt,
+        // For UPI autopay subscriptions:
+        // - When start_at is in the future (trial period), Razorpay charges ₹5 by default for auth
+        // - To override this and charge a specific amount (e.g., ₹20), use addons/upfront amount
+        // - The addons amount will be charged during authentication instead of ₹5
+        // - The subscription payment flow (without order_id) enables UPI autopay
+      };
+      
+      // If addons are provided, include them for upfront charges
+      if (params.addons && params.addons.length > 0) {
+        subscriptionParams.addons = params.addons;
+      }
+      
+      console.log('Creating Razorpay subscription with params:', {
+        plan_id: params.planId,
+        total_count: params.totalCount,
+        start_at: params.startAt,
+        start_at_date: new Date(params.startAt * 1000).toISOString(),
+        has_addons: params.addons ? params.addons.length > 0 : false,
+        addons_total: params.addons ? params.addons.reduce((sum, addon) => sum + addon.item.amount, 0) : 0,
+      });
+      
+      const subscription = await this.razorpay.subscriptions.create(subscriptionParams);
+
+      console.log('Razorpay subscription created successfully (UPI autopay):', subscription.id);
+      return subscription;
+    } catch (error: any) {
+      console.error('Razorpay subscription creation error:', error);
+      throw new Error(`Failed to create Razorpay subscription: ${error.message || error.error?.description || 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Fetch subscription details from Razorpay
+   */
+  async getSubscription(subscriptionId: string) {
+    try {
+      if (!this.razorpay) {
+        throw new Error('Razorpay client not initialized');
+      }
+
+      const subscription = await this.razorpay.subscriptions.fetch(subscriptionId);
+      return subscription;
+    } catch (error: any) {
+      throw new Error(`Failed to fetch Razorpay subscription: ${error.message || error.error?.description || 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Fetch plan details from Razorpay
+   */
+  async fetchPlan(planId: string) {
+    try {
+      if (!this.razorpay) {
+        throw new Error('Razorpay client not initialized');
+      }
+
+      const plan = await this.razorpay.plans.fetch(planId);
+      return plan;
+    } catch (error: any) {
+      throw new Error(`Failed to fetch Razorpay plan: ${error.message || error.error?.description || 'Unknown error'}`);
+    }
   }
 }
 

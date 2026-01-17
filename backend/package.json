@@ -15,6 +15,7 @@
     "create-admin": "ts-node src/scripts/createAdmin.ts",
     "generate-key": "ts-node src/scripts/generateEncryptionKey.ts",
     "migrate-env": "ts-node src/scripts/migrateEnvCredentials.ts",
+    "create-razorpay-plans": "ts-node src/scripts/createRazorpayPlans.ts",
     "generate:themes": "ts-node scripts/generate-niche-templates.ts",
     "generate:themes:force": "OVERWRITE_EXISTING=true ts-node scripts/generate-niche-templates.ts",
     "test": "jest",
