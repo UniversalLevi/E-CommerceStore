@@ -286,17 +286,7 @@ export default function BillingPage() {
                   <p className="text-xs text-text-muted mt-2 text-center">
                     ₹20 charged now to activate trial.
                     <br />
-                    {plan.price <= 500000 ? (
-                      <>
-                        Full amount (₹{plan.price / 100}) auto-debited via UPI after {plan.trialDays} days unless cancelled.
-                      </>
-                    ) : (
-                      <>
-                        Full amount (₹{plan.price / 100}) will be charged after {plan.trialDays} days.
-                        <br />
-                        <span className="text-yellow-400">Note: UPI AutoPay only supports amounts ≤ ₹5,000. Card payment required for this plan.</span>
-                      </>
-                    )}
+                    Full amount (₹{plan.price / 100}) {plan.price <= 500000 ? 'auto-debited via UPI' : 'will be charged'} after {plan.trialDays} days unless cancelled.
                   </p>
                 )}
               </div>
