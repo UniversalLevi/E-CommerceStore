@@ -20,6 +20,8 @@ app.use(cors({
   origin: config.corsOrigin,
   credentials: true,
 }));
+// Razorpay webhook needs raw body, so register it before JSON parser
+app.use('/api/store-dashboard/razorpay/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -65,6 +67,9 @@ import templateRoutes from './routes/templateRoutes';
 import templateAdminRoutes from './routes/templateAdminRoutes';
 import whatsappRoutes from './routes/whatsappRoutes';
 import userSubscriptionRoutes from './routes/userSubscriptionRoutes';
+import storeDashboardRoutes from './routes/storeDashboardRoutes';
+import storefrontRoutes from './routes/storefrontRoutes';
+import storeRazorpayWebhookRoutes from './routes/storeRazorpayWebhookRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -103,6 +108,12 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/admin/templates', templateAdminRoutes);
 // WhatsApp Bulk Product Intake routes
 app.use('/api/whatsapp', whatsappRoutes);
+// Store Dashboard routes
+app.use('/api/store-dashboard', storeDashboardRoutes);
+// Storefront routes (public)
+app.use('/api/storefront', storefrontRoutes);
+// Razorpay Connect webhook (must be before JSON parser for raw body)
+app.use('/api/store-dashboard/razorpay', storeRazorpayWebhookRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

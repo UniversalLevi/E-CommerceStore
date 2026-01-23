@@ -802,6 +802,116 @@ class ApiClient {
       { storeId, themeId }
     );
   }
+
+  // ========== STORE DASHBOARD API ==========
+
+  // Store management
+  async createStore(data: { name: string; slug?: string; currency?: string }) {
+    return this.post<{ success: boolean; data: any }>('/api/store-dashboard/stores', data);
+  }
+
+  async getMyStore() {
+    return this.get<{ success: boolean; data: any | null }>('/api/store-dashboard/stores');
+  }
+
+  async getStore(storeId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}`);
+  }
+
+  async updateStore(storeId: string, data: { name?: string; settings?: any }) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}`, data);
+  }
+
+  async getStoreOverview(storeId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/overview`);
+  }
+
+  // Product management
+  async createStoreProduct(storeId: string, data: any) {
+    return this.post<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/products`, data);
+  }
+
+  async getStoreProducts(storeId: string, params?: { status?: string; page?: number; limit?: number }) {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    const url = query ? `/api/store-dashboard/stores/${storeId}/products?${query}` : `/api/store-dashboard/stores/${storeId}/products`;
+    return this.get<{ success: boolean; data: any }>(url);
+  }
+
+  async getStoreProduct(storeId: string, productId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/products/${productId}`);
+  }
+
+  async updateStoreProduct(storeId: string, productId: string, data: any) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/products/${productId}`, data);
+  }
+
+  async deleteStoreProduct(storeId: string, productId: string) {
+    return this.delete<{ success: boolean; message: string }>(`/api/store-dashboard/stores/${storeId}/products/${productId}`);
+  }
+
+  // Order management
+  async getStoreOrders(storeId: string, params?: { paymentStatus?: string; fulfillmentStatus?: string; page?: number; limit?: number }) {
+    const searchParams = new URLSearchParams();
+    if (params?.paymentStatus) searchParams.set('paymentStatus', params.paymentStatus);
+    if (params?.fulfillmentStatus) searchParams.set('fulfillmentStatus', params.fulfillmentStatus);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    const url = query ? `/api/store-dashboard/stores/${storeId}/orders?${query}` : `/api/store-dashboard/stores/${storeId}/orders`;
+    return this.get<{ success: boolean; data: any }>(url);
+  }
+
+  async getStoreOrder(storeId: string, orderId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/orders/${orderId}`);
+  }
+
+  async updateFulfillmentStatus(storeId: string, orderId: string, fulfillmentStatus: string) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/orders/${orderId}/fulfillment`, { fulfillmentStatus });
+  }
+
+  // Razorpay
+  async initiateRazorpayConnect(storeId: string) {
+    return this.post<{ success: boolean; data: { onboardingUrl: string; accountId?: string } }>(`/api/store-dashboard/stores/${storeId}/razorpay/connect`);
+  }
+
+  async getRazorpayStatus(storeId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/razorpay/status`);
+  }
+
+  // ========== STOREFRONT API (Public) ==========
+
+  async getStorefrontInfo(slug: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/storefront/${slug}`);
+  }
+
+  async getStorefrontProducts(slug: string, params?: { page?: number; limit?: number }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    const url = query ? `/api/storefront/${slug}/products?${query}` : `/api/storefront/${slug}/products`;
+    return this.get<{ success: boolean; data: any }>(url);
+  }
+
+  async getStorefrontProduct(slug: string, productId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/storefront/${slug}/products/${productId}`);
+  }
+
+  async createStorefrontOrder(slug: string, data: any) {
+    return this.post<{ success: boolean; data: any }>(`/api/storefront/${slug}/orders`, data);
+  }
+
+  async createPaymentOrder(slug: string, orderId: string) {
+    return this.post<{ success: boolean; data: any }>(`/api/storefront/${slug}/orders/${orderId}/payment`);
+  }
+
+  async verifyPayment(slug: string, orderId: string, data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
+    return this.post<{ success: boolean; data: any }>(`/api/storefront/${slug}/orders/${orderId}/verify`, data);
+  }
 }
 
 export const api = new ApiClient();

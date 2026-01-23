@@ -46,6 +46,11 @@ const envSchema = Joi.object({
   WHATSAPP_ACCESS_TOKEN: Joi.string().allow('').optional(),
   WHATSAPP_VERIFY_TOKEN: Joi.string().allow('').optional(),
   WHATSAPP_BUSINESS_ACCOUNT_ID: Joi.string().allow('').optional(),
+  // Store Dashboard limits
+  MAX_PRODUCTS_PER_STORE: Joi.string().allow('').optional(),
+  MAX_IMAGES_PER_PRODUCT: Joi.string().allow('').optional(),
+  MAX_ORDERS_PER_DAY_PER_STORE: Joi.string().allow('').optional(),
+  STORE_DOMAIN: Joi.string().allow('').optional(),
 }).unknown();
 
 const { error, value } = envSchema.validate(process.env);

@@ -38,6 +38,7 @@ interface DashboardSidebarProps {
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/stores', label: 'My Stores', icon: Store },
+  { href: '/dashboard/store', label: 'Store', icon: Store },
   { href: '/dashboard/templates', label: 'Templates', icon: Palette },
   { href: '/dashboard/customers', label: 'Customers', icon: Mail },
   { href: '/dashboard/orders', label: 'Orders', icon: ShoppingCart },
