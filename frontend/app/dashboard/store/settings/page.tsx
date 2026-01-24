@@ -15,6 +15,9 @@ export default function StoreSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [updatingTestMode, setUpdatingTestMode] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualAccountId, setManualAccountId] = useState('');
+  const [settingAccount, setSettingAccount] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -27,12 +30,27 @@ export default function StoreSettingsPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  // Check for Razorpay redirect callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('razorpay') === 'connected') {
+      // Remove query parameter from URL
+      window.history.replaceState({}, '', window.location.pathname);
+      // Refresh status after a short delay to allow webhook to process
+      setTimeout(() => {
+        fetchData();
+        notify.success('Checking Razorpay connection status...');
+      }, 2000);
+    }
+  }, []);
+
   const fetchData = async () => {
     try {
       setLoading(true);
       const storeResponse = await api.getMyStore();
       if (storeResponse.success && storeResponse.data) {
         setStore(storeResponse.data);
+        // Force fresh fetch of Razorpay status (bypass cache)
         const statusResponse = await api.getRazorpayStatus(storeResponse.data._id);
         if (statusResponse.success) {
           setRazorpayStatus(statusResponse.data);
@@ -81,6 +99,28 @@ export default function StoreSettingsPage() {
       notify.error(error.response?.data?.message || 'Failed to update test mode');
     } finally {
       setUpdatingTestMode(false);
+    }
+  };
+
+  const handleSetAccountId = async () => {
+    if (!manualAccountId.trim()) {
+      notify.error('Please enter a valid account ID');
+      return;
+    }
+
+    try {
+      setSettingAccount(true);
+      const response = await api.setRazorpayAccount(store._id, manualAccountId.trim());
+      if (response.success) {
+        setShowManualInput(false);
+        setManualAccountId('');
+        await fetchData();
+        notify.success('Razorpay account ID set successfully');
+      }
+    } catch (error: any) {
+      notify.error(error.response?.data?.message || 'Failed to set account ID');
+    } finally {
+      setSettingAccount(false);
     }
   };
 
@@ -237,27 +277,118 @@ export default function StoreSettingsPage() {
               </div>
 
               {razorpayStatus?.accountStatus !== 'active' && (
-                <button
-                  onClick={handleConnectRazorpay}
-                  disabled={connecting || store.settings?.testMode}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {connecting ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Connecting...
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink className="h-5 w-5" />
-                      Connect Razorpay Account
-                    </>
+                <div className="space-y-4">
+                  <div className="flex gap-3 flex-wrap">
+                    <button
+                      onClick={handleConnectRazorpay}
+                      disabled={connecting || store.settings?.testMode}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {connecting ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="h-5 w-5" />
+                          Open Razorpay Dashboard
+                        </>
+                      )}
+                    </button>
+                    {(razorpayStatus?.accountStatus === 'pending' || razorpayStatus?.accountStatus === 'not_connected') && (
+                      <>
+                        <button
+                          onClick={fetchData}
+                          disabled={loading}
+                          className="px-4 py-3 bg-surface-base border border-border-default text-text-primary rounded-lg hover:bg-surface-hover transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {loading ? (
+                            <>
+                              <Loader2 className="h-5 w-5 animate-spin" />
+                              Checking...
+                            </>
+                          ) : (
+                            <>
+                              <Settings className="h-5 w-5" />
+                              Check Status
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setShowManualInput(!showManualInput)}
+                          className="px-4 py-3 bg-surface-base border border-border-default text-text-primary rounded-lg hover:bg-surface-hover transition-all font-medium flex items-center gap-2"
+                        >
+                          Enter Account ID Manually
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {showManualInput && (
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-2">
+                          Razorpay Account ID
+                        </label>
+                        <input
+                          type="text"
+                          value={manualAccountId}
+                          onChange={(e) => setManualAccountId(e.target.value)}
+                          placeholder="acc_xxxxxxxxxxxxx"
+                          className="w-full px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                        <p className="mt-1 text-xs text-text-secondary">
+                          After completing onboarding on Razorpay, find your Account ID in the Razorpay dashboard and enter it here.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSetAccountId}
+                          disabled={settingAccount || !manualAccountId.trim()}
+                          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {settingAccount ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Setting...
+                            </>
+                          ) : (
+                            'Set Account ID'
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowManualInput(false);
+                            setManualAccountId('');
+                          }}
+                          className="px-4 py-2 bg-surface-base border border-border-default text-text-primary rounded-lg hover:bg-surface-hover transition-all font-medium"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
+              )}
+
+              {razorpayStatus?.accountStatus === 'pending' && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mt-4">
+                  <p className="text-sm text-blue-400 mb-2">
+                    <strong>Onboarding in progress:</strong> Complete the following steps:
+                  </p>
+                  <ol className="text-xs text-blue-300 list-decimal list-inside space-y-1">
+                    <li>Click "Open Razorpay Dashboard" to go to Razorpay Connect setup</li>
+                    <li>Complete the onboarding process on Razorpay's website</li>
+                    <li>Find your Account ID (starts with "acc_") in the Razorpay dashboard</li>
+                    <li>Click "Enter Account ID Manually" and paste your Account ID</li>
+                    <li>Click "Set Account ID" to complete the connection</li>
+                  </ol>
+                </div>
               )}
 
               {razorpayStatus?.accountStatus === 'active' && (
-                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mt-4">
                   <p className="text-sm text-green-400">
                     Your Razorpay account is connected. Payments will go directly to your account.
                   </p>
@@ -265,7 +396,7 @@ export default function StoreSettingsPage() {
               )}
 
               {store.settings?.testMode && (
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mt-4">
                   <p className="text-sm text-yellow-400">
                     Test mode is enabled. Real payments are disabled. Disable test mode to accept real payments.
                   </p>

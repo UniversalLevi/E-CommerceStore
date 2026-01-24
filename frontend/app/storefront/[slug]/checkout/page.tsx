@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { openRazorpayCheckout } from '@/lib/razorpay';
 import { notify } from '@/lib/toast';
+import { useCartStore } from '@/store/useCartStore';
 import { Loader2, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 
@@ -13,9 +14,9 @@ export default function CheckoutPage() {
   const router = useRouter();
   const slug = params.slug as string;
   const [store, setStore] = useState<any>(null);
-  const [cart, setCart] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const { items: cart, setStoreSlug, clearCart } = useCartStore();
   const [formData, setFormData] = useState({
     customer: {
       name: '',
@@ -37,10 +38,10 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (slug) {
+      setStoreSlug(slug);
       fetchStore();
-      loadCart();
     }
-  }, [slug]);
+  }, [slug, setStoreSlug]);
 
   const fetchStore = async () => {
     try {
@@ -55,12 +56,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const loadCart = () => {
-    const cartData = localStorage.getItem(`storefront_cart_${slug}`);
-    if (cartData) {
-      setCart(JSON.parse(cartData));
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +143,7 @@ export default function CheckoutPage() {
           });
 
           if (verifyResponse.success) {
-            localStorage.removeItem(`storefront_cart_${slug}`);
+            clearCart();
             notify.success('Payment successful!');
             router.push(`/storefront/${slug}/order/${order.orderId}`);
           } else {
@@ -315,11 +310,19 @@ export default function CheckoutPage() {
           <div>
             <div className="bg-surface-raised rounded-lg border border-border-default p-6 sticky top-4">
               <h2 className="text-lg font-semibold text-text-primary mb-4">Order Summary</h2>
-              <div className="space-y-2 mb-4">
+              <div className="space-y-3 mb-4">
                 {cart.map((item, index) => (
-                  <div key={index} className="flex justify-between text-sm text-text-secondary">
-                    <span>Item {index + 1}</span>
-                    <span>{formatPrice(item.price || 0, store?.currency || 'INR')}</span>
+                  <div key={index} className="flex justify-between items-start text-sm">
+                    <div className="flex-1">
+                      <p className="text-text-primary font-medium">{item.title || 'Product'}</p>
+                      {item.variant && (
+                        <p className="text-text-secondary text-xs">Variant: {item.variant}</p>
+                      )}
+                      <p className="text-text-secondary text-xs">Qty: {item.quantity}</p>
+                    </div>
+                    <span className="text-text-primary font-medium ml-4">
+                      {formatPrice((item.price || 0) * (item.quantity || 1), store?.currency || 'INR')}
+                    </span>
                   </div>
                 ))}
               </div>

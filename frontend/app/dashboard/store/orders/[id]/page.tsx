@@ -59,6 +59,23 @@ export default function OrderDetailPage() {
     }
   };
 
+  const handlePaymentStatusUpdate = async (status: string) => {
+    if (!store || !order) return;
+
+    try {
+      setUpdating(true);
+      const response = await api.updatePaymentStatus(store._id, order._id, status);
+      if (response.success) {
+        notify.success('Payment status updated');
+        fetchData();
+      }
+    } catch (error: any) {
+      notify.error(error.response?.data?.message || 'Failed to update payment status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const handleFulfillmentUpdate = async (status: string) => {
     if (!store || !order) return;
 
@@ -245,34 +262,75 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {order.paymentStatus === 'paid' && (
-          <div>
-            <h3 className="font-semibold text-text-primary mb-3">Update Fulfillment Status</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleFulfillmentUpdate('fulfilled')}
-                disabled={updating || order.fulfillmentStatus === 'fulfilled'}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Mark as Fulfilled
-              </button>
-              <button
-                onClick={() => handleFulfillmentUpdate('shipped')}
-                disabled={updating || order.fulfillmentStatus === 'shipped'}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Mark as Shipped
-              </button>
-              <button
-                onClick={() => handleFulfillmentUpdate('cancelled')}
-                disabled={updating || order.fulfillmentStatus === 'cancelled'}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel Order
-              </button>
-            </div>
+        {/* Payment Status Update */}
+        <div className="mb-6">
+          <h3 className="font-semibold text-text-primary mb-3">Update Payment Status</h3>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handlePaymentStatusUpdate('pending')}
+              disabled={updating || order.paymentStatus === 'pending'}
+              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Mark as Pending
+            </button>
+            <button
+              onClick={() => handlePaymentStatusUpdate('paid')}
+              disabled={updating || order.paymentStatus === 'paid'}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Mark as Paid
+            </button>
+            <button
+              onClick={() => handlePaymentStatusUpdate('failed')}
+              disabled={updating || order.paymentStatus === 'failed'}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Mark as Failed
+            </button>
+            <button
+              onClick={() => handlePaymentStatusUpdate('refunded')}
+              disabled={updating || order.paymentStatus === 'refunded'}
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Mark as Refunded
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Fulfillment Status Update */}
+        <div className="mb-6">
+          <h3 className="font-semibold text-text-primary mb-3">Update Fulfillment Status</h3>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => handleFulfillmentUpdate('pending')}
+              disabled={updating || order.fulfillmentStatus === 'pending'}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Mark as Pending
+            </button>
+            <button
+              onClick={() => handleFulfillmentUpdate('fulfilled')}
+              disabled={updating || order.fulfillmentStatus === 'fulfilled'}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Mark as Fulfilled
+            </button>
+            <button
+              onClick={() => handleFulfillmentUpdate('shipped')}
+              disabled={updating || order.fulfillmentStatus === 'shipped'}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Mark as Shipped
+            </button>
+            <button
+              onClick={() => handleFulfillmentUpdate('cancelled')}
+              disabled={updating || order.fulfillmentStatus === 'cancelled'}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Cancel Order
+            </button>
+          </div>
+        </div>
 
         {/* Notes Section */}
         <div className="border-t border-border-default pt-6 mt-6">

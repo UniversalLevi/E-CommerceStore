@@ -30,6 +30,7 @@ router.get('/stores/:id/orders/search', authenticateToken, requireStoreOwner, or
 router.get('/stores/:id/orders/export', authenticateToken, requireStoreOwner, orderController.exportOrders);
 router.get('/stores/:id/orders/:orderId', authenticateToken, requireStoreOwner, orderController.getOrder);
 router.put('/stores/:id/orders/:orderId/fulfillment', authenticateToken, requireStoreOwner, orderController.updateFulfillment);
+router.put('/stores/:id/orders/:orderId/payment-status', authenticateToken, requireStoreOwner, orderController.updatePaymentStatus);
 router.put('/stores/:id/orders/bulk-fulfillment', authenticateToken, requireStoreOwner, orderController.bulkUpdateFulfillment);
 router.post('/stores/:id/orders/:orderId/notes', authenticateToken, requireStoreOwner, orderController.addOrderNote);
 router.get('/stores/:id/orders/:orderId/notes', authenticateToken, requireStoreOwner, orderController.getOrderNotes);
@@ -37,5 +38,6 @@ router.get('/stores/:id/orders/:orderId/notes', authenticateToken, requireStoreO
 // Razorpay routes
 router.post('/stores/:id/razorpay/connect', authenticateToken, requireStoreOwner, razorpayController.initiateRazorpayConnect);
 router.get('/stores/:id/razorpay/status', authenticateToken, requireStoreOwner, razorpayController.getRazorpayStatus);
+router.post('/stores/:id/razorpay/set-account', authenticateToken, requireStoreOwner, razorpayController.setRazorpayAccount);
 
 export default router;

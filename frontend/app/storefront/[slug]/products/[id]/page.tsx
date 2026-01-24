@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useCartStore } from '@/store/useCartStore';
+import { notify } from '@/lib/toast';
 import { Loader2, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 
@@ -48,15 +50,19 @@ export default function StorefrontProductPage() {
     }
   };
 
+  const { addItem } = useCartStore();
+
   const handleAddToCart = () => {
-    // For MVP, redirect to checkout with product
     const cartItem = {
       productId: product._id,
+      title: product.title,
+      image: product.images && product.images.length > 0 ? product.images[0] : undefined,
+      price: getProductPrice(),
       variant: selectedVariant || undefined,
       quantity,
     };
-    localStorage.setItem(`storefront_cart_${slug}`, JSON.stringify([cartItem]));
-    router.push(`/storefront/${slug}/checkout`);
+    addItem(cartItem);
+    notify.success('Added to cart');
   };
 
   const formatPrice = (price: number, currency: string = 'INR') => {
@@ -171,13 +177,24 @@ export default function StorefrontProductPage() {
               />
             </div>
 
-            <button
-              onClick={handleAddToCart}
-              className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium flex items-center justify-center gap-2"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              Buy Now
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleAddToCart}
+                className="flex-1 px-6 py-3 bg-surface-raised border border-border-default text-text-primary rounded-lg hover:bg-surface-hover transition-all font-medium flex items-center justify-center gap-2"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                Add to Cart
+              </button>
+              <button
+                onClick={() => {
+                  handleAddToCart();
+                  setTimeout(() => router.push(`/storefront/${slug}/checkout`), 100);
+                }}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium"
+              >
+                Buy Now
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -106,6 +106,12 @@ export const updateFulfillmentSchema = Joi.object({
     .required(),
 });
 
+export const updatePaymentStatusSchema = Joi.object({
+  paymentStatus: Joi.string()
+    .valid('pending', 'paid', 'failed', 'refunded')
+    .required(),
+});
+
 export const bulkFulfillmentSchema = Joi.object({
   orderIds: Joi.array().items(Joi.string().required()).min(1).required(),
   fulfillmentStatus: Joi.string()

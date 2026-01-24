@@ -240,33 +240,7 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       }
     }
 
-    // Send emails (non-blocking)
-    try {
-      // Check email notification preferences
-      const emailSettings = store.settings?.emailNotifications || {};
-      const sendCustomerEmails = emailSettings.orderConfirmation !== false; // Default to true
-      const sendOwnerEmails = emailSettings.newOrderNotification !== false; // Default to true
-
-      if (sendCustomerEmails) {
-        // Send order confirmation to customer
-        sendOrderConfirmationEmail(order, store.name).catch((err) => {
-          console.error('Failed to send order confirmation email:', err);
-        });
-      }
-
-      if (sendOwnerEmails) {
-        // Send new order notification to store owner
-        const owner = await User.findById(store.owner);
-        if (owner && owner.email) {
-          sendNewOrderNotificationEmail(order, store.name, owner.email).catch((err) => {
-            console.error('Failed to send new order notification email:', err);
-          });
-        }
-      }
-    } catch (emailError) {
-      // Don't fail the request if email fails
-      console.error('Error sending order emails:', emailError);
-    }
+    // Note: Emails will be sent after payment verification, not when order is created
 
     res.status(201).json({
       success: true,
@@ -411,11 +385,31 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
         order.razorpayPaymentId = `test_payment_${razorpay_payment_id || Date.now()}`;
         await order.save();
 
-        // Send payment confirmation email in test mode too (non-blocking)
+        // Send all emails after payment verification in test mode (non-blocking)
         try {
           const emailSettings = store.settings?.emailNotifications || {};
-          const sendPaymentEmails = emailSettings.paymentStatus !== false; // Default to true
+          
+          // Send order confirmation to customer
+          const sendCustomerEmails = emailSettings.orderConfirmation !== false; // Default to true
+          if (sendCustomerEmails) {
+            sendOrderConfirmationEmail(order, store.name).catch((err) => {
+              console.error('Failed to send order confirmation email:', err);
+            });
+          }
 
+          // Send new order notification to store owner
+          const sendOwnerEmails = emailSettings.newOrderNotification !== false; // Default to true
+          if (sendOwnerEmails) {
+            const owner = await User.findById(store.owner);
+            if (owner && owner.email) {
+              sendNewOrderNotificationEmail(order, store.name, owner.email).catch((err) => {
+                console.error('Failed to send new order notification email:', err);
+              });
+            }
+          }
+
+          // Send payment status email
+          const sendPaymentEmails = emailSettings.paymentStatus !== false; // Default to true
           if (sendPaymentEmails) {
             sendPaymentStatusEmail(order, store.name, 'paid').catch((err) => {
               console.error('Failed to send payment confirmation email:', err);
@@ -458,13 +452,33 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
     order.razorpayPaymentId = razorpay_payment_id;
     await order.save();
 
-    // Send payment confirmation email (non-blocking)
+    // Send all emails after payment verification (non-blocking)
     try {
       const store = await Store.findById(order.storeId);
       if (store) {
         const emailSettings = store.settings?.emailNotifications || {};
-        const sendPaymentEmails = emailSettings.paymentStatus !== false; // Default to true
+        
+        // Send order confirmation to customer (only after payment is verified)
+        const sendCustomerEmails = emailSettings.orderConfirmation !== false; // Default to true
+        if (sendCustomerEmails) {
+          sendOrderConfirmationEmail(order, store.name).catch((err) => {
+            console.error('Failed to send order confirmation email:', err);
+          });
+        }
 
+        // Send new order notification to store owner (only after payment is verified)
+        const sendOwnerEmails = emailSettings.newOrderNotification !== false; // Default to true
+        if (sendOwnerEmails) {
+          const owner = await User.findById(store.owner);
+          if (owner && owner.email) {
+            sendNewOrderNotificationEmail(order, store.name, owner.email).catch((err) => {
+              console.error('Failed to send new order notification email:', err);
+            });
+          }
+        }
+
+        // Send payment status email
+        const sendPaymentEmails = emailSettings.paymentStatus !== false; // Default to true
         if (sendPaymentEmails) {
           sendPaymentStatusEmail(order, store.name, 'paid').catch((err) => {
             console.error('Failed to send payment confirmation email:', err);
@@ -472,7 +486,7 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
         }
       }
     } catch (emailError) {
-      console.error('Error sending payment email:', emailError);
+      console.error('Error sending order emails:', emailError);
     }
 
     res.status(200).json({

@@ -24,8 +24,11 @@ export const initiateRazorpayConnect = async (
     const store = (req as any).store;
     const user = req.user as any;
 
-    // Check if account already exists
-    const existingAccount = await RazorpayAccount.findOne({ userId: user._id });
+    // Check if account already exists for this store
+    const existingAccount = await RazorpayAccount.findOne({ 
+      storeId: store._id 
+    });
+    
     if (existingAccount && existingAccount.status === 'active') {
       throw createError('Razorpay account is already connected', 400);
     }
@@ -45,21 +48,41 @@ export const initiateRazorpayConnect = async (
     });
 
     // Create or update RazorpayAccount record
-    if (existingAccount) {
-      existingAccount.status = 'pending';
-      existingAccount.onboardingData = onboarding;
-      await existingAccount.save();
-    } else {
-      const account = new RazorpayAccount({
-        userId: user._id,
-        storeId: store._id,
-        razorpayAccountId: onboarding.accountId || 'pending',
-        email: userEmail,
-        status: 'pending',
-        onboardingData: onboarding,
-      });
-      await account.save();
+    // Use findOneAndUpdate with upsert to handle race conditions
+    let accountId = onboarding.accountId;
+    
+    // If no accountId from Razorpay, only set it if account doesn't exist yet
+    if (!accountId) {
+      if (!existingAccount || !existingAccount.razorpayAccountId) {
+        accountId = `pending_${store._id}_${Date.now()}`;
+      } else {
+        // Keep existing accountId if account already exists
+        accountId = existingAccount.razorpayAccountId;
+      }
     }
+    
+    const updateData: any = {
+      userId: user._id,
+      storeId: store._id,
+      email: userEmail,
+      status: 'pending',
+      onboardingData: onboarding,
+    };
+    
+    // Only update razorpayAccountId if we have a new one
+    if (onboarding.accountId || !existingAccount?.razorpayAccountId) {
+      updateData.razorpayAccountId = accountId;
+    }
+    
+    const account = await RazorpayAccount.findOneAndUpdate(
+      { storeId: store._id },
+      updateData,
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
 
     // Update store status
     store.razorpayAccountStatus = 'pending';
@@ -97,6 +120,79 @@ export const getRazorpayStatus = async (req: AuthRequest, res: Response, next: N
         accountStatus: account?.status || 'not_connected',
         storeStatus: store.razorpayAccountStatus,
         accountId: account?.razorpayAccountId,
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Manually set Razorpay account ID (for manual onboarding)
+ * POST /api/store-dashboard/stores/:id/razorpay/set-account
+ */
+export const setRazorpayAccount = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const store = (req as any).store;
+    const user = req.user as any;
+    const { accountId } = req.body;
+
+    if (!accountId || typeof accountId !== 'string') {
+      throw createError('Account ID is required', 400);
+    }
+
+    // Verify account with Razorpay (optional - might fail if Connect not enabled)
+    let accountStatus = 'active'; // Default to active if account ID is provided
+    try {
+      const verifiedAccount = await razorpayConnectService.verifyAccount(accountId);
+      if (verifiedAccount) {
+        accountStatus = verifiedAccount.status || 'active';
+      }
+    } catch (verifyError: any) {
+      // If verification fails, still allow setting the account ID
+      // User might have completed onboarding but API verification isn't available
+      // We'll set status to 'active' since they provided a valid-looking account ID
+      console.warn('Could not verify account via API, but proceeding with active status:', verifyError?.message || verifyError);
+      // Account ID format validation: should start with 'acc_' for Razorpay Connect accounts
+      if (accountId.startsWith('acc_')) {
+        accountStatus = 'active';
+      } else {
+        // If it doesn't look like a valid account ID, keep as pending
+        accountStatus = 'pending';
+      }
+    }
+
+    // Update or create account record
+    const account = await RazorpayAccount.findOneAndUpdate(
+      { storeId: store._id },
+      {
+        userId: user._id,
+        storeId: store._id,
+        razorpayAccountId: accountId,
+        email: user.email || user.mobile || 'user@example.com',
+        status: accountStatus,
+      },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    // Update store status
+    store.razorpayAccountStatus = accountStatus;
+    await store.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Razorpay account ID set successfully',
+      data: {
+        accountId: account.razorpayAccountId,
+        status: account.status,
       },
     });
   } catch (error: any) {

@@ -17,7 +17,6 @@ const razorpayAccountSchema = new Schema<IRazorpayAccount>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      unique: true, // One account per user
       index: true,
     },
     storeId: {
@@ -29,8 +28,9 @@ const razorpayAccountSchema = new Schema<IRazorpayAccount>(
     },
     razorpayAccountId: {
       type: String,
-      required: true,
+      required: false, // Can be temporary during onboarding
       unique: true,
+      sparse: true, // Allows null/undefined values
       index: true,
     },
     email: {
@@ -56,9 +56,9 @@ const razorpayAccountSchema = new Schema<IRazorpayAccount>(
 );
 
 // Indexes
-razorpayAccountSchema.index({ userId: 1 }, { unique: true });
+// Note: userId is NOT unique - a user can have multiple stores, each with their own Razorpay account
 razorpayAccountSchema.index({ storeId: 1 }, { unique: true });
-razorpayAccountSchema.index({ razorpayAccountId: 1 }, { unique: true });
+razorpayAccountSchema.index({ razorpayAccountId: 1 }, { unique: true, sparse: true }); // sparse allows null/undefined
 razorpayAccountSchema.index({ status: 1 });
 
 export const RazorpayAccount = mongoose.model<IRazorpayAccount>('RazorpayAccount', razorpayAccountSchema);

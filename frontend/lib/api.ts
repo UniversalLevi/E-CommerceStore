@@ -869,6 +869,15 @@ class ApiClient {
     return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/orders/${orderId}`);
   }
 
+  async updatePaymentStatus(storeId: string, orderId: string, paymentStatus: string) {
+    return this.put<{
+      success: boolean;
+      data: any;
+    }>(`/api/store-dashboard/stores/${storeId}/orders/${orderId}/payment-status`, {
+      paymentStatus,
+    });
+  }
+
   async updateFulfillmentStatus(storeId: string, orderId: string, fulfillmentStatus: string) {
     return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/orders/${orderId}/fulfillment`, { fulfillmentStatus });
   }
@@ -948,7 +957,14 @@ class ApiClient {
   }
 
   async getRazorpayStatus(storeId: string) {
-    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/razorpay/status`);
+    // Add timestamp to bypass cache and get fresh status
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/razorpay/status?t=${Date.now()}`);
+  }
+
+  async setRazorpayAccount(storeId: string, accountId: string) {
+    return this.post<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/razorpay/set-account`, {
+      accountId,
+    });
   }
 
   // Product catalog and import

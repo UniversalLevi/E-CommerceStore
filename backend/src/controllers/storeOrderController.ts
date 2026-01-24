@@ -7,10 +7,11 @@ import { createError } from '../middleware/errorHandler';
 import {
   createOrderSchema,
   updateFulfillmentSchema,
+  updatePaymentStatusSchema,
   bulkFulfillmentSchema,
   orderNoteSchema,
 } from '../validators/storeDashboardValidator';
-import { sendFulfillmentStatusEmail } from '../services/StoreEmailService';
+import { sendFulfillmentStatusEmail, sendPaymentStatusEmail } from '../services/StoreEmailService';
 
 /**
  * List orders
@@ -133,6 +134,67 @@ export const updateFulfillment = async (req: AuthRequest, res: Response, next: N
         }
       } catch (emailError) {
         console.error('Error sending fulfillment email:', emailError);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: order,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Update payment status
+ * PUT /api/store-dashboard/stores/:id/orders/:orderId/payment-status
+ */
+export const updatePaymentStatus = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { error, value } = updatePaymentStatusSchema.validate(req.body);
+    if (error) {
+      throw createError(error.details[0].message, 400);
+    }
+
+    const store = (req as any).store;
+    const storeId = store._id;
+    const orderId = req.params.orderId;
+
+    const order = await StoreOrder.findOne({
+      _id: orderId,
+      storeId,
+    });
+
+    if (!order) {
+      throw createError('Order not found', 404);
+    }
+
+    const oldStatus = order.paymentStatus;
+    order.paymentStatus = value.paymentStatus as 'pending' | 'paid' | 'failed' | 'refunded';
+    await order.save();
+
+    // Send payment status email if status changed (non-blocking)
+    // Only send emails for paid, failed, or refunded - not for pending
+    if (oldStatus !== value.paymentStatus && value.paymentStatus !== 'pending') {
+      try {
+        const storeDoc = await Store.findById(storeId);
+        if (storeDoc) {
+          const emailSettings = storeDoc.settings?.emailNotifications || {};
+          const sendPaymentStatusEmails = emailSettings.paymentStatus !== false; // Default to true
+
+          if (sendPaymentStatusEmails) {
+            sendPaymentStatusEmail(
+              order,
+              storeDoc.name,
+              value.paymentStatus as 'paid' | 'failed' | 'refunded'
+            ).catch((err) => {
+              console.error('Failed to send payment status email:', err);
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending payment status email:', emailError);
       }
     }
 

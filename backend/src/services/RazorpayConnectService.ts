@@ -27,7 +27,7 @@ class RazorpayConnectService {
 
   /**
    * Create onboarding link for Razorpay Connect
-   * Note: This requires Razorpay Connect to be enabled in your Razorpay dashboard
+   * Note: Razorpay Connect requires special setup. For MVP, we provide manual instructions.
    */
   async createOnboardingLink(params: {
     email: string;
@@ -37,16 +37,15 @@ class RazorpayConnectService {
     redirectUrl: string;
   }): Promise<{ onboardingUrl: string; accountId?: string }> {
     try {
-      // For MVP, we'll use a simplified approach
-      // In production, you'd use Razorpay Connect API to create onboarding links
-      // This is a placeholder - actual implementation depends on Razorpay Connect setup
-
-      // For now, return a mock onboarding URL
-      // TODO: Replace with actual Razorpay Connect API call when Connect is enabled
-      const onboardingUrl = `https://dashboard.razorpay.com/app/connect/onboarding?email=${encodeURIComponent(
-        params.email
-      )}&redirect=${encodeURIComponent(params.redirectUrl)}`;
-
+      // Razorpay Connect requires special approval and setup
+      // For MVP, redirect to Razorpay dashboard where user can:
+      // 1. Enable Razorpay Connect in their dashboard
+      // 2. Complete onboarding manually
+      // 3. Then enter their account ID in our system
+      
+      // Direct to Razorpay Connect setup page
+      const onboardingUrl = `https://dashboard.razorpay.com/app/connect/accounts`;
+      
       return {
         onboardingUrl,
       };
@@ -55,6 +54,31 @@ class RazorpayConnectService {
       throw new Error(
         `Failed to create onboarding link: ${error.message || error.error?.description || 'Unknown error'}`
       );
+    }
+  }
+
+  /**
+   * Verify and fetch account details from Razorpay
+   */
+  async verifyAccount(accountId: string): Promise<{ id: string; status: string; email?: string } | null> {
+    try {
+      // Try to fetch account details using Razorpay API
+      // Note: This requires Razorpay Connect to be enabled
+      if (this.razorpay && this.razorpay.accounts) {
+        const account = await this.razorpay.accounts.fetch(accountId);
+        return {
+          id: account.id,
+          status: account.status || 'active',
+          email: account.email,
+        };
+      }
+      // If accounts API is not available, return null (will be handled by caller)
+      return null;
+    } catch (error: any) {
+      // Log the error but don't throw - let caller decide what to do
+      console.warn('Could not verify Razorpay account:', error.message || error);
+      // Return null if verification fails (account might still be valid)
+      return null;
     }
   }
 
