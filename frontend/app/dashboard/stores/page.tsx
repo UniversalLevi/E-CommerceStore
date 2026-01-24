@@ -10,7 +10,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import IconBadge from '@/components/IconBadge';
 import SubscriptionLock from '@/components/SubscriptionLock';
 import { useSubscription } from '@/hooks/useSubscription';
-import { Store } from 'lucide-react';
+import { Store, ShoppingBag, ExternalLink } from 'lucide-react';
 
 interface StoreConnection {
   _id: string;
@@ -24,11 +24,22 @@ interface StoreConnection {
   createdAt: string;
 }
 
+interface InternalStore {
+  _id: string;
+  name: string;
+  slug: string;
+  status: 'active' | 'inactive';
+  currency: string;
+  razorpayAccountStatus?: string;
+  createdAt: string;
+}
+
 export default function MyStoresPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { hasActiveSubscription } = useSubscription();
   const router = useRouter();
   const [stores, setStores] = useState<StoreConnection[]>([]);
+  const [internalStore, setInternalStore] = useState<InternalStore | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [testing, setTesting] = useState<string | null>(null);
@@ -54,10 +65,23 @@ export default function MyStoresPage() {
     
     try {
       setLoading(true);
-      const response = await api.get<{ success: boolean; data: StoreConnection[] }>(
+      
+      // Fetch Shopify stores
+      const shopifyResponse = await api.get<{ success: boolean; data: StoreConnection[] }>(
         '/api/stores'
       );
-      setStores(response.data);
+      setStores(shopifyResponse.data);
+      
+      // Fetch internal store
+      try {
+        const internalResponse = await api.getMyStore();
+        if (internalResponse.success && internalResponse.data) {
+          setInternalStore(internalResponse.data);
+        }
+      } catch (internalError: any) {
+        // Internal store might not exist, that's okay
+        setInternalStore(null);
+      }
     } catch (error: any) {
       console.error('Error fetching stores:', error);
       setError(error.response?.data?.error || 'Failed to load stores');
@@ -159,15 +183,23 @@ export default function MyStoresPage() {
             <div>
               <h1 className="text-3xl font-bold text-text-primary">My Stores</h1>
               <p className="mt-2 text-text-secondary">
-                Manage your connected Shopify stores
+                Manage your internal store and connected Shopify stores
               </p>
             </div>
-            <Link
-              href="/dashboard/stores/connect"
-              className="bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors font-medium"
-            >
-              + Connect New Store
-            </Link>
+            <div className="flex gap-3">
+              <Link
+                href="/dashboard/store/create"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg transition-all font-medium shadow-lg shadow-purple-500/25"
+              >
+                + Create Internal Store
+              </Link>
+              <Link
+                href="/dashboard/stores/connect"
+                className="bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors font-medium"
+              >
+                + Connect Shopify Store
+              </Link>
+            </div>
           </div>
 
           {error && (
@@ -177,37 +209,138 @@ export default function MyStoresPage() {
           )}
 
           {/* Stores Grid */}
-          {stores.length === 0 ? (
+          {stores.length === 0 && !internalStore ? (
             <div className="bg-surface-raised border border-border-default rounded-xl shadow-md p-12 text-center space-y-4">
               <div className="flex justify-center">
                 <IconBadge label="No stores" icon={Store} size="lg" variant="neutral" />
               </div>
               <h3 className="text-xl font-semibold text-text-primary mb-2">
-                No stores connected yet
+                No stores yet
               </h3>
               <p className="text-text-secondary mb-6">
-                Connect your first Shopify store to start creating products
+                Create an internal store or connect a Shopify store to get started
               </p>
-              <Link
-                href="/dashboard/stores/connect"
-                className="inline-block bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors font-medium"
-              >
-                Connect Your First Store
-              </Link>
+              <div className="flex gap-3 justify-center">
+                <Link
+                  href="/dashboard/store/create"
+                  className="inline-block bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg transition-all font-medium shadow-lg shadow-purple-500/25"
+                >
+                  Create Internal Store
+                </Link>
+                <Link
+                  href="/dashboard/stores/connect"
+                  className="inline-block bg-primary-500 hover:bg-primary-600 text-black px-6 py-3 rounded-lg transition-colors font-medium"
+                >
+                  Connect Shopify Store
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="grid gap-6">
-              {stores.map((store) => (
+              {/* Internal Store */}
+              {internalStore && (
                 <div
-                  key={store._id}
-                  className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
+                  className="bg-gradient-to-br from-purple-600/10 to-blue-600/10 border-2 border-purple-500/30 rounded-xl shadow-lg p-6 hover:shadow-xl transition-all relative overflow-hidden"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="absolute top-0 right-0 bg-gradient-to-br from-purple-600 to-blue-600 text-white px-3 py-1 rounded-bl-lg text-xs font-semibold">
+                    INTERNAL STORE
+                  </div>
+                  <div className="flex items-start justify-between mt-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-xl font-semibold text-text-primary">
-                          {store.storeName}
-                        </h3>
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                          <ShoppingBag className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold text-text-primary">
+                            {internalStore.name}
+                          </h3>
+                          <p className="text-sm text-text-secondary mt-1">
+                            {internalStore.slug}.eazydropshipping.com
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          internalStore.status === 'active'
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                            : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                        }`}>
+                          {internalStore.status === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 text-sm text-text-secondary ml-16">
+                        <p>
+                          <span className="font-medium">Currency:</span> {internalStore.currency}
+                        </p>
+                        <p>
+                          <span className="font-medium">Payment:</span>{' '}
+                          {internalStore.razorpayAccountStatus === 'active' ? (
+                            <span className="text-green-400">Connected</span>
+                          ) : (
+                            <span className="text-yellow-400">Not Connected</span>
+                          )}
+                        </p>
+                        <p>
+                          <span className="font-medium">Created:</span>{' '}
+                          {new Date(internalStore.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 ml-4">
+                      <Link
+                        href="/dashboard/store/overview"
+                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg text-sm font-medium text-center transition-all shadow-lg shadow-purple-500/25"
+                      >
+                        Manage Store
+                      </Link>
+                      <a
+                        href={`/storefront/${internalStore.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-surface-hover hover:bg-surface-elevated text-text-primary rounded-lg text-sm font-medium text-center transition-colors flex items-center justify-center gap-1"
+                      >
+                        View Store
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Shopify Stores Section */}
+              {stores.length > 0 && (
+                <>
+                  {internalStore && (
+                    <div className="mt-4 mb-2">
+                      <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+                        <Store className="h-5 w-5" />
+                        Shopify Stores
+                      </h2>
+                      <p className="text-sm text-text-secondary mt-1">
+                        Connected Shopify store connections
+                      </p>
+                    </div>
+                  )}
+                  {stores.map((store) => (
+                <div
+                  key={store._id}
+                  className="bg-surface-raised border border-border-default rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow relative"
+                >
+                  <div className="absolute top-0 right-0 bg-primary-500/20 text-primary-300 px-3 py-1 rounded-bl-lg text-xs font-semibold">
+                    SHOPIFY
+                  </div>
+                  <div className="flex items-start justify-between mt-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-lg bg-primary-500/20 flex items-center justify-center">
+                          <Store className="h-6 w-6 text-primary-300" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold text-text-primary">
+                            {store.storeName}
+                          </h3>
+                        </div>
                         {getStatusBadge(store.status)}
                         {store.isDefault && (
                           <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-500 text-black">
@@ -216,16 +349,17 @@ export default function MyStoresPage() {
                         )}
                       </div>
 
-                      <div className="space-y-2 text-sm text-text-secondary">
+                      <div className="space-y-2 text-sm text-text-secondary ml-16">
                         <p>
                           <span className="font-medium">Domain:</span>{' '}
                           <a
                             href={`https://${store.shopDomain}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-primary-500 hover:underline"
+                            className="text-primary-500 hover:underline flex items-center gap-1"
                           >
                             {store.shopDomain}
+                            <ExternalLink className="h-3 w-3" />
                           </a>
                         </p>
                         <p>
@@ -279,7 +413,9 @@ export default function MyStoresPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+                  ))}
+                </>
+              )}
             </div>
           )}
         </div>

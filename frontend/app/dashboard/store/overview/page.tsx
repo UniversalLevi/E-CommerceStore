@@ -1,51 +1,39 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useStore } from '../layout';
 import { api } from '@/lib/api';
-import { Store, Package, ShoppingCart, DollarSign, Loader2, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Package, ShoppingCart, DollarSign, Loader2, AlertCircle, ArrowRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 export default function StoreOverviewPage() {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
-  const router = useRouter();
-  const [store, setStore] = useState<any>(null);
+  const { store, loading: storeLoading } = useStore();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-      return;
+    if (store) {
+      fetchStats();
     }
+  }, [store]);
 
-    if (isAuthenticated) {
-      fetchData();
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  const fetchData = async () => {
+  const fetchStats = async () => {
     try {
       setLoading(true);
-      const storeResponse = await api.getMyStore();
-      if (storeResponse.success && storeResponse.data) {
-        setStore(storeResponse.data);
-        const overviewResponse = await api.getStoreOverview(storeResponse.data._id);
+      if (store) {
+        const overviewResponse = await api.getStoreOverview(store._id);
         if (overviewResponse.success) {
           setStats(overviewResponse.data.stats);
         }
-      } else {
-        router.push('/dashboard/store');
       }
     } catch (error: any) {
-      console.error('Error fetching store data:', error);
+      console.error('Error fetching store stats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (authLoading || loading) {
+  if (storeLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
@@ -68,149 +56,152 @@ export default function StoreOverviewPage() {
     return `${symbol}${(amount / 100).toFixed(2)}`;
   };
 
-  const getStatusBadge = () => {
-    if (store.status === 'active') {
-      if (store.razorpayAccountStatus === 'active') {
-        return (
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-400">
-            <CheckCircle2 className="h-4 w-4" />
-            Active
-          </span>
-        );
-      }
-      return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-500/20 text-blue-400">
-          <CheckCircle2 className="h-4 w-4" />
-          Active (Payment Not Connected)
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-red-500/20 text-red-400">
-        <XCircle className="h-4 w-4" />
-        Inactive
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">{store.name}</h1>
-          <div className="flex items-center gap-4 mt-1">
-            <p className="text-text-secondary">
-              {store.slug}.eazydropshipping.com
-            </p>
-            <a
-              href={`/storefront/${store.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-purple-500 hover:text-purple-400 text-sm underline"
-            >
-              View Store (Path-based)
-            </a>
-          </div>
-        </div>
-        {getStatusBadge()}
-      </div>
-
+      {/* Payment Account Alert */}
       {store.razorpayAccountStatus !== 'active' && (
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-text-primary mb-1">Payment Account Optional</h3>
-              <p className="text-sm text-text-secondary mb-3">
-                Your store is active! Connect your Razorpay account to start accepting payments from customers.
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-xl p-5 shadow-lg">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-text-primary mb-1.5">Connect Payment Account</h3>
+              <p className="text-sm text-text-secondary mb-4">
+                Your store is active! Connect your Razorpay account to start accepting real payments from customers.
               </p>
               <Link
                 href="/dashboard/store/settings"
-                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium text-sm shadow-lg shadow-blue-500/25"
               >
-                Connect Payment Account
+                Go to Settings
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
         </div>
       )}
 
+      {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-surface-raised rounded-lg border border-border-default p-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-text-secondary">Total Products</h3>
-              <Package className="h-5 w-5 text-purple-500" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="bg-gradient-to-br from-purple-600/10 to-purple-600/5 rounded-xl border border-purple-500/20 p-6 hover:border-purple-500/40 transition-all shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wide">Products</h3>
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center shadow-lg">
+                <Package className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <p className="text-2xl font-bold text-text-primary">{stats.totalProducts}</p>
-            <p className="text-sm text-text-secondary mt-1">{stats.activeProducts} active</p>
+            <p className="text-3xl font-bold text-text-primary mb-1">{stats.totalProducts}</p>
+            <p className="text-sm text-text-secondary flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" />
+              {stats.activeProducts} active
+            </p>
           </div>
 
-          <div className="bg-surface-raised rounded-lg border border-border-default p-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-text-secondary">Total Orders</h3>
-              <ShoppingCart className="h-5 w-5 text-blue-500" />
+          <div className="bg-gradient-to-br from-blue-600/10 to-blue-600/5 rounded-xl border border-blue-500/20 p-6 hover:border-blue-500/40 transition-all shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wide">Orders</h3>
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg">
+                <ShoppingCart className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <p className="text-2xl font-bold text-text-primary">{stats.totalOrders}</p>
-            <p className="text-sm text-text-secondary mt-1">{stats.paidOrders} paid</p>
+            <p className="text-3xl font-bold text-text-primary mb-1">{stats.totalOrders}</p>
+            <p className="text-sm text-text-secondary flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" />
+              {stats.paidOrders} paid
+            </p>
           </div>
 
-          <div className="bg-surface-raised rounded-lg border border-border-default p-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-text-secondary">Total Revenue</h3>
-              <DollarSign className="h-5 w-5 text-green-500" />
+          <div className="bg-gradient-to-br from-green-600/10 to-green-600/5 rounded-xl border border-green-500/20 p-6 hover:border-green-500/40 transition-all shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wide">Revenue</h3>
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center shadow-lg">
+                <DollarSign className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <p className="text-2xl font-bold text-text-primary">{formatCurrency(stats.totalRevenue)}</p>
-            <p className="text-sm text-text-secondary mt-1">All time</p>
+            <p className="text-3xl font-bold text-text-primary mb-1">{formatCurrency(stats.totalRevenue)}</p>
+            <p className="text-sm text-text-secondary">All time revenue</p>
           </div>
 
-          <div className="bg-surface-raised rounded-lg border border-border-default p-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-text-secondary">Store Status</h3>
-              <Store className="h-5 w-5 text-indigo-500" />
+          <div className="bg-gradient-to-br from-indigo-600/10 to-indigo-600/5 rounded-xl border border-indigo-500/20 p-6 hover:border-indigo-500/40 transition-all shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wide">Status</h3>
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center shadow-lg">
+                <TrendingUp className="h-6 w-6 text-white" />
+              </div>
             </div>
-            <p className="text-2xl font-bold text-text-primary capitalize">{store.status}</p>
-            <p className="text-sm text-text-secondary mt-1">Payment: {store.razorpayAccountStatus}</p>
+            <p className="text-3xl font-bold text-text-primary mb-1 capitalize">{store.status}</p>
+            <p className="text-sm text-text-secondary">Payment: {store.razorpayAccountStatus || 'not connected'}</p>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link
-          href="/dashboard/store/products"
-          className="bg-surface-raised rounded-lg border border-border-default p-6 hover:border-purple-500/50 transition-colors"
-        >
-          <Package className="h-8 w-8 text-purple-500 mb-3" />
-          <h3 className="font-semibold text-text-primary mb-1">Manage Products</h3>
-          <p className="text-sm text-text-secondary">Add, edit, and manage your products</p>
-        </Link>
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-lg font-semibold text-text-primary mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            href="/dashboard/store/products"
+            className="group bg-surface-raised rounded-xl border border-border-default p-6 hover:border-purple-500/50 hover:shadow-xl transition-all duration-200"
+          >
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Package className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="font-semibold text-text-primary mb-2 group-hover:text-purple-400 transition-colors">Manage Products</h3>
+            <p className="text-sm text-text-secondary mb-3">Add, edit, and manage your products</p>
+            <div className="flex items-center gap-1 text-sm text-purple-500 group-hover:gap-2 transition-all">
+              <span>View Products</span>
+              <ArrowRight className="h-4 w-4" />
+            </div>
+          </Link>
 
-        <Link
-          href="/dashboard/store/orders"
-          className="bg-surface-raised rounded-lg border border-border-default p-6 hover:border-blue-500/50 transition-colors"
-        >
-          <ShoppingCart className="h-8 w-8 text-blue-500 mb-3" />
-          <h3 className="font-semibold text-text-primary mb-1">View Orders</h3>
-          <p className="text-sm text-text-secondary">Track and manage customer orders</p>
-        </Link>
+          <Link
+            href="/dashboard/store/orders"
+            className="group bg-surface-raised rounded-xl border border-border-default p-6 hover:border-blue-500/50 hover:shadow-xl transition-all duration-200"
+          >
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <ShoppingCart className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="font-semibold text-text-primary mb-2 group-hover:text-blue-400 transition-colors">View Orders</h3>
+            <p className="text-sm text-text-secondary mb-3">Track and manage customer orders</p>
+            <div className="flex items-center gap-1 text-sm text-blue-500 group-hover:gap-2 transition-all">
+              <span>View Orders</span>
+              <ArrowRight className="h-4 w-4" />
+            </div>
+          </Link>
 
-        <Link
-          href="/dashboard/store/analytics"
-          className="bg-surface-raised rounded-lg border border-border-default p-6 hover:border-green-500/50 transition-colors"
-        >
-          <DollarSign className="h-8 w-8 text-green-500 mb-3" />
-          <h3 className="font-semibold text-text-primary mb-1">Analytics</h3>
-          <p className="text-sm text-text-secondary">View sales and performance metrics</p>
-        </Link>
+          <Link
+            href="/dashboard/store/analytics"
+            className="group bg-surface-raised rounded-xl border border-border-default p-6 hover:border-green-500/50 hover:shadow-xl transition-all duration-200"
+          >
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="font-semibold text-text-primary mb-2 group-hover:text-green-400 transition-colors">Analytics</h3>
+            <p className="text-sm text-text-secondary mb-3">View sales and performance metrics</p>
+            <div className="flex items-center gap-1 text-sm text-green-500 group-hover:gap-2 transition-all">
+              <span>View Analytics</span>
+              <ArrowRight className="h-4 w-4" />
+            </div>
+          </Link>
 
-        <Link
-          href="/dashboard/store/settings"
-          className="bg-surface-raised rounded-lg border border-border-default p-6 hover:border-indigo-500/50 transition-colors"
-        >
-          <Store className="h-8 w-8 text-indigo-500 mb-3" />
-          <h3 className="font-semibold text-text-primary mb-1">Store Settings</h3>
-          <p className="text-sm text-text-secondary">Configure your store settings</p>
-        </Link>
+          <Link
+            href="/dashboard/store/settings"
+            className="group bg-surface-raised rounded-xl border border-border-default p-6 hover:border-indigo-500/50 hover:shadow-xl transition-all duration-200"
+          >
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-700 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <DollarSign className="h-6 w-6 text-white" />
+            </div>
+            <h3 className="font-semibold text-text-primary mb-2 group-hover:text-indigo-400 transition-colors">Settings</h3>
+            <p className="text-sm text-text-secondary mb-3">Configure your store settings</p>
+            <div className="flex items-center gap-1 text-sm text-indigo-500 group-hover:gap-2 transition-all">
+              <span>Open Settings</span>
+              <ArrowRight className="h-4 w-4" />
+            </div>
+          </Link>
+        </div>
       </div>
     </div>
   );
