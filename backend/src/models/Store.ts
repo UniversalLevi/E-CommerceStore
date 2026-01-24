@@ -70,7 +70,9 @@ const storeSchema = new Schema<IStore>(
     },
     settings: {
       type: Schema.Types.Mixed,
-      default: {},
+      default: {
+        testMode: false, // Enable test mode to skip real payments
+      },
     },
   },
   {

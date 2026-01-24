@@ -175,7 +175,7 @@ export default function StoreOverviewPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           href="/dashboard/store/products"
           className="bg-surface-raised rounded-lg border border-border-default p-6 hover:border-purple-500/50 transition-colors"
@@ -192,6 +192,15 @@ export default function StoreOverviewPage() {
           <ShoppingCart className="h-8 w-8 text-blue-500 mb-3" />
           <h3 className="font-semibold text-text-primary mb-1">View Orders</h3>
           <p className="text-sm text-text-secondary">Track and manage customer orders</p>
+        </Link>
+
+        <Link
+          href="/dashboard/store/analytics"
+          className="bg-surface-raised rounded-lg border border-border-default p-6 hover:border-green-500/50 transition-colors"
+        >
+          <DollarSign className="h-8 w-8 text-green-500 mb-3" />
+          <h3 className="font-semibold text-text-primary mb-1">Analytics</h3>
+          <p className="text-sm text-text-secondary">View sales and performance metrics</p>
         </Link>
 
         <Link

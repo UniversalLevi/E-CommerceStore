@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
-import { Settings, Loader2, ExternalLink, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { Settings, Loader2, ExternalLink, AlertCircle, CheckCircle2, XCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 
 export default function StoreSettingsPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -14,6 +14,7 @@ export default function StoreSettingsPage() {
   const [razorpayStatus, setRazorpayStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [updatingTestMode, setUpdatingTestMode] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -58,6 +59,28 @@ export default function StoreSettingsPage() {
       notify.error(error.response?.data?.message || 'Failed to initiate Razorpay connection');
     } finally {
       setConnecting(false);
+    }
+  };
+
+  const handleToggleTestMode = async () => {
+    try {
+      setUpdatingTestMode(true);
+      const newTestMode = !store.settings?.testMode;
+      const response = await api.updateStore(store._id, {
+        settings: {
+          ...store.settings,
+          testMode: newTestMode,
+          emailNotifications: store.settings?.emailNotifications || {},
+        },
+      });
+      if (response.success) {
+        setStore(response.data);
+        notify.success(`Test mode ${newTestMode ? 'enabled' : 'disabled'}`);
+      }
+    } catch (error: any) {
+      notify.error(error.response?.data?.message || 'Failed to update test mode');
+    } finally {
+      setUpdatingTestMode(false);
     }
   };
 
@@ -168,45 +191,264 @@ export default function StoreSettingsPage() {
         </div>
 
         <div className="border-t border-border-default pt-6">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">Payment Account</h2>
+          <h2 className="text-lg font-semibold text-text-primary mb-4">Payment Settings</h2>
+          <div className="space-y-6">
+            {/* Test Mode Toggle */}
+            <div className="bg-surface-default rounded-lg border border-border-default p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-sm font-semibold text-text-primary">Test Mode</h3>
+                    {store.settings?.testMode && (
+                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded">TESTING</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-text-secondary">
+                    Enable test mode to test the order flow without connecting a real Razorpay account. 
+                    Payments will be automatically approved in test mode.
+                  </p>
+                </div>
+                <button
+                  onClick={handleToggleTestMode}
+                  disabled={updatingTestMode}
+                  className={`ml-4 relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                    store.settings?.testMode ? 'bg-purple-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      store.settings?.testMode ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Razorpay Account */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-medium text-text-primary mb-1">Razorpay Account</p>
+                  <p className="text-sm text-text-secondary">
+                    Connect your Razorpay account to accept real payments
+                  </p>
+                </div>
+                {getStatusBadge(razorpayStatus?.accountStatus || 'not_connected')}
+              </div>
+
+              {razorpayStatus?.accountStatus !== 'active' && (
+                <button
+                  onClick={handleConnectRazorpay}
+                  disabled={connecting || store.settings?.testMode}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {connecting ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-5 w-5" />
+                      Connect Razorpay Account
+                    </>
+                  )}
+                </button>
+              )}
+
+              {razorpayStatus?.accountStatus === 'active' && (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                  <p className="text-sm text-green-400">
+                    Your Razorpay account is connected. Payments will go directly to your account.
+                  </p>
+                </div>
+              )}
+
+              {store.settings?.testMode && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                  <p className="text-sm text-yellow-400">
+                    Test mode is enabled. Real payments are disabled. Disable test mode to accept real payments.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-border-default pt-6">
+          <h2 className="text-lg font-semibold text-text-primary mb-4">Email Notifications</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-text-primary mb-1">Razorpay Account</p>
-                <p className="text-sm text-text-secondary">
-                  Connect your Razorpay account to accept payments directly
-                </p>
+                <p className="text-sm font-medium text-text-primary mb-1">Order Confirmation (Customer)</p>
+                <p className="text-sm text-text-secondary">Send confirmation emails to customers when they place an order</p>
               </div>
-              {getStatusBadge(razorpayStatus?.accountStatus || 'not_connected')}
+              <button
+                onClick={async () => {
+                  const current = store.settings?.emailNotifications?.orderConfirmation !== false;
+                  const newValue = !current;
+                  try {
+                    const response = await api.updateStore(store._id, {
+                      settings: {
+                        ...store.settings,
+                        emailNotifications: {
+                          ...(store.settings?.emailNotifications || {}),
+                          orderConfirmation: newValue,
+                        },
+                      },
+                    });
+                    if (response.success) {
+                      setStore(response.data);
+                      notify.success(`Order confirmation emails ${newValue ? 'enabled' : 'disabled'}`);
+                    }
+                  } catch (error: any) {
+                    notify.error('Failed to update email settings');
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  store.settings?.emailNotifications?.orderConfirmation !== false
+                    ? 'bg-purple-600'
+                    : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    store.settings?.emailNotifications?.orderConfirmation !== false
+                      ? 'translate-x-6'
+                      : 'translate-x-1'
+                  }`}
+                />
+              </button>
             </div>
 
-            {razorpayStatus?.accountStatus !== 'active' && (
-              <button
-                onClick={handleConnectRazorpay}
-                disabled={connecting}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {connecting ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="h-5 w-5" />
-                    Connect Razorpay Account
-                  </>
-                )}
-              </button>
-            )}
-
-            {razorpayStatus?.accountStatus === 'active' && (
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                <p className="text-sm text-green-400">
-                  Your Razorpay account is connected. Payments will go directly to your account.
-                </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-primary mb-1">New Order Notification (Owner)</p>
+                <p className="text-sm text-text-secondary">Receive email notifications when a new order is placed</p>
               </div>
-            )}
+              <button
+                onClick={async () => {
+                  const current = store.settings?.emailNotifications?.newOrderNotification !== false;
+                  const newValue = !current;
+                  try {
+                    const response = await api.updateStore(store._id, {
+                      settings: {
+                        ...store.settings,
+                        emailNotifications: {
+                          ...(store.settings?.emailNotifications || {}),
+                          newOrderNotification: newValue,
+                        },
+                      },
+                    });
+                    if (response.success) {
+                      setStore(response.data);
+                      notify.success(`New order notifications ${newValue ? 'enabled' : 'disabled'}`);
+                    }
+                  } catch (error: any) {
+                    notify.error('Failed to update email settings');
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  store.settings?.emailNotifications?.newOrderNotification !== false
+                    ? 'bg-purple-600'
+                    : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    store.settings?.emailNotifications?.newOrderNotification !== false
+                      ? 'translate-x-6'
+                      : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-primary mb-1">Payment Status Updates</p>
+                <p className="text-sm text-text-secondary">Send emails to customers when payment status changes</p>
+              </div>
+              <button
+                onClick={async () => {
+                  const current = store.settings?.emailNotifications?.paymentStatus !== false;
+                  const newValue = !current;
+                  try {
+                    const response = await api.updateStore(store._id, {
+                      settings: {
+                        ...store.settings,
+                        emailNotifications: {
+                          ...(store.settings?.emailNotifications || {}),
+                          paymentStatus: newValue,
+                        },
+                      },
+                    });
+                    if (response.success) {
+                      setStore(response.data);
+                      notify.success(`Payment status emails ${newValue ? 'enabled' : 'disabled'}`);
+                    }
+                  } catch (error: any) {
+                    notify.error('Failed to update email settings');
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  store.settings?.emailNotifications?.paymentStatus !== false
+                    ? 'bg-purple-600'
+                    : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    store.settings?.emailNotifications?.paymentStatus !== false
+                      ? 'translate-x-6'
+                      : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-primary mb-1">Fulfillment Status Updates</p>
+                <p className="text-sm text-text-secondary">Send emails to customers when fulfillment status changes</p>
+              </div>
+              <button
+                onClick={async () => {
+                  const current = store.settings?.emailNotifications?.fulfillmentStatus !== false;
+                  const newValue = !current;
+                  try {
+                    const response = await api.updateStore(store._id, {
+                      settings: {
+                        ...store.settings,
+                        emailNotifications: {
+                          ...(store.settings?.emailNotifications || {}),
+                          fulfillmentStatus: newValue,
+                        },
+                      },
+                    });
+                    if (response.success) {
+                      setStore(response.data);
+                      notify.success(`Fulfillment status emails ${newValue ? 'enabled' : 'disabled'}`);
+                    }
+                  } catch (error: any) {
+                    notify.error('Failed to update email settings');
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  store.settings?.emailNotifications?.fulfillmentStatus !== false
+                    ? 'bg-purple-600'
+                    : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    store.settings?.emailNotifications?.fulfillmentStatus !== false
+                      ? 'translate-x-6'
+                      : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         </div>
       </div>

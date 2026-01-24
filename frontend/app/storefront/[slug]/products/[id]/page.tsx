@@ -55,7 +55,7 @@ export default function StorefrontProductPage() {
       variant: selectedVariant || undefined,
       quantity,
     };
-    localStorage.setItem('storefront_cart', JSON.stringify([cartItem]));
+    localStorage.setItem(`storefront_cart_${slug}`, JSON.stringify([cartItem]));
     router.push(`/storefront/${slug}/checkout`);
   };
 

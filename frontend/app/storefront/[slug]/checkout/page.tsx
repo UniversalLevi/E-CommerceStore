@@ -56,7 +56,7 @@ export default function CheckoutPage() {
   };
 
   const loadCart = () => {
-    const cartData = localStorage.getItem('storefront_cart');
+    const cartData = localStorage.getItem(`storefront_cart_${slug}`);
     if (cartData) {
       setCart(JSON.parse(cartData));
     }
@@ -69,11 +69,30 @@ export default function CheckoutPage() {
     try {
       setProcessing(true);
 
+      // Prepare cart items - ensure they match the expected schema
+      const orderItems = cart
+        .map((item) => {
+          const orderItem: any = {
+            productId: item.productId,
+            quantity: item.quantity || 1,
+          };
+          // Only include variant if it's a non-empty string
+          if (item.variant && item.variant.trim()) {
+            orderItem.variant = item.variant.trim();
+          }
+          return orderItem;
+        })
+        .filter((item) => item.productId); // Remove items without productId
+
+      if (orderItems.length === 0) {
+        throw new Error('No valid items in cart');
+      }
+
       // Create order
       const orderResponse = await api.createStorefrontOrder(slug, {
         customer: formData.customer,
         shippingAddress: formData.shippingAddress,
-        items: cart,
+        items: orderItems,
         shipping: formData.shipping,
       });
 
@@ -89,9 +108,28 @@ export default function CheckoutPage() {
         throw new Error('Failed to create payment order');
       }
 
-      const { razorpayOrderId, amount, currency, keyId } = paymentResponse.data;
+      const { razorpayOrderId, amount, currency, keyId, testMode } = paymentResponse.data;
 
-      // Open Razorpay checkout
+      // Test mode: Auto-approve payment
+      if (testMode) {
+        // Verify payment immediately (will be auto-approved in test mode)
+        const verifyResponse = await api.verifyPayment(slug, order._id, {
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: `test_payment_${Date.now()}`,
+          razorpay_signature: 'test_signature',
+        });
+
+        if (verifyResponse.success) {
+          localStorage.removeItem(`storefront_cart_${slug}`);
+          notify.success('Test payment successful! (Test Mode)');
+          router.push(`/storefront/${slug}/order/${order.orderId}`);
+        } else {
+          notify.error('Test payment verification failed');
+        }
+        return;
+      }
+
+      // Production mode: Open Razorpay checkout
       await openRazorpayCheckout(
         {
           key: keyId,
@@ -110,7 +148,7 @@ export default function CheckoutPage() {
           });
 
           if (verifyResponse.success) {
-            localStorage.removeItem('storefront_cart');
+            localStorage.removeItem(`storefront_cart_${slug}`);
             notify.success('Payment successful!');
             router.push(`/storefront/${slug}/order/${order.orderId}`);
           } else {

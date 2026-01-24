@@ -101,13 +101,22 @@ export default function StoreProductsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-text-primary">Products</h1>
-        <Link
-          href="/dashboard/store/products/create"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
-        >
-          <Plus className="h-5 w-5" />
-          Add Product
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-surface-raised border border-border-default text-text-primary rounded-lg hover:bg-surface-hover transition-all"
+          >
+            <Package className="h-5 w-5" />
+            Browse Catalog
+          </Link>
+          <Link
+            href="/dashboard/store/products/create"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+          >
+            <Plus className="h-5 w-5" />
+            Add Product
+          </Link>
+        </div>
       </div>
 
       <div className="flex gap-2">
@@ -147,14 +156,23 @@ export default function StoreProductsPage() {
         <div className="bg-surface-raised rounded-lg border border-border-default p-12 text-center">
           <Package className="h-12 w-12 text-text-secondary mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-text-primary mb-2">No products yet</h3>
-          <p className="text-text-secondary mb-4">Get started by adding your first product</p>
-          <Link
-            href="/dashboard/store/products/create"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
-          >
-            <Plus className="h-5 w-5" />
-            Add Product
-          </Link>
+          <p className="text-text-secondary mb-4">Get started by importing from the catalog or adding a new product</p>
+          <div className="flex items-center justify-center gap-4">
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-surface-raised border border-border-default text-text-primary rounded-lg hover:bg-surface-hover transition-all"
+            >
+              <Package className="h-5 w-5" />
+              Browse Catalog
+            </Link>
+            <Link
+              href="/dashboard/store/products/create"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+            >
+              <Plus className="h-5 w-5" />
+              Add Product
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

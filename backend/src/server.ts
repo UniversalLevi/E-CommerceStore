@@ -68,6 +68,7 @@ import templateAdminRoutes from './routes/templateAdminRoutes';
 import whatsappRoutes from './routes/whatsappRoutes';
 import userSubscriptionRoutes from './routes/userSubscriptionRoutes';
 import storeDashboardRoutes from './routes/storeDashboardRoutes';
+import storeProductImportRoutes from './routes/storeProductImportRoutes';
 import storefrontRoutes from './routes/storefrontRoutes';
 import storeRazorpayWebhookRoutes from './routes/storeRazorpayWebhookRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
@@ -110,6 +111,8 @@ app.use('/api/admin/templates', templateAdminRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 // Store Dashboard routes
 app.use('/api/store-dashboard', storeDashboardRoutes);
+// Store Product Import routes
+app.use('/api/store-dashboard', storeProductImportRoutes);
 // Storefront routes (public)
 app.use('/api/storefront', storefrontRoutes);
 // Razorpay Connect webhook (must be before JSON parser for raw body)

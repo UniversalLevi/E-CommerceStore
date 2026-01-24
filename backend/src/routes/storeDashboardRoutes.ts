@@ -14,6 +14,7 @@ router.get('/stores', authenticateToken, storeController.getMyStore);
 router.get('/stores/:id', authenticateToken, requireStoreOwner, storeController.getStore);
 router.put('/stores/:id', authenticateToken, requireStoreOwner, storeController.updateStore);
 router.get('/stores/:id/overview', authenticateToken, requireStoreOwner, storeController.getStoreOverview);
+router.get('/stores/:id/analytics', authenticateToken, requireStoreOwner, storeController.getStoreAnalytics);
 router.post('/stores/:id/disable', authenticateToken, requireStoreOwner, storeController.disableStore);
 
 // Product routes
@@ -25,8 +26,13 @@ router.delete('/stores/:id/products/:productId', authenticateToken, requireStore
 
 // Order routes
 router.get('/stores/:id/orders', authenticateToken, requireStoreOwner, orderController.listOrders);
+router.get('/stores/:id/orders/search', authenticateToken, requireStoreOwner, orderController.searchOrders);
+router.get('/stores/:id/orders/export', authenticateToken, requireStoreOwner, orderController.exportOrders);
 router.get('/stores/:id/orders/:orderId', authenticateToken, requireStoreOwner, orderController.getOrder);
 router.put('/stores/:id/orders/:orderId/fulfillment', authenticateToken, requireStoreOwner, orderController.updateFulfillment);
+router.put('/stores/:id/orders/bulk-fulfillment', authenticateToken, requireStoreOwner, orderController.bulkUpdateFulfillment);
+router.post('/stores/:id/orders/:orderId/notes', authenticateToken, requireStoreOwner, orderController.addOrderNote);
+router.get('/stores/:id/orders/:orderId/notes', authenticateToken, requireStoreOwner, orderController.getOrderNotes);
 
 // Razorpay routes
 router.post('/stores/:id/razorpay/connect', authenticateToken, requireStoreOwner, razorpayController.initiateRazorpayConnect);

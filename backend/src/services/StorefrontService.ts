@@ -48,6 +48,7 @@ class StorefrontService {
         name: store.name,
         slug: store.slug,
         currency: store.currency,
+        settings: store.settings || {},
       };
     } catch (error: any) {
       throw new Error(error.message || 'Store not found');
@@ -57,22 +58,77 @@ class StorefrontService {
   /**
    * Get active products for storefront
    */
-  async getActiveProducts(storeId: string, page: number = 1, limit: number = 20) {
+  async getActiveProducts(
+    storeId: string,
+    page: number = 1,
+    limit: number = 20,
+    options?: {
+      search?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      variantDimension?: string;
+      sort?: 'price_asc' | 'price_desc' | 'newest' | 'oldest';
+    }
+  ) {
     const skip = (page - 1) * limit;
 
-    const products = await StoreProduct.find({
+    // Build query
+    const query: any = {
       storeId,
       status: 'active',
-    })
-      .sort({ createdAt: -1 })
+    };
+
+    // Search filter
+    if (options?.search && options.search.trim()) {
+      const searchRegex = { $regex: options.search.trim(), $options: 'i' };
+      query.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+      ];
+    }
+
+    // Price filters
+    if (options?.minPrice !== undefined || options?.maxPrice !== undefined) {
+      query.basePrice = {};
+      if (options.minPrice !== undefined) {
+        query.basePrice.$gte = options.minPrice;
+      }
+      if (options.maxPrice !== undefined) {
+        query.basePrice.$lte = options.maxPrice;
+      }
+    }
+
+    // Variant dimension filter
+    if (options?.variantDimension) {
+      query.variantDimension = options.variantDimension;
+    }
+
+    // Sort options
+    let sortOption: any = { createdAt: -1 }; // Default: newest first
+    if (options?.sort) {
+      switch (options.sort) {
+        case 'price_asc':
+          sortOption = { basePrice: 1 };
+          break;
+        case 'price_desc':
+          sortOption = { basePrice: -1 };
+          break;
+        case 'newest':
+          sortOption = { createdAt: -1 };
+          break;
+        case 'oldest':
+          sortOption = { createdAt: 1 };
+          break;
+      }
+    }
+
+    const products = await StoreProduct.find(query)
+      .sort(sortOption)
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const total = await StoreProduct.countDocuments({
-      storeId,
-      status: 'active',
-    });
+    const total = await StoreProduct.countDocuments(query);
 
     return {
       products,

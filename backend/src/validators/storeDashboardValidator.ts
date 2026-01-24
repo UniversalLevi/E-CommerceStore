@@ -18,7 +18,15 @@ export const createStoreSchema = Joi.object({
 
 export const updateStoreSchema = Joi.object({
   name: Joi.string().trim().min(3).max(100).optional(),
-  settings: Joi.object().optional(),
+  settings: Joi.object({
+    testMode: Joi.boolean().optional(),
+    emailNotifications: Joi.object({
+      orderConfirmation: Joi.boolean().optional(),
+      newOrderNotification: Joi.boolean().optional(),
+      paymentStatus: Joi.boolean().optional(),
+      fulfillmentStatus: Joi.boolean().optional(),
+    }).optional(),
+  }).optional(),
 });
 
 // Product validation
@@ -69,13 +77,26 @@ export const createOrderSchema = Joi.object({
   items: Joi.array()
     .items(
       Joi.object({
-        productId: Joi.string().required(),
-        variant: Joi.string().optional().allow(''),
-        quantity: Joi.number().required().min(1),
+        productId: Joi.string().required().messages({
+          'string.empty': 'Product ID is required',
+          'any.required': 'Product ID is required',
+        }),
+        variant: Joi.string().optional().allow('', null).messages({
+          'string.base': 'Variant must be a string',
+        }),
+        quantity: Joi.number().required().min(1).messages({
+          'number.base': 'Quantity must be a number',
+          'number.min': 'Quantity must be at least 1',
+          'any.required': 'Quantity is required',
+        }),
       })
     )
     .min(1)
-    .required(),
+    .required()
+    .messages({
+      'array.min': 'At least one item is required',
+      'any.required': 'Items are required',
+    }),
   shipping: Joi.number().min(0).default(0),
 });
 
@@ -83,6 +104,17 @@ export const updateFulfillmentSchema = Joi.object({
   fulfillmentStatus: Joi.string()
     .valid('pending', 'fulfilled', 'cancelled', 'shipped')
     .required(),
+});
+
+export const bulkFulfillmentSchema = Joi.object({
+  orderIds: Joi.array().items(Joi.string().required()).min(1).required(),
+  fulfillmentStatus: Joi.string()
+    .valid('pending', 'fulfilled', 'cancelled', 'shipped')
+    .required(),
+});
+
+export const orderNoteSchema = Joi.object({
+  text: Joi.string().required().trim().min(1).max(1000),
 });
 
 // Slug validation helper

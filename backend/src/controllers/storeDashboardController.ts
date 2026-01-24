@@ -187,6 +187,171 @@ export const getStoreOverview = async (req: AuthRequest, res: Response, next: Ne
 };
 
 /**
+ * Get store analytics
+ * GET /api/store-dashboard/stores/:id/analytics?period=7d|30d|90d|all
+ */
+export const getStoreAnalytics = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const store = (req as any).store;
+    const storeId = store._id;
+    const { period = '30d' } = req.query;
+
+    // Calculate date range based on period
+    let startDate: Date | null = null;
+    const endDate = new Date();
+
+    switch (period) {
+      case '7d':
+        startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'all':
+        startDate = null;
+        break;
+      default:
+        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const dateFilter: any = startDate ? { createdAt: { $gte: startDate, $lte: endDate } } : {};
+
+    // Revenue over time (daily breakdown)
+    const revenueOverTime = await StoreOrder.aggregate([
+      { $match: { storeId, paymentStatus: 'paid', ...dateFilter } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          revenue: { $sum: '$total' },
+          orders: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+      {
+        $project: {
+          date: '$_id',
+          revenue: 1,
+          orders: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+    // Order status breakdown
+    const orderStatusBreakdown = await StoreOrder.aggregate([
+      { $match: { storeId, ...dateFilter } },
+      {
+        $group: {
+          _id: '$paymentStatus',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Fulfillment status breakdown
+    const fulfillmentStatusBreakdown = await StoreOrder.aggregate([
+      { $match: { storeId, ...dateFilter } },
+      {
+        $group: {
+          _id: '$fulfillmentStatus',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Top products by revenue
+    const topProductsByRevenue = await StoreOrder.aggregate([
+      { $match: { storeId, paymentStatus: 'paid', ...dateFilter } },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.productId',
+          title: { $first: '$items.title' },
+          revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+          quantity: { $sum: '$items.quantity' },
+        },
+      },
+      { $sort: { revenue: -1 } },
+      { $limit: 10 },
+      {
+        $project: {
+          productId: '$_id',
+          title: 1,
+          revenue: 1,
+          quantity: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+    // Customer metrics
+    const uniqueCustomers = await StoreOrder.distinct('customer.email', {
+      storeId,
+      ...dateFilter,
+    });
+    const repeatCustomers = await StoreOrder.aggregate([
+      { $match: { storeId, ...dateFilter } },
+      {
+        $group: {
+          _id: '$customer.email',
+          orderCount: { $sum: 1 },
+        },
+      },
+      { $match: { orderCount: { $gt: 1 } } },
+      { $count: 'count' },
+    ]);
+
+    // Calculate totals
+    const totalRevenueResult = await StoreOrder.aggregate([
+      { $match: { storeId, paymentStatus: 'paid', ...dateFilter } },
+      { $group: { _id: null, total: { $sum: '$total' } } },
+    ]);
+    const totalRevenue = totalRevenueResult.length > 0 ? totalRevenueResult[0].total : 0;
+
+    const totalOrders = await StoreOrder.countDocuments({ storeId, ...dateFilter });
+    const paidOrders = await StoreOrder.countDocuments({
+      storeId,
+      paymentStatus: 'paid',
+      ...dateFilter,
+    });
+
+    const averageOrderValue = paidOrders > 0 ? totalRevenue / paidOrders : 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        period,
+        revenueOverTime,
+        orderStatusBreakdown: orderStatusBreakdown.map((s) => ({
+          status: s._id,
+          count: s.count,
+        })),
+        fulfillmentStatusBreakdown: fulfillmentStatusBreakdown.map((s) => ({
+          status: s._id,
+          count: s.count,
+        })),
+        topProductsByRevenue,
+        customerMetrics: {
+          uniqueCustomers: uniqueCustomers.length,
+          repeatCustomers: repeatCustomers.length > 0 ? repeatCustomers[0].count : 0,
+        },
+        summary: {
+          totalRevenue,
+          totalOrders,
+          paidOrders,
+          averageOrderValue,
+        },
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
  * Disable store (admin or owner)
  * POST /api/store-dashboard/stores/:id/disable
  */

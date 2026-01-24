@@ -4,11 +4,17 @@ import { Store } from '../models/Store';
 import { StoreProduct } from '../models/StoreProduct';
 import { StoreOrder } from '../models/StoreOrder';
 import { RazorpayAccount } from '../models/RazorpayAccount';
+import { User } from '../models/User';
 import { storefrontService } from '../services/StorefrontService';
 import { razorpayConnectService } from '../services/RazorpayConnectService';
 import { razorpayService } from '../services/RazorpayService';
 import { createError } from '../middleware/errorHandler';
 import { createOrderSchema } from '../validators/storeDashboardValidator';
+import {
+  sendOrderConfirmationEmail,
+  sendNewOrderNotificationEmail,
+  sendPaymentStatusEmail,
+} from '../services/StoreEmailService';
 
 /**
  * Get store public info
@@ -41,6 +47,7 @@ export const listStorefrontProducts = async (
     const { slug } = req.params;
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 20;
+    const { search, minPrice, maxPrice, variantDimension, sort } = req.query;
 
     // Get store (payment connection not required for viewing products)
     const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'active' });
@@ -48,7 +55,25 @@ export const listStorefrontProducts = async (
       throw createError('Store not found or not active', 404);
     }
 
-    const result = await storefrontService.getActiveProducts((store._id as any).toString(), page, limit);
+    // Parse price filters (convert from currency units to paise if needed)
+    let minPricePaise: number | undefined;
+    let maxPricePaise: number | undefined;
+    if (minPrice) {
+      const min = parseFloat(minPrice as string);
+      minPricePaise = min > 100 ? min : Math.round(min * 100); // Assume if > 100, already in paise
+    }
+    if (maxPrice) {
+      const max = parseFloat(maxPrice as string);
+      maxPricePaise = max > 100 ? max : Math.round(max * 100); // Assume if > 100, already in paise
+    }
+
+    const result = await storefrontService.getActiveProducts((store._id as any).toString(), page, limit, {
+      search: search as string,
+      minPrice: minPricePaise,
+      maxPrice: maxPricePaise,
+      variantDimension: variantDimension as string,
+      sort: sort as 'price_asc' | 'price_desc' | 'newest' | 'oldest',
+    });
 
     res.status(200).json({
       success: true,
@@ -108,9 +133,13 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
     }
 
     // Validate order data
-    const { error, value } = createOrderSchema.validate(req.body);
+    const { error, value } = createOrderSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
     if (error) {
-      throw createError(error.details[0].message, 400);
+      const errorMessage = error.details.map((detail) => detail.message).join(', ');
+      throw createError(`Validation error: ${errorMessage}`, 400);
     }
 
     // Fetch products and calculate totals
@@ -164,7 +193,12 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       });
     }
 
-    const shipping = value.shipping || 0;
+    // Convert shipping to paise if needed (assume it's already in paise, but handle if it's in currency units)
+    let shipping = value.shipping || 0;
+    // If shipping is less than 100, assume it's in currency units and convert to paise
+    if (shipping > 0 && shipping < 100) {
+      shipping = Math.round(shipping * 100);
+    }
     const total = subtotal + shipping;
 
     // Create order (orderId will be auto-generated)
@@ -181,7 +215,18 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       fulfillmentStatus: 'pending',
     });
 
-    await order.save();
+    try {
+      await order.save();
+    } catch (saveError: any) {
+      // Handle unique constraint violations (orderId collision)
+      if (saveError.code === 11000) {
+        // Retry once with a new orderId - delete the property to let it regenerate
+        delete (order as any).orderId;
+        await order.save();
+      } else {
+        throw saveError;
+      }
+    }
 
     // Update inventory if tracking is enabled
     for (const item of value.items) {
@@ -195,11 +240,47 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       }
     }
 
+    // Send emails (non-blocking)
+    try {
+      // Check email notification preferences
+      const emailSettings = store.settings?.emailNotifications || {};
+      const sendCustomerEmails = emailSettings.orderConfirmation !== false; // Default to true
+      const sendOwnerEmails = emailSettings.newOrderNotification !== false; // Default to true
+
+      if (sendCustomerEmails) {
+        // Send order confirmation to customer
+        sendOrderConfirmationEmail(order, store.name).catch((err) => {
+          console.error('Failed to send order confirmation email:', err);
+        });
+      }
+
+      if (sendOwnerEmails) {
+        // Send new order notification to store owner
+        const owner = await User.findById(store.owner);
+        if (owner && owner.email) {
+          sendNewOrderNotificationEmail(order, store.name, owner.email).catch((err) => {
+            console.error('Failed to send new order notification email:', err);
+          });
+        }
+      }
+    } catch (emailError) {
+      // Don't fail the request if email fails
+      console.error('Error sending order emails:', emailError);
+    }
+
     res.status(201).json({
       success: true,
       data: order,
     });
   } catch (error: any) {
+    console.error('Error creating storefront order:', error);
+    // Log more details for debugging
+    if (error.message) {
+      console.error('Error message:', error.message);
+    }
+    if (error.stack) {
+      console.error('Error stack:', error.stack);
+    }
     next(error);
   }
 };
@@ -234,10 +315,31 @@ export const createPaymentOrder = async (req: Request, res: Response, next: Next
       throw createError('Order payment already processed', 400);
     }
 
-    // Get Razorpay account (optional - only required for payment processing)
+    // Check if test mode is enabled
+    const testMode = store.settings?.testMode === true;
+
+    if (testMode) {
+      // Test mode: Skip Razorpay, return test payment data
+      order.razorpayOrderId = `test_order_${order.orderId}`;
+      await order.save();
+
+      res.status(200).json({
+        success: true,
+        data: {
+          razorpayOrderId: order.razorpayOrderId,
+          amount: order.total,
+          currency: order.currency,
+          keyId: 'test_key', // Test key for test mode
+          testMode: true,
+        },
+      });
+      return;
+    }
+
+    // Production mode: Require Razorpay account
     const razorpayAccount = await RazorpayAccount.findOne({ storeId: store._id });
     if (!razorpayAccount || razorpayAccount.status !== 'active') {
-      throw createError('Payment account is not connected. Please connect your Razorpay account in store settings to accept payments.', 400);
+      throw createError('Payment account is not connected. Please connect your Razorpay account in store settings to accept payments, or enable test mode for testing.', 400);
     }
 
     // Create Razorpay order
@@ -260,6 +362,7 @@ export const createPaymentOrder = async (req: Request, res: Response, next: Next
         amount: order.total,
         currency: order.currency,
         keyId: razorpayService.getKeyId(),
+        testMode: false,
       },
     });
   } catch (error: any) {
@@ -298,7 +401,43 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
       throw createError('Order not found', 404);
     }
 
-    // Verify signature
+    // Check if test mode is enabled
+    const testMode = store.settings?.testMode === true;
+
+    if (testMode) {
+      // Test mode: Auto-approve payment
+      if (order.razorpayOrderId && order.razorpayOrderId.startsWith('test_order_')) {
+        order.paymentStatus = 'paid';
+        order.razorpayPaymentId = `test_payment_${razorpay_payment_id || Date.now()}`;
+        await order.save();
+
+        // Send payment confirmation email in test mode too (non-blocking)
+        try {
+          const emailSettings = store.settings?.emailNotifications || {};
+          const sendPaymentEmails = emailSettings.paymentStatus !== false; // Default to true
+
+          if (sendPaymentEmails) {
+            sendPaymentStatusEmail(order, store.name, 'paid').catch((err) => {
+              console.error('Failed to send payment confirmation email:', err);
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending payment email:', emailError);
+        }
+
+        res.status(200).json({
+          success: true,
+          data: {
+            orderId: order.orderId,
+            paymentStatus: 'paid',
+            testMode: true,
+          },
+        });
+        return;
+      }
+    }
+
+    // Production mode: Verify signature
     const isValid = razorpayService.verifyPaymentSignature(
       razorpay_order_id,
       razorpay_payment_id,
@@ -319,11 +458,29 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
     order.razorpayPaymentId = razorpay_payment_id;
     await order.save();
 
+    // Send payment confirmation email (non-blocking)
+    try {
+      const store = await Store.findById(order.storeId);
+      if (store) {
+        const emailSettings = store.settings?.emailNotifications || {};
+        const sendPaymentEmails = emailSettings.paymentStatus !== false; // Default to true
+
+        if (sendPaymentEmails) {
+          sendPaymentStatusEmail(order, store.name, 'paid').catch((err) => {
+            console.error('Failed to send payment confirmation email:', err);
+          });
+        }
+      }
+    } catch (emailError) {
+      console.error('Error sending payment email:', emailError);
+    }
+
     res.status(200).json({
       success: true,
       data: {
         orderId: order.orderId,
         paymentStatus: 'paid',
+        testMode: false,
       },
     });
   } catch (error: any) {

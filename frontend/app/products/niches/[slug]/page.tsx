@@ -10,9 +10,11 @@ import Pagination from '@/components/Pagination';
 import SortDropdown from '@/components/SortDropdown';
 import FindWinningProductModal from '@/components/FindWinningProductModal';
 import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
+import ImportProductModal from '@/components/store/ImportProductModal';
 import IconBadge from '@/components/IconBadge';
 import { useAuth } from '@/contexts/AuthContext';
-import { Layers, PenLine, Target } from 'lucide-react';
+import { notify } from '@/lib/toast';
+import { Layers, PenLine, Target, Store } from 'lucide-react';
 
 export default function NicheProductsPage() {
   const params = useParams();
@@ -33,8 +35,11 @@ export default function NicheProductsPage() {
   const { isAuthenticated } = useAuth();
   const [showFindProduct, setShowFindProduct] = useState(false);
   const [showWriteDescription, setShowWriteDescription] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [selectedProductTitle, setSelectedProductTitle] = useState<string>('');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [myStore, setMyStore] = useState<any>(null);
 
   const page = parseInt(searchParams.get('page') || '1', 10);
   const sort = (searchParams.get('sort') as any) || niche?.defaultSortMode || 'newest';
@@ -48,6 +53,12 @@ export default function NicheProductsPage() {
       fetchProducts();
     }
   }, [niche, page, sort]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchMyStore();
+    }
+  }, [isAuthenticated]);
 
   const fetchNiche = async () => {
     try {
@@ -73,6 +84,25 @@ export default function NicheProductsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchMyStore = async () => {
+    try {
+      const response = await api.getMyStore();
+      if (response.success && response.data) {
+        setMyStore(response.data);
+      }
+    } catch (err: any) {
+      // Store might not exist, that's okay
+      console.error('Error fetching my store:', err);
+    }
+  };
+
+  const handleImportClick = (product: Product, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedProduct(product);
+    setShowImportModal(true);
   };
 
   if (error && !niche) {
@@ -293,6 +323,17 @@ export default function NicheProductsPage() {
                       </div>
                     </Link>
                     {isAuthenticated && (
+                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        {myStore && (
+                          <button
+                            onClick={(e) => handleImportClick(product, e)}
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-lg flex items-center gap-2"
+                            title="Import to Store Dashboard"
+                          >
+                            <Store className="h-4 w-4" />
+                            Import
+                          </button>
+                        )}
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -301,12 +342,13 @@ export default function NicheProductsPage() {
                           setSelectedProductTitle(product.title);
                           setShowWriteDescription(true);
                         }}
-                        className="absolute top-2 right-2 bg-primary-500 hover:bg-primary-600 text-black px-3 py-1.5 rounded-lg text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10 flex items-center gap-2"
+                          className="bg-primary-500 hover:bg-primary-600 text-black px-3 py-1.5 rounded-lg text-sm font-semibold shadow-lg flex items-center gap-2"
                         title="Write Product Description (AI)"
                       >
                         <IconBadge icon={PenLine} label="AI assistant" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
                         Write
                       </button>
+                      </div>
                     )}
                   </div>
                 );
@@ -351,6 +393,29 @@ export default function NicheProductsPage() {
         productId={selectedProductId}
         productTitle={selectedProductTitle}
       />
+
+      {showImportModal && selectedProduct && myStore && (
+        <ImportProductModal
+          product={{
+            _id: selectedProduct._id,
+            title: selectedProduct.title,
+            description: selectedProduct.description,
+            price: selectedProduct.price,
+            images: selectedProduct.images,
+            niche: typeof selectedProduct.niche === 'object' ? selectedProduct.niche : undefined,
+          }}
+          store={myStore}
+          onClose={() => {
+            setShowImportModal(false);
+            setSelectedProduct(null);
+          }}
+          onSuccess={() => {
+            setShowImportModal(false);
+            setSelectedProduct(null);
+            notify.success('Product imported to your store successfully!');
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -25,6 +25,12 @@ export interface ICustomer {
   phone: string;
 }
 
+export interface IOrderNote {
+  text: string;
+  addedBy: mongoose.Types.ObjectId;
+  addedAt: Date;
+}
+
 export interface IStoreOrder extends Document {
   storeId: mongoose.Types.ObjectId;
   orderId: string; // Unique, auto-generated (e.g., 'ORD-20250101-001')
@@ -39,6 +45,7 @@ export interface IStoreOrder extends Document {
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   fulfillmentStatus: 'pending' | 'fulfilled' | 'cancelled' | 'shipped';
+  notes: IOrderNote[];
   metadata: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
@@ -139,6 +146,26 @@ const customerSchema = new Schema<ICustomer>(
   { _id: false }
 );
 
+const orderNoteSchema = new Schema<IOrderNote>(
+  {
+    text: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    addedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    addedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false }
+);
+
 const storeOrderSchema = new Schema<IStoreOrder>(
   {
     storeId: {
@@ -149,9 +176,10 @@ const storeOrderSchema = new Schema<IStoreOrder>(
     },
     orderId: {
       type: String,
-      required: true,
+      required: false, // Will be auto-generated in pre-save hook
       unique: true,
       index: true,
+      sparse: true, // Allow multiple null values for unique index
     },
     customer: {
       type: customerSchema,
@@ -211,6 +239,10 @@ const storeOrderSchema = new Schema<IStoreOrder>(
       default: 'pending',
       index: true,
     },
+    notes: {
+      type: [orderNoteSchema],
+      default: [],
+    },
     metadata: {
       type: Schema.Types.Mixed,
       default: {},
@@ -229,23 +261,42 @@ storeOrderSchema.index({ fulfillmentStatus: 1 });
 
 // Pre-save hook: Generate order ID if not provided
 storeOrderSchema.pre('save', async function (next) {
-  if (!this.orderId) {
-    const date = new Date();
-    const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
-    
-    // Find the last order for today to generate sequential number
-    const lastOrder = await mongoose.model('StoreOrder').findOne({
-      orderId: new RegExp(`^ORD-${dateStr}-`),
-    }).sort({ orderId: -1 });
-    
-    let seq = 1;
-    if (lastOrder) {
-      const lastSeq = parseInt(lastOrder.orderId.split('-')[2] || '0', 10);
-      seq = lastSeq + 1;
+  // Always generate orderId if it's missing or empty
+  if (!this.orderId || this.orderId.trim() === '') {
+    try {
+      const date = new Date();
+      const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
+      
+      // Find the last order for today to generate sequential number
+      const StoreOrderModel = mongoose.model('StoreOrder');
+      const lastOrder = await StoreOrderModel.findOne({
+        orderId: { $regex: `^ORD-${dateStr}-` },
+      }).sort({ orderId: -1 });
+      
+      let seq = 1;
+      if (lastOrder && lastOrder.orderId) {
+        const parts = lastOrder.orderId.split('-');
+        if (parts.length >= 3) {
+          const lastSeq = parseInt(parts[2] || '0', 10);
+          seq = lastSeq + 1;
+        }
+      }
+      
+      this.orderId = `ORD-${dateStr}-${seq.toString().padStart(3, '0')}`;
+    } catch (error: any) {
+      // Fallback to timestamp-based ID if generation fails
+      const timestamp = Date.now();
+      this.orderId = `ORD-${timestamp}`;
+      console.warn('Order ID generation failed, using timestamp fallback:', error);
     }
-    
-    this.orderId = `ORD-${dateStr}-${seq.toString().padStart(3, '0')}`;
   }
+  
+  // Ensure orderId is always set before saving
+  if (!this.orderId) {
+    const timestamp = Date.now();
+    this.orderId = `ORD-${timestamp}`;
+  }
+  
   next();
 });
 

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
-import { ArrowLeft, Loader2, Package, MapPin, User, CreditCard } from 'lucide-react';
+import { ArrowLeft, Loader2, Package, MapPin, User, CreditCard, MessageSquare, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 export default function OrderDetailPage() {
@@ -15,8 +15,11 @@ export default function OrderDetailPage() {
   const orderId = params.id as string;
   const [store, setStore] = useState<any>(null);
   const [order, setOrder] = useState<any>(null);
+  const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [newNote, setNewNote] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -35,9 +38,15 @@ export default function OrderDetailPage() {
       const storeResponse = await api.getMyStore();
       if (storeResponse.success && storeResponse.data) {
         setStore(storeResponse.data);
-        const orderResponse = await api.getStoreOrder(storeResponse.data._id, orderId);
+        const [orderResponse, notesResponse] = await Promise.all([
+          api.getStoreOrder(storeResponse.data._id, orderId),
+          api.getOrderNotes(storeResponse.data._id, orderId),
+        ]);
         if (orderResponse.success) {
           setOrder(orderResponse.data);
+        }
+        if (notesResponse.success) {
+          setNotes(notesResponse.data || []);
         }
       } else {
         router.push('/dashboard/store');
@@ -64,6 +73,27 @@ export default function OrderDetailPage() {
       notify.error(error.response?.data?.message || 'Failed to update fulfillment status');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim() || !store || !order) return;
+
+    try {
+      setAddingNote(true);
+      const response = await api.addOrderNote(store._id, order._id, { text: newNote.trim() });
+      if (response.success) {
+        notify.success('Note added');
+        setNewNote('');
+        const notesResponse = await api.getOrderNotes(store._id, order._id);
+        if (notesResponse.success) {
+          setNotes(notesResponse.data || []);
+        }
+      }
+    } catch (error: any) {
+      notify.error('Failed to add note');
+    } finally {
+      setAddingNote(false);
     }
   };
 
@@ -243,6 +273,51 @@ export default function OrderDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Notes Section */}
+        <div className="border-t border-border-default pt-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="h-5 w-5 text-purple-500" />
+            <h3 className="font-semibold text-text-primary">Order Notes</h3>
+          </div>
+          
+          <div className="space-y-4 mb-4">
+            {notes.map((note: any, index: number) => (
+              <div key={index} className="bg-surface-base rounded-lg p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="text-sm text-text-primary">{note.text}</p>
+                    <p className="text-xs text-text-secondary mt-1">
+                      {note.addedBy?.name || note.addedBy?.email || 'Unknown'} • {new Date(note.addedAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {notes.length === 0 && (
+              <p className="text-sm text-text-secondary">No notes yet</p>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleAddNote()}
+              placeholder="Add a note..."
+              className="flex-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary placeholder-text-secondary"
+            />
+            <button
+              onClick={handleAddNote}
+              disabled={!newNote.trim() || addingNote}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Note
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

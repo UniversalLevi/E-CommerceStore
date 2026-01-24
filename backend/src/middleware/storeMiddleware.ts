@@ -75,6 +75,7 @@ export const requireActiveStore = async (
 
 /**
  * Rate limiting for store orders (100 orders/day per store)
+ * Supports both store ID (from dashboard routes) and slug (from storefront routes)
  */
 export const rateLimitStoreOrders = async (
   req: AuthRequest,
@@ -82,9 +83,19 @@ export const rateLimitStoreOrders = async (
   next: NextFunction
 ) => {
   try {
-    const storeId = req.params.id || req.params.storeId || (req as any).store?._id;
+    let storeId = req.params.id || req.params.storeId || (req as any).store?._id;
+    
+    // If we have a slug instead of ID, look up the store
+    if (!storeId && req.params.slug) {
+      const store = await Store.findOne({ slug: req.params.slug.toLowerCase(), status: 'active' });
+      if (!store) {
+        throw createError('Store not found', 404);
+      }
+      storeId = store._id;
+    }
+    
     if (!storeId) {
-      throw createError('Store ID is required', 400);
+      throw createError('Store ID or slug is required', 400);
     }
 
     const { StoreOrder } = await import('../models/StoreOrder');

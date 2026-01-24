@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
-import { ShoppingCart, Loader2, Eye } from 'lucide-react';
+import { ShoppingCart, Loader2, Eye, Search, Download, CheckSquare, Square } from 'lucide-react';
 import Link from 'next/link';
 
 export default function StoreOrdersPage() {
@@ -16,6 +16,10 @@ export default function StoreOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [fulfillmentFilter, setFulfillmentFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<string>('');
+  const [applyingBulk, setApplyingBulk] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -34,10 +38,15 @@ export default function StoreOrdersPage() {
       const storeResponse = await api.getMyStore();
       if (storeResponse.success && storeResponse.data) {
         setStore(storeResponse.data);
-        const ordersResponse = await api.getStoreOrders(storeResponse.data._id, {
-          paymentStatus: paymentFilter === 'all' ? undefined : paymentFilter,
-          fulfillmentStatus: fulfillmentFilter === 'all' ? undefined : fulfillmentFilter,
-        });
+        let ordersResponse;
+        if (searchQuery.trim()) {
+          ordersResponse = await api.searchStoreOrders(storeResponse.data._id, searchQuery.trim());
+        } else {
+          ordersResponse = await api.getStoreOrders(storeResponse.data._id, {
+            paymentStatus: paymentFilter === 'all' ? undefined : paymentFilter,
+            fulfillmentStatus: fulfillmentFilter === 'all' ? undefined : fulfillmentFilter,
+          });
+        }
         if (ordersResponse.success) {
           setOrders(ordersResponse.data.orders || []);
         }
@@ -48,6 +57,66 @@ export default function StoreOrdersPage() {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    fetchData();
+  };
+
+  const handleExport = async () => {
+    try {
+      await api.exportStoreOrders(store._id, {
+        format: 'csv',
+        paymentStatus: paymentFilter === 'all' ? undefined : paymentFilter,
+        fulfillmentStatus: fulfillmentFilter === 'all' ? undefined : fulfillmentFilter,
+      });
+      notify.success('Orders exported successfully');
+    } catch (error: any) {
+      notify.error('Failed to export orders');
+    }
+  };
+
+  const handleBulkAction = async () => {
+    if (!bulkAction || selectedOrders.size === 0) {
+      notify.error('Please select orders and an action');
+      return;
+    }
+
+    try {
+      setApplyingBulk(true);
+      const response = await api.bulkUpdateStoreOrders(store._id, {
+        orderIds: Array.from(selectedOrders),
+        fulfillmentStatus: bulkAction,
+      });
+      if (response.success) {
+        notify.success(`Updated ${response.data.updated} orders`);
+        setSelectedOrders(new Set());
+        setBulkAction('');
+        fetchData();
+      }
+    } catch (error: any) {
+      notify.error('Failed to update orders');
+    } finally {
+      setApplyingBulk(false);
+    }
+  };
+
+  const toggleSelectOrder = (orderId: string) => {
+    const newSelected = new Set(selectedOrders);
+    if (newSelected.has(orderId)) {
+      newSelected.delete(orderId);
+    } else {
+      newSelected.add(orderId);
+    }
+    setSelectedOrders(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedOrders.size === orders.length) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(orders.map((o) => o._id)));
     }
   };
 
@@ -76,9 +145,31 @@ export default function StoreOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">Orders</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-text-primary">Orders</h1>
+        <button
+          onClick={handleExport}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          Export CSV
+        </button>
+      </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-text-secondary" />
+            <input
+              type="text"
+              placeholder="Search by order ID, customer name, or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              className="w-full pl-10 pr-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary placeholder-text-secondary"
+            />
+          </div>
+        </div>
         <div>
           <label className="block text-sm font-medium text-text-secondary mb-2">Payment Status</label>
           <select
@@ -108,6 +199,39 @@ export default function StoreOrdersPage() {
         </div>
       </div>
 
+      {selectedOrders.size > 0 && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex items-center justify-between">
+          <span className="text-sm text-text-primary">
+            {selectedOrders.size} order{selectedOrders.size !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <select
+              value={bulkAction}
+              onChange={(e) => setBulkAction(e.target.value)}
+              className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+            >
+              <option value="">Select action...</option>
+              <option value="fulfilled">Mark as Fulfilled</option>
+              <option value="shipped">Mark as Shipped</option>
+              <option value="cancelled">Mark as Cancelled</option>
+            </select>
+            <button
+              onClick={handleBulkAction}
+              disabled={!bulkAction || applyingBulk}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {applyingBulk ? 'Applying...' : 'Apply'}
+            </button>
+            <button
+              onClick={() => setSelectedOrders(new Set())}
+              className="px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
       {orders.length === 0 ? (
         <div className="bg-surface-raised rounded-lg border border-border-default p-12 text-center">
           <ShoppingCart className="h-12 w-12 text-text-secondary mx-auto mb-4" />
@@ -119,6 +243,15 @@ export default function StoreOrdersPage() {
           <table className="w-full">
             <thead className="bg-surface-base border-b border-border-default">
               <tr>
+                <th className="px-6 py-3 text-left">
+                  <button onClick={toggleSelectAll} className="text-text-secondary hover:text-text-primary">
+                    {selectedOrders.size === orders.length ? (
+                      <CheckSquare className="h-5 w-5" />
+                    ) : (
+                      <Square className="h-5 w-5" />
+                    )}
+                  </button>
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">Order ID</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">Customer</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase">Total</th>
@@ -131,6 +264,18 @@ export default function StoreOrdersPage() {
             <tbody className="divide-y divide-border-default">
               {orders.map((order) => (
                 <tr key={order._id} className="hover:bg-surface-hover">
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => toggleSelectOrder(order._id)}
+                      className="text-text-secondary hover:text-text-primary"
+                    >
+                      {selectedOrders.has(order._id) ? (
+                        <CheckSquare className="h-5 w-5" />
+                      ) : (
+                        <Square className="h-5 w-5" />
+                      )}
+                    </button>
+                  </td>
                   <td className="px-6 py-4 text-sm font-medium text-text-primary">{order.orderId}</td>
                   <td className="px-6 py-4 text-sm text-text-primary">{order.customer.name}</td>
                   <td className="px-6 py-4 text-sm text-text-primary">{formatPrice(order.total)}</td>

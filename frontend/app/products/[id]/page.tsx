@@ -9,9 +9,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import StoreSelectionModal from '@/components/StoreSelectionModal';
 import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
+import ImportProductModal from '@/components/store/ImportProductModal';
 import IconBadge from '@/components/IconBadge';
 import { notify } from '@/lib/toast';
-import { CheckCircle2, Tag, ShoppingCart, PenLine, Target, LogIn } from 'lucide-react';
+import { CheckCircle2, Tag, ShoppingCart, PenLine, Target, LogIn, Store } from 'lucide-react';
 
 interface StoreConnection {
   _id: string;
@@ -38,6 +39,8 @@ export default function ProductDetailPage() {
   const [showStoreModal, setShowStoreModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showWriteDescription, setShowWriteDescription] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [myStore, setMyStore] = useState<any>(null);
   const [storeData, setStoreData] = useState<any>(null);
 
   useEffect(() => {
@@ -49,6 +52,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchStores();
+      fetchMyStore();
     }
   }, [isAuthenticated]);
 
@@ -145,6 +149,18 @@ export default function ProductDetailPage() {
       console.error('Error fetching stores:', err);
     } finally {
       setLoadingStores(false);
+    }
+  };
+
+  const fetchMyStore = async () => {
+    try {
+      const response = await api.getMyStore();
+      if (response.success && response.data) {
+        setMyStore(response.data);
+      }
+    } catch (err: any) {
+      // Store might not exist, that's okay
+      console.error('Error fetching my store:', err);
     }
   };
 
@@ -488,9 +504,20 @@ export default function ProductDetailPage() {
                                       >
                         <span className="flex items-center justify-center gap-2">
                           <IconBadge icon={ShoppingCart} label="Add to store" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
-                          Add to My Store
+                          Add to Shopify Store
                         </span>
                       </button>
+                      {myStore && (
+                        <button
+                          onClick={() => setShowImportModal(true)}
+                          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-4 rounded-lg font-semibold text-lg transition-all shadow-lg shadow-blue-500/25"
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <IconBadge icon={Store} label="Import to store" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
+                            Import to My Store Dashboard
+                          </span>
+                        </button>
+                      )}
                       <button
                         onClick={() => setShowWriteDescription(true)}
                         className="w-full glass-card hover:bg-white/10 border-2 border-purple-500/50 text-text-primary py-4 rounded-lg font-semibold text-lg transition-all"
@@ -660,6 +687,25 @@ export default function ProductDetailPage() {
             productId={params.id as string}
             productTitle={product?.title}
           />
+
+          {showImportModal && myStore && product && (
+            <ImportProductModal
+              product={{
+                _id: product._id,
+                title: product.title,
+                description: product.description,
+                price: product.price,
+                images: product.images,
+                niche: typeof product.niche === 'object' ? product.niche : undefined,
+              }}
+              store={myStore}
+              onClose={() => setShowImportModal(false)}
+              onSuccess={() => {
+                setShowImportModal(false);
+                notify.success('Product imported to your store successfully!');
+              }}
+            />
+          )}
         </>
       )}
     </div>

@@ -16,6 +16,14 @@ export interface IStoreProduct extends Document {
   variantDimension?: string; // Single dimension name (e.g., 'Size', 'Color')
   variants: IVariant[]; // Variant values with inventory
   inventoryTracking: boolean;
+  // Import metadata
+  importedFrom?: mongoose.Types.ObjectId; // Reference to Product (catalog)
+  importedAt?: Date;
+  metadata?: {
+    nicheId?: mongoose.Types.ObjectId;
+    tags?: string[];
+    supplierLink?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -91,6 +99,29 @@ const storeProductSchema = new Schema<IStoreProduct>(
       type: Boolean,
       default: false,
     },
+    // Import metadata
+    importedFrom: {
+      type: Schema.Types.ObjectId,
+      ref: 'Product',
+      index: true,
+    },
+    importedAt: {
+      type: Date,
+    },
+    metadata: {
+      nicheId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Niche',
+      },
+      tags: {
+        type: [String],
+        default: [],
+      },
+      supplierLink: {
+        type: String,
+        trim: true,
+      },
+    },
   },
   {
     timestamps: true,
@@ -100,6 +131,7 @@ const storeProductSchema = new Schema<IStoreProduct>(
 // Indexes
 storeProductSchema.index({ storeId: 1, status: 1 });
 storeProductSchema.index({ storeId: 1, createdAt: -1 });
+storeProductSchema.index({ importedFrom: 1 });
 
 // Validation: Max 1 variant dimension (enforced in schema)
 storeProductSchema.pre('save', function (next) {

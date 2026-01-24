@@ -873,6 +873,75 @@ class ApiClient {
     return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/orders/${orderId}/fulfillment`, { fulfillmentStatus });
   }
 
+  async searchStoreOrders(storeId: string, query: string, params?: { page?: number; limit?: number }) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('q', query);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    return this.get<{ success: boolean; data: { orders: any[]; pagination: any } }>(
+      `/api/store-dashboard/stores/${storeId}/orders/search?${queryParams.toString()}`
+    );
+  }
+
+  async exportStoreOrders(storeId: string, params?: { format?: string; paymentStatus?: string; fulfillmentStatus?: string; startDate?: string; endDate?: string }) {
+    const queryParams = new URLSearchParams();
+    if (params?.format) queryParams.append('format', params.format);
+    if (params?.paymentStatus) queryParams.append('paymentStatus', params.paymentStatus);
+    if (params?.fulfillmentStatus) queryParams.append('fulfillmentStatus', params.fulfillmentStatus);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    return fetch(`${this.baseURL}/api/store-dashboard/stores/${storeId}/orders/export?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.getToken()}`,
+      },
+    }).then((res) => res.blob()).then((blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orders-${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    });
+  }
+
+  async bulkUpdateStoreOrders(storeId: string, data: { orderIds: string[]; fulfillmentStatus: string }) {
+    return this.put<{ success: boolean; data: { updated: number; total: number } }>(
+      `/api/store-dashboard/stores/${storeId}/orders/bulk-fulfillment`,
+      data
+    );
+  }
+
+  async addOrderNote(storeId: string, orderId: string, note: { text: string }) {
+    return this.post<{ success: boolean; data: any }>(
+      `/api/store-dashboard/stores/${storeId}/orders/${orderId}/notes`,
+      note
+    );
+  }
+
+  async getOrderNotes(storeId: string, orderId: string) {
+    return this.get<{ success: boolean; data: any[] }>(
+      `/api/store-dashboard/stores/${storeId}/orders/${orderId}/notes`
+    );
+  }
+
+  async getStoreAnalytics(storeId: string, period: '7d' | '30d' | '90d' | 'all' = '30d') {
+    return this.get<{
+      success: boolean;
+      data: {
+        period: string;
+        revenueOverTime: Array<{ date: string; revenue: number; orders: number }>;
+        orderStatusBreakdown: Array<{ status: string; count: number }>;
+        fulfillmentStatusBreakdown: Array<{ status: string; count: number }>;
+        topProductsByRevenue: Array<{ productId: string; title: string; revenue: number; quantity: number }>;
+        customerMetrics: { uniqueCustomers: number; repeatCustomers: number };
+        summary: { totalRevenue: number; totalOrders: number; paidOrders: number; averageOrderValue: number };
+      };
+    }>(`/api/store-dashboard/stores/${storeId}/analytics?period=${period}`);
+  }
+
   // Razorpay
   async initiateRazorpayConnect(storeId: string) {
     return this.post<{ success: boolean; data: { onboardingUrl: string; accountId?: string } }>(`/api/store-dashboard/stores/${storeId}/razorpay/connect`);
@@ -882,19 +951,82 @@ class ApiClient {
     return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/razorpay/status`);
   }
 
+  // Product catalog and import
+  async browseCatalogProducts(storeId: string, params?: {
+    niche?: string;
+    search?: string;
+    sort?: 'popularity' | 'newest' | 'price_low_to_high' | 'price_high_to_low';
+    page?: number;
+    limit?: number;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.niche) searchParams.set('niche', params.niche);
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.sort) searchParams.set('sort', params.sort);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString();
+    const url = query
+      ? `/api/store-dashboard/stores/${storeId}/products/catalog?${query}`
+      : `/api/store-dashboard/stores/${storeId}/products/catalog`;
+    return this.get<{
+      success: boolean;
+      data: any[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        pages: number;
+      };
+    }>(url);
+  }
+
+  async getCatalogProductDetails(storeId: string, productId: string) {
+    return this.get<{
+      success: boolean;
+      data: any & {
+        isImported: boolean;
+        canImport: boolean;
+        importWarnings: string[];
+      };
+    }>(`/api/store-dashboard/stores/${storeId}/products/catalog/${productId}`);
+  }
+
+  async importProduct(storeId: string, data: {
+    catalogProductId: string;
+    basePrice?: number;
+    status?: 'draft' | 'active';
+    variantDimension?: string;
+    variants?: Array<{
+      name: string;
+      price?: number;
+      inventory?: number | null;
+    }>;
+  }) {
+    return this.post<{ success: boolean; data: any; message: string }>(
+      `/api/store-dashboard/stores/${storeId}/products/import`,
+      data
+    );
+  }
+
   // ========== STOREFRONT API (Public) ==========
 
   async getStorefrontInfo(slug: string) {
     return this.get<{ success: boolean; data: any }>(`/api/storefront/${slug}`);
   }
 
-  async getStorefrontProducts(slug: string, params?: { page?: number; limit?: number }) {
+  async getStorefrontProducts(slug: string, params?: { page?: number; limit?: number; search?: string; minPrice?: number; maxPrice?: number; variantDimension?: string; sort?: string }) {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', String(params.page));
     if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.search) searchParams.set('search', params.search);
+    if (params?.minPrice) searchParams.set('minPrice', String(params.minPrice));
+    if (params?.maxPrice) searchParams.set('maxPrice', String(params.maxPrice));
+    if (params?.variantDimension) searchParams.set('variantDimension', params.variantDimension);
+    if (params?.sort) searchParams.set('sort', params.sort);
     const query = searchParams.toString();
     const url = query ? `/api/storefront/${slug}/products?${query}` : `/api/storefront/${slug}/products`;
-    return this.get<{ success: boolean; data: any }>(url);
+    return this.get<{ success: boolean; data: { products: any[]; pagination: any } }>(url);
   }
 
   async getStorefrontProduct(slug: string, productId: string) {
@@ -906,11 +1038,27 @@ class ApiClient {
   }
 
   async createPaymentOrder(slug: string, orderId: string) {
-    return this.post<{ success: boolean; data: any }>(`/api/storefront/${slug}/orders/${orderId}/payment`);
+    return this.post<{
+      success: boolean;
+      data: {
+        razorpayOrderId: string;
+        amount: number;
+        currency: string;
+        keyId: string;
+        testMode?: boolean;
+      };
+    }>(`/api/storefront/${slug}/orders/${orderId}/payment`);
   }
 
   async verifyPayment(slug: string, orderId: string, data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
-    return this.post<{ success: boolean; data: any }>(`/api/storefront/${slug}/orders/${orderId}/verify`, data);
+    return this.post<{
+      success: boolean;
+      data: {
+        orderId: string;
+        paymentStatus: string;
+        testMode?: boolean;
+      };
+    }>(`/api/storefront/${slug}/orders/${orderId}/verify`, data);
   }
 }
 
