@@ -967,6 +967,23 @@ class ApiClient {
     });
   }
 
+  // Theme management
+  async getStoreTheme(storeId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/theme`);
+  }
+
+  async updateStoreTheme(storeId: string, themeConfig: { name: string; customizations?: any }) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/theme`, themeConfig);
+  }
+
+  async getAvailableThemes() {
+    return this.get<{ success: boolean; data: any[] }>('/api/store-dashboard/themes');
+  }
+
+  async getThemeDetails(themeName: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/themes/${themeName}`);
+  }
+
   // Product catalog and import
   async browseCatalogProducts(storeId: string, params?: {
     niche?: string;

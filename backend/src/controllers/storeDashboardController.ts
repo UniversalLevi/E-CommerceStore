@@ -5,6 +5,7 @@ import { createError } from '../middleware/errorHandler';
 import { createStoreSchema, updateStoreSchema } from '../validators/storeDashboardValidator';
 import { StoreProduct } from '../models/StoreProduct';
 import { StoreOrder } from '../models/StoreOrder';
+import * as themeService from '../services/storeThemeService';
 
 /**
  * Create store (one per user)
@@ -54,6 +55,13 @@ export const createStore = async (req: AuthRequest, res: Response, next: NextFun
       currency: value.currency || 'INR',
       status: 'active', // Activate store immediately
       razorpayAccountStatus: 'not_connected',
+      settings: {
+        testMode: false,
+        theme: {
+          name: 'minimal',
+          customizations: {},
+        },
+      },
     });
 
     await store.save();
@@ -372,6 +380,121 @@ export const disableStore = async (req: AuthRequest, res: Response, next: NextFu
       success: true,
       message: 'Store disabled successfully',
       data: store,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get store theme
+ * GET /api/store-dashboard/stores/:id/theme
+ */
+export const getStoreTheme = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const store = (req as any).store;
+    const theme = store.settings?.theme || null;
+
+    res.status(200).json({
+      success: true,
+      data: theme,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Update store theme
+ * PUT /api/store-dashboard/stores/:id/theme
+ */
+export const updateStoreTheme = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const store = (req as any).store;
+    const { name, customizations } = req.body;
+
+    if (!name || typeof name !== 'string') {
+      throw createError('Theme name is required', 400);
+    }
+
+    // Validate theme exists
+    const themeConfig = themeService.getThemeConfig(name);
+    if (!themeConfig) {
+      throw createError(`Theme "${name}" does not exist`, 400);
+    }
+
+    // Validate customizations if provided
+    if (customizations) {
+      const validation = themeService.validateThemeCustomization(name, customizations);
+      if (!validation.valid) {
+        throw createError(`Invalid theme customizations: ${validation.errors.join(', ')}`, 400);
+      }
+    }
+
+    // Save theme - only save user customizations, defaults are in theme config
+    const themeData = {
+      name: name,
+      customizations: customizations || {},
+    };
+
+    // Update store settings
+    if (!store.settings) {
+      store.settings = {};
+    }
+    store.settings.theme = themeData;
+
+    // Mark settings as modified to ensure it's saved (required for Mixed type)
+    store.markModified('settings');
+    
+    try {
+      await store.save();
+    } catch (saveError: any) {
+      console.error('Error saving theme to store:', saveError);
+      throw createError(`Failed to save theme: ${saveError.message}`, 500);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: themeData,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get all available themes
+ * GET /api/store-dashboard/themes
+ */
+export const getAvailableThemes = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const themes = themeService.getAvailableThemes();
+
+    res.status(200).json({
+      success: true,
+      data: themes,
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get theme details
+ * GET /api/store-dashboard/themes/:name
+ */
+export const getThemeDetails = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { name } = req.params;
+    const theme = themeService.getThemeConfig(name);
+
+    if (!theme) {
+      throw createError(`Theme "${name}" does not exist`, 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: theme,
     });
   } catch (error: any) {
     next(error);

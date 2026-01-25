@@ -40,4 +40,10 @@ router.post('/stores/:id/razorpay/connect', authenticateToken, requireStoreOwner
 router.get('/stores/:id/razorpay/status', authenticateToken, requireStoreOwner, razorpayController.getRazorpayStatus);
 router.post('/stores/:id/razorpay/set-account', authenticateToken, requireStoreOwner, razorpayController.setRazorpayAccount);
 
+// Theme routes
+router.get('/stores/:id/theme', authenticateToken, requireStoreOwner, storeController.getStoreTheme);
+router.put('/stores/:id/theme', authenticateToken, requireStoreOwner, storeController.updateStoreTheme);
+router.get('/themes', authenticateToken, storeController.getAvailableThemes);
+router.get('/themes/:name', authenticateToken, storeController.getThemeDetails);
+
 export default router;

@@ -44,11 +44,20 @@ class StorefrontService {
         throw new Error('Store is not active');
       }
 
+      // Ensure theme is always present (default to minimal if not set)
+      const settings = store.settings || {};
+      if (!settings.theme || !settings.theme.name) {
+        settings.theme = {
+          name: 'minimal',
+          customizations: {},
+        };
+      }
+
       return {
         name: store.name,
         slug: store.slug,
         currency: store.currency,
-        settings: store.settings || {},
+        settings,
       };
     } catch (error: any) {
       throw new Error(error.message || 'Store not found');

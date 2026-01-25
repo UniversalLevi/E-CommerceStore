@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import CartSidebar from '@/components/storefront/CartSidebar';
-import { ShoppingCart } from 'lucide-react';
+import { StoreThemeProvider } from '@/contexts/StoreThemeContext';
+import { CartProvider, useCart } from '@/contexts/CartContext';
 import { api } from '@/lib/api';
+import { StoreTheme } from '@/themes/base/types';
 
-export default function StorefrontLayout({
+function StorefrontLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -15,45 +17,87 @@ export default function StorefrontLayout({
   const params = useParams();
   const slug = params.slug as string;
   const [store, setStore] = useState<any>(null);
-  const [cartOpen, setCartOpen] = useState(false);
-  const { items, setStoreSlug, getTotalItems } = useCartStore();
+  const [storeTheme, setStoreTheme] = useState<StoreTheme | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { setStoreSlug } = useCartStore();
+  const { isOpen: cartOpen, closeCart } = useCart();
 
   useEffect(() => {
     if (slug) {
       setStoreSlug(slug);
-      // Load store info for currency
-      api.getStorefrontInfo(slug).then((res) => {
-        if (res.success) {
-          setStore(res.data);
-        }
-      });
+      fetchStoreData();
     }
   }, [slug, setStoreSlug]);
 
-  return (
-    <>
-      {children}
-      
-      {/* Cart Button */}
-      <button
-        onClick={() => setCartOpen(true)}
-        className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full p-4 shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all z-30 flex items-center gap-2"
-      >
-        <ShoppingCart className="h-6 w-6" />
-        {getTotalItems() > 0 && (
-          <span className="bg-white text-purple-600 rounded-full px-2 py-1 text-sm font-bold min-w-[1.5rem] text-center">
-            {getTotalItems()}
-          </span>
-        )}
-      </button>
+  // Refresh theme when store changes (e.g., after theme update)
+  useEffect(() => {
+    if (store?.settings?.theme) {
+      const theme = store.settings.theme;
+      if (theme && theme.name) {
+        setStoreTheme(theme);
+      }
+    }
+  }, [store]);
 
-      {/* Cart Sidebar */}
+  const fetchStoreData = async () => {
+    try {
+      setLoading(true);
+      const storeResponse = await api.getStorefrontInfo(slug);
+      if (storeResponse.success && storeResponse.data) {
+        setStore(storeResponse.data);
+        // Get theme from store settings, default to minimal if not set
+        const theme = storeResponse.data.settings?.theme;
+        if (theme && theme.name) {
+          setStoreTheme(theme);
+        } else {
+          // Default to minimal theme if no theme is set
+          setStoreTheme({
+            name: 'minimal',
+            customizations: {},
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching store data:', error);
+      // Set default theme even on error
+      setStoreTheme({
+        name: 'minimal',
+        customizations: {},
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <StoreThemeProvider storeTheme={storeTheme} isLoading={loading}>
+      {children}
       <CartSidebar
         isOpen={cartOpen}
-        onClose={() => setCartOpen(false)}
+        onClose={closeCart}
         storeSlug={slug}
         currency={store?.currency || 'INR'}
       />
-    </>
+    </StoreThemeProvider>
+  );
+}
+
+export default function StorefrontLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <CartProvider>
+      <StorefrontLayoutContent>{children}</StorefrontLayoutContent>
+    </CartProvider>
   );
 }

@@ -3,13 +3,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Package, Loader2, Search, SlidersHorizontal } from 'lucide-react';
-import Link from 'next/link';
+import { Package, Loader2 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useStoreTheme } from '@/contexts/StoreThemeContext';
+import { useCartStore } from '@/store/useCartStore';
+import { useCart } from '@/contexts/CartContext';
+import { loadTheme } from '@/themes/themeLoader';
 
 export default function StorefrontPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { theme, colors } = useStoreTheme();
+  const { getTotalItems } = useCartStore();
   const [store, setStore] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,8 +24,26 @@ export default function StorefrontPage() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const { openCart } = useCart();
+  const [ThemeComponents, setThemeComponents] = useState<any>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Load theme components
+  useEffect(() => {
+    const themeName = theme?.name || 'minimal';
+    loadTheme(themeName)
+      .then((components) => {
+        setThemeComponents(components);
+      })
+      .catch((error) => {
+        console.error('Error loading theme:', error);
+        // Fallback to minimal theme
+        loadTheme('minimal').then((components) => {
+          setThemeComponents(components);
+        });
+      });
+  }, [theme]);
 
   useEffect(() => {
     if (slug) {
@@ -69,95 +92,132 @@ export default function StorefrontPage() {
     return `${symbol}${(price / 100).toFixed(2)}`;
   };
 
-  if (loading) {
+  if (loading || !ThemeComponents || !theme) {
     return (
-      <div className="min-h-screen bg-surface-base flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.background || '#ffffff' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: colors.accent || '#4a90d9' }} />
       </div>
     );
   }
 
   if (error || !store) {
+    const bgColor = colors?.background || '#ffffff';
+    const textColor = colors?.text || '#1a1a1a';
     return (
-      <div className="min-h-screen bg-surface-base flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
         <div className="text-center">
-          <Package className="h-12 w-12 text-text-secondary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-text-primary mb-2">Store Not Found</h1>
-          <p className="text-text-secondary">{error || 'This store does not exist or is not active'}</p>
+          <Package className="h-12 w-12 mx-auto mb-4" style={{ color: textColor + '80' }} />
+          <h1 className="text-2xl font-bold mb-2" style={{ color: textColor }}>Store Not Found</h1>
+          <p style={{ color: textColor + 'CC' }}>{error || 'This store does not exist or is not active'}</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-surface-base">
-      {/* Header */}
-      <header className="bg-surface-raised border-b border-border-default">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-text-primary">{store.name}</h1>
-            {store.settings?.testMode && (
-              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full border border-yellow-500/30">
-                🧪 TEST MODE
-              </span>
-            )}
-          </div>
-        </div>
-      </header>
+  if (!ThemeComponents || !ThemeComponents.Header || !ThemeComponents.Footer || !ThemeComponents.ProductCard || !ThemeComponents.Hero) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors?.background || '#ffffff' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: colors?.accent || '#4a90d9' }} />
+      </div>
+    );
+  }
 
-      {/* Products */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  const { Header, Footer, ProductCard, Hero } = ThemeComponents;
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors?.background || '#ffffff' }}>
+      {/* Header */}
+      <Header
+        storeSlug={slug}
+        storeName={store.name}
+        onCartClick={openCart}
+      />
+
+      {/* Hero Section */}
+      <Hero
+        storeSlug={slug}
+        storeName={store.name}
+        heading={`Welcome to ${store.name}`}
+        subheading="Discover amazing products"
+        ctaText="Shop Now"
+        ctaLink={`/storefront/${slug}`}
+      />
+
+      {/* Main Content */}
+      <main className="flex-1" style={{ maxWidth: 'var(--theme-container-width, 1280px)', margin: '0 auto', width: '100%', padding: '2rem 1rem' }}>
         {/* Search and Filters */}
-        <div className="mb-6 space-y-4">
+        <div className="mb-8 space-y-4">
           <div className="flex gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-text-secondary" />
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-surface-raised border border-border-default rounded-lg text-text-primary placeholder-text-secondary"
+                className="w-full pl-4 pr-4 py-3 rounded-lg border"
+                style={{
+                  backgroundColor: colors.secondary,
+                  borderColor: colors.primary + '30',
+                  color: colors.text,
+                }}
               />
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-2 bg-surface-raised border border-border-default rounded-lg text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-2"
+              className="px-6 py-3 rounded-lg font-medium transition-opacity hover:opacity-80"
+              style={{
+                backgroundColor: colors.accent,
+                color: '#ffffff',
+              }}
             >
-              <SlidersHorizontal className="h-5 w-5" />
               Filters
             </button>
           </div>
 
           {showFilters && (
-            <div className="bg-surface-raised rounded-lg border border-border-default p-4 space-y-4">
+            <div className="rounded-lg border p-6 space-y-4" style={{ backgroundColor: colors.secondary, borderColor: colors.primary + '30' }}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-2">Min Price</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Min Price</label>
                   <input
                     type="number"
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
                     placeholder="0"
-                    className="w-full px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                    className="w-full px-4 py-2 rounded-lg border"
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.primary + '30',
+                      color: colors.text,
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-2">Max Price</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Max Price</label>
                   <input
                     type="number"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                     placeholder="1000"
-                    className="w-full px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                    className="w-full px-4 py-2 rounded-lg border"
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.primary + '30',
+                      color: colors.text,
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-2">Sort By</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Sort By</label>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
+                    className="w-full px-4 py-2 rounded-lg border"
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.primary + '30',
+                      color: colors.text,
+                    }}
                   >
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
@@ -170,37 +230,41 @@ export default function StorefrontPage() {
           )}
         </div>
 
+        {/* Products Grid */}
         {products.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-12 w-12 text-text-secondary mx-auto mb-4" />
-            <p className="text-text-secondary">No products found</p>
+          <div className="text-center py-16">
+            <Package className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text + '60' }} />
+            <p style={{ color: colors.text + 'CC' }}>No products found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
-              <Link
+              <ProductCard
                 key={product._id}
-                href={`/storefront/${slug}/products/${product._id}`}
-                className="bg-surface-raised rounded-lg border border-border-default overflow-hidden hover:border-purple-500/50 transition-colors"
-              >
-                {product.images && product.images.length > 0 && (
-                  <img
-                    src={product.images[0]}
-                    alt={product.title}
-                    className="w-full h-48 object-cover"
-                  />
-                )}
-                <div className="p-4">
-                  <h3 className="font-semibold text-text-primary mb-2">{product.title}</h3>
-                  <p className="text-lg font-bold text-purple-500">
-                    {formatPrice(product.basePrice, store.currency)}
-                  </p>
-                </div>
-              </Link>
+                product={product}
+                storeSlug={slug}
+                currency={store.currency}
+              />
             ))}
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <Footer storeSlug={slug} storeName={store.name} />
+
+      {/* Floating Cart Button */}
+      {getTotalItems() > 0 && (
+        <button
+          onClick={openCart}
+          className="fixed bottom-6 right-6 rounded-full p-4 shadow-lg transition-all hover:scale-110 z-30 flex items-center gap-2 cursor-pointer"
+          style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+          aria-label="Open cart"
+        >
+          <span className="font-bold">{getTotalItems()}</span>
+          <span>Cart</span>
+        </button>
+      )}
     </div>
   );
 }
