@@ -16,8 +16,39 @@ app.set('trust proxy', true);
 
 // Middleware
 app.use(morgan('dev'));
+
+// CORS configuration - allow main domain and all subdomains
+const allowedOrigins = [
+  config.corsOrigin,
+  'https://eazydropshipping.com',
+  'https://www.eazydropshipping.com',
+  // Allow all subdomains of eazydropshipping.com
+  /^https:\/\/[a-zA-Z0-9-]+\.eazydropshipping\.com$/,
+];
+
 app.use(cors({
-  origin: config.corsOrigin,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Check if origin matches any allowed pattern
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return origin === allowedOrigin;
+      } else if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return false;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 // Razorpay webhook needs raw body, so register it before JSON parser
@@ -136,7 +167,7 @@ const startServer = async () => {
     app.listen(config.port, () => {
       console.log(`🚀 Server running on http://localhost:${config.port}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔗 CORS enabled for: ${config.corsOrigin}`);
+      console.log(`🔗 CORS enabled for: ${config.corsOrigin} and all *.eazydropshipping.com subdomains`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
