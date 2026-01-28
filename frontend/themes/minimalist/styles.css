@@ -1,0 +1,78 @@
+/* Minimalist Theme Styles */
+.minimalist-theme {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Subtle Fade */
+@keyframes minimalistFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.minimalist-fade {
+  animation: minimalistFade 0.6s ease-out;
+}
+
+/* Smooth Transition */
+.minimalist-transition {
+  transition: all 0.3s ease;
+}
+
+/* Minimal Hover */
+.minimalist-hover {
+  transition: all 0.2s ease;
+}
+
+.minimalist-hover:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+/* Clean Button */
+.minimalist-button {
+  transition: all 0.2s ease;
+}
+
+.minimalist-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Minimal Card */
+.minimalist-card {
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.minimalist-card:hover {
+  border-color: currentColor;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Input Focus */
+.minimalist-input:focus {
+  outline: none;
+  border-color: currentColor;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.05);
+}
+
+/* Stagger Minimal */
+@keyframes staggerMinimal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-minimal {
+  animation: staggerMinimal 0.4s ease-out forwards;
+  opacity: 0;
+}

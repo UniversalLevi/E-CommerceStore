@@ -31,9 +31,182 @@ export interface ThemeCustomization {
 
 // Available themes metadata
 const AVAILABLE_THEMES: ThemeConfig[] = [
+  // New internal store themes
+  {
+    name: 'modern',
+    displayName: 'Modern',
+    description: 'Contemporary design with clean lines and modern aesthetics',
+    category: 'modern',
+    defaultColors: {
+      primary: '#2563eb',
+      secondary: '#f8fafc',
+      background: '#ffffff',
+      text: '#1e293b',
+      accent: '#3b82f6',
+    },
+    defaultTypography: {
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      headingFont: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'classic',
+    displayName: 'Classic',
+    description: 'Traditional e-commerce design with timeless elegance',
+    category: 'modern',
+    defaultColors: {
+      primary: '#1a1a1a',
+      secondary: '#f5f5f5',
+      background: '#ffffff',
+      text: '#333333',
+      accent: '#c9a961',
+    },
+    defaultTypography: {
+      fontFamily: 'Georgia, serif',
+      headingFont: 'Georgia, serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'minimal-v2',
+    displayName: 'Minimal V2',
+    description: 'Ultra-clean minimal design with maximum focus on content',
+    category: 'minimal',
+    defaultColors: {
+      primary: '#000000',
+      secondary: '#fafafa',
+      background: '#ffffff',
+      text: '#1a1a1a',
+      accent: '#000000',
+    },
+    defaultTypography: {
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      headingFont: 'system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo'],
+  },
+  {
+    name: 'premium',
+    displayName: 'Premium',
+    description: 'Luxury design with sophisticated aesthetics and premium feel',
+    category: 'luxury',
+    defaultColors: {
+      primary: '#1a1a1a',
+      secondary: '#f8f8f8',
+      background: '#ffffff',
+      text: '#2c2c2c',
+      accent: '#d4af37',
+    },
+    defaultTypography: {
+      fontFamily: 'Playfair Display, serif',
+      headingFont: 'Playfair Display, serif',
+      fontSize: '17px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'neon',
+    displayName: 'Neon',
+    description: 'Dark cyberpunk aesthetic with neon accents and futuristic design',
+    category: 'tech',
+    defaultColors: {
+      primary: '#00ffff',
+      secondary: '#1a1a1a',
+      background: '#0a0a0a',
+      text: '#ffffff',
+      accent: '#ff00ff',
+    },
+    defaultTypography: {
+      fontFamily: 'Orbitron, Rajdhani, system-ui, sans-serif',
+      headingFont: 'Orbitron, system-ui, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'elegant',
+    displayName: 'Elegant',
+    description: 'Luxury premium design with gold accents and sophisticated aesthetics',
+    category: 'luxury',
+    defaultColors: {
+      primary: '#1a1a2e',
+      secondary: '#f5f5dc',
+      background: '#ffffff',
+      text: '#2c2c2c',
+      accent: '#d4af37',
+    },
+    defaultTypography: {
+      fontFamily: 'Playfair Display, Cormorant, serif',
+      headingFont: 'Playfair Display, serif',
+      fontSize: '18px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'bold',
+    displayName: 'Bold',
+    description: 'Vibrant, energetic design with bright colors and bold typography',
+    category: 'bold',
+    defaultColors: {
+      primary: '#ff6b35',
+      secondary: '#ffffff',
+      background: '#ffffff',
+      text: '#1a1a1a',
+      accent: '#004e89',
+    },
+    defaultTypography: {
+      fontFamily: 'Montserrat, Poppins, system-ui, sans-serif',
+      headingFont: 'Montserrat, system-ui, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'minimalist',
+    displayName: 'Minimalist',
+    description: 'Clean, white space focused design with simple elegance',
+    category: 'minimal',
+    defaultColors: {
+      primary: '#2c3e50',
+      secondary: '#f8f9fa',
+      background: '#ffffff',
+      text: '#2c3e50',
+      accent: '#3498db',
+    },
+    defaultTypography: {
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      headingFont: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'vintage',
+    displayName: 'Vintage',
+    description: 'Retro aesthetic with warm colors and classic design',
+    category: 'custom',
+    defaultColors: {
+      primary: '#8b0000',
+      secondary: '#fff8dc',
+      background: '#f4e4c1',
+      text: '#704214',
+      accent: '#704214',
+    },
+    defaultTypography: {
+      fontFamily: 'Merriweather, Lora, serif',
+      headingFont: 'Merriweather, serif',
+      fontSize: '17px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  // Legacy themes (deprecated, kept for backward compatibility)
   {
     name: 'minimal',
-    displayName: 'Minimal',
+    displayName: 'Minimal (Legacy)',
     description: 'Clean and simple design with focus on content',
     category: 'minimal',
     defaultColors: {
@@ -186,28 +359,152 @@ const AVAILABLE_THEMES: ThemeConfig[] = [
 ];
 
 /**
- * Get all available themes
+ * Get all available themes (built-in themes + active templates from database)
  */
-export function getAvailableThemes(): ThemeConfig[] {
-  return AVAILABLE_THEMES;
+export async function getAvailableThemes(): Promise<ThemeConfig[]> {
+  try {
+    // Get built-in themes (including the new 5 e-commerce themes)
+    const builtInThemes: ThemeConfig[] = AVAILABLE_THEMES.filter(theme => {
+      // Include new e-commerce themes and modern internal store themes
+      // Exclude legacy/deprecated themes
+      const excludedThemes = ['minimal', 'dark-theme', 'fashion-luxury', 'techy', 'black-premium', '3d-theme', 'white', 'r765r786ry8r'];
+      return !excludedThemes.includes(theme.name);
+    });
+
+    // Get templates from database
+    const { Template } = await import('../models/Template');
+    const templates = await Template.find({ 
+      isActive: true, 
+      isDeleted: false 
+    })
+    .select('name slug description previewImage category')
+    .sort({ appliedCount: -1, createdAt: -1 })
+    .lean();
+    
+    const templateThemes: ThemeConfig[] = templates.map((template) => {
+      return {
+        name: `template-${template.slug}`,
+        displayName: template.name,
+        description: template.description,
+        category: template.category as any,
+        previewImage: template.previewImage,
+        defaultColors: {
+          primary: '#000000',
+          secondary: '#ffffff',
+          background: '#ffffff',
+          text: '#1a1a1a',
+          accent: '#4a90d9',
+        },
+        defaultTypography: {
+          fontFamily: 'system-ui, sans-serif',
+          headingFont: 'system-ui, sans-serif',
+          fontSize: '16px',
+        },
+        customizableProperties: ['colors', 'typography', 'logo'],
+      };
+    });
+    
+    // Return built-in themes first, then templates
+    return [...builtInThemes, ...templateThemes];
+  } catch (error) {
+    console.error('Error loading themes:', error);
+    // Fallback to built-in themes if templates fail
+    return AVAILABLE_THEMES.filter(theme => {
+      const excludedThemes = ['minimal', 'dark-theme', 'fashion-luxury', 'techy', 'black-premium', '3d-theme', 'white', 'r765r786ry8r'];
+      return !excludedThemes.includes(theme.name);
+    });
+  }
 }
 
 /**
  * Get theme configuration by name
+ * Supports both built-in themes and templates from database
  */
-export function getThemeConfig(themeName: string): ThemeConfig | null {
+export async function getThemeConfig(themeName: string): Promise<ThemeConfig | null> {
+  // Check if it's a template-based theme (format: template-{slug})
+  if (themeName.startsWith('template-')) {
+    const templateSlug = themeName.replace('template-', '');
+    try {
+      const { Template } = await import('../models/Template');
+      const template = await Template.findOne({ 
+        slug: templateSlug, 
+        isActive: true, 
+        isDeleted: false 
+      }).lean();
+      
+      if (template) {
+        // Get template metadata from filesystem
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const templatePath = path.join(process.cwd(), 'backend', 'templates', template.slug, 'meta.json');
+        
+        try {
+          const metaContent = await fs.readFile(templatePath, 'utf-8');
+          const meta = JSON.parse(metaContent);
+          
+          return {
+            name: themeName,
+            displayName: template.name,
+            description: template.description,
+            category: template.category as any,
+            previewImage: template.previewImage,
+            defaultColors: meta.colors || {
+              primary: '#000000',
+              secondary: '#ffffff',
+              background: '#ffffff',
+              text: '#1a1a1a',
+              accent: '#4a90d9',
+            },
+            defaultTypography: meta.typography || {
+              fontFamily: 'system-ui, sans-serif',
+              headingFont: 'system-ui, sans-serif',
+              fontSize: '16px',
+            },
+            customizableProperties: ['colors', 'typography', 'logo'],
+          };
+        } catch (error) {
+          // If meta.json doesn't exist, return default config
+          return {
+            name: themeName,
+            displayName: template.name,
+            description: template.description,
+            category: template.category as any,
+            previewImage: template.previewImage,
+            defaultColors: {
+              primary: '#000000',
+              secondary: '#ffffff',
+              background: '#ffffff',
+              text: '#1a1a1a',
+              accent: '#4a90d9',
+            },
+            defaultTypography: {
+              fontFamily: 'system-ui, sans-serif',
+              headingFont: 'system-ui, sans-serif',
+              fontSize: '16px',
+            },
+            customizableProperties: ['colors', 'typography', 'logo'],
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error loading template theme:', error);
+      return null;
+    }
+  }
+  
+  // Check built-in themes
   return AVAILABLE_THEMES.find((theme) => theme.name === themeName) || null;
 }
 
 /**
  * Validate theme customization values
  */
-export function validateThemeCustomization(
+export async function validateThemeCustomization(
   themeName: string,
   customizations: ThemeCustomization
-): { valid: boolean; errors: string[] } {
+): Promise<{ valid: boolean; errors: string[] }> {
   const errors: string[] = [];
-  const theme = getThemeConfig(themeName);
+  const theme = await getThemeConfig(themeName);
 
   if (!theme) {
     errors.push(`Theme "${themeName}" does not exist`);
@@ -251,21 +548,21 @@ export function validateThemeCustomization(
 /**
  * Apply theme to store (returns theme configuration with customizations merged)
  */
-export function applyThemeToStore(
+export async function applyThemeToStore(
   themeName: string,
   customizations?: ThemeCustomization
-): {
+): Promise<{
   name: string;
   customizations: ThemeCustomization;
-} {
-  const theme = getThemeConfig(themeName);
+}> {
+  const theme = await getThemeConfig(themeName);
   if (!theme) {
     throw new Error(`Theme "${themeName}" does not exist`);
   }
 
   const defaultCustomizations: ThemeCustomization = {
-    colors: { ...theme.defaultColors },
-    typography: { ...theme.defaultTypography },
+    colors: theme.defaultColors ? { ...theme.defaultColors } : {},
+    typography: theme.defaultTypography ? { ...theme.defaultTypography } : {},
     layout: {},
   };
 

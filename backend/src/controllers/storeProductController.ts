@@ -4,6 +4,7 @@ import { StoreProduct } from '../models/StoreProduct';
 import { Store } from '../models/Store';
 import { createError } from '../middleware/errorHandler';
 import { createProductSchema, updateProductSchema } from '../validators/storeDashboardValidator';
+import { logInternalStoreActivity, getInternalStoreLogContext } from '../services/internalStoreLogger';
 
 const MAX_PRODUCTS_PER_STORE = parseInt(process.env.MAX_PRODUCTS_PER_STORE || '50', 10);
 
@@ -54,11 +55,46 @@ export const createProduct = async (req: AuthRequest, res: Response, next: NextF
 
     await product.save();
 
+    // Log product creation
+    const userId = (req.user as any)?._id;
+    if (userId) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: storeId.toString(),
+        userId: userId.toString(),
+        action: 'INTERNAL_STORE_PRODUCT_CREATED',
+        entityType: 'product',
+        entityId: (product._id as any).toString(),
+        changes: {
+          after: {
+            title: product.title,
+            basePrice: product.basePrice,
+            status: product.status,
+          },
+        },
+        success: true,
+        ...logContext,
+      });
+    }
+
     res.status(201).json({
       success: true,
       data: product,
     });
   } catch (error: any) {
+    // Log error
+    if (req.user && (req as any).store) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: (req as any).store._id,
+        userId: (req.user as any)._id,
+        action: 'INTERNAL_STORE_PRODUCT_CREATED',
+        entityType: 'product',
+        success: false,
+        errorMessage: error.message,
+        ...logContext,
+      });
+    }
     next(error);
   }
 };
@@ -154,6 +190,13 @@ export const updateProduct = async (req: AuthRequest, res: Response, next: NextF
       throw createError('Maximum 5 images allowed per product', 400);
     }
 
+    // Store before state for logging
+    const beforeState = {
+      title: product.title,
+      basePrice: product.basePrice,
+      status: product.status,
+    };
+
     // Update fields
     if (value.title !== undefined) product.title = value.title;
     if (value.description !== undefined) product.description = value.description;
@@ -166,11 +209,48 @@ export const updateProduct = async (req: AuthRequest, res: Response, next: NextF
 
     await product.save();
 
+    // Log product update
+    const userId = (req.user as any)?._id;
+    if (userId) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: storeId.toString(),
+        userId: userId.toString(),
+        action: 'INTERNAL_STORE_PRODUCT_UPDATED',
+        entityType: 'product',
+        entityId: productId,
+        changes: {
+          before: beforeState,
+          after: {
+            title: product.title,
+            basePrice: product.basePrice,
+            status: product.status,
+          },
+        },
+        success: true,
+        ...logContext,
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: product,
     });
   } catch (error: any) {
+    // Log error
+    if (req.user && (req as any).store) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: (req as any).store._id,
+        userId: (req.user as any)._id,
+        action: 'INTERNAL_STORE_PRODUCT_UPDATED',
+        entityType: 'product',
+        entityId: req.params.productId,
+        success: false,
+        errorMessage: error.message,
+        ...logContext,
+      });
+    }
     next(error);
   }
 };
@@ -190,13 +270,52 @@ export const deleteProduct = async (req: AuthRequest, res: Response, next: NextF
       throw createError('Product not found', 404);
     }
 
+    // Store product info for logging before deletion
+    const productInfo = {
+      title: product.title,
+      basePrice: product.basePrice,
+      status: product.status,
+    };
+
     await StoreProduct.deleteOne({ _id: productId });
+
+    // Log product deletion
+    const userId = (req.user as any)?._id;
+    if (userId) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: storeId.toString(),
+        userId: userId.toString(),
+        action: 'INTERNAL_STORE_PRODUCT_DELETED',
+        entityType: 'product',
+        entityId: productId,
+        changes: {
+          before: productInfo,
+        },
+        success: true,
+        ...logContext,
+      });
+    }
 
     res.status(200).json({
       success: true,
       message: 'Product deleted successfully',
     });
   } catch (error: any) {
+    // Log error
+    if (req.user && (req as any).store) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: (req as any).store._id,
+        userId: (req.user as any)._id,
+        action: 'INTERNAL_STORE_PRODUCT_DELETED',
+        entityType: 'product',
+        entityId: req.params.productId,
+        success: false,
+        errorMessage: error.message,
+        ...logContext,
+      });
+    }
     next(error);
   }
 };

@@ -108,7 +108,7 @@ export default function BillingPage() {
             // Verify ₹20 token payment
             // Note: For subscription payments, order_id might not be in response
             // But we still pass it if available for verification
-            const verifyResponse = await api.verifyPayment({
+            const verifyResponse = await api.verifySubscriptionPayment({
               ...(response.razorpay_order_id && { razorpay_order_id: response.razorpay_order_id }), // Optional for subscription payments
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,

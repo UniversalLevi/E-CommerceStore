@@ -1,0 +1,199 @@
+<header class="header header--{{ section.settings.logo_position }}" data-section-id="{{ section.id }}">
+  <div class="page-width header__wrapper">
+    {%- if section.settings.logo != blank -%}
+      <a href="{{ routes.root_url }}" class="header__logo-link">
+        <img
+          src="{{ section.settings.logo | image_url: width: 300 }}"
+          alt="{{ shop.name }}"
+          class="header__logo"
+          width="{{ section.settings.logo_width }}"
+          loading="eager"
+        >
+      </a>
+    {%- else -%}
+      <a href="{{ routes.root_url }}" class="header__heading-link">
+        <span class="header__heading h2">{{ shop.name }}</span>
+      </a>
+    {%- endif -%}
+
+    <nav class="header__nav" aria-label="Main navigation">
+      {%- if section.settings.menu != blank -%}
+        <ul class="header__menu list-unstyled" role="list">
+          {%- for link in section.settings.menu.links -%}
+            <li>
+              <a
+                href="{{ link.url }}"
+                class="header__menu-link{% if link.active %} header__menu-link--active{% endif %}"
+                {% if link.current %} aria-current="page"{% endif %}
+              >
+                {{ link.title }}
+              </a>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+    </nav>
+
+    <div class="header__actions">
+      <a href="{{ routes.search_url }}" class="header__icon header__icon--search" aria-label="Search">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </a>
+      
+      <a href="{{ routes.account_url }}" class="header__icon header__icon--account" aria-label="Account">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </a>
+      
+      <a href="{{ routes.cart_url }}" class="header__icon header__icon--cart" aria-label="Cart ({{ cart.item_count }} items)">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+        {%- if cart.item_count > 0 -%}
+          <span class="header__cart-count">{{ cart.item_count }}</span>
+        {%- endif -%}
+      </a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .header {
+    padding: 1rem 0;
+    background-color: rgb(var(--color-base-background-1));
+    border-bottom: 1px solid rgba(var(--color-base-text), 0.1);
+  }
+
+  .header__wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .header__logo {
+    max-width: {{ section.settings.logo_width }}px;
+    height: auto;
+  }
+
+  .header__heading-link {
+    text-decoration: none;
+    color: rgb(var(--color-base-text));
+  }
+
+  .header__heading {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: var(--font-heading-weight);
+  }
+
+  .header__nav {
+    flex-grow: 1;
+  }
+
+  .header__menu {
+    display: flex;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    justify-content: center;
+  }
+
+  .header__menu-link {
+    text-decoration: none;
+    color: rgb(var(--color-base-text));
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: opacity 0.2s ease;
+  }
+
+  .header__menu-link:hover,
+  .header__menu-link--active {
+    opacity: 0.7;
+  }
+
+  .header__actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header__icon {
+    position: relative;
+    color: rgb(var(--color-base-text));
+    transition: opacity 0.2s ease;
+  }
+
+  .header__icon:hover {
+    opacity: 0.7;
+  }
+
+  .header__cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: rgb(var(--color-base-solid-button-labels));
+    background-color: rgb(var(--color-base-accent-1));
+    border-radius: 50%;
+  }
+
+  @media screen and (max-width: 749px) {
+    .header__menu {
+      display: none;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Header",
+  "class": "section-header",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo"
+    },
+    {
+      "type": "range",
+      "id": "logo_width",
+      "min": 50,
+      "max": 300,
+      "step": 10,
+      "default": 120,
+      "unit": "px",
+      "label": "Logo width"
+    },
+    {
+      "type": "select",
+      "id": "logo_position",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "center", "label": "Center" }
+      ],
+      "default": "left",
+      "label": "Logo position"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "default": "main-menu",
+      "label": "Menu"
+    }
+  ]
+}
+{% endschema %}
+

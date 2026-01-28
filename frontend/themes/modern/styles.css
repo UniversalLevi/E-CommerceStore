@@ -1,0 +1,19 @@
+/* Modern Theme Styles */
+.modern-theme {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.modern-theme button {
+  transition: all 0.2s ease;
+}
+
+.modern-theme button:hover {
+  transform: translateY(-1px);
+}
+
+.modern-theme input:focus,
+.modern-theme textarea:focus,
+.modern-theme select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}

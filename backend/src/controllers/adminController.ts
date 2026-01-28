@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { User } from '../models/User';
 import { StoreConnection } from '../models/StoreConnection';
+import { Store } from '../models/Store';
 import { AuditLog } from '../models/AuditLog';
 import { Product } from '../models/Product';
 import { Contact } from '../models/Contact';
@@ -37,10 +38,13 @@ export const getDashboardStats = async (
     const [
       totalUsers,
       activeUsers,
-      totalStores,
-      activeStores,
+      totalShopifyStores,
+      activeShopifyStores,
       invalidStores,
       revokedStores,
+      totalInternalStores,
+      activeInternalStores,
+      suspendedInternalStores,
       totalProducts,
     ] = await Promise.all([
       User.countDocuments(),
@@ -51,6 +55,9 @@ export const getDashboardStats = async (
       StoreConnection.countDocuments({ status: 'active' }),
       StoreConnection.countDocuments({ status: 'invalid' }),
       StoreConnection.countDocuments({ status: 'revoked' }),
+      Store.countDocuments(),
+      Store.countDocuments({ status: 'active' }),
+      Store.countDocuments({ status: 'suspended' }),
       Product.countDocuments(),
     ]);
 
@@ -119,10 +126,16 @@ export const getDashboardStats = async (
         active: activeUsers,
       },
       stores: {
-        total: totalStores,
-        active: activeStores,
+        total: totalShopifyStores,
+        active: activeShopifyStores,
         invalid: invalidStores,
         revoked: revokedStores,
+      },
+      internalStores: {
+        total: totalInternalStores,
+        active: activeInternalStores,
+        suspended: suspendedInternalStores,
+        inactive: totalInternalStores - activeInternalStores - suspendedInternalStores,
       },
       products: {
         total: totalProducts,

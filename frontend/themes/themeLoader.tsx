@@ -12,7 +12,46 @@ export async function loadTheme(themeName: string) {
   }
 
   try {
+    // Check if it's a template-based theme (format: template-{slug})
+    if (themeName.startsWith('template-')) {
+      // For now, template-based themes use the modern theme as a base
+      // TODO: In the future, we can convert templates to React components or create a template renderer
+      console.log(`Loading template-based theme: ${themeName}. Using modern theme as base.`);
+      themeComponents[themeName] = await import('./modern');
+      return themeComponents[themeName];
+    }
+
     switch (themeName) {
+      // New internal store themes
+      case 'modern':
+        themeComponents[themeName] = await import('./modern');
+        break;
+      case 'classic':
+        themeComponents[themeName] = await import('./classic');
+        break;
+      case 'minimal-v2':
+        themeComponents[themeName] = await import('./minimal-v2');
+        break;
+      case 'premium':
+        themeComponents[themeName] = await import('./premium');
+        break;
+      // New e-commerce themes
+      case 'neon':
+        themeComponents[themeName] = await import('./neon');
+        break;
+      case 'elegant':
+        themeComponents[themeName] = await import('./elegant');
+        break;
+      case 'bold':
+        themeComponents[themeName] = await import('./bold');
+        break;
+      case 'minimalist':
+        themeComponents[themeName] = await import('./minimalist');
+        break;
+      case 'vintage':
+        themeComponents[themeName] = await import('./vintage');
+        break;
+      // Legacy themes (deprecated)
       case 'minimal':
         themeComponents[themeName] = await import('./minimal');
         break;
@@ -25,30 +64,26 @@ export async function loadTheme(themeName: string) {
       case 'techy':
         themeComponents[themeName] = await import('./techy');
         break;
+      // Deprecated Shopify themes - fallback to modern
       case 'black-premium':
-        themeComponents[themeName] = await import('./dark-theme');
-        break;
       case '3d-theme':
-        themeComponents[themeName] = await import('./minimal');
-        break;
       case 'white':
-        themeComponents[themeName] = await import('./minimal');
-        break;
       case 'r765r786ry8r':
-        themeComponents[themeName] = await import('./minimal');
+        console.warn(`Theme "${themeName}" is deprecated. Falling back to modern.`);
+        themeComponents[themeName] = await import('./modern');
         break;
       default:
-        // Fallback to minimal
-        themeComponents[themeName] = await import('./minimal');
+        // Fallback to modern theme
+        themeComponents[themeName] = await import('./modern');
     }
     return themeComponents[themeName];
   } catch (error) {
     console.error(`Failed to load theme ${themeName}:`, error);
-    // Fallback to minimal
-    if (!themeComponents['minimal']) {
-      themeComponents['minimal'] = await import('./minimal');
+    // Fallback to modern
+    if (!themeComponents['modern']) {
+      themeComponents['modern'] = await import('./modern');
     }
-    return themeComponents['minimal'];
+    return themeComponents['modern'];
   }
 }
 

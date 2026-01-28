@@ -1,0 +1,132 @@
+/* Vintage Theme Styles */
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Lora:wght@400;600;700&display=swap');
+
+.vintage-theme {
+  font-family: 'Lora', serif;
+}
+
+/* Vintage Paper Effect */
+.vintage-paper {
+  background: linear-gradient(
+    135deg,
+    #f4e4c1 0%,
+    #fff8dc 50%,
+    #f4e4c1 100%
+  );
+  box-shadow: 
+    0 2px 8px rgba(112, 66, 20, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Gentle Fade */
+@keyframes vintageFade {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vintage-fade {
+  animation: vintageFade 0.8s ease-out;
+}
+
+/* Vintage Hover */
+.vintage-hover {
+  transition: all 0.3s ease;
+}
+
+.vintage-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(112, 66, 20, 0.15);
+}
+
+/* Vintage Button */
+.vintage-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.vintage-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.vintage-button:hover::before {
+  left: 100%;
+}
+
+.vintage-button:hover {
+  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Vintage Card */
+.vintage-card {
+  transition: all 0.4s ease;
+  border: 2px solid transparent;
+  background: linear-gradient(
+    135deg,
+    #fff8dc 0%,
+    #f4e4c1 100%
+  );
+}
+
+.vintage-card:hover {
+  border-color: currentColor;
+  box-shadow: 0 6px 20px rgba(112, 66, 20, 0.15);
+  transform: translateY(-3px);
+}
+
+/* Input Vintage */
+.vintage-input:focus {
+  outline: none;
+  border-color: currentColor;
+  box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+/* Stagger Vintage */
+@keyframes staggerVintage {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-vintage {
+  animation: staggerVintage 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Vintage Border */
+.vintage-border {
+  border: 2px solid;
+  position: relative;
+}
+
+.vintage-border::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 1px solid;
+  opacity: 0.3;
+}

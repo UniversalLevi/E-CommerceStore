@@ -27,7 +27,7 @@ export default function StorefrontProductPage() {
 
   // Load theme components
   useEffect(() => {
-    const themeName = theme?.name || 'minimal';
+    const themeName = theme?.name || 'modern';
     loadTheme(themeName).then((components) => {
       setThemeComponents(components);
     });
@@ -139,8 +139,28 @@ export default function StorefrontProductPage() {
     );
   }
 
-  const { Header, Footer } = ThemeComponents;
+  const { Header, Footer, ProductDetail } = ThemeComponents;
 
+  // If theme has ProductDetail component, use it
+  if (ProductDetail) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.background }}>
+        <Header
+          storeSlug={slug}
+          storeName={store.name}
+          onCartClick={openCart}
+        />
+        <ProductDetail
+          product={product}
+          storeSlug={slug}
+          currency={store.currency}
+        />
+        <Footer storeSlug={slug} storeName={store.name} />
+      </div>
+    );
+  }
+
+  // Fallback to manual rendering if ProductDetail not available
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.background }}>
       <Header

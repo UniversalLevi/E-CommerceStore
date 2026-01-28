@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStore } from '../layout';
+import { useStore } from '@/contexts/StoreContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import { Package, Plus, Loader2, Edit, Trash2, Eye, EyeOff, Search, Filter } from 'lucide-react';

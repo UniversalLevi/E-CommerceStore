@@ -1,0 +1,7 @@
+{
+  "title": "Home",
+  "handle": "home",
+  "body_html": "<div class=\"page-width\"><h1>Welcome to Our Store</h1><p>This is the homepage. Use AI to generate rich content for this page.</p></div>",
+  "published": true,
+  "template_suffix": ""
+}

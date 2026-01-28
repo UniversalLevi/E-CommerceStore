@@ -1,0 +1,70 @@
+{% comment %}
+  Main Hero Section
+  
+  Example AI prompts:
+  - "Create a hero section with heading, subheading, CTA button, and background image"
+  - "Add animation effects to the hero section"
+  - "Make the hero section full-width with parallax effect"
+{% endcomment %}
+
+<section class="main-hero-section" data-section-id="{{ section.id }}">
+  <div class="page-width">
+    <div class="main-hero-section__container">
+      <h1 class="main-hero-section__heading">
+        {{ section.settings.heading | default: 'Welcome to Our Store' }}
+      </h1>
+      <p class="main-hero-section__subheading">
+        {{ section.settings.subheading | default: 'Discover amazing products' }}
+      </p>
+      {% if section.settings.button_text != blank %}
+        <a href="{{ section.settings.button_link }}" class="button main-hero-section__button">
+          {{ section.settings.button_text }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Main Hero",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Welcome to Our Store"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Discover amazing products"
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Text",
+      "default": "Shop Now"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Button Link"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Color scheme",
+      "default": "scheme-1"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Main Hero"
+    }
+  ]
+}
+{% endschema %}

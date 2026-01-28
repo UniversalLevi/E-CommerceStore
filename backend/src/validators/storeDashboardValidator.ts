@@ -26,7 +26,8 @@ export const updateStoreSchema = Joi.object({
       paymentStatus: Joi.boolean().optional(),
       fulfillmentStatus: Joi.boolean().optional(),
     }).optional(),
-  }).optional(),
+    theme: Joi.any().optional(), // Allow theme object (validated separately in theme endpoint)
+  }).unknown(true).optional(), // Allow unknown fields in settings to support future additions
 });
 
 // Product validation

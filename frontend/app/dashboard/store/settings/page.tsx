@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useStore } from '../layout';
+import Link from 'next/link';
+import { useStore } from '@/contexts/StoreContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import { Settings, Loader2, ExternalLink, AlertCircle, CheckCircle2, XCircle, Mail, CreditCard, Store as StoreIcon, Palette, Eye } from 'lucide-react';
-import { getAvailableThemes } from '@/themes/base/ThemeConfig';
+// Removed getAvailableThemes import - now fetching from API
 
 export default function StoreSettingsPage() {
   const { store, refreshStore } = useStore();
@@ -37,20 +38,47 @@ export default function StoreSettingsPage() {
     }
   }, [store]);
 
+  const fetchAvailableThemes = useCallback(async () => {
+    if (!store) return;
+    
+    try {
+      // Fetch themes from store dashboard API (only active templates from database)
+      const response = await api.get<{ success: boolean; data: any[] }>('/api/store-dashboard/themes');
+      if (response.success) {
+        const themes = response.data || [];
+        setAvailableThemes(themes);
+        
+        // Set current theme if it exists in available themes
+        if (store?.settings?.theme?.name) {
+          const currentThemeExists = themes.some(t => t.name === store.settings.theme.name);
+          if (currentThemeExists) {
+            setSelectedTheme(store.settings.theme.name);
+          } else {
+            setSelectedTheme(''); // Clear selection if current theme is not available
+          }
+        } else {
+          setSelectedTheme(''); // No default theme
+        }
+      } else {
+        // No fallback - show empty list
+        setAvailableThemes([]);
+        setSelectedTheme('');
+      }
+    } catch (error) {
+      console.error('Error fetching themes:', error);
+      // No fallback - show empty list
+      setAvailableThemes([]);
+      setSelectedTheme('');
+    }
+  }, [store]);
+
   useEffect(() => {
     if (store) {
       fetchRazorpayStatus();
-      // Load available themes
-      const themes = getAvailableThemes();
-      setAvailableThemes(themes);
-      // Set current theme
-      if (store.settings?.theme?.name) {
-        setSelectedTheme(store.settings.theme.name);
-      } else {
-        setSelectedTheme('minimal'); // Default
-      }
+      // Fetch available themes (only active templates from database)
+      fetchAvailableThemes();
     }
-  }, [store, fetchRazorpayStatus]);
+  }, [store, fetchRazorpayStatus, fetchAvailableThemes]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -436,8 +464,20 @@ export default function StoreSettingsPage() {
           {/* Theme Selection */}
           <div>
             <p className="text-sm font-medium text-text-primary mb-4">Select Store Theme</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {availableThemes.map((theme) => (
+            {availableThemes.length === 0 ? (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6 text-center">
+                <p className="text-yellow-400 mb-2">No themes available</p>
+                <p className="text-sm text-text-secondary">
+                  Please create and activate templates in the{' '}
+                  <Link href="/admin/templates" className="text-primary-500 hover:underline">
+                    Templates section
+                  </Link>
+                  {' '}to use them here.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {availableThemes.map((theme) => (
                 <button
                   key={theme.name}
                   onClick={() => {
@@ -467,11 +507,12 @@ export default function StoreSettingsPage() {
                   <p className="text-xs text-text-secondary text-center mt-1">{theme.category}</p>
                 </button>
               ))}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Apply Theme Button */}
-          {selectedTheme && selectedTheme !== store.settings?.theme?.name && (
+          {selectedTheme && selectedTheme !== store.settings?.theme?.name && availableThemes.length > 0 && (
             <div className="flex gap-3">
               <button
                 onClick={async () => {

@@ -36,6 +36,8 @@ export default function AdminStoresPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Note: This page is for Shopify stores only. Internal stores are managed at /admin/internal-stores
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
@@ -141,9 +143,12 @@ export default function AdminStoresPage() {
       <nav className="bg-surface-raised border-b border-border-default shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
-              EAZY DROPSHIPPING
-            </Link>
+            <div>
+              <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
+                EAZY DROPSHIPPING
+              </Link>
+              <p className="text-sm text-text-secondary mt-1">Shopify Store Connections</p>
+            </div>
             <div className="flex items-center gap-4">
               <Link href="/dashboard" className="text-text-secondary hover:text-primary-500">
                 Dashboard
@@ -162,9 +167,12 @@ export default function AdminStoresPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-text-primary">All Stores (Admin)</h1>
+            <h1 className="text-3xl font-bold text-text-primary">Shopify Stores</h1>
             <p className="mt-2 text-text-secondary">
-              Manage all connected Shopify stores across all users
+              Manage all connected Shopify stores across all users. For internal stores, see{' '}
+              <Link href="/admin/internal-stores" className="text-primary-500 hover:underline">
+                Internal Stores
+              </Link>
             </p>
           </div>
 

@@ -108,12 +108,12 @@ class ApiClient {
     });
   }
 
-  // Payment API methods
+  // Subscription / billing methods (SaaS subscription for the app)
   async getPlans() {
     return this.get<{ success: boolean; data: { plans: any[] } }>('/api/payments/plans');
   }
 
-  async createPaymentOrder(planCode: string) {
+  async createSubscriptionPaymentOrder(planCode: string) {
     return this.post<{ success: boolean; data: { orderId: string; amount: number; currency: string; keyId: string } }>(
       '/api/payments/create-order',
       { planCode }
@@ -139,7 +139,7 @@ class ApiClient {
     );
   }
 
-  async verifyPayment(paymentData: {
+  async verifySubscriptionPayment(paymentData: {
     razorpay_order_id?: string; // Optional for subscription payments
     razorpay_payment_id: string;
     razorpay_signature: string;
@@ -899,10 +899,12 @@ class ApiClient {
     if (params?.fulfillmentStatus) queryParams.append('fulfillmentStatus', params.fulfillmentStatus);
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);
-    return fetch(`${this.baseURL}/api/store-dashboard/stores/${storeId}/orders/export?${queryParams.toString()}`, {
+    // Use API_URL directly since ApiClient does not expose baseURL
+    const token = typeof window !== 'undefined' ? window.localStorage.getItem('token') : null;
+    return fetch(`${API_URL}/api/store-dashboard/stores/${storeId}/orders/export?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${this.getToken()}`,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
     }).then((res) => res.blob()).then((blob) => {
       const url = window.URL.createObjectURL(blob);
@@ -1092,6 +1094,43 @@ class ApiClient {
         testMode?: boolean;
       };
     }>(`/api/storefront/${slug}/orders/${orderId}/verify`, data);
+  }
+
+  // Admin internal store management
+  async getAdminInternalStores(params?: {
+    status?: string;
+    owner?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    return this.get<{ success: boolean; data: any[]; pagination: any }>(
+      `/api/admin/internal-stores?${queryParams.toString()}`
+    );
+  }
+
+  async getAdminInternalStore(storeId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/admin/internal-stores/${storeId}`);
+  }
+
+  async suspendAdminInternalStore(storeId: string) {
+    return this.post<{ success: boolean; data: any; message: string }>(
+      `/api/admin/internal-stores/${storeId}/suspend`
+    );
+  }
+
+  async activateAdminInternalStore(storeId: string) {
+    return this.post<{ success: boolean; data: any; message: string }>(
+      `/api/admin/internal-stores/${storeId}/activate`
+    );
   }
 }
 

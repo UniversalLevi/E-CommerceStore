@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useStore } from '../layout';
+import { useStore } from '@/contexts/StoreContext';
 import { api } from '@/lib/api';
 import { Package, ShoppingCart, DollarSign, Loader2, AlertCircle, ArrowRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';

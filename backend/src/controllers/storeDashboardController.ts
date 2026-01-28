@@ -6,6 +6,7 @@ import { createStoreSchema, updateStoreSchema } from '../validators/storeDashboa
 import { StoreProduct } from '../models/StoreProduct';
 import { StoreOrder } from '../models/StoreOrder';
 import * as themeService from '../services/storeThemeService';
+import { logInternalStoreActivity, getInternalStoreLogContext } from '../services/internalStoreLogger';
 
 /**
  * Create store (one per user)
@@ -58,7 +59,7 @@ export const createStore = async (req: AuthRequest, res: Response, next: NextFun
       settings: {
         testMode: false,
         theme: {
-          name: 'minimal',
+          name: 'modern',
           customizations: {},
         },
       },
@@ -66,11 +67,45 @@ export const createStore = async (req: AuthRequest, res: Response, next: NextFun
 
     await store.save();
 
+    // Log store creation
+    const logContext = getInternalStoreLogContext(req);
+    const storeId = (store._id as any).toString();
+    await logInternalStoreActivity({
+      storeId: storeId,
+      userId: userId.toString(),
+      action: 'INTERNAL_STORE_CREATED',
+      entityType: 'store',
+      entityId: storeId,
+      changes: {
+        after: {
+          name: store.name,
+          slug: store.slug,
+          currency: store.currency,
+          status: store.status,
+        },
+      },
+      success: true,
+      ...logContext,
+    });
+
     res.status(201).json({
       success: true,
       data: store,
     });
   } catch (error: any) {
+    // Log error if we have user context
+    if (req.user) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: (req as any).store?._id || 'unknown',
+        userId: (req.user as any)._id,
+        action: 'INTERNAL_STORE_CREATED',
+        entityType: 'store',
+        success: false,
+        errorMessage: error.message,
+        ...logContext,
+      });
+    }
     next(error);
   }
 };
@@ -132,6 +167,11 @@ export const updateStore = async (req: AuthRequest, res: Response, next: NextFun
     }
 
     const store = (req as any).store;
+    const userId = (req.user as any)?._id;
+    const beforeState = {
+      name: store.name,
+      settings: JSON.parse(JSON.stringify(store.settings || {})),
+    };
 
     // Only allow updating name and settings (slug and currency are locked)
     if (value.name) {
@@ -139,15 +179,51 @@ export const updateStore = async (req: AuthRequest, res: Response, next: NextFun
     }
     if (value.settings) {
       store.settings = { ...store.settings, ...value.settings };
+      // Mark settings as modified to ensure it's saved (required for Mixed type)
+      store.markModified('settings');
     }
 
     await store.save();
+
+    // Log store update
+    if (userId) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: store._id.toString(),
+        userId: userId.toString(),
+        action: 'INTERNAL_STORE_UPDATED',
+        entityType: 'settings',
+        entityId: store._id.toString(),
+        changes: {
+          before: beforeState,
+          after: {
+            name: store.name,
+            settings: store.settings,
+          },
+        },
+        success: true,
+        ...logContext,
+      });
+    }
 
     res.status(200).json({
       success: true,
       data: store,
     });
   } catch (error: any) {
+    // Log error
+    if (req.user && (req as any).store) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: (req as any).store._id,
+        userId: (req.user as any)._id,
+        action: 'INTERNAL_STORE_UPDATED',
+        entityType: 'settings',
+        success: false,
+        errorMessage: error.message,
+        ...logContext,
+      });
+    }
     next(error);
   }
 };
@@ -417,15 +493,15 @@ export const updateStoreTheme = async (req: AuthRequest, res: Response, next: Ne
       throw createError('Theme name is required', 400);
     }
 
-    // Validate theme exists
-    const themeConfig = themeService.getThemeConfig(name);
+    // Validate theme exists (async for template support)
+    const themeConfig = await themeService.getThemeConfig(name);
     if (!themeConfig) {
       throw createError(`Theme "${name}" does not exist`, 400);
     }
 
     // Validate customizations if provided
     if (customizations) {
-      const validation = themeService.validateThemeCustomization(name, customizations);
+      const validation = await themeService.validateThemeCustomization(name, customizations);
       if (!validation.valid) {
         throw createError(`Invalid theme customizations: ${validation.errors.join(', ')}`, 400);
       }
@@ -446,11 +522,35 @@ export const updateStoreTheme = async (req: AuthRequest, res: Response, next: Ne
     // Mark settings as modified to ensure it's saved (required for Mixed type)
     store.markModified('settings');
     
+    const beforeTheme = store.settings?.theme ? JSON.parse(JSON.stringify(store.settings.theme)) : null;
+    
     try {
       await store.save();
     } catch (saveError: any) {
       console.error('Error saving theme to store:', saveError);
       throw createError(`Failed to save theme: ${saveError.message}`, 500);
+    }
+
+    // Log theme update
+    const userId = (req.user as any)?._id;
+    if (userId) {
+      const logContext = getInternalStoreLogContext(req);
+      await logInternalStoreActivity({
+        storeId: store._id.toString(),
+        userId: userId.toString(),
+        action: 'INTERNAL_STORE_THEME_CHANGED',
+        entityType: 'theme',
+        entityId: store._id.toString(),
+        changes: {
+          before: beforeTheme ? { theme: beforeTheme } : undefined,
+          after: { theme: themeData },
+        },
+        success: true,
+        metadata: {
+          themeName: name,
+        },
+        ...logContext,
+      });
     }
 
     res.status(200).json({
@@ -468,7 +568,7 @@ export const updateStoreTheme = async (req: AuthRequest, res: Response, next: Ne
  */
 export const getAvailableThemes = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const themes = themeService.getAvailableThemes();
+    const themes = await themeService.getAvailableThemes();
 
     res.status(200).json({
       success: true,
@@ -486,7 +586,7 @@ export const getAvailableThemes = async (req: AuthRequest, res: Response, next: 
 export const getThemeDetails = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { name } = req.params;
-    const theme = themeService.getThemeConfig(name);
+    const theme = await themeService.getThemeConfig(name);
 
     if (!theme) {
       throw createError(`Theme "${name}" does not exist`, 404);

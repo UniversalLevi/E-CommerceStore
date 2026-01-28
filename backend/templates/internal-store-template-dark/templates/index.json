@@ -1,0 +1,171 @@
+{
+  "sections": {
+    "hero": {
+      "type": "hero-banner",
+      "settings": {
+        "heading": "Unveil the Darkness",
+        "subheading": "Explore our mesmerizing collection of products",
+        "button_label": "Discover Now",
+        "button_link": "/collections/all",
+        "height": 75,
+        "overlay_opacity": 30,
+        "text_alignment": "center",
+        "text_color": "#ffffff"
+      }
+    },
+    "features": {
+      "type": "features",
+      "settings": {
+        "heading": "Why Choose Us",
+        "layout": "horizontal"
+      },
+      "blocks": {
+        "feature-1": {
+          "type": "feature",
+          "settings": {
+            "icon": "truck",
+            "title": "Free Shipping",
+            "description": "On orders over ₹499"
+          }
+        },
+        "feature-2": {
+          "type": "feature",
+          "settings": {
+            "icon": "shield",
+            "title": "Secure Payment",
+            "description": "Safe transactions"
+          }
+        },
+        "feature-3": {
+          "type": "feature",
+          "settings": {
+            "icon": "refresh",
+            "title": "Easy Returns",
+            "description": "30-day return policy"
+          }
+        },
+        "feature-4": {
+          "type": "feature",
+          "settings": {
+            "icon": "support",
+            "title": "24/7 Support",
+            "description": "Always here to help"
+          }
+        }
+      },
+      "block_order": [
+        "feature-1",
+        "feature-2",
+        "feature-3",
+        "feature-4"
+      ]
+    },
+    "featured-products": {
+      "type": "featured-products",
+      "settings": {
+        "heading": "Top Picks",
+        "subheading": "Handpicked just for you",
+        "products_to_show": 8,
+        "columns": 4,
+        "show_secondary_image": true,
+        "show_vendor": false,
+        "content_alignment": "left",
+        "show_view_all": true,
+        "view_all_text": "View all products"
+      }
+    },
+    "collection-list": {
+      "type": "collection-list",
+      "settings": {
+        "heading": "Browse by Theme",
+        "collections_to_show": 6,
+        "columns": 3
+      }
+    },
+    "testimonials": {
+      "type": "testimonials",
+      "settings": {
+        "heading": "Glowing Reviews",
+        "subheading": "What our customers glow about",
+        "columns": 3
+      },
+      "blocks": {
+        "testimonial-1": {
+          "type": "testimonial",
+          "settings": {
+            "rating": 5,
+            "content": "Absolutely love the quality! The product exceeded my expectations and arrived faster than expected.",
+            "author_name": "Priya S.",
+            "author_title": "Verified Buyer"
+          }
+        },
+        "testimonial-2": {
+          "type": "testimonial",
+          "settings": {
+            "rating": 5,
+            "content": "Best purchase I've made this year. Great value for money and excellent customer service.",
+            "author_name": "Rahul M.",
+            "author_title": "Verified Buyer"
+          }
+        },
+        "testimonial-3": {
+          "type": "testimonial",
+          "settings": {
+            "rating": 5,
+            "content": "Highly recommend this store! The products are exactly as described and shipping was quick.",
+            "author_name": "Anita K.",
+            "author_title": "Verified Buyer"
+          }
+        }
+      },
+      "block_order": [
+        "testimonial-1",
+        "testimonial-2",
+        "testimonial-3"
+      ]
+    },
+    "newsletter": {
+      "type": "newsletter",
+      "settings": {
+        "heading": "Stay in the Light",
+        "subheading": "Subscribe for illuminating deals",
+        "button_text": "Subscribe",
+        "show_privacy_text": true,
+        "show_benefits": true
+      },
+      "blocks": {
+        "benefit-1": {
+          "type": "benefit",
+          "settings": {
+            "text": "Exclusive discounts"
+          }
+        },
+        "benefit-2": {
+          "type": "benefit",
+          "settings": {
+            "text": "New arrival alerts"
+          }
+        },
+        "benefit-3": {
+          "type": "benefit",
+          "settings": {
+            "text": "No spam, ever"
+          }
+        }
+      },
+      "block_order": [
+        "benefit-1",
+        "benefit-2",
+        "benefit-3"
+      ]
+    }
+  },
+  "order": [
+    "hero",
+    "features",
+    "featured-products",
+    "collection-list",
+    "testimonials",
+    "newsletter"
+  ]
+}

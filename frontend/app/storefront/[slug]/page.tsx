@@ -31,15 +31,15 @@ export default function StorefrontPage() {
 
   // Load theme components
   useEffect(() => {
-    const themeName = theme?.name || 'minimal';
+    const themeName = theme?.name || 'modern';
     loadTheme(themeName)
       .then((components) => {
         setThemeComponents(components);
       })
       .catch((error) => {
         console.error('Error loading theme:', error);
-        // Fallback to minimal theme
-        loadTheme('minimal').then((components) => {
+        // Fallback to modern theme
+        loadTheme('modern').then((components) => {
           setThemeComponents(components);
         });
       });

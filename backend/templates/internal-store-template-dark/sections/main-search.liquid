@@ -1,0 +1,271 @@
+<section class="main-search" data-section-id="{{ section.id }}">
+  <div class="page-width">
+    <div class="main-search__header">
+      <h1 class="main-search__title h1">Search</h1>
+      
+      <form action="{{ routes.search_url }}" method="get" class="main-search__form">
+        <div class="main-search__input-wrapper">
+          <input
+            type="search"
+            name="q"
+            value="{{ search.terms | escape }}"
+            placeholder="Search our store..."
+            class="main-search__input"
+            aria-label="Search"
+          >
+          <button type="submit" class="main-search__submit" aria-label="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {%- if search.performed -%}
+      <div class="main-search__results">
+        {%- if search.results_count > 0 -%}
+          <p class="main-search__count">{{ search.results_count }} {{ search.results_count | pluralize: 'result', 'results' }} for "{{ search.terms }}"</p>
+          
+          <div class="main-search__grid">
+            {%- for item in search.results -%}
+              <div class="main-search__item">
+                {%- if item.object_type == 'product' -%}
+                  <a href="{{ item.url }}" class="product-card">
+                    <div class="product-card__image-wrapper">
+                      {%- if item.featured_image != blank -%}
+                        <img
+                          src="{{ item.featured_image | image_url: width: 600 }}"
+                          alt="{{ item.featured_image.alt | default: item.title }}"
+                          class="product-card__image"
+                          loading="lazy"
+                          width="300"
+                          height="400"
+                        >
+                      {%- else -%}
+                        <div class="product-card__placeholder">
+                          {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+                        </div>
+                      {%- endif -%}
+                    </div>
+                    <div class="product-card__info">
+                      <h3 class="product-card__title">{{ item.title }}</h3>
+                      <p class="product-card__price">{{ item.price | money }}</p>
+                    </div>
+                  </a>
+                {%- elsif item.object_type == 'article' -%}
+                  <a href="{{ item.url }}" class="article-card">
+                    <h3 class="article-card__title">{{ item.title }}</h3>
+                    <p class="article-card__excerpt">{{ item.content | strip_html | truncate: 150 }}</p>
+                    <span class="article-card__link">Read more →</span>
+                  </a>
+                {%- elsif item.object_type == 'page' -%}
+                  <a href="{{ item.url }}" class="page-card">
+                    <h3 class="page-card__title">{{ item.title }}</h3>
+                    <p class="page-card__excerpt">{{ item.content | strip_html | truncate: 150 }}</p>
+                    <span class="page-card__link">View page →</span>
+                  </a>
+                {%- endif -%}
+              </div>
+            {%- endfor -%}
+          </div>
+
+          {%- if paginate.pages > 1 -%}
+            <nav class="main-search__pagination" aria-label="Search pagination">
+              {%- if paginate.previous -%}
+                <a href="{{ paginate.previous.url }}" class="pagination__link">← Previous</a>
+              {%- endif -%}
+              
+              <span class="pagination__current">Page {{ paginate.current_page }} of {{ paginate.pages }}</span>
+              
+              {%- if paginate.next -%}
+                <a href="{{ paginate.next.url }}" class="pagination__link">Next →</a>
+              {%- endif -%}
+            </nav>
+          {%- endif -%}
+        {%- else -%}
+          <div class="main-search__empty">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="64" height="64">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <h2>No results found for "{{ search.terms }}"</h2>
+            <p>Try checking your spelling or use different keywords.</p>
+          </div>
+        {%- endif -%}
+      </div>
+    {%- else -%}
+      <div class="main-search__empty">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="64" height="64">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <h2>Start your search</h2>
+        <p>Enter keywords above to find products, pages, and articles.</p>
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+<style>
+  .main-search {
+    padding: var(--spacing-sections-mobile) 0;
+  }
+
+  @media screen and (min-width: 750px) {
+    .main-search {
+      padding: var(--spacing-sections-desktop) 0;
+    }
+  }
+
+  .main-search__header {
+    margin-bottom: 3rem;
+  }
+
+  .main-search__title {
+    margin: 0 0 1.5rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+
+  .main-search__form {
+    max-width: 600px;
+  }
+
+  .main-search__input-wrapper {
+    display: flex;
+    border: 2px solid rgba(var(--color-base-text), 0.2);
+    transition: border-color 0.2s ease;
+  }
+
+  .main-search__input-wrapper:focus-within {
+    border-color: rgb(var(--color-base-accent-1));
+  }
+
+  .main-search__input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    background: transparent;
+    color: rgb(var(--color-base-text));
+  }
+
+  .main-search__input:focus {
+    outline: none;
+  }
+
+  .main-search__submit {
+    padding: 1rem 1.5rem;
+    background: rgb(var(--color-base-accent-1));
+    border: none;
+    color: rgb(var(--color-base-solid-button-labels));
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .main-search__submit:hover {
+    opacity: 0.8;
+  }
+
+  .main-search__count {
+    margin: 0 0 2rem;
+    opacity: 0.7;
+  }
+
+  .main-search__grid {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media screen and (min-width: 750px) {
+    .main-search__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media screen and (min-width: 990px) {
+    .main-search__grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .article-card,
+  .page-card {
+    display: block;
+    padding: 1.5rem;
+    background-color: rgba(var(--color-base-text), 0.03);
+    text-decoration: none;
+    color: inherit;
+    transition: background-color 0.2s ease;
+  }
+
+  .article-card:hover,
+  .page-card:hover {
+    background-color: rgba(var(--color-base-text), 0.08);
+  }
+
+  .article-card__title,
+  .page-card__title {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+  }
+
+  .article-card__excerpt,
+  .page-card__excerpt {
+    margin: 0 0 1rem;
+    opacity: 0.7;
+    font-size: 0.875rem;
+  }
+
+  .article-card__link,
+  .page-card__link {
+    font-size: 0.875rem;
+    color: rgb(var(--color-base-accent-1));
+  }
+
+  .main-search__pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(var(--color-base-text), 0.1);
+  }
+
+  .pagination__link {
+    color: inherit;
+  }
+
+  .pagination__current {
+    opacity: 0.7;
+  }
+
+  .main-search__empty {
+    text-align: center;
+    padding: 4rem 2rem;
+  }
+
+  .main-search__empty svg {
+    opacity: 0.3;
+    margin-bottom: 1rem;
+  }
+
+  .main-search__empty h2 {
+    margin: 0 0 0.5rem;
+  }
+
+  .main-search__empty p {
+    margin: 0;
+    opacity: 0.7;
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Search Results",
+  "tag": "section",
+  "class": "section-main-search",
+  "settings": []
+}
+{% endschema %}
+

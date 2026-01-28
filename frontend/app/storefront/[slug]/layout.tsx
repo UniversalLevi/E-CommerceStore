@@ -45,14 +45,14 @@ function StorefrontLayoutContent({
       const storeResponse = await api.getStorefrontInfo(slug);
       if (storeResponse.success && storeResponse.data) {
         setStore(storeResponse.data);
-        // Get theme from store settings, default to minimal if not set
+        // Get theme from store settings, default to modern if not set
         const theme = storeResponse.data.settings?.theme;
         if (theme && theme.name) {
           setStoreTheme(theme);
         } else {
-          // Default to minimal theme if no theme is set
+          // Default to modern theme if no theme is set
           setStoreTheme({
-            name: 'minimal',
+            name: 'modern',
             customizations: {},
           });
         }
@@ -61,7 +61,7 @@ function StorefrontLayoutContent({
       console.error('Error fetching store data:', error);
       // Set default theme even on error
       setStoreTheme({
-        name: 'minimal',
+        name: 'modern',
         customizations: {},
       });
     } finally {

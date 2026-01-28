@@ -1,0 +1,16 @@
+{
+  "sections": {
+    "main": {
+      "type": "contact-form",
+      "settings": {
+        "heading": "Contact Us",
+        "subheading": "We'd love to hear from you. Send us a message and we'll respond as soon as possible.",
+        "show_contact_info": true
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}
+

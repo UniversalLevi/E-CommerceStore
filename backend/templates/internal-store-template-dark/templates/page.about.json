@@ -1,0 +1,151 @@
+{
+  "sections": {
+    "main": {
+      "type": "about-content",
+      "settings": {
+        "subtitle": "About Us",
+        "heading": "Our Story",
+        "content": "<p>We are passionate about bringing you the best products at great prices. Our journey started with a simple idea: make quality accessible to everyone.</p><p>Today, we serve thousands of happy customers and continue to grow with your support. We believe in quality, transparency, and customer satisfaction above all else.</p>",
+        "show_stats": true,
+        "show_badge": true,
+        "badge_number": "5+",
+        "badge_text": "Years Experience",
+        "button_label": "Shop Now",
+        "button_link": "/collections/all",
+        "show_values": true,
+        "values_heading": "Our Values"
+      },
+      "blocks": {
+        "stat-1": {
+          "type": "stat",
+          "settings": {
+            "number": "10K+",
+            "label": "Happy Customers"
+          }
+        },
+        "stat-2": {
+          "type": "stat",
+          "settings": {
+            "number": "500+",
+            "label": "Products"
+          }
+        },
+        "stat-3": {
+          "type": "stat",
+          "settings": {
+            "number": "5+",
+            "label": "Years"
+          }
+        },
+        "value-1": {
+          "type": "value",
+          "settings": {
+            "icon": "heart",
+            "title": "Quality First",
+            "description": "We never compromise on quality"
+          }
+        },
+        "value-2": {
+          "type": "value",
+          "settings": {
+            "icon": "star",
+            "title": "Customer Focus",
+            "description": "Your satisfaction is our priority"
+          }
+        },
+        "value-3": {
+          "type": "value",
+          "settings": {
+            "icon": "users",
+            "title": "Community",
+            "description": "Building lasting relationships"
+          }
+        },
+        "value-4": {
+          "type": "value",
+          "settings": {
+            "icon": "leaf",
+            "title": "Sustainability",
+            "description": "Eco-friendly practices"
+          }
+        }
+      },
+      "block_order": ["stat-1", "stat-2", "stat-3", "value-1", "value-2", "value-3", "value-4"]
+    },
+    "features": {
+      "type": "features",
+      "settings": {
+        "heading": "Why Choose Us",
+        "layout": "horizontal"
+      },
+      "blocks": {
+        "feature-1": {
+          "type": "feature",
+          "settings": {
+            "icon": "truck",
+            "title": "Free Shipping",
+            "description": "On orders over ₹499"
+          }
+        },
+        "feature-2": {
+          "type": "feature",
+          "settings": {
+            "icon": "shield",
+            "title": "Secure Payment",
+            "description": "100% secure checkout"
+          }
+        },
+        "feature-3": {
+          "type": "feature",
+          "settings": {
+            "icon": "refresh",
+            "title": "Easy Returns",
+            "description": "30-day return policy"
+          }
+        },
+        "feature-4": {
+          "type": "feature",
+          "settings": {
+            "icon": "headphones",
+            "title": "24/7 Support",
+            "description": "Dedicated customer service"
+          }
+        }
+      },
+      "block_order": ["feature-1", "feature-2", "feature-3", "feature-4"]
+    },
+    "newsletter": {
+      "type": "newsletter",
+      "settings": {
+        "heading": "Stay Updated",
+        "subheading": "Subscribe to our newsletter for exclusive deals and updates",
+        "button_text": "Subscribe",
+        "show_privacy_text": true,
+        "show_benefits": true
+      },
+      "blocks": {
+        "benefit-1": {
+          "type": "benefit",
+          "settings": {
+            "text": "Exclusive discounts"
+          }
+        },
+        "benefit-2": {
+          "type": "benefit",
+          "settings": {
+            "text": "New arrival alerts"
+          }
+        },
+        "benefit-3": {
+          "type": "benefit",
+          "settings": {
+            "text": "No spam, ever"
+          }
+        }
+      },
+      "block_order": ["benefit-1", "benefit-2", "benefit-3"]
+    }
+  },
+  "order": ["main", "features", "newsletter"]
+}
+

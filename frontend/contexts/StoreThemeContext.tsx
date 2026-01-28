@@ -45,30 +45,28 @@ export function StoreThemeProvider({ children, storeTheme, isLoading = false }: 
   const themeConfig: ThemeConfig | null = getThemeConfig(theme.name) || getThemeConfig('minimal');
 
   // Merge default colors with customizations
-  const colors: ThemeColors = themeConfig
-    ? {
-        ...themeConfig.defaultColors,
-        ...(theme.customizations?.colors || {}),
-      }
-    : {
-        primary: '#000000',
-        secondary: '#ffffff',
-        background: '#ffffff',
-        text: '#1a1a1a',
-        accent: '#4a90d9',
-      };
+  const defaultColors = themeConfig?.defaultColors || {
+    primary: '#000000',
+    secondary: '#ffffff',
+    background: '#ffffff',
+    text: '#1a1a1a',
+    accent: '#4a90d9',
+  };
+  const colors: ThemeColors = {
+    ...defaultColors,
+    ...(theme.customizations?.colors || {}),
+  } as ThemeColors;
 
   // Merge default typography with customizations
-  const typography: ThemeTypography = themeConfig
-    ? {
-        ...themeConfig.defaultTypography,
-        ...(theme.customizations?.typography || {}),
-      }
-    : {
-        fontFamily: 'system-ui, sans-serif',
-        headingFont: 'system-ui, sans-serif',
-        fontSize: '16px',
-      };
+  const defaultTypography = themeConfig?.defaultTypography || {
+    fontFamily: 'system-ui, sans-serif',
+    headingFont: 'system-ui, sans-serif',
+    fontSize: '16px',
+  };
+  const typography: ThemeTypography = {
+    ...defaultTypography,
+    ...(theme.customizations?.typography || {}),
+  } as ThemeTypography;
 
   // Get layout customizations or defaults
   const layout: ThemeLayout = theme?.customizations?.layout || {
@@ -79,6 +77,14 @@ export function StoreThemeProvider({ children, storeTheme, isLoading = false }: 
 
   const logo = theme?.customizations?.logo;
 
+  const handleSetTheme = (newTheme: StoreTheme | null) => {
+    if (newTheme) {
+      setTheme(newTheme);
+    } else {
+      setTheme(defaultTheme);
+    }
+  };
+
   const value: StoreThemeContextType = {
     theme,
     themeConfig,
@@ -87,7 +93,7 @@ export function StoreThemeProvider({ children, storeTheme, isLoading = false }: 
     layout,
     logo,
     isLoading,
-    setTheme,
+    setTheme: handleSetTheme,
   };
 
   // Apply CSS variables for theme

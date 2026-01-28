@@ -47,6 +47,7 @@ const navItems: NavItem[] = [
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/users/database', label: 'User Database', icon: Database },
   { href: '/admin/stores', label: 'Stores', icon: Store },
+  { href: '/admin/internal-stores', label: 'Internal Stores', icon: Store },
   { href: '/admin/templates', label: 'Templates', icon: Palette },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/zen-orders', label: 'ZEN Orders', icon: Zap },

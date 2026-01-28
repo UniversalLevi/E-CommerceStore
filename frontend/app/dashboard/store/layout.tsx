@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, createContext, useContext } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -15,20 +15,7 @@ import {
   Store,
   ChevronRight
 } from 'lucide-react';
-
-interface StoreContextType {
-  store: any;
-  loading: boolean;
-  refreshStore: () => Promise<void>;
-}
-
-const StoreContext = createContext<StoreContextType>({
-  store: null,
-  loading: true,
-  refreshStore: async () => {},
-});
-
-export const useStore = () => useContext(StoreContext);
+import { StoreContext } from '@/contexts/StoreContext';
 
 interface NavItem {
   href: string;
