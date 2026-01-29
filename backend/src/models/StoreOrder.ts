@@ -41,9 +41,12 @@ export interface IStoreOrder extends Document {
   shipping: number; // in paise
   total: number; // in paise
   currency: string;
+  paymentMethod: 'razorpay' | 'cod'; // Payment method selected at checkout
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  codPaidAt?: Date; // When COD payment was received
+  codPaidBy?: mongoose.Types.ObjectId; // Admin/user who marked COD as paid
   fulfillmentStatus: 'pending' | 'fulfilled' | 'cancelled' | 'shipped';
   notes: IOrderNote[];
   metadata: Record<string, any>;
@@ -221,6 +224,12 @@ const storeOrderSchema = new Schema<IStoreOrder>(
       default: 'INR',
       uppercase: true,
     },
+    paymentMethod: {
+      type: String,
+      enum: ['razorpay', 'cod'],
+      default: 'razorpay',
+      index: true,
+    },
     paymentStatus: {
       type: String,
       enum: ['pending', 'paid', 'failed', 'refunded'],
@@ -232,6 +241,15 @@ const storeOrderSchema = new Schema<IStoreOrder>(
     },
     razorpayPaymentId: {
       type: String,
+    },
+    codPaidAt: {
+      type: Date,
+      default: null,
+    },
+    codPaidBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
     fulfillmentStatus: {
       type: String,
@@ -257,7 +275,9 @@ const storeOrderSchema = new Schema<IStoreOrder>(
 storeOrderSchema.index({ storeId: 1, createdAt: -1 });
 storeOrderSchema.index({ orderId: 1 }, { unique: true });
 storeOrderSchema.index({ paymentStatus: 1 });
+storeOrderSchema.index({ paymentMethod: 1 });
 storeOrderSchema.index({ fulfillmentStatus: 1 });
+storeOrderSchema.index({ paymentMethod: 1, paymentStatus: 1 }); // For filtering COD pending orders
 
 // Pre-save hook: Generate order ID if not provided
 storeOrderSchema.pre('save', async function (next) {

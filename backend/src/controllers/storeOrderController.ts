@@ -22,7 +22,7 @@ export const listOrders = async (req: AuthRequest, res: Response, next: NextFunc
     const store = (req as any).store;
     const storeId = store._id;
 
-    const { paymentStatus, fulfillmentStatus, page = 1, limit = 20 } = req.query;
+    const { paymentStatus, fulfillmentStatus, paymentMethod, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page as string, 10) - 1) * parseInt(limit as string, 10);
 
     const query: any = { storeId };
@@ -31,6 +31,9 @@ export const listOrders = async (req: AuthRequest, res: Response, next: NextFunc
     }
     if (fulfillmentStatus) {
       query.fulfillmentStatus = fulfillmentStatus;
+    }
+    if (paymentMethod) {
+      query.paymentMethod = paymentMethod;
     }
 
     const orders = await StoreOrder.find(query)
@@ -172,6 +175,19 @@ export const updatePaymentStatus = async (req: AuthRequest, res: Response, next:
 
     const oldStatus = order.paymentStatus;
     order.paymentStatus = value.paymentStatus as 'pending' | 'paid' | 'failed' | 'refunded';
+    
+    // For COD orders, track when and who marked it as paid
+    if (order.paymentMethod === 'cod' && value.paymentStatus === 'paid' && oldStatus !== 'paid') {
+      order.codPaidAt = new Date();
+      order.codPaidBy = (req.user as any)._id;
+    }
+    
+    // If marking COD as unpaid, clear the COD payment tracking
+    if (order.paymentMethod === 'cod' && value.paymentStatus !== 'paid') {
+      order.codPaidAt = undefined;
+      order.codPaidBy = undefined;
+    }
+    
     await order.save();
 
     // Send payment status email if status changed (non-blocking)
@@ -304,6 +320,7 @@ export const exportOrders = async (req: AuthRequest, res: Response, next: NextFu
       'Shipping',
       'Total',
       'Currency',
+      'Payment Method',
       'Payment Status',
       'Fulfillment Status',
     ];
@@ -322,6 +339,7 @@ export const exportOrders = async (req: AuthRequest, res: Response, next: NextFu
         formatPrice(order.shipping),
         formatPrice(order.total),
         order.currency,
+        order.paymentMethod || 'razorpay',
         order.paymentStatus,
         order.fulfillmentStatus,
       ];

@@ -202,6 +202,7 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
     const total = subtotal + shipping;
 
     // Create order (orderId will be auto-generated)
+    const paymentMethod = value.paymentMethod || 'razorpay';
     const order = new StoreOrder({
       storeId: store._id,
       customer: value.customer,
@@ -211,7 +212,8 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       shipping,
       total,
       currency: store.currency,
-      paymentStatus: 'pending',
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'pending', // COD orders start as pending, will be marked paid on delivery
       fulfillmentStatus: 'pending',
     });
 
@@ -240,7 +242,31 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       }
     }
 
-    // Note: Emails will be sent after payment verification, not when order is created
+    // For COD orders, send confirmation email immediately (payment will be marked later)
+    // For Razorpay orders, emails will be sent after payment verification
+    if (paymentMethod === 'cod') {
+      try {
+        const emailSettings = store.settings?.emailNotifications || {};
+        const sendCustomerEmails = emailSettings.orderConfirmation !== false;
+        if (sendCustomerEmails) {
+          sendOrderConfirmationEmail(order, store.name).catch((err) => {
+            console.error('Failed to send COD order confirmation email:', err);
+          });
+        }
+        
+        const sendOwnerEmails = emailSettings.newOrderNotification !== false;
+        if (sendOwnerEmails) {
+          const owner = await User.findById(store.owner);
+          if (owner && owner.email) {
+            sendNewOrderNotificationEmail(order, store.name, owner.email).catch((err) => {
+              console.error('Failed to send COD new order notification email:', err);
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending COD order emails:', emailError);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -287,6 +313,11 @@ export const createPaymentOrder = async (req: Request, res: Response, next: Next
 
     if (order.paymentStatus !== 'pending') {
       throw createError('Order payment already processed', 400);
+    }
+
+    // COD orders don't need Razorpay payment flow
+    if (order.paymentMethod === 'cod') {
+      throw createError('This is a COD order. Payment will be collected on delivery.', 400);
     }
 
     // Check if test mode is enabled

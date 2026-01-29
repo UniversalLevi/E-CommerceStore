@@ -34,6 +34,7 @@ export default function CheckoutPage() {
       phone: '',
     },
     shipping: 0,
+    paymentMethod: 'razorpay' as 'razorpay' | 'cod',
   });
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export default function CheckoutPage() {
         shippingAddress: formData.shippingAddress,
         items: orderItems,
         shipping: formData.shipping,
+        paymentMethod: formData.paymentMethod,
       });
 
       if (!orderResponse.success || !orderResponse.data) {
@@ -97,7 +99,15 @@ export default function CheckoutPage() {
 
       const order = orderResponse.data;
 
-      // Create payment order
+      // For COD orders, skip payment flow and redirect to order confirmation
+      if (formData.paymentMethod === 'cod') {
+        clearCart();
+        notify.success('Order placed successfully! Payment will be collected on delivery.');
+        router.push(`/storefront/${slug}/order/${order.orderId}`);
+        return;
+      }
+
+      // For Razorpay orders, create payment order
       const paymentResponse = await api.createPaymentOrder(slug, order._id);
       if (!paymentResponse.success || !paymentResponse.data) {
         throw new Error('Failed to create payment order');
@@ -340,6 +350,42 @@ export default function CheckoutPage() {
                   <span>{formatPrice(cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0) + formData.shipping, store?.currency || 'INR')}</span>
                 </div>
               </div>
+              
+              {/* Payment Method Selection */}
+              <div className="mt-6 pt-4 border-t border-border-default">
+                <h3 className="text-sm font-semibold text-text-primary mb-3">Payment Method</h3>
+                <div className="space-y-3">
+                  <label className="flex items-center p-3 border border-border-default rounded-lg cursor-pointer hover:bg-surface-base transition-colors">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="razorpay"
+                      checked={formData.paymentMethod === 'razorpay'}
+                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as 'razorpay' | 'cod' })}
+                      className="mr-3"
+                    />
+                    <div className="flex-1">
+                      <span className="text-text-primary font-medium">Online Payment</span>
+                      <p className="text-xs text-text-secondary">Pay securely with Razorpay</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center p-3 border border-border-default rounded-lg cursor-pointer hover:bg-surface-base transition-colors">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={formData.paymentMethod === 'cod'}
+                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as 'razorpay' | 'cod' })}
+                      className="mr-3"
+                    />
+                    <div className="flex-1">
+                      <span className="text-text-primary font-medium">Cash on Delivery (COD)</span>
+                      <p className="text-xs text-text-secondary">Pay when you receive your order</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={processing}
@@ -353,7 +399,7 @@ export default function CheckoutPage() {
                 ) : (
                   <>
                     <ShoppingCart className="h-5 w-5" />
-                    Complete Order
+                    {formData.paymentMethod === 'cod' ? 'Place COD Order' : 'Complete Order'}
                   </>
                 )}
               </button>
