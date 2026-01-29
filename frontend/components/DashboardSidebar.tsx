@@ -47,7 +47,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/ad-builder/instagram', label: 'Ad Builder', icon: Megaphone },
   { href: '/dashboard/video-mutator', label: 'Video Mutator', icon: Video },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
-  { href: '/dashboard/mentorship', label: 'Mentorship', icon: Users },
+  { href: '/dashboard/services', label: 'Connect with Experts', icon: Users },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/activity', label: 'Activity', icon: Activity },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },

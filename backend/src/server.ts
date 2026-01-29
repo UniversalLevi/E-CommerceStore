@@ -82,6 +82,7 @@ import storeDashboardRoutes from './routes/storeDashboardRoutes';
 import storeProductImportRoutes from './routes/storeProductImportRoutes';
 import storefrontRoutes from './routes/storefrontRoutes';
 import storeRazorpayWebhookRoutes from './routes/storeRazorpayWebhookRoutes';
+import serviceRoutes from './routes/serviceRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -112,6 +113,8 @@ app.use('/api', contentRoutes);
 // Niche routes (separate namespaces to prevent route overlap)
 app.use('/api/niches', nicheRoutes);
 app.use('/api/admin/niches', authenticateToken, requireAdmin, nicheAdminRoutes);
+// Service routes
+app.use('/api/services', serviceRoutes);
 // Mentorship routes (public POST, admin for GET/PUT)
 app.use('/api/mentorship', mentorshipRoutes);
 app.use('/api/admin/mentorship', mentorshipRoutes);

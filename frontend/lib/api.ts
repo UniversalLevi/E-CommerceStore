@@ -164,6 +164,28 @@ class ApiClient {
     return this.get<{ success: boolean; data: any }>('/api/payments/current-plan');
   }
 
+  // Service orders methods
+  async createServiceOrder(data: { serviceType: string; planType: string; targetGoal?: number }) {
+    return this.post<{ success: boolean; data: any }>('/api/services/orders', data);
+  }
+
+  async createServicePaymentOrder(orderId: string) {
+    return this.post<{ success: boolean; data: any }>(`/api/services/orders/${orderId}/payment`);
+  }
+
+  async verifyServicePayment(orderId: string, data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
+    return this.post<{ success: boolean; data: any }>(`/api/services/orders/${orderId}/verify`, data);
+  }
+
+  async getServiceOrders(params?: { serviceType?: string; status?: string; paymentStatus?: string }) {
+    const query = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    return this.get<{ success: boolean; data: { orders: any[] } }>(`/api/services/orders${query}`);
+  }
+
+  async getServiceOrder(orderId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/services/orders/${orderId}`);
+  }
+
   // Wallet API methods
   async getWallet() {
     return this.get<{

@@ -33,7 +33,7 @@ export default function CTASection({ onGetStarted }: CTASectionProps) {
 
   const handleScheduleDemo = () => {
     if (isAuthenticated) {
-      router.push('/dashboard/mentorship');
+      router.push('/services/connect-experts');
     } else {
       router.push('/login');
     }
