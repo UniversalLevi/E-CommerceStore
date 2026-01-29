@@ -33,6 +33,7 @@ interface Plan {
   code: string;
   name: string;
   price: number;
+  trialDays?: number;
   durationDays: number | null;
   isLifetime: boolean;
   maxProducts: number | null;

@@ -24,6 +24,8 @@ export async function isPaidUser(user: IUser): Promise<boolean> {
       if (subscription.trialEndsAt && subscription.trialEndsAt > new Date()) {
         return true;
       }
+      // Trial has expired - user should not have access
+      return false;
     }
   }
   

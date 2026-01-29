@@ -4,6 +4,8 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { User, IUser } from '../models/User';
+import { Subscription } from '../models/Subscription';
+import { plans, PlanCode } from '../config/plans';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
@@ -277,9 +279,63 @@ export const getMe = async (
       throw createError('User not found', 404);
     }
 
+    // Sync subscription status from Subscription model to User model
+    // This ensures manually_granted subscriptions are recognized
+    const activeSubscription = await Subscription.findOne({
+      userId: (req.user as any)._id,
+      status: { $in: ['active', 'trialing', 'manually_granted'] },
+    }).sort({ createdAt: -1 }).lean();
+
+    let user = req.user;
+    let needsUpdate = false;
+
+    if (activeSubscription) {
+      const plan = plans[activeSubscription.planCode as PlanCode];
+      if (plan) {
+        // Check if User model needs to be synced with Subscription model
+        const userPlanMatches = user.plan === activeSubscription.planCode;
+        const userIsLifetimeMatches = user.isLifetime === plan.isLifetime;
+        const userExpiresAtMatches = 
+          (plan.isLifetime && user.planExpiresAt === null) ||
+          (!plan.isLifetime && user.planExpiresAt && activeSubscription.endDate && 
+           Math.abs(user.planExpiresAt.getTime() - activeSubscription.endDate.getTime()) < 1000);
+
+        if (!userPlanMatches || !userIsLifetimeMatches || !userExpiresAtMatches) {
+          // Sync User model with Subscription model
+          const userDoc = await User.findById((req.user as any)._id);
+          if (userDoc) {
+            userDoc.plan = activeSubscription.planCode as PlanCode;
+            userDoc.isLifetime = plan.isLifetime;
+            userDoc.planExpiresAt = plan.isLifetime ? null : (activeSubscription.endDate || null);
+            await userDoc.save();
+            
+            // Update user object for response
+            user = userDoc.toObject();
+            delete (user as any).password;
+            needsUpdate = true;
+          }
+        }
+      }
+    } else {
+      // No active subscription found - check if user still has plan set (should be cleared)
+      if (user.plan || user.isLifetime) {
+        const userDoc = await User.findById((req.user as any)._id);
+        if (userDoc) {
+          userDoc.plan = null;
+          userDoc.isLifetime = false;
+          userDoc.planExpiresAt = null;
+          await userDoc.save();
+          
+          user = userDoc.toObject();
+          delete (user as any).password;
+          needsUpdate = true;
+        }
+      }
+    }
+
     res.status(200).json({
       success: true,
-      user: req.user,
+      user: user,
     });
   } catch (error) {
     next(error);

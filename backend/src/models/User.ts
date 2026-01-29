@@ -31,6 +31,7 @@ export interface IUser extends Document {
   planExpiresAt: Date | null;
   isLifetime: boolean;
   productsAdded: number;
+  hasUsedTrial: boolean; // Track if user has ever used a trial
   // Onboarding fields for AI features
   onboarding?: {
     nicheId: mongoose.Types.ObjectId;
@@ -163,6 +164,11 @@ const userSchema = new Schema<IUser>(
       type: Number,
       default: 0,
       min: 0,
+      index: true,
+    },
+    hasUsedTrial: {
+      type: Boolean,
+      default: false,
       index: true,
     },
     // Onboarding fields for AI features

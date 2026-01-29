@@ -46,6 +46,27 @@ export const createTrialSubscription = async (
     }
 
     const userId = (req.user as any)._id;
+    
+    // Check if user has already used a trial
+    const user = await User.findById(userId);
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+    
+    // Prevent multiple trials - check if user has already used a trial
+    if (user.hasUsedTrial) {
+      throw createError('You have already used your free trial. Please purchase a plan to continue.', 400);
+    }
+    
+    // Also check if user has any existing active or trialing subscription
+    const existingSubscription = await Subscription.findOne({
+      userId: userId,
+      status: { $in: ['active', 'trialing', 'manually_granted'] },
+    });
+    
+    if (existingSubscription) {
+      throw createError('You already have an active subscription. Please cancel your current subscription before starting a new one.', 400);
+    }
     const userIdStr = typeof userId === 'string' ? userId : userId.toString();
     const userIdShort = userIdStr.slice(-12);
     const timestamp = Date.now().toString().slice(-8);
@@ -484,6 +505,7 @@ export const verifyPayment = async (
     user.plan = planCode;
     user.planExpiresAt = subscription.trialEndsAt || new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
     user.isLifetime = plan.isLifetime || false;
+    user.hasUsedTrial = true; // Mark that user has used trial
     await user.save();
 
     // Create notification
@@ -897,16 +919,17 @@ export const handleWebhook = async (
         });
         
         if (subRecord) {
+          const plan = plans[subRecord.planCode];
           // Mark subscription as expired/failed
           subRecord.status = 'expired';
           subRecord.history.push({
-            action: 'payment_received', // Using existing action
+            action: 'trial_ended',
             timestamp: new Date(),
-            notes: `Payment failed after trial - subscription expired`,
+            notes: `Payment failed after trial - subscription expired. Full amount (₹${plan.price / 100}) was not charged.`,
           });
           await subRecord.save();
 
-          // Revoke user access
+          // Revoke user access immediately
           const user = await User.findById(subRecord.userId);
           if (user && user.plan === subRecord.planCode) {
             user.plan = null;
@@ -1082,7 +1105,27 @@ export const getCurrentPlan = async (
         trialEndsAt = subscription.trialEndsAt;
         isTrialing = true;
       } else {
-        // Trial ended but payment not yet charged - check webhook status
+        // Trial ended but payment not yet charged - expire the subscription
+        if (subscription.trialEndsAt && subscription.trialEndsAt <= new Date()) {
+          // Trial has expired - mark subscription as expired if not already
+          if (subscription.status === 'trialing') {
+            subscription.status = 'expired';
+            subscription.history.push({
+              action: 'trial_ended',
+              timestamp: new Date(),
+              notes: 'Trial expired without payment - subscription cancelled',
+            });
+            await subscription.save();
+            
+            // Revoke user access
+            if (user.plan === subscription.planCode) {
+              user.plan = null;
+              user.planExpiresAt = null;
+              user.isLifetime = false;
+              await user.save();
+            }
+          }
+        }
         status = getSubscriptionStatus(user);
       }
     }

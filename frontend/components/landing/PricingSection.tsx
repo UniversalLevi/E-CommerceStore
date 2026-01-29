@@ -18,6 +18,7 @@ interface Plan {
   code: string;
   name: string;
   price: number;
+  trialDays?: number;
   durationDays: number | null;
   isLifetime: boolean;
   maxProducts: number | null;
@@ -249,6 +250,17 @@ export default function PricingSection({ plans, loading, onGetStarted, formatPri
                         transition={{ duration: 2, repeat: Infinity }}
                       >
                         One-time payment
+                      </motion.div>
+                    )}
+                    
+                    {plan.trialDays && plan.trialDays > 0 && (
+                      <motion.div 
+                        className="inline-block px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-semibold mt-2"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        {plan.trialDays}-day free trial
                       </motion.div>
                     )}
                     
