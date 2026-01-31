@@ -190,3 +190,5 @@ export interface WhatsAppDraftStats {
   pending_review: number;
 }
 
+// Export affiliate types
+export * from './affiliate';

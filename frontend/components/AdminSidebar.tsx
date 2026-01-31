@@ -28,6 +28,7 @@ import {
   Database,
   Palette,
   MessageCircle,
+  TrendingUp,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -53,6 +54,7 @@ const navItems: NavItem[] = [
   { href: '/admin/zen-orders', label: 'ZEN Orders', icon: Zap },
   { href: '/admin/wallets', label: 'Wallets', icon: Wallet },
   { href: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet },
+  { href: '/admin/affiliates', label: 'Affiliates', icon: TrendingUp },
   { href: '/admin/auto-orders', label: 'Auto Place Order', icon: Sparkles },
   { href: '/admin/niches', label: 'Niches', icon: Layers },
   { href: '/admin/products', label: 'Products', icon: Package },

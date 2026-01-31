@@ -23,6 +23,7 @@ export interface ISubscription extends Document {
   source: 'razorpay' | 'manual' | 'legacy';
   adminNote?: string;
   history: ISubscriptionHistory[];
+  referredBy?: mongoose.Types.ObjectId; // Affiliate who referred this subscription
   createdAt: Date;
   updatedAt: Date;
 }
@@ -127,6 +128,12 @@ const subscriptionSchema = new Schema<ISubscription>(
     history: {
       type: [subscriptionHistorySchema],
       default: [],
+    },
+    referredBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'Affiliate',
+      default: null,
+      index: true,
     },
   },
   {

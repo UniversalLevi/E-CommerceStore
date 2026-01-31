@@ -1,23 +1,34 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { registerSchema } from '@/lib/validation';
 import Button from '@/components/Button';
 import { notify } from '@/lib/toast';
-import { COUNTRIES } from '@/lib/countries';
+import { UNIQUE_COUNTRIES } from '@/lib/countries';
 
 export default function RegisterPage() {
+  const searchParams = useSearchParams();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string; country?: string; password?: string; confirmPassword?: string }>({});
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
+
+  // Extract referral code from URL on mount
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setReferralCode(ref);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -84,7 +95,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(email, cleanPhone, password, name, country);
+      await register(email, cleanPhone, password, name, country, referralCode || undefined);
       notify.success('Account created successfully!');
     } catch (err: any) {
       notify.error(err.message || 'Registration failed');
@@ -210,7 +221,7 @@ export default function RegisterPage() {
                 }`}
               >
                 <option value="">Select a country</option>
-                {COUNTRIES.map((c) => (
+                {UNIQUE_COUNTRIES.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -269,6 +280,26 @@ export default function RegisterPage() {
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
               )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="referralCode"
+                className="block text-sm font-medium text-text-secondary mb-2"
+              >
+                Referral Code (Optional)
+              </label>
+              <input
+                id="referralCode"
+                type="text"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                className="w-full px-4 py-3 bg-white/5 backdrop-blur-sm text-text-primary border border-white/10 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none min-h-[44px] transition-all"
+                placeholder="Enter referral code"
+              />
+              <p className="mt-1 text-xs text-text-secondary">
+                Have a referral code? Enter it here to support your referrer
+              </p>
             </div>
 
             <Button type="submit" loading={loading} className="w-full">

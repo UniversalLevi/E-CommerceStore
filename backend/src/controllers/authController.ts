@@ -11,6 +11,7 @@ import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { logAuditWithRequest, logAudit } from '../utils/auditLogger';
 import { createNotification } from '../utils/notifications';
+import { bindReferralToUser } from '../services/referralTrackingService';
 
 export const register = async (
   req: Request,
@@ -18,7 +19,7 @@ export const register = async (
   next: NextFunction
 ) => {
   try {
-    const { name, email, mobile, country, password } = req.body;
+    const { name, email, mobile, country, password, referralCode } = req.body;
 
     // Validate required fields
     if (!name || !name.trim()) {
@@ -37,21 +38,29 @@ export const register = async (
       throw createError('Country is required', 400);
     }
 
-    // Check if user already exists by email or mobile
-    const existingUser = email 
-      ? await User.findOne({ email })
-      : await User.findOne({ mobile });
-
-    if (existingUser) {
-      // If account is deleted, hard delete it to allow re-registration
-      if (existingUser.deletedAt) {
-        console.log('Found deleted account, hard deleting to allow re-registration:', email || mobile);
-        await User.findByIdAndDelete(existingUser._id);
-      } else {
-        // Account exists and is not deleted
-        const field = email ? 'Email' : 'Mobile number';
-        throw createError(`${field} already registered`, 409);
-      }
+    // Check if user already exists by email or mobile (check both)
+    const existingUserByEmail = email ? await User.findOne({ email: email.trim().toLowerCase() }) : null;
+    const existingUserByMobile = mobile ? await User.findOne({ mobile: mobile.trim() }) : null;
+    
+    // Handle deleted accounts - allow re-registration
+    if (existingUserByEmail && existingUserByEmail.deletedAt) {
+      console.log('Found deleted account by email, hard deleting to allow re-registration:', email);
+      await User.findByIdAndDelete(existingUserByEmail._id);
+    }
+    if (existingUserByMobile && existingUserByMobile.deletedAt) {
+      console.log('Found deleted account by mobile, hard deleting to allow re-registration:', mobile);
+      await User.findByIdAndDelete(existingUserByMobile._id);
+    }
+    
+    // Check again after cleanup
+    const existingUserByEmailAfter = email ? await User.findOne({ email: email.trim().toLowerCase() }) : null;
+    const existingUserByMobileAfter = mobile ? await User.findOne({ mobile: mobile.trim() }) : null;
+    
+    if (existingUserByEmailAfter && !existingUserByEmailAfter.deletedAt) {
+      throw createError('Email already registered', 409);
+    }
+    if (existingUserByMobileAfter && !existingUserByMobileAfter.deletedAt) {
+      throw createError('Mobile number already registered', 409);
     }
 
     // Hash password with optimized rounds (10 -> 8 for better performance)
@@ -70,7 +79,41 @@ export const register = async (
       mobileLinkReminderSent: true,
     };
 
-    const user = await User.create(userData);
+    let user;
+    try {
+      user = await User.create(userData);
+    } catch (error: any) {
+      // Handle duplicate key errors (race condition or index issues)
+      if (error.code === 11000) {
+        const duplicateField = error.keyPattern?.email ? 'email' : error.keyPattern?.mobile ? 'mobile' : 'field';
+        throw createError(`${duplicateField === 'email' ? 'Email' : duplicateField === 'mobile' ? 'Mobile number' : 'Field'} already registered`, 409);
+      }
+      throw error;
+    }
+
+    // Bind referral if provided
+    const refCode = referralCode || req.query.ref;
+    if (refCode) {
+      try {
+        console.log(`[Registration] Attempting to bind referral code "${refCode}" to user ${user._id}`);
+        const tracking = await bindReferralToUser({
+          userId: user._id as mongoose.Types.ObjectId,
+          referralCode: refCode as string,
+          ipAddress: req.ip || req.socket.remoteAddress,
+        });
+        if (tracking) {
+          console.log(`[Registration] Successfully bound referral ${tracking._id} to user ${user._id}`);
+        } else {
+          console.log(`[Registration] No referral tracking created for code "${refCode}"`);
+        }
+      } catch (error: any) {
+        // Don't fail registration if referral binding fails, but log it
+        console.error('[Registration] Failed to bind referral:', error.message || error);
+        console.error('[Registration] Referral error stack:', error.stack);
+      }
+    } else {
+      console.log(`[Registration] No referral code provided`);
+    }
 
     // Generate JWT token with password change timestamp
     const jwtOptions: SignOptions = {

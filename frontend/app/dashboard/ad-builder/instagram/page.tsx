@@ -12,7 +12,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { notify } from '@/lib/toast';
 import { Sparkles } from 'lucide-react';
 import AdBuilderTabs from '@/components/ads/AdBuilderTabs';
-import { COUNTRIES } from '@/lib/countries';
+import { UNIQUE_COUNTRIES } from '@/lib/countries';
 
 interface CampaignFormData {
   campaignGoal: string;
@@ -305,7 +305,7 @@ export default function InstagramAdsPage() {
                 className="w-full px-4 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
               >
                 <option value="">Select country</option>
-                {COUNTRIES.map((country) => (
+                {UNIQUE_COUNTRIES.map((country) => (
                   <option key={country} value={country}>
                     {country}
                   </option>

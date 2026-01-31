@@ -21,6 +21,7 @@ import {
   Mail,
   Video,
   Palette,
+  Share2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -44,6 +45,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
   { href: '/dashboard/products', label: 'My Products', icon: Package },
+  { href: '/dashboard/affiliate', label: 'Affiliate', icon: Share2 },
   { href: '/dashboard/ad-builder/instagram', label: 'Ad Builder', icon: Megaphone },
   { href: '/dashboard/video-mutator', label: 'Video Mutator', icon: Video },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },

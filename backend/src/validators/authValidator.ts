@@ -6,6 +6,7 @@ export const registerSchema = z.object({
   mobile: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid mobile number format'),
   country: z.string().min(2, 'Country is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  referralCode: z.string().optional(), // Optional referral code for affiliate tracking
 });
 
 export const loginSchema = z.object({

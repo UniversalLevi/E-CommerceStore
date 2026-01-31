@@ -9,7 +9,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (emailOrMobile: string, password: string, isMobile?: boolean) => Promise<void>;
-  register: (email: string, mobile: string, password: string, name?: string, country?: string) => Promise<void>;
+  register: (email: string, mobile: string, password: string, name?: string, country?: string, referralCode?: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
@@ -66,11 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const register = async (email: string, mobile: string, password: string, name?: string, country?: string) => {
+  const register = async (email: string, mobile: string, password: string, name?: string, country?: string, referralCode?: string) => {
     try {
       const payload: any = { email, mobile, password };
       if (name) payload.name = name;
       if (country) payload.country = country;
+      if (referralCode) payload.referralCode = referralCode;
 
       const response = await api.post<{
         success: boolean;

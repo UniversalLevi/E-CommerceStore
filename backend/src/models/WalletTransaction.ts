@@ -9,7 +9,8 @@ export type TransactionReason =
   | 'Manual adjustment'
   | 'Auto-recharge'
   | 'Cashback'
-  | 'Promotional credit';
+  | 'Promotional credit'
+  | 'Affiliate payout';
 
 export interface IWalletTransaction extends Document {
   walletId: mongoose.Types.ObjectId;

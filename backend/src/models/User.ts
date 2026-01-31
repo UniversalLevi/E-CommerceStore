@@ -44,6 +44,8 @@ export interface IUser extends Document {
   // Mobile linking for email-only accounts
   mobileLinkedAt?: Date;
   mobileLinkReminderSent?: boolean;
+  // Affiliate referral tracking
+  referredBy?: mongoose.Types.ObjectId; // Affiliate who referred this user
   createdAt: Date;
   updatedAt: Date;
 }
@@ -200,6 +202,13 @@ const userSchema = new Schema<IUser>(
     mobileLinkReminderSent: {
       type: Boolean,
       default: false,
+    },
+    // Affiliate referral tracking
+    referredBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'Affiliate',
+      default: null,
+      index: true,
     },
   },
   {

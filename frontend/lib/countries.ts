@@ -213,27 +213,22 @@ export const COUNTRIES = [
   'Kyrgyzstan',
   'Mongolia',
   'North Korea',
-  'Myanmar',
   'Yemen',
   'Oman',
   'Qatar',
   'Bahrain',
   'Kuwait',
-  'Kyrgyzstan',
-  'Tajikistan',
-  'Turkmenistan',
-  'Uzbekistan',
-  'Kazakhstan',
   'Azerbaijan',
   'Armenia',
   'Georgia',
-  'Moldova',
-  'Belarus',
   'Kosovo',
   'Montenegro',
   'Serbia',
   'Bosnia and Herzegovina',
   'North Macedonia',
   'Albania',
-].sort();
+];
+
+// Remove duplicates and sort
+export const UNIQUE_COUNTRIES = Array.from(new Set(COUNTRIES)).sort();
 

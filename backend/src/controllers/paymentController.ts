@@ -12,6 +12,7 @@ import { plans, isValidPlanCode, PlanCode, TOKEN_CHARGE_AMOUNT } from '../config
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
+import { createCommission } from '../services/commissionService';
 
 /**
  * Create trial subscription with ₹20 token charge
@@ -713,6 +714,23 @@ export const handleWebhook = async (
         // Link payment to subscription
         paymentRecord.subscriptionId = subscription._id as mongoose.Types.ObjectId;
         await paymentRecord.save();
+
+        // Create affiliate commission if this is a new subscription (not renewal)
+        // Only create commission on first payment, not renewals
+        if (!isRenewal && subscription) {
+          try {
+            await createCommission({
+              userId: paymentRecord.userId,
+              subscriptionId: subscription._id as mongoose.Types.ObjectId,
+              paymentId: paymentRecord._id as mongoose.Types.ObjectId,
+              planCode: paymentRecord.planCode,
+              subscriptionAmount: plan.price,
+            });
+          } catch (error) {
+            // Don't fail webhook if commission creation fails
+            console.error('Failed to create affiliate commission:', error);
+          }
+        }
       }
     }
 
@@ -791,6 +809,57 @@ export const handleWebhook = async (
           notes: `Trial ended - Full amount (₹${plan.price / 100}) charged`,
         });
         await subRecord.save();
+
+        // Create affiliate commission when trial ends and full payment is charged
+        // This is the first full payment, so create commission
+        try {
+          // Find payment record for this subscription charge
+          // Try multiple ways to find the payment record
+          let paymentRecord = await Payment.findOne({
+            paymentId: payment.id,
+          });
+
+          // If not found by paymentId, try by subscriptionId
+          if (!paymentRecord) {
+            paymentRecord = await Payment.findOne({
+              subscriptionId: subRecord._id,
+              status: 'paid',
+            }).sort({ createdAt: -1 });
+          }
+
+          // If still not found, create a payment record for tracking
+          if (!paymentRecord) {
+            paymentRecord = await Payment.create({
+              userId: subRecord.userId,
+              orderId: `sub_${subscription.id}_${Date.now()}`,
+              paymentId: payment.id,
+              planCode: subRecord.planCode,
+              status: 'paid',
+              amount: plan.price,
+              currency: 'INR',
+              razorpayOrderId: payment.order_id || `order_${subscription.id}`,
+              subscriptionId: subRecord._id,
+              planName: plan.name,
+              metadata: {
+                source: 'webhook',
+                subscriptionId: subscription.id,
+              },
+            });
+          }
+
+          if (paymentRecord) {
+            await createCommission({
+              userId: subRecord.userId,
+              subscriptionId: subRecord._id as mongoose.Types.ObjectId,
+              paymentId: paymentRecord._id as mongoose.Types.ObjectId,
+              planCode: subRecord.planCode,
+              subscriptionAmount: plan.price,
+            });
+          }
+        } catch (error) {
+          // Don't fail webhook if commission creation fails
+          console.error('Failed to create affiliate commission:', error);
+        }
 
         // Update user subscription access
         const user = await User.findById(subRecord.userId);

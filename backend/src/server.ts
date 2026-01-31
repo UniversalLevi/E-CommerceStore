@@ -83,6 +83,8 @@ import storeProductImportRoutes from './routes/storeProductImportRoutes';
 import storefrontRoutes from './routes/storefrontRoutes';
 import storeRazorpayWebhookRoutes from './routes/storeRazorpayWebhookRoutes';
 import serviceRoutes from './routes/serviceRoutes';
+import affiliateRoutes from './routes/affiliateRoutes';
+import adminAffiliateRoutes from './routes/adminAffiliateRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -131,6 +133,9 @@ app.use('/api/store-dashboard', storeProductImportRoutes);
 app.use('/api/storefront', storefrontRoutes);
 // Razorpay Connect webhook (must be before JSON parser for raw body)
 app.use('/api/store-dashboard/razorpay', storeRazorpayWebhookRoutes);
+// Affiliate routes
+app.use('/api/affiliates', affiliateRoutes);
+app.use('/api/admin/affiliates', adminAffiliateRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
