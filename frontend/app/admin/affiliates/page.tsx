@@ -117,7 +117,7 @@ export default function AdminAffiliatesPage() {
         payload = { reason };
       }
 
-      const response = await api.post(endpoint, payload);
+      const response = await api.post<{ success: boolean }>(endpoint, payload);
       if (response.success) {
         notify.success(`Affiliate ${action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'suspended'}`);
         fetchAffiliates();

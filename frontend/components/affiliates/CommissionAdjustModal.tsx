@@ -57,7 +57,8 @@ export default function CommissionAdjustModal({
         payload
       );
 
-      if (response.success) {
+      const typedResponse = response as { success: boolean };
+      if (typedResponse.success) {
         notify.success(`Commission ${action === 'approve' ? 'approved' : action === 'revoke' ? 'revoked' : 'adjusted'} successfully`);
         onSuccess();
         onClose();

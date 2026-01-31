@@ -30,7 +30,7 @@ export default function PayoutApprovalModal({
     // Fetch commissions included in this payout
     const fetchCommissions = async () => {
       try {
-        const response = await api.get(`/api/admin/affiliates/${affiliateId}/commissions`);
+        const response = await api.get<{ success: boolean; data?: { commissions?: any[] } }>(`/api/admin/affiliates/${affiliateId}/commissions`);
         if (response.success && response.data) {
           // Filter commissions that are approved and ready for payout
           const readyCommissions = response.data.commissions?.filter(
@@ -64,7 +64,8 @@ export default function PayoutApprovalModal({
 
       const response = await api.post(endpoint, payload);
 
-      if (response.success) {
+      const typedResponse = response as { success: boolean };
+      if (typedResponse.success) {
         notify.success(`Payout ${action === 'approve' ? 'approved' : 'rejected'} successfully`);
         onSuccess();
         onClose();

@@ -72,7 +72,7 @@ export default function AffiliateDashboardPage() {
 
   const handleApply = async () => {
     try {
-      const response = await api.post('/api/affiliates/apply');
+      const response = await api.post<{ success: boolean }>('/api/affiliates/apply');
       if (response.success) {
         notify.success('Affiliate application submitted!');
         fetchData();
@@ -125,7 +125,7 @@ export default function AffiliateDashboardPage() {
 
     try {
       setRequestingPayout(true);
-      const response = await api.post('/api/affiliates/payout/request');
+      const response = await api.post<{ success: boolean }>('/api/affiliates/payout/request');
       if (response.success) {
         notify.success('Payout request submitted successfully!');
         fetchData();
@@ -270,7 +270,7 @@ export default function AffiliateDashboardPage() {
             <Copy className="h-4 w-4 mr-2" />
             Copy
           </Button>
-          {navigator.share && (
+          {typeof navigator !== 'undefined' && 'share' in navigator && (
             <Button
               onClick={shareReferralLink}
               variant="secondary"
