@@ -1,0 +1,36 @@
+/* Dark Premium Theme Styles */
+.dark-premium-theme {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #000000 0%, #1f2937 100%);
+}
+
+.dark-premium-theme button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(251, 191, 36, 0.2);
+}
+
+.dark-premium-theme button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(251, 191, 36, 0.4);
+}
+
+.dark-premium-theme input:focus,
+.dark-premium-theme textarea:focus,
+.dark-premium-theme select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3);
+  border-color: #fbbf24;
+}
+
+.dark-premium-theme .product-card {
+  backdrop-filter: blur(10px);
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.dark-premium-theme .product-card:hover {
+  background: rgba(31, 41, 55, 0.95);
+  border-color: rgba(251, 191, 36, 0.6);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(251, 191, 36, 0.3);
+}

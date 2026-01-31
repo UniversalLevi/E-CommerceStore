@@ -51,6 +51,28 @@ export async function loadTheme(themeName: string) {
       case 'vintage':
         themeComponents[themeName] = await import('./vintage');
         break;
+      // Premium internal store themes
+      case 'dark-shade':
+        themeComponents[themeName] = await import('./dark-shade');
+        break;
+      case 'dark-premium':
+        themeComponents[themeName] = await import('./dark-premium');
+        break;
+      case 'royal-luxury':
+        themeComponents[themeName] = await import('./royal-luxury');
+        break;
+      case 'ocean-breeze':
+        themeComponents[themeName] = await import('./ocean-breeze');
+        break;
+      case 'sunset-glow':
+        themeComponents[themeName] = await import('./sunset-glow');
+        break;
+      case 'forest-nature':
+        themeComponents[themeName] = await import('./forest-nature');
+        break;
+      case 'cosmic-space':
+        themeComponents[themeName] = await import('./cosmic-space');
+        break;
       // Legacy themes (deprecated)
       case 'minimal':
         themeComponents[themeName] = await import('./minimal');

@@ -8,6 +8,13 @@ import { elegantThemeConfig } from '../elegant/config';
 import { boldThemeConfig } from '../bold/config';
 import { minimalistThemeConfig } from '../minimalist/config';
 import { vintageThemeConfig } from '../vintage/config';
+import { darkShadeThemeConfig } from '../dark-shade/config';
+import { darkPremiumThemeConfig } from '../dark-premium/config';
+import { royalLuxuryThemeConfig } from '../royal-luxury/config';
+import { oceanBreezeThemeConfig } from '../ocean-breeze/config';
+import { sunsetGlowThemeConfig } from '../sunset-glow/config';
+import { forestNatureThemeConfig } from '../forest-nature/config';
+import { cosmicSpaceThemeConfig } from '../cosmic-space/config';
 
 export const AVAILABLE_THEMES: ThemeConfig[] = [
   // New internal store themes
@@ -21,6 +28,14 @@ export const AVAILABLE_THEMES: ThemeConfig[] = [
   boldThemeConfig,
   minimalistThemeConfig,
   vintageThemeConfig,
+  // Premium internal store themes
+  darkShadeThemeConfig,
+  darkPremiumThemeConfig,
+  royalLuxuryThemeConfig,
+  oceanBreezeThemeConfig,
+  sunsetGlowThemeConfig,
+  forestNatureThemeConfig,
+  cosmicSpaceThemeConfig,
   // Legacy themes (deprecated, kept for backward compatibility)
   {
     name: 'minimal',

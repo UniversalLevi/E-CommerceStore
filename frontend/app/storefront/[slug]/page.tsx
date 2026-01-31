@@ -124,8 +124,11 @@ export default function StorefrontPage() {
 
   const { Header, Footer, ProductCard, Hero } = ThemeComponents;
 
+  const themeName = theme?.name || 'modern';
+  const themeClass = `${themeName}-theme`;
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors?.background || '#ffffff' }}>
+    <div className={`min-h-screen flex flex-col ${themeClass}`} style={{ backgroundColor: colors?.background || '#ffffff', position: 'relative', zIndex: 1 }}>
       {/* Header */}
       <Header
         storeSlug={slug}
@@ -144,9 +147,9 @@ export default function StorefrontPage() {
       />
 
       {/* Main Content */}
-      <main className="flex-1" style={{ maxWidth: 'var(--theme-container-width, 1280px)', margin: '0 auto', width: '100%', padding: '2rem 1rem' }}>
+      <main className="flex-1 relative z-10" style={{ maxWidth: 'var(--theme-container-width, 1280px)', margin: '0 auto', width: '100%', padding: '2rem 1rem' }}>
         {/* Search and Filters */}
-        <div className="mb-8 space-y-4">
+        <div className="mb-8 space-y-4 relative z-10">
           <div className="flex gap-4">
             <div className="flex-1 relative">
               <input
@@ -154,20 +157,21 @@ export default function StorefrontPage() {
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-4 py-3 rounded-lg border"
+                className="w-full pl-4 pr-4 py-3 rounded-lg border relative z-10"
                 style={{
-                  backgroundColor: colors.secondary,
-                  borderColor: colors.primary + '30',
+                  backgroundColor: themeName === 'dark-shade' ? 'rgba(26, 26, 26, 0.8)' : themeName === 'cosmic-space' ? 'rgba(30, 27, 75, 0.7)' : colors.secondary,
+                  borderColor: themeName === 'dark-shade' ? 'rgba(255, 255, 255, 0.15)' : themeName === 'cosmic-space' ? 'rgba(167, 139, 250, 0.4)' : colors.primary + '30',
                   color: colors.text,
                 }}
               />
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-6 py-3 rounded-lg font-medium transition-opacity hover:opacity-80"
+              className="px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg relative z-10"
               style={{
-                backgroundColor: colors.accent,
+                backgroundColor: themeName === 'dark-shade' ? '#64748b' : themeName === 'cosmic-space' ? colors.accent : colors.accent,
                 color: '#ffffff',
+                boxShadow: themeName === 'dark-shade' ? '0 4px 12px rgba(100, 116, 139, 0.3)' : themeName === 'cosmic-space' ? '0 4px 12px rgba(139, 92, 246, 0.3)' : '0 4px 12px rgba(0, 0, 0, 0.2)',
               }}
             >
               Filters
@@ -175,47 +179,50 @@ export default function StorefrontPage() {
           </div>
 
           {showFilters && (
-            <div className="rounded-lg border p-6 space-y-4" style={{ backgroundColor: colors.secondary, borderColor: colors.primary + '30' }}>
+            <div className="rounded-lg border p-6 space-y-4 relative z-10" style={{ 
+              backgroundColor: themeName === 'dark-shade' ? 'rgba(26, 26, 26, 0.6)' : themeName === 'cosmic-space' ? 'rgba(30, 27, 75, 0.6)' : colors.secondary, 
+              borderColor: themeName === 'dark-shade' ? 'rgba(255, 255, 255, 0.12)' : themeName === 'cosmic-space' ? 'rgba(167, 139, 250, 0.4)' : colors.primary + '30' 
+            }}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Min Price</label>
+                  <label className="block text-sm font-medium mb-2 relative z-10" style={{ color: colors.text }}>Min Price</label>
                   <input
                     type="number"
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
                     placeholder="0"
-                    className="w-full px-4 py-2 rounded-lg border"
+                    className="w-full px-4 py-2 rounded-lg border relative z-10"
                     style={{
-                      backgroundColor: colors.background,
-                      borderColor: colors.primary + '30',
+                      backgroundColor: themeName === 'dark-shade' ? 'rgba(26, 26, 26, 0.8)' : themeName === 'cosmic-space' ? 'rgba(30, 27, 75, 0.7)' : colors.background,
+                      borderColor: themeName === 'dark-shade' ? 'rgba(255, 255, 255, 0.15)' : themeName === 'cosmic-space' ? 'rgba(167, 139, 250, 0.4)' : colors.primary + '30',
                       color: colors.text,
                     }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Max Price</label>
+                  <label className="block text-sm font-medium mb-2 relative z-10" style={{ color: colors.text }}>Max Price</label>
                   <input
                     type="number"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
                     placeholder="1000"
-                    className="w-full px-4 py-2 rounded-lg border"
+                    className="w-full px-4 py-2 rounded-lg border relative z-10"
                     style={{
-                      backgroundColor: colors.background,
-                      borderColor: colors.primary + '30',
+                      backgroundColor: themeName === 'dark-shade' ? 'rgba(26, 26, 26, 0.8)' : themeName === 'cosmic-space' ? 'rgba(30, 27, 75, 0.7)' : colors.background,
+                      borderColor: themeName === 'dark-shade' ? 'rgba(255, 255, 255, 0.15)' : themeName === 'cosmic-space' ? 'rgba(167, 139, 250, 0.4)' : colors.primary + '30',
                       color: colors.text,
                     }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Sort By</label>
+                  <label className="block text-sm font-medium mb-2 relative z-10" style={{ color: colors.text }}>Sort By</label>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border"
+                    className="w-full px-4 py-2 rounded-lg border relative z-10"
                     style={{
-                      backgroundColor: colors.background,
-                      borderColor: colors.primary + '30',
+                      backgroundColor: themeName === 'dark-shade' ? 'rgba(26, 26, 26, 0.8)' : themeName === 'cosmic-space' ? 'rgba(30, 27, 75, 0.7)' : colors.background,
+                      borderColor: themeName === 'dark-shade' ? 'rgba(255, 255, 255, 0.15)' : themeName === 'cosmic-space' ? 'rgba(167, 139, 250, 0.4)' : colors.primary + '30',
                       color: colors.text,
                     }}
                   >
@@ -232,12 +239,12 @@ export default function StorefrontPage() {
 
         {/* Products Grid */}
         {products.length === 0 ? (
-          <div className="text-center py-16">
-            <Package className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text + '60' }} />
-            <p style={{ color: colors.text + 'CC' }}>No products found</p>
+          <div className="text-center py-16 relative z-10">
+            <Package className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text, opacity: 0.6 }} />
+            <p style={{ color: colors.text, opacity: 0.8 }}>No products found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative z-10">
             {products.map((product) => (
               <ProductCard
                 key={product._id}
@@ -258,7 +265,11 @@ export default function StorefrontPage() {
         <button
           onClick={openCart}
           className="fixed bottom-6 right-6 rounded-full p-4 shadow-lg transition-all hover:scale-110 z-30 flex items-center gap-2 cursor-pointer"
-          style={{ backgroundColor: colors.accent, color: '#ffffff' }}
+          style={{ 
+            backgroundColor: themeName === 'dark-shade' ? '#64748b' : themeName === 'cosmic-space' ? colors.accent : colors.accent, 
+            color: '#ffffff',
+            boxShadow: themeName === 'dark-shade' ? '0 8px 24px rgba(100, 116, 139, 0.4)' : themeName === 'cosmic-space' ? '0 8px 24px rgba(139, 92, 246, 0.4)' : '0 8px 24px rgba(0, 0, 0, 0.3)',
+          }}
           aria-label="Open cart"
         >
           <span className="font-bold">{getTotalItems()}</span>

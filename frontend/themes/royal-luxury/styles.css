@@ -1,0 +1,35 @@
+/* Royal Luxury Theme Styles */
+.royal-luxury-theme {
+  font-family: 'Playfair Display', serif;
+  background: linear-gradient(135deg, #ffffff 0%, #f3e8ff 100%);
+}
+
+.royal-luxury-theme button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.2);
+}
+
+.royal-luxury-theme button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(168, 85, 247, 0.4);
+}
+
+.royal-luxury-theme input:focus,
+.royal-luxury-theme textarea:focus,
+.royal-luxury-theme select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+  border-color: #a855f7;
+}
+
+.royal-luxury-theme .product-card {
+  background: #ffffff;
+  border: 2px solid rgba(168, 85, 247, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.1);
+}
+
+.royal-luxury-theme .product-card:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(168, 85, 247, 0.2);
+}

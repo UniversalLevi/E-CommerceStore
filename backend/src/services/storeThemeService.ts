@@ -13,6 +13,8 @@ export interface ThemeConfig {
     background: string;
     text: string;
     accent: string;
+    border?: string;
+    hover?: string;
   };
   defaultTypography: {
     fontFamily: string;
@@ -200,6 +202,142 @@ const AVAILABLE_THEMES: ThemeConfig[] = [
       fontFamily: 'Merriweather, Lora, serif',
       headingFont: 'Merriweather, serif',
       fontSize: '17px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  // Premium internal store themes
+  {
+    name: 'dark-shade',
+    displayName: 'Dark Shade',
+    description: 'Premium dark theme with elegant design and modern aesthetics',
+    category: 'luxury',
+    defaultColors: {
+      primary: '#ffffff',
+      secondary: '#1a1a1a',
+      background: '#000000',
+      text: '#e0e0e0',
+      accent: '#64748b',
+      border: '#334155',
+      hover: '#475569',
+    },
+    defaultTypography: {
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      headingFont: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'dark-premium',
+    displayName: 'Dark Premium',
+    description: 'Ultra-premium dark theme with deep black and gold accents',
+    category: 'luxury',
+    defaultColors: {
+      primary: '#fbbf24',
+      secondary: '#1f2937',
+      background: '#000000',
+      text: '#ffffff',
+      accent: '#f59e0b',
+    },
+    defaultTypography: {
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      headingFont: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'royal-luxury',
+    displayName: 'Royal Luxury',
+    description: 'Regal theme with purple and gold luxury accents',
+    category: 'luxury',
+    defaultColors: {
+      primary: '#a855f7',
+      secondary: '#f3e8ff',
+      background: '#ffffff',
+      text: '#1e1b4b',
+      accent: '#fbbf24',
+    },
+    defaultTypography: {
+      fontFamily: 'Playfair Display, serif',
+      headingFont: 'Playfair Display, serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'ocean-breeze',
+    displayName: 'Ocean Breeze',
+    description: 'Fresh ocean theme with blue and teal tones',
+    category: 'modern',
+    defaultColors: {
+      primary: '#0ea5e9',
+      secondary: '#e0f2fe',
+      background: '#ffffff',
+      text: '#0c4a6e',
+      accent: '#06b6d4',
+    },
+    defaultTypography: {
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      headingFont: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'sunset-glow',
+    displayName: 'Sunset Glow',
+    description: 'Warm sunset theme with orange and pink gradients',
+    category: 'bold',
+    defaultColors: {
+      primary: '#f97316',
+      secondary: '#fff7ed',
+      background: '#ffffff',
+      text: '#7c2d12',
+      accent: '#ec4899',
+    },
+    defaultTypography: {
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      headingFont: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'forest-nature',
+    displayName: 'Forest Nature',
+    description: 'Natural green theme inspired by nature',
+    category: 'modern',
+    defaultColors: {
+      primary: '#16a34a',
+      secondary: '#f0fdf4',
+      background: '#ffffff',
+      text: '#14532d',
+      accent: '#22c55e',
+    },
+    defaultTypography: {
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      headingFont: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
+    },
+    customizableProperties: ['colors', 'typography', 'logo', 'layout'],
+  },
+  {
+    name: 'cosmic-space',
+    displayName: 'Cosmic Space',
+    description: 'Premium futuristic space theme with stunning purple-blue gradients and modern aesthetics',
+    category: 'luxury',
+    defaultColors: {
+      primary: '#a78bfa',
+      secondary: '#1e1b4b',
+      background: '#0a0a0f',
+      text: '#e9d5ff',
+      accent: '#6366f1',
+    },
+    defaultTypography: {
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      headingFont: 'Inter, system-ui, -apple-system, sans-serif',
+      fontSize: '16px',
     },
     customizableProperties: ['colors', 'typography', 'logo', 'layout'],
   },

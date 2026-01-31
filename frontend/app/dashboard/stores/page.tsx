@@ -295,7 +295,7 @@ export default function MyStoresPage() {
                         Manage Store
                       </Link>
                       <a
-                        href={`/storefront/${internalStore.slug}`}
+                        href={`https://${internalStore.slug}.eazydropshipping.com`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 bg-surface-hover hover:bg-surface-elevated text-text-primary rounded-lg text-sm font-medium text-center transition-colors flex items-center justify-center gap-1"

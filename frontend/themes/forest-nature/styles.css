@@ -1,0 +1,35 @@
+/* Forest Nature Theme Styles */
+.forest-nature-theme {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+
+.forest-nature-theme button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.2);
+}
+
+.forest-nature-theme button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.4);
+}
+
+.forest-nature-theme input:focus,
+.forest-nature-theme textarea:focus,
+.forest-nature-theme select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+  border-color: #16a34a;
+}
+
+.forest-nature-theme .product-card {
+  background: #ffffff;
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.1);
+}
+
+.forest-nature-theme .product-card:hover {
+  border-color: rgba(22, 163, 74, 0.5);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(22, 163, 74, 0.2);
+}

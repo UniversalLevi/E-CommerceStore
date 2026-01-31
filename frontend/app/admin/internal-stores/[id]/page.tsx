@@ -259,7 +259,7 @@ export default function AdminInternalStoreDetailPage() {
             <div>
               <p className="text-sm text-text-secondary mb-1">Store URL</p>
               <a
-                href={`/storefront/${store.slug}`}
+                href={`https://${store.slug}.eazydropshipping.com`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary-500 hover:underline"

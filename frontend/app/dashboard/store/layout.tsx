@@ -110,7 +110,7 @@ export default function StoreDashboardLayout({
                     {store.slug}.eazydropshipping.com
                   </p>
                   <a
-                    href={`/storefront/${store.slug}`}
+                    href={`https://${store.slug}.eazydropshipping.com`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-purple-400 hover:text-purple-300 underline"

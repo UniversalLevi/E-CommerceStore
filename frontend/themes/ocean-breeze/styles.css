@@ -1,0 +1,35 @@
+/* Ocean Breeze Theme Styles */
+.ocean-breeze-theme {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+}
+
+.ocean-breeze-theme button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
+}
+
+.ocean-breeze-theme button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.4);
+}
+
+.ocean-breeze-theme input:focus,
+.ocean-breeze-theme textarea:focus,
+.ocean-breeze-theme select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+  border-color: #0ea5e9;
+}
+
+.ocean-breeze-theme .product-card {
+  background: #ffffff;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.1);
+}
+
+.ocean-breeze-theme .product-card:hover {
+  border-color: rgba(14, 165, 233, 0.5);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(14, 165, 233, 0.2);
+}

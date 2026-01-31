@@ -1,0 +1,225 @@
+/* Cosmic Space Premium Theme Styles - Modern & Premium */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.cosmic-space-theme {
+  font-family: 'Orbitron', 'Rajdhani', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #312e81 100%);
+  position: relative;
+  overflow-x: hidden;
+  min-height: 100vh;
+  z-index: 1;
+}
+
+/* Override any global grid pattern */
+.cosmic-space-theme .grid-pattern {
+  opacity: 0.05 !important;
+  z-index: 0 !important;
+  pointer-events: none;
+}
+
+/* Background overlay - behind everything */
+.cosmic-space-theme::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(167, 139, 250, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure all content is above background */
+.cosmic-space-theme > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cosmic-space-theme button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.4), 0 0 20px rgba(139, 92, 246, 0.2);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+}
+
+.cosmic-space-theme button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%);
+}
+
+.cosmic-space-theme input,
+.cosmic-space-theme textarea,
+.cosmic-space-theme select {
+  background-color: rgba(30, 27, 75, 0.7) !important;
+  border: 1px solid rgba(167, 139, 250, 0.4) !important;
+  color: #e0e7ff !important;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 10;
+}
+
+.cosmic-space-theme input::placeholder,
+.cosmic-space-theme textarea::placeholder {
+  color: rgba(167, 139, 250, 0.6) !important;
+  opacity: 1;
+}
+
+.cosmic-space-theme input:focus,
+.cosmic-space-theme textarea:focus,
+.cosmic-space-theme select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.5), 0 0 20px rgba(139, 92, 246, 0.3) !important;
+  border-color: #a78bfa !important;
+  background: rgba(30, 27, 75, 0.9) !important;
+  transform: scale(1.02);
+  z-index: 20;
+}
+
+.cosmic-space-theme .product-card {
+  backdrop-filter: blur(20px);
+  background: rgba(30, 27, 75, 0.6) !important;
+  border: 1px solid rgba(167, 139, 250, 0.4) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 0 20px rgba(139, 92, 246, 0.2);
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.cosmic-space-theme .product-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.cosmic-space-theme .product-card:hover::before {
+  left: 100%;
+}
+
+.cosmic-space-theme .product-card:hover {
+  background: rgba(30, 27, 75, 0.7);
+  border-color: rgba(167, 139, 250, 0.6);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(139, 92, 246, 0.3);
+}
+
+.cosmic-space-theme .header,
+.cosmic-space-theme header {
+  backdrop-filter: blur(20px) !important;
+  background: rgba(10, 10, 15, 0.95) !important;
+  border-bottom: 1px solid rgba(167, 139, 250, 0.3) !important;
+  position: relative;
+  z-index: 100 !important;
+}
+
+.cosmic-space-theme .header *,
+.cosmic-space-theme header * {
+  position: relative;
+  z-index: 101;
+}
+
+.cosmic-space-theme .hero-section,
+.cosmic-space-theme section {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+  position: relative;
+  z-index: 10;
+}
+
+.cosmic-space-theme .hero-section::after,
+.cosmic-space-theme section::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(167, 139, 250, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cosmic-space-theme .hero-section > *,
+.cosmic-space-theme section > * {
+  position: relative;
+  z-index: 10;
+}
+
+/* Ensure text is always visible */
+.cosmic-space-theme h1,
+.cosmic-space-theme h2,
+.cosmic-space-theme h3,
+.cosmic-space-theme h4,
+.cosmic-space-theme h5,
+.cosmic-space-theme h6,
+.cosmic-space-theme p,
+.cosmic-space-theme span,
+.cosmic-space-theme label {
+  position: relative;
+  z-index: 10;
+  color: #e0e7ff !important;
+}
+
+.cosmic-space-theme .animate-fadeIn {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.cosmic-space-theme .animate-slideIn {
+  animation: slideIn 0.6s ease-out;
+}
+
+/* Scrollbar styling */
+.cosmic-space-theme ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.cosmic-space-theme ::-webkit-scrollbar-track {
+  background: rgba(10, 10, 15, 0.5);
+}
+
+.cosmic-space-theme ::-webkit-scrollbar-thumb {
+  background: rgba(167, 139, 250, 0.3);
+  border-radius: 5px;
+}
+
+.cosmic-space-theme ::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.5);
+}
