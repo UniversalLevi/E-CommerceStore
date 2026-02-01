@@ -56,6 +56,7 @@ export const createTrialSubscription = async (
     
     // Prevent multiple trials - check if user has already used a trial
     if (user.hasUsedTrial) {
+      console.log(`[Payment] User ${userId} has already used trial`);
       throw createError('You have already used your free trial. Please purchase a plan to continue.', 400);
     }
     
@@ -66,6 +67,7 @@ export const createTrialSubscription = async (
     });
     
     if (existingSubscription) {
+      console.log(`[Payment] User ${userId} has existing subscription: ${existingSubscription.status}`);
       throw createError('You already have an active subscription. Please cancel your current subscription before starting a new one.', 400);
     }
     const userIdStr = typeof userId === 'string' ? userId : userId.toString();
@@ -76,8 +78,8 @@ export const createTrialSubscription = async (
     const trialDays = plan.trialDays || 0;
     const startAt = Math.floor(Date.now() / 1000) + (trialDays * 24 * 60 * 60);
 
-    // Determine total_count: 1 for one-time (Pro/Lifetime), high number for recurring (Monthly)
-    const totalCount = plan.isLifetime || !plan.durationDays ? 1 : 120; // 120 months for recurring
+    // Determine total_count: 1 for one-time (Lifetime), max 100 for recurring (Monthly) - Razorpay limit
+    const totalCount = plan.isLifetime || !plan.durationDays ? 1 : 100; // 100 months max for recurring (Razorpay limit)
 
     console.log('Creating trial subscription for plan:', planCode, 'trial days:', trialDays, 'start_at:', startAt);
 

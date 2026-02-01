@@ -10,6 +10,8 @@ export interface IAffiliate extends Document {
     starter_30?: number; // Percentage as decimal (0.20 = 20%)
     growth_90?: number;
     lifetime?: number;
+    service?: number; // Percentage as decimal (0.15 = 15%)
+    store_order?: number; // Percentage as decimal (0.10 = 10%)
   };
   // Stats (calculated fields, can be cached)
   totalReferrals: number;
@@ -63,6 +65,16 @@ const affiliateSchema = new Schema<IAffiliate>(
         max: 1,
       },
       lifetime: {
+        type: Number,
+        min: 0,
+        max: 1,
+      },
+      service: {
+        type: Number,
+        min: 0,
+        max: 1,
+      },
+      store_order: {
         type: Number,
         min: 0,
         max: 1,

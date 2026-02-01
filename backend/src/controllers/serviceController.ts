@@ -1,4 +1,5 @@
 import { Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { ServiceOrder, ServiceType, PlanType } from '../models/ServiceOrder';
 import { User } from '../models/User';
@@ -7,6 +8,7 @@ import { services, getService, getPlan, isValidServiceCode, ServiceCode, PlanCod
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
 import { createServiceOrderSchema } from '../validators/serviceValidator';
+import { createServiceCommission } from '../services/commissionService';
 
 /**
  * Create service order
@@ -210,6 +212,19 @@ export const verifyServicePayment = async (
     serviceOrder.razorpayPaymentId = razorpay_payment_id;
     serviceOrder.status = 'active';
     await serviceOrder.save();
+
+    // Create affiliate commission for service purchase
+    try {
+      await createServiceCommission({
+        userId,
+        serviceOrderId: serviceOrder._id as mongoose.Types.ObjectId,
+        serviceType: serviceOrder.serviceType,
+        purchaseAmount: serviceOrder.amount,
+      });
+    } catch (error) {
+      // Don't fail payment verification if commission creation fails
+      console.error('Failed to create affiliate commission for service order:', error);
+    }
 
     // Get service details for notification
     const service = getService(serviceOrder.serviceType);

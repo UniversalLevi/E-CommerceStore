@@ -104,6 +104,8 @@ export const getAffiliateDetails = async (
       AffiliateCommission.find({ affiliateId: affiliate._id })
         .populate('referredUserId', 'name email')
         .populate('subscriptionId', 'planCode amountPaid')
+        .populate('serviceOrderId', 'serviceType planType amount')
+        .populate('storeOrderId', 'orderId total customer')
         .sort({ createdAt: -1 })
         .limit(50)
         .lean(),
@@ -344,6 +346,8 @@ export const getAffiliateCommissions = async (
       AffiliateCommission.find(query)
         .populate('referredUserId', 'name email')
         .populate('subscriptionId', 'planCode amountPaid')
+        .populate('serviceOrderId', 'serviceType planType amount')
+        .populate('storeOrderId', 'orderId total customer')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit))

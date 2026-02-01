@@ -16,6 +16,19 @@ export interface CreateCommissionParams {
   subscriptionAmount: number; // in paise
 }
 
+export interface CreateServiceCommissionParams {
+  userId: mongoose.Types.ObjectId;
+  serviceOrderId: mongoose.Types.ObjectId;
+  serviceType: string;
+  purchaseAmount: number; // in paise
+}
+
+export interface CreateStoreOrderCommissionParams {
+  userId: mongoose.Types.ObjectId;
+  storeOrderId: mongoose.Types.ObjectId;
+  purchaseAmount: number; // in paise
+}
+
 /**
  * Calculate commission amount based on plan and custom rates
  */
@@ -31,6 +44,24 @@ export function calculateCommission(
   // Use custom rate if available, otherwise use default
   const rate = customRates?.[planCode] ?? COMMISSION_RATES[planCode];
   const amount = Math.floor(subscriptionAmount * rate); // Round down to avoid fractional paise
+
+  return { rate, amount };
+}
+
+/**
+ * Calculate commission amount for service or store order purchases
+ */
+export function calculatePurchaseCommission(
+  purchaseType: 'service' | 'store_order',
+  purchaseAmount: number,
+  customRates?: {
+    service?: number;
+    store_order?: number;
+  }
+): { rate: number; amount: number } {
+  // Use custom rate if available, otherwise use default
+  const rate = customRates?.[purchaseType] ?? COMMISSION_RATES[purchaseType];
+  const amount = Math.floor(purchaseAmount * rate); // Round down to avoid fractional paise
 
   return { rate, amount };
 }
@@ -87,10 +118,11 @@ export async function createCommission(params: CreateCommissionParams): Promise<
   const commission = await AffiliateCommission.create({
     affiliateId: affiliate._id,
     referredUserId: userId,
+    purchaseType: 'subscription',
     subscriptionId,
     paymentId,
     planCode,
-    subscriptionAmount,
+    purchaseAmount: subscriptionAmount,
     commissionRate: rate,
     commissionAmount: amount,
     status: 'pending',
@@ -237,6 +269,137 @@ export async function getCommissionsReadyForPayout(
     approvedAt: { $lte: holdingPeriodDate },
     isRefunded: false,
   });
+}
+
+/**
+ * Create commission for a service purchase
+ */
+export async function createServiceCommission(params: CreateServiceCommissionParams): Promise<IAffiliateCommission | null> {
+  const { userId, serviceOrderId, serviceType, purchaseAmount } = params;
+
+  // Check if user has a referral
+  const referral = await ReferralTracking.findOne({
+    referredUserId: userId,
+    status: 'converted',
+  }).populate('affiliateId');
+
+  if (!referral) {
+    return null;
+  }
+
+  const affiliate = referral.affiliateId as any;
+  if (!affiliate || affiliate.status !== 'active') {
+    return null;
+  }
+
+  // Fraud check: Ensure user is not referring themselves
+  if (affiliate.userId.toString() === userId.toString()) {
+    return null;
+  }
+
+  // Check if commission already exists for this service order (idempotency)
+  const existingCommission = await AffiliateCommission.findOne({ serviceOrderId });
+  if (existingCommission) {
+    return existingCommission;
+  }
+
+  // Calculate commission (use default service rate or custom rate if set)
+  const customRates = affiliate.customCommissionRates as any;
+  const { rate, amount } = calculatePurchaseCommission('service', purchaseAmount, {
+    service: customRates?.service,
+    store_order: customRates?.store_order,
+  });
+
+  if (amount <= 0) {
+    return null;
+  }
+
+  // Create commission record
+  const commission = await AffiliateCommission.create({
+    affiliateId: affiliate._id,
+    referredUserId: userId,
+    purchaseType: 'service',
+    serviceOrderId,
+    serviceType,
+    purchaseAmount,
+    commissionRate: rate,
+    commissionAmount: amount,
+    status: 'pending',
+    paymentStatus: 'paid',
+    isRefunded: false,
+  });
+
+  // Update affiliate stats
+  affiliate.totalCommissions += amount;
+  affiliate.pendingCommissions += amount;
+  await affiliate.save();
+
+  return commission;
+}
+
+/**
+ * Create commission for a store order purchase
+ */
+export async function createStoreOrderCommission(params: CreateStoreOrderCommissionParams): Promise<IAffiliateCommission | null> {
+  const { userId, storeOrderId, purchaseAmount } = params;
+
+  // Check if user has a referral
+  const referral = await ReferralTracking.findOne({
+    referredUserId: userId,
+    status: 'converted',
+  }).populate('affiliateId');
+
+  if (!referral) {
+    return null;
+  }
+
+  const affiliate = referral.affiliateId as any;
+  if (!affiliate || affiliate.status !== 'active') {
+    return null;
+  }
+
+  // Fraud check: Ensure user is not referring themselves
+  if (affiliate.userId.toString() === userId.toString()) {
+    return null;
+  }
+
+  // Check if commission already exists for this store order (idempotency)
+  const existingCommission = await AffiliateCommission.findOne({ storeOrderId });
+  if (existingCommission) {
+    return existingCommission;
+  }
+
+  // Calculate commission (use default store_order rate or custom rate if set)
+  const customRates = affiliate.customCommissionRates as any;
+  const { rate, amount } = calculatePurchaseCommission('store_order', purchaseAmount, {
+    service: customRates?.service,
+    store_order: customRates?.store_order,
+  });
+
+  if (amount <= 0) {
+    return null;
+  }
+
+  // Create commission record
+  const commission = await AffiliateCommission.create({
+    affiliateId: affiliate._id,
+    referredUserId: userId,
+    purchaseType: 'store_order',
+    storeOrderId,
+    purchaseAmount,
+    commissionRate: rate,
+    commissionAmount: amount,
+    status: 'pending',
+    paymentStatus: 'paid',
+    isRefunded: false,
+  });
+
+  // Update affiliate stats
+  affiliate.totalCommissions += amount;
+  affiliate.pendingCommissions += amount;
+  await affiliate.save();
+
+  return commission;
 }
 
 /**

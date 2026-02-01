@@ -2,6 +2,8 @@ export const COMMISSION_RATES = {
   starter_30: 0.20, // 20%
   growth_90: 0.25,  // 25%
   lifetime: 0.30,   // 30%
+  service: 0.15,    // 15% for service purchases
+  store_order: 0.10, // 10% for store order purchases
 };
 
 export const MIN_PAYOUT_AMOUNT = 100000; // ₹1,000 in paise

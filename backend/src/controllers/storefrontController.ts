@@ -15,6 +15,8 @@ import {
   sendNewOrderNotificationEmail,
   sendPaymentStatusEmail,
 } from '../services/StoreEmailService';
+import { createStoreOrderCommission } from '../services/commissionService';
+import mongoose from 'mongoose';
 
 /**
  * Get store public info
@@ -409,12 +411,28 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
     // Check if test mode is enabled
     const testMode = store.settings?.testMode === true;
 
-    if (testMode) {
+      if (testMode) {
       // Test mode: Auto-approve payment
       if (order.razorpayOrderId && order.razorpayOrderId.startsWith('test_order_')) {
         order.paymentStatus = 'paid';
         order.razorpayPaymentId = `test_payment_${razorpay_payment_id || Date.now()}`;
         await order.save();
+
+        // Create affiliate commission for store order purchase (if customer is a registered user)
+        try {
+          // Check if customer email matches a registered user
+          const customerUser = await User.findOne({ email: order.customer.email.toLowerCase() });
+          if (customerUser) {
+            await createStoreOrderCommission({
+              userId: customerUser._id as mongoose.Types.ObjectId,
+              storeOrderId: order._id as mongoose.Types.ObjectId,
+              purchaseAmount: order.total,
+            });
+          }
+        } catch (error) {
+          // Don't fail payment verification if commission creation fails
+          console.error('Failed to create affiliate commission for store order:', error);
+        }
 
         // Send all emails after payment verification in test mode (non-blocking)
         try {
@@ -482,6 +500,22 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
     order.paymentStatus = 'paid';
     order.razorpayPaymentId = razorpay_payment_id;
     await order.save();
+
+    // Create affiliate commission for store order purchase (if customer is a registered user)
+    try {
+      // Check if customer email matches a registered user
+      const customerUser = await User.findOne({ email: order.customer.email.toLowerCase() });
+      if (customerUser) {
+        await createStoreOrderCommission({
+          userId: customerUser._id as mongoose.Types.ObjectId,
+          storeOrderId: order._id as mongoose.Types.ObjectId,
+          purchaseAmount: order.total,
+        });
+      }
+    } catch (error) {
+      // Don't fail payment verification if commission creation fails
+      console.error('Failed to create affiliate commission for store order:', error);
+    }
 
     // Send all emails after payment verification (non-blocking)
     try {

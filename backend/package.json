@@ -16,6 +16,7 @@
     "generate-key": "ts-node src/scripts/generateEncryptionKey.ts",
     "migrate-env": "ts-node src/scripts/migrateEnvCredentials.ts",
     "create-razorpay-plans": "ts-node src/scripts/createRazorpayPlans.ts",
+    "reset-user-for-testing": "ts-node src/scripts/resetUserForTesting.ts",
     "generate:themes": "ts-node scripts/generate-niche-templates.ts",
     "generate:themes:force": "OVERWRITE_EXISTING=true ts-node scripts/generate-niche-templates.ts",
     "test": "jest",
