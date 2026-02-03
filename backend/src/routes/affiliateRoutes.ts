@@ -4,6 +4,7 @@ import {
   getMyAffiliate,
   getAffiliateStats,
   getCommissions,
+  getReferrals,
   requestPayout,
   getPayoutHistory,
 } from '../controllers/affiliateController';
@@ -18,6 +19,7 @@ router.post('/apply', applyForAffiliate);
 router.get('/me', getMyAffiliate);
 router.get('/stats', getAffiliateStats);
 router.get('/commissions', getCommissions);
+router.get('/referrals', getReferrals);
 router.post('/payout/request', requestPayout);
 router.get('/payout/history', getPayoutHistory);
 

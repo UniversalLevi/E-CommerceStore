@@ -72,6 +72,8 @@ export function calculatePurchaseCommission(
 export async function createCommission(params: CreateCommissionParams): Promise<IAffiliateCommission | null> {
   const { userId, subscriptionId, paymentId, planCode, subscriptionAmount } = params;
 
+  console.log(`[Commission] Creating commission for user ${userId}, subscription ${subscriptionId}, plan ${planCode}, amount ${subscriptionAmount}`);
+
   // Check if user has a referral
   const referral = await ReferralTracking.findOne({
     referredUserId: userId,
@@ -80,14 +82,24 @@ export async function createCommission(params: CreateCommissionParams): Promise<
 
   if (!referral) {
     // No referral found, no commission
+    console.log(`[Commission] No referral found for user ${userId} - no commission will be created`);
     return null;
   }
 
+  console.log(`[Commission] Found referral:`, { referralId: referral._id, affiliateId: (referral.affiliateId as any)?._id });
+
   const affiliate = referral.affiliateId as any;
-  if (!affiliate || affiliate.status !== 'active') {
-    // Affiliate is not active
+  if (!affiliate) {
+    console.log(`[Commission] Affiliate not found in referral ${referral._id}`);
     return null;
   }
+  
+  if (affiliate.status !== 'active') {
+    console.log(`[Commission] Affiliate ${affiliate._id} is not active (status: ${affiliate.status}) - no commission`);
+    return null;
+  }
+  
+  console.log(`[Commission] Affiliate is active:`, { affiliateId: affiliate._id, status: affiliate.status });
 
   // Fraud check: Ensure user is not referring themselves
   if (affiliate.userId.toString() === userId.toString()) {
@@ -98,14 +110,17 @@ export async function createCommission(params: CreateCommissionParams): Promise<
   // Check if commission already exists for this subscription (idempotency)
   const existingCommission = await AffiliateCommission.findOne({ subscriptionId });
   if (existingCommission) {
+    console.log(`[Commission] Commission already exists for subscription ${subscriptionId}: ${existingCommission._id}`);
     return existingCommission;
   }
 
   // Calculate commission
   const { rate, amount } = calculateCommission(planCode, subscriptionAmount, affiliate.customCommissionRates);
+  console.log(`[Commission] Calculated commission:`, { rate, amount, planCode, subscriptionAmount });
 
   if (amount <= 0) {
     // No commission to award
+    console.log(`[Commission] Commission amount is 0 or negative - no commission created`);
     return null;
   }
 
@@ -130,10 +145,14 @@ export async function createCommission(params: CreateCommissionParams): Promise<
     isRefunded: false,
   });
 
+  console.log(`[Commission] Commission created successfully:`, { commissionId: commission._id, amount });
+
   // Update affiliate stats
   affiliate.totalCommissions += amount;
   affiliate.pendingCommissions += amount;
   await affiliate.save();
+  
+  console.log(`[Commission] Affiliate stats updated:`, { totalCommissions: affiliate.totalCommissions, pendingCommissions: affiliate.pendingCommissions });
 
   // Update subscription with referral
   await Subscription.findByIdAndUpdate(subscriptionId, {

@@ -291,6 +291,62 @@ export const getCommissions = async (
 };
 
 /**
+ * Get referrals list
+ * GET /api/affiliates/referrals
+ */
+export const getReferrals = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const userId = (req.user as any)._id;
+
+    const affiliate = await Affiliate.findOne({ userId });
+    if (!affiliate) {
+      throw createError('You are not an affiliate', 404);
+    }
+
+    const { page = 1, limit = 20, status } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const query: any = { affiliateId: affiliate._id };
+    if (status) {
+      query.status = status;
+    }
+
+    const [referrals, total] = await Promise.all([
+      ReferralTracking.find(query)
+        .populate('referredUserId', 'name email createdAt')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .lean(),
+      ReferralTracking.countDocuments(query),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        referrals,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Request payout
  * POST /api/affiliates/payout/request
  */

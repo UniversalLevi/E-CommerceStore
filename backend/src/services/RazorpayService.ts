@@ -210,7 +210,27 @@ class RazorpayService {
       return subscription;
     } catch (error: any) {
       console.error('Razorpay subscription creation error:', error);
-      throw new Error(`Failed to create Razorpay subscription: ${error.message || error.error?.description || 'Unknown error'}`);
+      console.error('Error details:', {
+        message: error.message,
+        description: error.error?.description,
+        field: error.error?.field,
+        code: error.error?.code,
+        statusCode: error.statusCode,
+        planId: params.planId,
+      });
+      
+      // Provide more specific error messages
+      if (error.error?.description?.toLowerCase().includes('invalid key') || 
+          error.error?.description?.toLowerCase().includes('authentication failed')) {
+        throw new Error(`Invalid Razorpay API credentials. Please check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your .env file. Error: ${error.error?.description || error.message}`);
+      }
+      
+      if (error.error?.description?.toLowerCase().includes('plan') || 
+          error.error?.code === 'BAD_REQUEST_ERROR') {
+        throw new Error(`Invalid Razorpay plan ID: ${params.planId}. Please run 'npm run create-razorpay-plans' to create the plans. Error: ${error.error?.description || error.message}`);
+      }
+      
+      throw new Error(`Failed to create Razorpay subscription: ${error.error?.description || error.message || 'Unknown error'}`);
     }
   }
 

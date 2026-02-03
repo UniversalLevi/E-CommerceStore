@@ -17,6 +17,7 @@ import {
   setOrderCosts,
   fulfillViaZen,
   getOrderZenStatus,
+  getAllInternalStoreOrders,
 } from '../controllers/orderController';
 
 const router = Router();
@@ -41,6 +42,15 @@ router.get(
   requireAdmin,
   generalApiRateLimit,
   getStoreRevenueAnalytics
+);
+
+// Get all internal store orders for authenticated user
+router.get(
+  '/internal/all',
+  authenticateToken,
+  requirePaidPlan,
+  generalApiRateLimit,
+  getAllInternalStoreOrders
 );
 
 // ==========================================

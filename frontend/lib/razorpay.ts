@@ -11,10 +11,10 @@ declare global {
 
 interface RazorpayOptions {
   key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
+  amount?: number; // Optional - not required when subscription_id is present
+  currency?: string;
+  name?: string;
+  description?: string;
   order_id?: string; // Optional - not required when subscription_id is present
   subscription_id?: string; // For UPI autopay mandate
   handler: (response: RazorpayResponse) => void;
@@ -101,14 +101,18 @@ export async function openRazorpayCheckout(
     }
 
     // Validate required options
-    // For subscriptions, order_id is optional (subscription_id is used instead)
-    if (!options.key || !options.amount) {
-      throw new Error('Missing required Razorpay options: key or amount');
+    if (!options.key) {
+      throw new Error('Missing required Razorpay option: key');
     }
     
     // Either order_id or subscription_id must be present
     if (!options.order_id && !options.subscription_id) {
       throw new Error('Missing required Razorpay options: either order_id or subscription_id must be provided');
+    }
+    
+    // For regular orders (not subscriptions), amount is required
+    if (options.order_id && !options.amount) {
+      throw new Error('Missing required Razorpay option: amount (required for order_id)');
     }
 
     // Build Razorpay options - configure for UPI autopay subscriptions
@@ -139,46 +143,57 @@ export async function openRazorpayCheckout(
     if (options.subscription_id) {
       razorpayOptions.subscription_id = options.subscription_id;
       // DO NOT include order_id - it prevents UPI from showing
-      // Razorpay will use the subscription's plan amount for authorization
-      // The amount parameter is ignored when subscription_id is present
-      // The subscription's plan amount (₹20) should be used automatically
+      // DO NOT include amount - Razorpay will use the subscription's plan/addon amount
+      // The amount parameter conflicts with subscription_id and causes 400 errors
+      // Razorpay will automatically use the subscription's authorization amount (from addons or plan)
       
-      // Note: Razorpay subscriptions use the plan's amount, not the amount parameter
-      // So we don't set amount here - it comes from the subscription's plan
-      // If the amount shown is ₹5 instead of ₹20, it means the token plan in Razorpay
-      // is configured with ₹5 (500 paise) instead of ₹20 (2000 paise)
-      // Solution: Recreate the token plan with amount: 2000 paise using npm run create-razorpay-plans
-      
-      // Validate expected amount
-      const expectedAmount = 2000; // ₹20 in paise
-      const requestedAmount = options.amount;
-      
-      if (requestedAmount !== expectedAmount) {
-        console.warn('⚠️ Amount mismatch: Server requested ₹' + (requestedAmount / 100) + ' but expected ₹20.');
-        console.warn('   Razorpay will use the subscription plan amount, not the requested amount.');
-        console.warn('   If checkout shows wrong amount, the token plan in Razorpay needs to be recreated.');
+      // Explicitly ensure amount is NOT in the options (even if undefined)
+      if ('amount' in razorpayOptions) {
+        delete razorpayOptions.amount;
+      }
+      if ('order_id' in razorpayOptions) {
+        delete razorpayOptions.order_id;
       }
       
       console.log('Razorpay subscription checkout config (UPI autopay):', {
         subscription_id: options.subscription_id,
-        requested_amount: requestedAmount,
-        requested_amount_rupees: `₹${requestedAmount / 100}`,
-        expected_amount: expectedAmount,
-        expected_amount_rupees: `₹${expectedAmount / 100}`,
-        currency: options.currency,
-        note: 'ONLY subscription_id passed - Razorpay will use subscription plan amount (should be ₹20)',
-        warning: requestedAmount !== expectedAmount ? 'Amount mismatch detected! Token plan may be incorrectly configured.' : null
+        currency: options.currency || 'INR',
+        has_amount: 'amount' in razorpayOptions,
+        has_order_id: 'order_id' in razorpayOptions,
+        note: 'ONLY subscription_id passed - Razorpay will use subscription plan/addon amount automatically'
       });
     } else if (options.order_id) {
       // For regular payments (non-subscription), use order_id and amount
       razorpayOptions.order_id = options.order_id;
       razorpayOptions.amount = options.amount;
+      
+      // Explicitly ensure subscription_id is NOT in the options
+      if ('subscription_id' in razorpayOptions) {
+        delete razorpayOptions.subscription_id;
+      }
     }
 
     // Add prefill if provided
     if (options.prefill) {
       razorpayOptions.prefill = options.prefill;
     }
+
+    // Final validation: Ensure no conflicting parameters
+    if (razorpayOptions.subscription_id) {
+      // For subscriptions, ensure amount and order_id are completely absent
+      delete razorpayOptions.amount;
+      delete razorpayOptions.order_id;
+    }
+
+    // Log final configuration for debugging
+    console.log('Final Razorpay options:', {
+      has_key: !!razorpayOptions.key,
+      has_subscription_id: !!razorpayOptions.subscription_id,
+      has_order_id: !!razorpayOptions.order_id,
+      has_amount: !!razorpayOptions.amount,
+      currency: razorpayOptions.currency,
+      description: razorpayOptions.description,
+    });
 
     const razorpay = new window.Razorpay(razorpayOptions);
 

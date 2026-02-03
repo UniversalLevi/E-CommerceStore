@@ -120,21 +120,18 @@ class ApiClient {
     );
   }
 
-  async createTrialSubscription(planCode: string) {
+  async createSubscription(planCode: string) {
     return this.post<{ 
       success: boolean; 
       data: { 
         subscriptionId: string;
         mainSubscriptionId: string;
-        orderId: string; 
         amount: number; 
         currency: string; 
         keyId: string;
-        trialDays: number;
-        trialEndsAt: string;
       } 
     }>(
-      '/api/payments/create-trial-subscription',
+      '/api/payments/create-subscription',
       { planCode }
     );
   }
@@ -324,6 +321,26 @@ class ApiClient {
   }
 
   // ZEN Fulfillment API methods
+  async getInternalStoreOrders(params?: {
+    fulfillmentStatus?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params?.fulfillmentStatus) queryParams.append('fulfillmentStatus', params.fulfillmentStatus);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+    const queryString = queryParams.toString();
+    return this.get<{
+      success: boolean;
+      data: any[];
+      stats: any;
+      store: { id: string; name: string; domain: string };
+    }>(`/api/orders/internal/all${queryString ? `?${queryString}` : ''}`);
+  }
+
   async getOrderZenStatus(storeId: string, orderId: string) {
     return this.get<{
       success: boolean;

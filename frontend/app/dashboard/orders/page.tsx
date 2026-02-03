@@ -48,6 +48,13 @@ interface StoreConnection {
   isDefault: boolean;
 }
 
+interface InternalStore {
+  _id: string;
+  name: string;
+  slug: string;
+  status: 'active' | 'inactive';
+}
+
 interface Order {
   id: number;
   name: string;
@@ -89,6 +96,9 @@ interface Order {
     status: string;
     trackingNumber: string | null;
   } | null;
+  isInternalStore?: boolean; // Flag to identify internal store orders
+  storeName?: string;
+  storeSlug?: string;
 }
 
 interface OrderStats {
@@ -165,6 +175,7 @@ export default function OrdersPage() {
   const router = useRouter();
   
   const [stores, setStores] = useState<StoreConnection[]>([]);
+  const [internalStore, setInternalStore] = useState<InternalStore | null>(null);
   const [selectedStore, setSelectedStore] = useState<string>('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<OrderStats | null>(null);
@@ -216,13 +227,33 @@ export default function OrdersPage() {
     if (!isAuthenticated) return;
     
     try {
+      // Fetch Shopify stores
       const response = await api.get<{ success: boolean; data: StoreConnection[] }>('/api/stores');
       const activeStores = response.data.filter(s => s.status === 'active');
       setStores(activeStores);
       
+      // Fetch internal store
+      let fetchedInternalStore: InternalStore | null = null;
+      try {
+        const internalResponse = await api.getMyStore();
+        if (internalResponse.success && internalResponse.data) {
+          fetchedInternalStore = internalResponse.data;
+          setInternalStore(fetchedInternalStore);
+        } else {
+          setInternalStore(null);
+        }
+      } catch (internalError: any) {
+        // Internal store might not exist, that's okay
+        setInternalStore(null);
+      }
+      
+      // Set default selected store
       if (activeStores.length > 0) {
         const defaultStore = activeStores.find(s => s.isDefault) || activeStores[0];
         setSelectedStore(defaultStore._id);
+      } else if (fetchedInternalStore) {
+        // If no Shopify stores but internal store exists, select it
+        setSelectedStore('internal');
       }
     } catch (error: any) {
       console.error('Error fetching stores:', error);
@@ -233,45 +264,59 @@ export default function OrdersPage() {
   }, [isAuthenticated]);
 
   const fetchOrders = useCallback(async () => {
-    if (!selectedStore) return;
-    
     try {
       setOrdersLoading(true);
       setError('');
       
       const { startDate, endDate } = getDateRange(datePreset);
       
-      let url = `/api/orders/${selectedStore}?limit=100`;
-      if (fulfillmentFilter !== 'any') {
-        url += `&fulfillmentStatus=${fulfillmentFilter}`;
-      }
-      if (startDate) {
-        url += `&startDate=${encodeURIComponent(startDate)}`;
-      }
-      if (endDate) {
-        url += `&endDate=${encodeURIComponent(endDate)}`;
-      }
-      
-      const response = await api.get<{
-        success: boolean;
-        data: Order[];
-        stats: OrderStats;
-        store: { id: string; name: string; domain: string };
-      }>(url);
-      
-      const shopifyOrders = response.data;
+      // Fetch both Shopify orders and internal store orders in parallel
+      const promises: Promise<any>[] = [
+        // Always fetch internal store orders
+        api.getInternalStoreOrders({
+          fulfillmentStatus: fulfillmentFilter !== 'any' ? fulfillmentFilter : undefined,
+          startDate,
+          endDate,
+          limit: 100,
+        }).catch(() => ({ success: false, data: [], stats: null, store: null })),
+      ];
 
-      // Fetch ZEN status for each order in parallel
+      // Fetch Shopify orders only if a Shopify store is selected (not "internal")
+      if (selectedStore && selectedStore !== 'internal') {
+        promises.push(
+          api.get<{
+            success: boolean;
+            data: Order[];
+            stats: OrderStats;
+            store: { id: string; name: string; domain: string };
+          }>(`/api/orders/${selectedStore}?limit=100${
+            fulfillmentFilter !== 'any' ? `&fulfillmentStatus=${fulfillmentFilter}` : ''
+          }${startDate ? `&startDate=${encodeURIComponent(startDate)}` : ''}${
+            endDate ? `&endDate=${encodeURIComponent(endDate)}` : ''
+          }`).catch(() => ({ success: false, data: [], stats: null, store: null }))
+        );
+      }
+
+      const responses = await Promise.all(promises);
+      const internalResponse = responses[0];
+      const shopifyResponse = (selectedStore && selectedStore !== 'internal') ? responses[1] : { success: false, data: [], stats: null, store: null };
+      
+      const shopifyOrders = shopifyResponse.success ? shopifyResponse.data : [];
+      const internalOrders = internalResponse.success ? internalResponse.data : [];
+
+      // Fetch ZEN status for Shopify orders only (internal orders don't have ZEN status)
       const zenStatuses = await Promise.all(
-        shopifyOrders.map(async (order) => {
+        shopifyOrders.map(async (order: Order) => {
           try {
-            const zenResponse = await api.getOrderZenStatus(selectedStore, order.id.toString());
-            if (zenResponse.success && zenResponse.data?.hasLocalOrder) {
-              return {
-                orderId: order.id,
-                zenStatus: zenResponse.data.zenStatus,
-                zenOrder: zenResponse.data.zenOrder,
-              };
+            if (selectedStore && selectedStore !== 'internal') {
+              const zenResponse = await api.getOrderZenStatus(selectedStore, order.id.toString());
+              if (zenResponse.success && zenResponse.data?.hasLocalOrder) {
+                return {
+                  orderId: order.id,
+                  zenStatus: zenResponse.data.zenStatus,
+                  zenOrder: zenResponse.data.zenOrder,
+                };
+              }
             }
           } catch {
             // Ignore errors and treat as non-ZEN order
@@ -284,8 +329,8 @@ export default function OrdersPage() {
         })
       );
 
-      // Merge ZEN info into orders
-      const ordersWithZen = shopifyOrders.map((order) => {
+      // Merge ZEN info into Shopify orders
+      const shopifyOrdersWithZen = shopifyOrders.map((order: Order) => {
         const zenInfo = zenStatuses.find((z) => z.orderId === order.id);
         return {
           ...order,
@@ -294,8 +339,31 @@ export default function OrdersPage() {
         };
       });
 
-      setOrders(ordersWithZen);
-      setStats(response.stats);
+      // Combine both types of orders and sort by creation date (newest first)
+      const allOrders = [...shopifyOrdersWithZen, ...internalOrders].sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+
+      // Combine stats
+      const combinedStats: OrderStats = {
+        totalRevenue: (shopifyResponse.stats?.totalRevenue || 0) + (internalResponse.stats?.totalRevenue || 0),
+        paidRevenue: (shopifyResponse.stats?.paidRevenue || 0) + (internalResponse.stats?.paidRevenue || 0),
+        currency: shopifyResponse.stats?.currency || internalResponse.stats?.currency || 'INR',
+        ordersByStatus: {
+          pending: (shopifyResponse.stats?.ordersByStatus?.pending || 0) + (internalResponse.stats?.ordersByStatus?.pending || 0),
+          paid: (shopifyResponse.stats?.ordersByStatus?.paid || 0) + (internalResponse.stats?.ordersByStatus?.paid || 0),
+          authorized: shopifyResponse.stats?.ordersByStatus?.authorized || 0,
+          refunded: (shopifyResponse.stats?.ordersByStatus?.refunded || 0) + (internalResponse.stats?.ordersByStatus?.refunded || 0),
+          partially_refunded: shopifyResponse.stats?.ordersByStatus?.partially_refunded || 0,
+          voided: shopifyResponse.stats?.ordersByStatus?.voided || 0,
+          unfulfilled: (shopifyResponse.stats?.ordersByStatus?.unfulfilled || 0) + (internalResponse.stats?.ordersByStatus?.unfulfilled || 0),
+          fulfilled: (shopifyResponse.stats?.ordersByStatus?.fulfilled || 0) + (internalResponse.stats?.ordersByStatus?.fulfilled || 0),
+          partial: (shopifyResponse.stats?.ordersByStatus?.partial || 0) + (internalResponse.stats?.ordersByStatus?.partial || 0),
+        },
+      };
+
+      setOrders(allOrders);
+      setStats(combinedStats);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
       setError(error.response?.data?.error || 'Failed to load orders');
@@ -311,10 +379,8 @@ export default function OrdersPage() {
   }, [fetchStores]);
 
   useEffect(() => {
-    if (selectedStore) {
-      fetchOrders();
-    }
-  }, [selectedStore, fetchOrders]);
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleOrderAction = async (action: string, orderId: number) => {
     try {
@@ -588,7 +654,7 @@ export default function OrdersPage() {
                 </p>
               </div>
               
-              {stores.length > 0 && (
+              {(stores.length > 0 || internalStore) && (
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2">
                     <Store className="w-5 h-5 text-text-secondary" />
@@ -599,9 +665,14 @@ export default function OrdersPage() {
                     >
                       {stores.map(store => (
                         <option key={store._id} value={store._id}>
-                          {store.storeName}
+                          {store.storeName} (Shopify)
                         </option>
                       ))}
+                      {internalStore && (
+                        <option value="internal">
+                          {internalStore.name} (Internal Store)
+                        </option>
+                      )}
                     </select>
                   </div>
                   <button
@@ -617,7 +688,7 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          {stores.length === 0 ? (
+          {stores.length === 0 && !internalStore ? (
             <div className="bg-surface-raised border border-border-default rounded-xl p-12 text-center space-y-4">
               <div className="flex justify-center">
                 <IconBadge label="No stores" icon={Store} size="lg" variant="neutral" />
@@ -783,7 +854,15 @@ export default function OrdersPage() {
                             onClick={() => setSelectedOrder(order)}
                           >
                             <td className="px-6 py-4">
-                              <div className="font-semibold text-text-primary">{order.name}</div>
+                              <div className="flex items-center gap-2">
+                                <div className="font-semibold text-text-primary">{order.name}</div>
+                                {order.isInternalStore && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/15 text-blue-300 border border-blue-500/40">
+                                    <Store className="w-3 h-3" />
+                                    Internal
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-sm text-text-muted">{order.lineItems.length} items</div>
                             </td>
                             <td className="px-6 py-4">
@@ -798,7 +877,9 @@ export default function OrdersPage() {
                             <td className="px-6 py-4">{getFinancialStatusBadge(order.financialStatus)}</td>
                             <td className="px-6 py-4">{getFulfillmentStatusBadge(order.fulfillmentStatus)}</td>
                             <td className="px-6 py-4">
-                              {order.zenStatus && order.zenStatus !== 'shopify' ? (
+                              {order.isInternalStore ? (
+                                <span className="text-xs text-text-muted">-</span>
+                              ) : order.zenStatus && order.zenStatus !== 'shopify' ? (
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-violet-500/15 text-violet-300 border-violet-500/40">
                                   <Zap className="w-3.5 h-3.5" />
                                   {order.zenStatus.replace(/_/g, ' ')}
@@ -838,8 +919,19 @@ export default function OrdersPage() {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-border-default bg-surface-elevated">
                 <div>
-                  <h2 className="text-xl font-bold text-text-primary">{selectedOrder.name}</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-text-primary">{selectedOrder.name}</h2>
+                    {selectedOrder.isInternalStore && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-500/15 text-blue-300 border border-blue-500/40">
+                        <Store className="w-3 h-3" />
+                        Internal Store
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-text-secondary">{formatDate(selectedOrder.createdAt)}</p>
+                  {selectedOrder.storeName && (
+                    <p className="text-xs text-text-muted mt-1">Store: {selectedOrder.storeName}</p>
+                  )}
                 </div>
                 <button
                   onClick={() => setSelectedOrder(null)}
@@ -863,8 +955,8 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {/* ZEN Fulfillment Section */}
-                {selectedOrder.fulfillmentStatus !== 'fulfilled' && !processedZenOrders.has(selectedOrder.id) && (
+                {/* ZEN Fulfillment Section - Only for Shopify orders */}
+                {!selectedOrder.isInternalStore && selectedOrder.fulfillmentStatus !== 'fulfilled' && !processedZenOrders.has(selectedOrder.id) && (
                   <div className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border border-violet-500/30 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-text-primary flex items-center gap-2">

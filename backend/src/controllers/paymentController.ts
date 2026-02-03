@@ -15,11 +15,10 @@ import { createNotification } from '../utils/notifications';
 import { createCommission } from '../services/commissionService';
 
 /**
- * Create trial subscription with ₹20 token charge
- * POST /api/payments/create-order (kept for backward compatibility)
- * POST /api/payments/create-trial-subscription (new endpoint)
+ * Create subscription with full payment upfront
+ * POST /api/payments/create-subscription
  */
-export const createTrialSubscription = async (
+export const createSubscription = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -48,184 +47,127 @@ export const createTrialSubscription = async (
 
     const userId = (req.user as any)._id;
     
-    // Check if user has already used a trial
+    // Check if user exists
     const user = await User.findById(userId);
     if (!user) {
       throw createError('User not found', 404);
     }
     
-    // Prevent multiple trials - check if user has already used a trial
-    if (user.hasUsedTrial) {
-      console.log(`[Payment] User ${userId} has already used trial`);
-      throw createError('You have already used your free trial. Please purchase a plan to continue.', 400);
-    }
-    
-    // Also check if user has any existing active or trialing subscription
-    const existingSubscription = await Subscription.findOne({
-      userId: userId,
-      status: { $in: ['active', 'trialing', 'manually_granted'] },
-    });
-    
-    if (existingSubscription) {
-      console.log(`[Payment] User ${userId} has existing subscription: ${existingSubscription.status}`);
-      throw createError('You already have an active subscription. Please cancel your current subscription before starting a new one.', 400);
-    }
-    const userIdStr = typeof userId === 'string' ? userId : userId.toString();
-    const userIdShort = userIdStr.slice(-12);
-    const timestamp = Date.now().toString().slice(-8);
-    
-    // Calculate trial end date (Unix timestamp)
-    const trialDays = plan.trialDays || 0;
-    const startAt = Math.floor(Date.now() / 1000) + (trialDays * 24 * 60 * 60);
+    // Note: Removed prevention logic - users can purchase plans multiple times
 
-    // Determine total_count: 1 for one-time (Lifetime), max 100 for recurring (Monthly) - Razorpay limit
-    const totalCount = plan.isLifetime || !plan.durationDays ? 1 : 100; // 100 months max for recurring (Razorpay limit)
+    // Start subscription immediately (no trial)
+    const startAt = Math.floor(Date.now() / 1000) + 60; // Start 60 seconds from now (Razorpay requirement)
 
-    console.log('Creating trial subscription for plan:', planCode, 'trial days:', trialDays, 'start_at:', startAt);
-
-    // Get token charge plan ID from config
-    const tokenPlanId = config.razorpay.planTokenId;
-    if (!tokenPlanId) {
-      throw createError('Token charge plan ID not configured. Please run: npm run create-razorpay-plans', 500);
-    }
-
-    // Verify the token plan amount before creating subscription
-    const tokenPlan = await razorpayService.fetchPlan(tokenPlanId);
-    console.log('Token plan details:', {
-      id: tokenPlan.id,
-      amount: tokenPlan.item.amount,
-      amount_rupees: `₹${tokenPlan.item.amount / 100}`,
-      currency: tokenPlan.item.currency,
-    });
-
-    if (tokenPlan.item.amount !== TOKEN_CHARGE_AMOUNT) {
-      console.error(`❌ Token plan amount mismatch! Expected ${TOKEN_CHARGE_AMOUNT} paise (₹20), got ${tokenPlan.item.amount} paise (₹${tokenPlan.item.amount / 100})`);
-      throw createError(`Token plan amount is incorrect. Expected ₹20, but plan has ₹${tokenPlan.item.amount / 100}. Please recreate the plan with correct amount.`, 500);
-    }
-    
-    console.log('✅ Token plan verified - amount is correct: ₹20');
-
-    // 1. Create Razorpay Subscription with ₹20 token charge plan for UPI autopay mandate
-    // This subscription will charge ₹20 immediately and set up UPI autopay
-    // Note: start_at must be at least 60 seconds in the future for Razorpay
-    // CRITICAL: When start_at is in the future, Razorpay charges ₹5 by default for auth
-    // To charge ₹20 instead, we must use addons/upfront amount feature
-    const tokenStartAt = Math.floor(Date.now() / 1000) + 60; // Start 60 seconds from now (Razorpay requirement)
-    const tokenSubscription = await razorpayService.createSubscription({
-      planId: tokenPlanId, // Use ₹20 token charge plan
-      startAt: tokenStartAt, // Start 60 seconds from now (Razorpay requires future timestamp)
-      totalCount: 1, // One-time charge
-      customerNotify: 1,
-      // IMPORTANT: Add upfront addon to charge ₹20 instead of default ₹5
-      // This overrides Razorpay's default ₹5 authentication charge for future start dates
-      addons: [
-        {
-          item: {
-            name: 'Trial Token Charge',
-            amount: TOKEN_CHARGE_AMOUNT, // ₹20 (2000 paise) - upfront charge
-            currency: 'INR',
-          },
-        },
-      ],
-    });
-
-    console.log('Token charge subscription created for UPI autopay:', tokenSubscription.id);
-    
-    // Fetch subscription details to verify amount
-    const subscriptionDetails = await razorpayService.getSubscription(tokenSubscription.id);
-    const planDetails = await razorpayService.fetchPlan(subscriptionDetails.plan_id);
-    const actualPlanAmount = planDetails.item.amount;
-    
-    console.log('Token subscription details:', {
-      id: subscriptionDetails.id,
-      plan_id: subscriptionDetails.plan_id,
-      status: subscriptionDetails.status,
-      current_start: subscriptionDetails.current_start,
-      current_end: subscriptionDetails.current_end,
-      plan_amount: actualPlanAmount,
-      plan_amount_rupees: `₹${actualPlanAmount / 100}`,
-      expected_amount: TOKEN_CHARGE_AMOUNT,
-      expected_amount_rupees: `₹${TOKEN_CHARGE_AMOUNT / 100}`,
-    });
-    
-    // Verify the subscription is using the correct plan
-    if (subscriptionDetails.plan_id !== tokenPlanId) {
-      throw createError(`Subscription plan mismatch! Expected ${tokenPlanId}, got ${subscriptionDetails.plan_id}`, 500);
-    }
-    
-    // DIAGNOSTIC: Verify the actual subscription amount matches expected ₹20
-    if (actualPlanAmount !== TOKEN_CHARGE_AMOUNT) {
-      console.error(`⚠️ WARNING: Token subscription amount mismatch!`);
-      console.error(`   Expected: ₹${TOKEN_CHARGE_AMOUNT / 100} (${TOKEN_CHARGE_AMOUNT} paise)`);
-      console.error(`   Actual in Razorpay: ₹${actualPlanAmount / 100} (${actualPlanAmount} paise)`);
-      console.error(`   This will cause the checkout to show ₹${actualPlanAmount / 100} instead of ₹${TOKEN_CHARGE_AMOUNT / 100}`);
-      console.error(`   Solution: Recreate the token plan with amount: ${TOKEN_CHARGE_AMOUNT} paise using npm run create-razorpay-plans`);
-      
-      // Still proceed, but log the warning for debugging
-      // The subscription will work, but will charge the wrong amount
-    } else {
-      console.log(`✅ Token subscription amount verified: ₹${actualPlanAmount / 100} (${actualPlanAmount} paise) - Correct!`);
+    // Determine total_count based on plan period to avoid exceeding Razorpay's limits
+    // IMPORTANT: For UPI autopay, expire_at cannot be more than 30 years in the future
+    let totalCount = 1; // Default for lifetime/one-time
+    if (!plan.isLifetime && plan.durationDays) {
+      // Fetch the Razorpay plan to check its period
+      try {
+        const razorpayPlan = await razorpayService.fetchPlan(plan.razorpayPlanId);
+        const planPeriod = razorpayPlan.period; // 'monthly', 'yearly', etc.
+        const planInterval = razorpayPlan.interval || 1;
+        
+        // Calculate maximum safe totalCount based on plan period
+        // UPI autopay limit: 30 years maximum
+        const maxYearsForUPI = 30;
+        const startTime = startAt; // Subscription starts immediately
+        
+        if (planPeriod === 'yearly') {
+          // For yearly plans: UPI limit is 30 years max
+          totalCount = Math.min(30, maxYearsForUPI);
+        } else if (planPeriod === 'monthly') {
+          // For monthly plans: 30 years = 360 months, but Razorpay limit is 100 months
+          totalCount = Math.min(100, 30 * 12); // 360 months = 30 years, but capped at 100
+        } else if (planPeriod === 'weekly') {
+          // For weekly plans: 30 years = ~1560 weeks
+          totalCount = Math.min(1560, Math.floor(maxYearsForUPI * 52.14));
+        } else if (planPeriod === 'daily') {
+          // For daily plans: 30 years = ~10950 days
+          totalCount = Math.min(10950, Math.floor(maxYearsForUPI * 365.25));
+        } else {
+          // For other periods, use a conservative limit
+          totalCount = 30; // Default to 30 for safety
+        }
+        
+        console.log(`[Payment] Direct purchase - Plan period: ${planPeriod}, interval: ${planInterval}, calculated totalCount: ${totalCount} (UPI autopay limit: 30 years)`);
+      } catch (planFetchError) {
+        // If we can't fetch the plan, use conservative defaults for UPI autopay
+        console.warn(`[Payment] Could not fetch plan details, using default totalCount:`, planFetchError);
+        // For UPI autopay, be conservative: max 30 years
+        if (plan.durationDays <= 90) {
+          // Monthly plan: 30 years = 360 months, but Razorpay limit is 100
+          totalCount = 100;
+        } else {
+          // Yearly plan: max 30 years for UPI
+          totalCount = 30;
+        }
+      }
     }
 
-    // 2. Create main subscription with trial period (this will be charged after trial)
-    // IMPORTANT: We use the main subscription for checkout (not token subscription)
-    // This ensures UPI autopay mandate is linked to the main subscription (plan amount)
-    // We add an upfront ₹20 addon to charge ₹20 instead of default ₹5 for auth
-    const mainSubscription = await razorpayService.createSubscription({
+    console.log('Creating direct subscription (no trial) for plan:', planCode, 'start_at:', startAt);
+
+    // Verify the plan exists before creating subscription
+    try {
+      await razorpayService.fetchPlan(plan.razorpayPlanId);
+      console.log(`✅ Verified Razorpay plan exists: ${plan.razorpayPlanId}`);
+    } catch (planError: any) {
+      console.error(`❌ Failed to verify Razorpay plan ${plan.razorpayPlanId}:`, planError);
+      throw createError(`Razorpay plan ${plan.razorpayPlanId} not found or invalid. Please run: npm run create-razorpay-plans`, 500);
+    }
+    
+    // Create subscription that starts immediately (no trial)
+    // IMPORTANT: When startAt is in the future, Razorpay charges ₹5 by default for authentication
+    // To charge the full plan amount immediately, we use addons to add the full amount upfront
+    const subscription = await razorpayService.createSubscription({
       planId: plan.razorpayPlanId,
       startAt: startAt,
       totalCount: totalCount,
-      customerNotify: 0, // Don't notify for main subscription yet (will be charged after trial)
-      // Add upfront ₹20 addon to charge ₹20 instead of default ₹5 for future start dates
-      // This also ensures the UPI mandate is linked to the main subscription (plan amount)
+      customerNotify: 1, // Notify customer for direct purchase
+      // Add upfront addon to charge full plan amount immediately instead of default ₹5
       addons: [
         {
           item: {
-            name: 'Trial Token Charge',
-            amount: TOKEN_CHARGE_AMOUNT, // ₹20 (2000 paise) - upfront charge
+            name: `Plan Purchase - ${plan.name}`,
+            amount: plan.price, // Full plan amount in paise
             currency: 'INR',
           },
         },
       ],
     });
 
-    console.log('Main subscription created:', mainSubscription.id);
+    console.log('Direct subscription created:', subscription.id);
 
-    // Save payment record for main subscription (not token subscription)
-    // IMPORTANT: We now use mainSubscription.id because checkout uses main subscription
+    // Save payment record
     const payment = await Payment.create({
       userId: userId,
-      orderId: mainSubscription.id, // Use main subscription ID as order reference
-      razorpayOrderId: mainSubscription.id,
+      orderId: subscription.id,
+      razorpayOrderId: subscription.id,
       planCode: planCode as PlanCode,
       status: 'created',
-      amount: TOKEN_CHARGE_AMOUNT,
+      amount: plan.price, // Full plan amount
       currency: 'INR',
       metadata: {
-        type: 'token_charge',
-        subscriptionId: mainSubscription.id, // Main subscription ID (changed from tokenSubscription.id)
-        tokenSubscriptionId: tokenSubscription.id, // Token subscription ID (for reference)
-        mainSubscriptionId: mainSubscription.id, // Main subscription ID (charged after trial)
+        type: 'direct_purchase',
+        subscriptionId: subscription.id,
       },
     });
 
-    // Create subscription record in database (status: trialing)
-    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+    // Create subscription record in database (status: active)
     const dbSubscription = await Subscription.create({
       userId: userId,
       planCode: planCode as PlanCode,
-      razorpaySubscriptionId: mainSubscription.id, // Main subscription ID
+      razorpaySubscriptionId: subscription.id,
       razorpayPlanId: plan.razorpayPlanId,
-      status: 'trialing',
+      status: 'active',
       startDate: new Date(),
-      trialEndsAt: trialEndsAt,
       amountPaid: 0, // Will be updated when charged
       source: 'razorpay',
       history: [
         {
-          action: 'trial_started',
+          action: 'direct_purchase',
           timestamp: new Date(),
-          notes: `Trial started - ${trialDays} days free trial. Token charge subscription: ${tokenSubscription.id}`,
+          notes: `Direct purchase - no trial. Subscription: ${subscription.id}`,
         },
       ],
     });
@@ -235,17 +177,11 @@ export const createTrialSubscription = async (
     res.status(200).json({
       success: true,
       data: {
-        // IMPORTANT: Use main subscription ID for checkout (not token subscription)
-        // This ensures UPI autopay mandate is linked to the main subscription (plan amount)
-        // The ₹20 token charge is handled via addons on the main subscription
-        subscriptionId: mainSubscription.id, // Main subscription ID (for UPI autopay - links to plan amount)
-        tokenSubscriptionId: tokenSubscription.id, // Token subscription ID (for reference only)
-        mainSubscriptionId: mainSubscription.id, // Main subscription ID (same as subscriptionId)
-        amount: TOKEN_CHARGE_AMOUNT, // ₹20 token charge (via addons on main subscription)
+        subscriptionId: subscription.id,
+        mainSubscriptionId: subscription.id,
+        amount: plan.price, // Full plan amount
         currency: 'INR',
         keyId: razorpayService.getKeyId(),
-        trialDays: trialDays,
-        trialEndsAt: trialEndsAt.toISOString(),
       },
     });
   } catch (error: any) {
@@ -253,14 +189,9 @@ export const createTrialSubscription = async (
   }
 };
 
-/**
- * Legacy createOrder - kept for backward compatibility
- * Now redirects to createTrialSubscription
- */
-export const createOrder = createTrialSubscription;
 
 /**
- * Verify ₹20 token payment and activate trial subscription
+ * Verify payment and activate subscription
  * POST /api/payments/verify
  */
 export const verifyPayment = async (
@@ -431,18 +362,19 @@ export const verifyPayment = async (
       throw createError('Invalid payment signature or verification failed', 400);
     }
     
-    // Verify amount is ₹20 token charge
-    if (paymentAmount !== TOKEN_CHARGE_AMOUNT) {
-      throw createError(`Payment amount mismatch. Expected ₹20 token charge, got ₹${paymentAmount / 100}`, 400);
-    }
-    
     if (!payment) {
       throw createError('Payment record not found. Please create subscription first.', 404);
     }
 
-    // Verify this is a token charge payment
-    if (payment.metadata?.type !== 'token_charge') {
-      throw createError('Invalid payment type. Expected token charge.', 400);
+    // Verify payment type is direct_purchase
+    const paymentType = payment.metadata?.type;
+    if (paymentType !== 'direct_purchase') {
+      throw createError(`Invalid payment type: ${paymentType}. Expected 'direct_purchase'.`, 400);
+    }
+
+    // Verify amount matches plan price
+    if (paymentAmount !== plan.price) {
+      throw createError(`Payment amount mismatch. Expected ₹${plan.price / 100} for plan purchase, got ₹${paymentAmount / 100}`, 400);
     }
 
     // Get subscription ID from payment metadata or request body
@@ -481,64 +413,80 @@ export const verifyPayment = async (
       throw createError('Subscription not found', 404);
     }
 
-    // Update subscription with token payment ID
-    subscription.tokenPaymentId = razorpay_payment_id;
-    subscription.status = 'trialing'; // Ensure status is trialing
+    // Update subscription to active status
+    subscription.razorpayPaymentId = razorpay_payment_id;
+    subscription.status = 'active';
+    subscription.amountPaid = paymentAmount;
+    
+    // Calculate end date based on plan duration
+    let endDate: Date | null = null;
+    if (!plan.isLifetime && plan.durationDays) {
+      endDate = new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000);
+      subscription.endDate = endDate;
+    }
+    
     await subscription.save();
 
     // Link payment to subscription
     payment.subscriptionId = subscription._id as mongoose.Types.ObjectId;
     await payment.save();
 
-    // Update user to reflect trial subscription
-    // IMPORTANT: Set planExpiresAt to trial end date so user has access during trial
-    // This will be updated to the actual expiry date when full payment is charged after trial
+    // Update user based on payment type
     const user = await User.findById((req.user as any)._id);
     if (!user) {
       throw createError('User not found', 404);
     }
 
-    // Get trial days for notification and fallback calculation
     const planName = plan.name;
-    const trialDays = plan.trialDays || 0;
 
-    // Set user plan and planExpiresAt to trial end date
-    // This ensures user has access during the trial period
-    // planExpiresAt will be updated to the actual expiry when full payment is charged
+    // Set full plan expiry
     user.plan = planCode;
-    user.planExpiresAt = subscription.trialEndsAt || new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+    if (!plan.isLifetime && plan.durationDays) {
+      user.planExpiresAt = new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000);
+    } else {
+      user.planExpiresAt = null;
+    }
     user.isLifetime = plan.isLifetime || false;
-    user.hasUsedTrial = true; // Mark that user has used trial
     await user.save();
 
+    // Create affiliate commission
+    try {
+      console.log(`[Payment] Creating commission for user ${(req.user as any)._id}`);
+      await createCommission({
+        userId: (req.user as any)._id,
+        subscriptionId: subscription._id as mongoose.Types.ObjectId,
+        paymentId: payment._id as mongoose.Types.ObjectId,
+        planCode: planCode,
+        subscriptionAmount: plan.price,
+      });
+    } catch (commissionError) {
+      console.error('[Payment] Failed to create commission during payment verification:', commissionError);
+    }
+
     // Create notification
-    const notificationMessage = `Your ${planName} trial has started! You have ${trialDays} days free. Full amount (₹${plan.price / 100}) will be auto-debited after trial unless cancelled.`;
+    const notificationMessage = `Your ${planName} plan has been activated! You now have full access to all features.`;
 
     await createNotification({
       userId: (req.user as any)._id,
       type: 'system_update',
-      title: 'Trial Started',
+      title: 'Plan Activated',
       message: notificationMessage,
       link: '/dashboard/billing',
       metadata: {
         planCode,
         planName,
-        trialDays,
-        trialEndsAt: subscription.trialEndsAt?.toISOString(),
         subscriptionId: subscriptionId,
       },
     });
 
     res.status(200).json({
       success: true,
-      message: 'Token payment verified and trial activated',
+      message: 'Payment verified and plan activated',
       data: {
         subscriptionId: subscriptionId,
         plan: planCode,
-        status: 'trialing',
-        trialDays: trialDays,
-        trialEndsAt: subscription.trialEndsAt?.toISOString(),
-        message: `Trial started! Full amount will be charged after ${trialDays} days.`,
+        status: 'active',
+        message: `Plan activated successfully!`,
       },
     });
   } catch (error: any) {
@@ -721,17 +669,25 @@ export const handleWebhook = async (
         // Only create commission on first payment, not renewals
         if (!isRenewal && subscription) {
           try {
-            await createCommission({
+            console.log(`[Webhook payment.captured] Creating commission for subscription ${subscription._id}, user ${paymentRecord.userId}, plan ${paymentRecord.planCode}, amount ${plan.price}`);
+            const commission = await createCommission({
               userId: paymentRecord.userId,
               subscriptionId: subscription._id as mongoose.Types.ObjectId,
               paymentId: paymentRecord._id as mongoose.Types.ObjectId,
               planCode: paymentRecord.planCode,
               subscriptionAmount: plan.price,
             });
+            if (commission) {
+              console.log(`[Webhook payment.captured] Commission created successfully: ${commission._id}`);
+            } else {
+              console.log(`[Webhook payment.captured] No commission created (likely no referral or affiliate not active)`);
+            }
           } catch (error) {
             // Don't fail webhook if commission creation fails
-            console.error('Failed to create affiliate commission:', error);
+            console.error('[Webhook payment.captured] Failed to create affiliate commission:', error);
           }
+        } else {
+          console.log(`[Webhook payment.captured] Skipping commission creation - isRenewal: ${isRenewal}, hasSubscription: ${!!subscription}`);
         }
       }
     }
@@ -777,139 +733,6 @@ export const handleWebhook = async (
       }
     }
 
-    // Handle subscription.charged - Trial ended, full amount charged
-    if (eventType === 'subscription.charged') {
-      const subscription = payload.subscription.entity;
-      const payment = payload.payment.entity;
-      
-      const subRecord = await Subscription.findOne({
-        razorpaySubscriptionId: subscription.id,
-      });
-      
-      if (subRecord) {
-        const plan = plans[subRecord.planCode];
-        const now = new Date();
-        
-        // Update subscription status to active
-        subRecord.status = 'active';
-        subRecord.razorpayPaymentId = payment.id;
-        subRecord.amountPaid = plan.price;
-        
-        // Calculate end date based on plan
-        let endDate: Date | null = null;
-        if (plan.isLifetime) {
-          endDate = null;
-        } else if (plan.durationDays) {
-          // For monthly recurring, extend from now
-          endDate = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
-        }
-        
-        subRecord.endDate = endDate;
-        subRecord.history.push({
-          action: 'trial_ended',
-          timestamp: now,
-          notes: `Trial ended - Full amount (₹${plan.price / 100}) charged`,
-        });
-        await subRecord.save();
-
-        // Create affiliate commission when trial ends and full payment is charged
-        // This is the first full payment, so create commission
-        try {
-          // Find payment record for this subscription charge
-          // Try multiple ways to find the payment record
-          let paymentRecord = await Payment.findOne({
-            paymentId: payment.id,
-          });
-
-          // If not found by paymentId, try by subscriptionId
-          if (!paymentRecord) {
-            paymentRecord = await Payment.findOne({
-              subscriptionId: subRecord._id,
-              status: 'paid',
-            }).sort({ createdAt: -1 });
-          }
-
-          // If still not found, create a payment record for tracking
-          if (!paymentRecord) {
-            paymentRecord = await Payment.create({
-              userId: subRecord.userId,
-              orderId: `sub_${subscription.id}_${Date.now()}`,
-              paymentId: payment.id,
-              planCode: subRecord.planCode,
-              status: 'paid',
-              amount: plan.price,
-              currency: 'INR',
-              razorpayOrderId: payment.order_id || `order_${subscription.id}`,
-              subscriptionId: subRecord._id,
-              planName: plan.name,
-              metadata: {
-                source: 'webhook',
-                subscriptionId: subscription.id,
-              },
-            });
-          }
-
-          if (paymentRecord) {
-            await createCommission({
-              userId: subRecord.userId,
-              subscriptionId: subRecord._id as mongoose.Types.ObjectId,
-              paymentId: paymentRecord._id as mongoose.Types.ObjectId,
-              planCode: subRecord.planCode,
-              subscriptionAmount: plan.price,
-            });
-          }
-        } catch (error) {
-          // Don't fail webhook if commission creation fails
-          console.error('Failed to create affiliate commission:', error);
-        }
-
-        // Update user subscription access
-        const user = await User.findById(subRecord.userId);
-        if (user) {
-          user.plan = subRecord.planCode;
-          if (plan.isLifetime) {
-            user.planExpiresAt = null;
-            user.isLifetime = true;
-          } else {
-            user.planExpiresAt = endDate;
-            user.isLifetime = false;
-          }
-          await user.save();
-
-          // Create notification
-          await createNotification({
-            userId: user._id as mongoose.Types.ObjectId,
-            type: 'system_update',
-            title: 'Trial Ended - Subscription Active',
-            message: `Your ${plan.name} trial has ended. Full amount (₹${plan.price / 100}) has been charged. Your subscription is now active!`,
-            link: '/dashboard/billing',
-            metadata: {
-              planCode: subRecord.planCode,
-              planName: plan.name,
-              paymentId: payment.id,
-            },
-          });
-        }
-
-        // Create payment record for the charged amount
-        await Payment.create({
-          userId: subRecord.userId,
-          orderId: `sub_${subscription.id}_${Date.now()}`,
-          razorpayOrderId: `sub_${subscription.id}`,
-          paymentId: payment.id,
-          planCode: subRecord.planCode,
-          status: 'paid',
-          amount: plan.price,
-          currency: 'INR',
-          subscriptionId: subRecord._id,
-          planName: plan.name,
-          metadata: {
-            type: 'subscription_charge',
-            subscriptionId: subscription.id,
-          },
-        });
-      }
-    }
 
     // Handle subscription.completed - Subscription ended (for one-time plans)
     if (eventType === 'subscription.completed') {
@@ -958,12 +781,8 @@ export const handleWebhook = async (
         // Update user access - revoke after current period ends
         const user = await User.findById(subRecord.userId);
         if (user && user.plan === subRecord.planCode) {
-          // Set expiry to trial end date or current date if trial already ended
-          if (subRecord.trialEndsAt && subRecord.trialEndsAt > new Date()) {
-            user.planExpiresAt = subRecord.trialEndsAt;
-          } else {
-            user.planExpiresAt = new Date();
-          }
+          // Set expiry to current date
+          user.planExpiresAt = new Date();
           await user.save();
 
           await createNotification({
@@ -994,9 +813,9 @@ export const handleWebhook = async (
           // Mark subscription as expired/failed
           subRecord.status = 'expired';
           subRecord.history.push({
-            action: 'trial_ended',
+            action: 'subscription_expired',
             timestamp: new Date(),
-            notes: `Payment failed after trial - subscription expired. Full amount (₹${plan.price / 100}) was not charged.`,
+            notes: `Payment failed - subscription expired. Full amount (₹${plan.price / 100}) was not charged.`,
           });
           await subRecord.save();
 
@@ -1012,7 +831,7 @@ export const handleWebhook = async (
               userId: user._id as mongoose.Types.ObjectId,
               type: 'system_update',
               title: 'Payment Failed',
-              message: 'Payment failed after trial period. Your subscription has been cancelled. Please update your payment method to continue.',
+              message: 'Payment failed. Your subscription has been cancelled. Please update your payment method to continue.',
               link: '/dashboard/billing',
             });
           }
@@ -1051,7 +870,6 @@ export const getPlans = async (
       code,
       name: plan.name,
       price: plan.price,
-      trialDays: plan.trialDays || 0,
       durationDays: plan.durationDays,
       isLifetime: plan.isLifetime,
       maxProducts: plan.maxProducts,
@@ -1159,47 +977,13 @@ export const getCurrentPlan = async (
       throw createError('User not found', 404);
     }
 
-    // Check for active subscription (including trialing)
+    // Check for active subscription
     const subscription = await Subscription.findOne({
       userId: (req.user as any)._id,
-      status: { $in: ['active', 'trialing', 'manually_granted'] },
+      status: { $in: ['active', 'manually_granted'] },
     }).sort({ createdAt: -1 });
 
     let status = getSubscriptionStatus(user);
-    let trialEndsAt: Date | null = null;
-    let isTrialing = false;
-
-    // If subscription exists and is trialing, override status
-    if (subscription && subscription.status === 'trialing') {
-      if (subscription.trialEndsAt && subscription.trialEndsAt > new Date()) {
-        status = 'trialing' as any; // Override to show trialing
-        trialEndsAt = subscription.trialEndsAt;
-        isTrialing = true;
-      } else {
-        // Trial ended but payment not yet charged - expire the subscription
-        if (subscription.trialEndsAt && subscription.trialEndsAt <= new Date()) {
-          // Trial has expired - mark subscription as expired if not already
-          if (subscription.status === 'trialing') {
-            subscription.status = 'expired';
-            subscription.history.push({
-              action: 'trial_ended',
-              timestamp: new Date(),
-              notes: 'Trial expired without payment - subscription cancelled',
-            });
-            await subscription.save();
-            
-            // Revoke user access
-            if (user.plan === subscription.planCode) {
-              user.plan = null;
-              user.planExpiresAt = null;
-              user.isLifetime = false;
-              await user.save();
-            }
-          }
-        }
-        status = getSubscriptionStatus(user);
-      }
-    }
 
     const maxProducts = user.plan ? plans[user.plan as PlanCode]?.maxProducts ?? null : null;
     const productsRemaining = maxProducts === null ? null : Math.max(0, maxProducts - user.productsAdded);
@@ -1211,8 +995,6 @@ export const getCurrentPlan = async (
         planExpiresAt: user.planExpiresAt,
         isLifetime: user.isLifetime,
         status,
-        isTrialing,
-        trialEndsAt: trialEndsAt?.toISOString() || null,
         maxProducts,
         productsAdded: user.productsAdded,
         productsRemaining,

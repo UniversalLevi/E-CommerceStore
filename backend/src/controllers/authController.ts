@@ -41,7 +41,7 @@ export const register = async (
     // Check if user already exists by email or mobile (check both)
     const existingUserByEmail = email ? await User.findOne({ email: email.trim().toLowerCase() }) : null;
     const existingUserByMobile = mobile ? await User.findOne({ mobile: mobile.trim() }) : null;
-    
+
     // Handle deleted accounts - allow re-registration
     if (existingUserByEmail && existingUserByEmail.deletedAt) {
       console.log('Found deleted account by email, hard deleting to allow re-registration:', email);

@@ -19,17 +19,20 @@ export default function AffiliateDashboardPage() {
   const [requestingPayout, setRequestingPayout] = useState(false);
   const [commissionsPage, setCommissionsPage] = useState(1);
   const [payoutsPage, setPayoutsPage] = useState(1);
+  const [referralsPage, setReferralsPage] = useState(1);
   const [commissionsTotalPages, setCommissionsTotalPages] = useState(1);
   const [payoutsTotalPages, setPayoutsTotalPages] = useState(1);
+  const [referralsTotalPages, setReferralsTotalPages] = useState(1);
+  const [referrals, setReferrals] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
-  }, [commissionsPage, payoutsPage]);
+  }, [commissionsPage, payoutsPage, referralsPage]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [affiliateRes, statsRes, commissionsRes, payoutsRes] = await Promise.all([
+      const [affiliateRes, statsRes, commissionsRes, payoutsRes, referralsRes] = await Promise.all([
         api.get<{ success: boolean; data: Affiliate | null }>('/api/affiliates/me'),
         api.get<{ success: boolean; data: CommissionStats }>('/api/affiliates/stats'),
         api.get<{ success: boolean; data: { commissions: AffiliateCommission[]; pagination?: any } }>(
@@ -37,6 +40,9 @@ export default function AffiliateDashboardPage() {
         ),
         api.get<{ success: boolean; data: { payouts: AffiliatePayout[]; pagination?: any } }>(
           `/api/affiliates/payout/history?page=${payoutsPage}&limit=20`
+        ),
+        api.get<{ success: boolean; data: { referrals: any[]; pagination?: any } }>(
+          `/api/affiliates/referrals?page=${referralsPage}&limit=20`
         ),
       ]);
 
@@ -59,6 +65,12 @@ export default function AffiliateDashboardPage() {
         setPayouts(payoutsRes.data.payouts || []);
         if (payoutsRes.data.pagination) {
           setPayoutsTotalPages(payoutsRes.data.pagination.pages || 1);
+        }
+      }
+      if (referralsRes.success && referralsRes.data) {
+        setReferrals(referralsRes.data.referrals || []);
+        if (referralsRes.data.pagination) {
+          setReferralsTotalPages(referralsRes.data.pagination.pages || 1);
         }
       }
     } catch (error: any) {
@@ -314,15 +326,119 @@ export default function AffiliateDashboardPage() {
         </div>
       )}
 
+      {/* Referrals */}
+      <div className="glass-card border border-white/10 rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Your Referrals</h2>
+        {referrals.length === 0 ? (
+          <div className="text-center py-8 text-text-secondary">
+            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No referrals yet. Share your referral link to start earning!</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">User</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Status</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Joined</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-text-secondary">Converted</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {referrals.map((referral) => {
+                    const user = referral.referredUserId;
+                    const isConverted = referral.status === 'converted';
+                    return (
+                      <tr key={referral._id} className="hover:bg-white/5 transition-colors">
+                        <td className="py-3 px-4">
+                          {user ? (
+                            <div>
+                              <div className="font-medium text-text-primary">
+                                {typeof user === 'object' ? user.name || user.email : 'Unknown'}
+                              </div>
+                              {typeof user === 'object' && user.email && (
+                                <div className="text-sm text-text-muted">{user.email}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-text-muted">Pending...</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                              isConverted
+                                ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                                : referral.status === 'pending'
+                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
+                                : 'bg-gray-500/20 text-gray-400 border border-gray-500/50'
+                            }`}
+                          >
+                            {referral.status === 'converted' ? 'Converted' : referral.status === 'pending' ? 'Pending' : 'Expired'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-text-muted">
+                          {formatDate(referral.createdAt)}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-text-muted">
+                          {referral.convertedAt ? formatDate(referral.convertedAt) : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {referralsTotalPages > 1 && (
+              <div className="mt-4 flex justify-center gap-2">
+                <Button
+                  onClick={() => setReferralsPage((p) => Math.max(1, p - 1))}
+                  disabled={referralsPage === 1}
+                  variant="secondary"
+                  className="px-4"
+                >
+                  Previous
+                </Button>
+                <span className="px-4 py-2 text-text-secondary">
+                  Page {referralsPage} of {referralsTotalPages}
+                </span>
+                <Button
+                  onClick={() => setReferralsPage((p) => Math.min(referralsTotalPages, p + 1))}
+                  disabled={referralsPage >= referralsTotalPages}
+                  variant="secondary"
+                  className="px-4"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Commissions */}
       <div className="glass-card border border-white/10 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Commission History</h2>
-        <CommissionTable
-          commissions={commissions}
-          page={commissionsPage}
-          totalPages={commissionsTotalPages}
-          onPageChange={setCommissionsPage}
-        />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Commission History</h2>
+        </div>
+        {commissions.length === 0 ? (
+          <div className="text-center py-8 text-text-secondary">
+            <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="mb-2">No commissions yet.</p>
+            <p className="text-sm text-text-muted">
+              Commissions are created when referred users purchase plans. For trial subscriptions, commissions are created when the full payment is charged after the trial period ends.
+            </p>
+          </div>
+        ) : (
+          <CommissionTable
+            commissions={commissions}
+            page={commissionsPage}
+            totalPages={commissionsTotalPages}
+            onPageChange={setCommissionsPage}
+          />
+        )}
       </div>
 
       {/* Payout History */}

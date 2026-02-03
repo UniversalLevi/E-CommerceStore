@@ -1,7 +1,6 @@
 export const plans = {
   starter_30: {
-    price: 99900, // in paise (₹999) - full amount after trial
-    trialDays: 7, // 7-day free trial
+    price: 99900, // in paise (₹999) - full amount
     durationDays: 30, // Monthly subscription duration
     isLifetime: false,
     maxProducts: 5,
@@ -13,8 +12,7 @@ export const plans = {
     ],
   },
   growth_90: {
-    price: 399900, // in paise (₹3999) - 5 months after trial
-    trialDays: 7, // 7-day free trial
+    price: 399900, // in paise (₹3999) - 5 months
     durationDays: 150, // 5 months (150 days)
     isLifetime: false,
     maxProducts: 15,
@@ -27,8 +25,7 @@ export const plans = {
     ],
   },
   lifetime: {
-    price: 999900, // in paise (₹9999) - one-time after trial
-    trialDays: 7, // 7-day free trial
+    price: 999900, // in paise (₹9999) - one-time payment
     durationDays: null,
     isLifetime: true,
     maxProducts: null, // null = unlimited

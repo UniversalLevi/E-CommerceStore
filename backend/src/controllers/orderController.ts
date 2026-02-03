@@ -8,6 +8,8 @@ import { Order, IOrder, ZenStatus } from '../models/Order';
 import { ZenOrder } from '../models/ZenOrder';
 import { Wallet } from '../models/Wallet';
 import { WalletTransaction } from '../models/WalletTransaction';
+import { Store } from '../models/Store';
+import { StoreOrder } from '../models/StoreOrder';
 import { decrypt } from '../utils/encryption';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
@@ -2195,6 +2197,158 @@ export const getOrderZenStatus = async (
       },
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get all internal store orders for the authenticated user
+ * GET /api/orders/internal/all
+ */
+export const getAllInternalStoreOrders = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    const userId = (req.user as any)._id;
+    const { fulfillmentStatus, startDate, endDate, limit = '100' } = req.query;
+
+    // Get user's internal store
+    const store = await Store.findOne({ owner: userId });
+    if (!store) {
+      // User doesn't have an internal store yet, return empty
+      return res.status(200).json({
+        success: true,
+        data: [],
+        stats: {
+          totalRevenue: 0,
+          paidRevenue: 0,
+          currency: 'INR',
+          ordersByStatus: {
+            pending: 0,
+            paid: 0,
+            refunded: 0,
+            unfulfilled: 0,
+            fulfilled: 0,
+            partial: 0,
+          },
+        },
+      });
+    }
+
+    // Build query
+    const query: any = { storeId: store._id };
+    
+    if (fulfillmentStatus && fulfillmentStatus !== 'any') {
+      query.fulfillmentStatus = fulfillmentStatus;
+    }
+
+    // Date filters
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate as string);
+      }
+    }
+
+    // Fetch orders
+    const orders = await StoreOrder.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit as string, 10))
+      .lean();
+
+    // Calculate stats
+    const allOrders = await StoreOrder.find({ storeId: store._id }).lean();
+    const totalRevenue = allOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const paidRevenue = allOrders
+      .filter(order => order.paymentStatus === 'paid')
+      .reduce((sum, order) => sum + (order.total || 0), 0);
+
+    const ordersByStatus = {
+      pending: allOrders.filter(order => order.paymentStatus === 'pending').length,
+      paid: allOrders.filter(order => order.paymentStatus === 'paid').length,
+      refunded: allOrders.filter(order => order.paymentStatus === 'refunded').length,
+      unfulfilled: allOrders.filter(order => order.fulfillmentStatus === 'pending').length,
+      fulfilled: allOrders.filter(order => order.fulfillmentStatus === 'fulfilled').length,
+      partial: allOrders.filter(order => order.fulfillmentStatus === 'shipped').length,
+    };
+
+    // Transform internal store orders to match Shopify order format
+    const transformedOrders = orders.map((order) => {
+      const orderNumber = parseInt(order.orderId.split('-').pop() || '0', 10);
+      return {
+        id: orderNumber, // Use order number as ID
+        name: order.orderId,
+        orderNumber: orderNumber,
+        email: order.customer.email || '',
+        createdAt: order.createdAt.toISOString(),
+        updatedAt: order.updatedAt.toISOString(),
+        totalPrice: (order.total / 100).toFixed(2), // Convert paise to rupees
+        subtotalPrice: (order.subtotal / 100).toFixed(2),
+        totalTax: '0.00',
+        currency: order.currency || 'INR',
+        financialStatus: order.paymentStatus === 'paid' ? 'paid' : order.paymentStatus === 'pending' ? 'pending' : 'refunded',
+        fulfillmentStatus: order.fulfillmentStatus || 'pending',
+        customer: {
+          id: 0,
+          email: order.customer.email || '',
+          firstName: order.customer.name?.split(' ')[0] || '',
+          lastName: order.customer.name?.split(' ').slice(1).join(' ') || '',
+          fullName: order.customer.name || '',
+        },
+        lineItems: order.items.map((item, idx) => ({
+          id: idx + 1,
+          title: item.title,
+          quantity: item.quantity,
+          price: (item.price / 100).toFixed(2), // Convert paise to rupees
+          variantTitle: item.variant || '',
+          sku: '',
+        })),
+        shippingAddress: order.shippingAddress ? {
+          address1: order.shippingAddress.address1 || '',
+          city: order.shippingAddress.city || '',
+          province: order.shippingAddress.state || '',
+          country: order.shippingAddress.country || '',
+          zip: order.shippingAddress.zip || '',
+          formatted: [
+            order.shippingAddress.address1,
+            order.shippingAddress.address2,
+            order.shippingAddress.city,
+            order.shippingAddress.state,
+            order.shippingAddress.zip,
+            order.shippingAddress.country,
+          ].filter(Boolean).join(', '),
+        } : null,
+        isInternalStore: true, // Flag to identify internal store orders
+        storeName: store.name,
+        storeSlug: store.slug,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: transformedOrders,
+      stats: {
+        totalRevenue,
+        paidRevenue,
+        currency: store.currency || 'INR',
+        ordersByStatus,
+      },
+      store: {
+        id: (store._id as mongoose.Types.ObjectId).toString(),
+        name: store.name,
+        domain: store.slug,
+      },
+    });
+  } catch (error: any) {
     next(error);
   }
 };

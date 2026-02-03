@@ -113,8 +113,7 @@ export type SubscriptionStatus = 'active' | 'expired' | 'none' | 'trialing';
 export interface Plan {
   code: PlanCode;
   name: string;
-  price: number; // in paise (full amount after trial)
-  trialDays?: number; // Free trial days
+  price: number; // in paise (full amount)
   durationDays: number | null;
   isLifetime: boolean;
   maxProducts: number | null; // null = unlimited
@@ -134,12 +133,12 @@ export interface SubscriptionInfo {
   planExpiresAt: string | null;
   isLifetime: boolean;
   status: SubscriptionStatus;
-  isTrialing?: boolean;
-  trialEndsAt?: string | null;
   subscriptionId?: string | null;
   maxProducts: number | null;
   productsAdded: number;
   productsRemaining: number | null;
+  trialEndsAt?: string | null;
+  hasUsedTrial?: boolean;
 }
 
 export interface PaymentOrderResponse {

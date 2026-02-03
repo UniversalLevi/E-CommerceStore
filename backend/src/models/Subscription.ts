@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ISubscriptionHistory {
-  action: 'manual_granted' | 'manual_revoke' | 'manual_upgrade' | 'manual_extension' | 'payment_received' | 'auto_renewal' | 'subscription_activated' | 'subscription_cancelled' | 'subscription_expired' | 'trial_started' | 'trial_ended';
+  action: 'manual_granted' | 'manual_revoke' | 'manual_upgrade' | 'manual_extension' | 'payment_received' | 'auto_renewal' | 'subscription_activated' | 'subscription_cancelled' | 'subscription_expired' | 'trial_started' | 'trial_ended' | 'direct_purchase';
   timestamp: Date;
   adminId?: mongoose.Types.ObjectId;
   notes?: string;
@@ -44,6 +44,7 @@ const subscriptionHistorySchema = new Schema<ISubscriptionHistory>({
       'subscription_expired',
       'trial_started',
       'trial_ended',
+      'direct_purchase',
     ],
   },
   timestamp: {

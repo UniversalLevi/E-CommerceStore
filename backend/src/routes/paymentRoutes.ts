@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import express from 'express';
 import {
-  createOrder,
-  createTrialSubscription,
+  createSubscription,
   verifyPayment,
   handleWebhook,
   getPlans,
@@ -26,8 +25,7 @@ router.post(
 );
 
 // Authenticated routes
-router.post('/create-order', authenticateToken, generalApiRateLimit, createOrder); // Legacy - redirects to createTrialSubscription
-router.post('/create-trial-subscription', authenticateToken, generalApiRateLimit, createTrialSubscription);
+router.post('/create-subscription', authenticateToken, generalApiRateLimit, createSubscription);
 router.post('/verify', authenticateToken, generalApiRateLimit, verifyPayment);
 router.get('/history', authenticateToken, generalApiRateLimit, getPaymentHistory);
 router.get('/current-plan', authenticateToken, generalApiRateLimit, getCurrentPlan);
