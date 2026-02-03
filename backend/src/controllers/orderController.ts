@@ -2265,8 +2265,21 @@ export const getAllInternalStoreOrders = async (
       .limit(parseInt(limit as string, 10))
       .lean();
 
-    // Calculate stats
-    const allOrders = await StoreOrder.find({ storeId: store._id }).lean();
+    // Calculate stats - use the same query with date filters for accurate stats
+    const statsQuery: any = { storeId: store._id };
+    
+    // Apply date filters to stats as well
+    if (startDate || endDate) {
+      statsQuery.createdAt = {};
+      if (startDate) {
+        statsQuery.createdAt.$gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        statsQuery.createdAt.$lte = new Date(endDate as string);
+      }
+    }
+    
+    const allOrders = await StoreOrder.find(statsQuery).lean();
     const totalRevenue = allOrders.reduce((sum, order) => sum + (order.total || 0), 0);
     const paidRevenue = allOrders
       .filter(order => order.paymentStatus === 'paid')

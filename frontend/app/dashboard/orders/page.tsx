@@ -345,9 +345,13 @@ export default function OrdersPage() {
       });
 
       // Combine stats
+      // Note: Shopify revenue is in rupees, internal store revenue is in paise (need to convert)
+      const internalTotalRevenue = (internalResponse.stats?.totalRevenue || 0) / 100; // Convert paise to rupees
+      const internalPaidRevenue = (internalResponse.stats?.paidRevenue || 0) / 100; // Convert paise to rupees
+      
       const combinedStats: OrderStats = {
-        totalRevenue: (shopifyResponse.stats?.totalRevenue || 0) + (internalResponse.stats?.totalRevenue || 0),
-        paidRevenue: (shopifyResponse.stats?.paidRevenue || 0) + (internalResponse.stats?.paidRevenue || 0),
+        totalRevenue: (shopifyResponse.stats?.totalRevenue || 0) + internalTotalRevenue,
+        paidRevenue: (shopifyResponse.stats?.paidRevenue || 0) + internalPaidRevenue,
         currency: shopifyResponse.stats?.currency || internalResponse.stats?.currency || 'INR',
         ordersByStatus: {
           pending: (shopifyResponse.stats?.ordersByStatus?.pending || 0) + (internalResponse.stats?.ordersByStatus?.pending || 0),
