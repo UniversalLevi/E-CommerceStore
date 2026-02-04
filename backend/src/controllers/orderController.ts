@@ -979,14 +979,16 @@ export const markOrderCompleted = async (
 
     res.json({
       success: true,
-      message: paymentMarked 
+      message: paymentReceived 
         ? 'Order marked as completed and paid successfully' 
         : 'Order marked as completed (payment status unchanged)',
       data: {
-        order: closeResponse.data.order ? transformOrder(closeResponse.data.order) : null,
+        id: (order as any)._id.toString(),
+        orderId: order.orderId,
+        paymentStatus: order.paymentStatus,
+        fulfillmentStatus: order.fulfillmentStatus,
         completedAt: timestamp,
         paymentReceived,
-        paymentMarked,
       },
     });
   } catch (error: any) {
@@ -1029,55 +1031,27 @@ export const reopenOrder = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Get order and reopen it
+    const order = await StoreOrder.findOne({ 
+      storeId: store._id,
+      orderId: orderId 
+    });
 
-    // Reopen the order
-    const response = await axios.post(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/open.json`,
-      {},
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    if (!order) {
+      throw createError('Order not found', 404);
+    }
+
+    // Reopen order (change fulfillment status back to pending)
+    order.fulfillmentStatus = 'pending';
 
     // Update note if provided
     if (note) {
-      const order = response.data.order;
       const timestamp = new Date().toISOString();
-      const reopenNote = [
-        order.note || '',
-        `\n[REOPENED - ${timestamp}]`,
-        `Reason: ${note}`,
-        `Reopened by: ${req.user.email || 'Admin'}`,
-      ].filter(Boolean).join('\n');
-
-      // Remove completed tags
-      const existingTags = order.tags ? order.tags.split(', ') : [];
-      const newTags = existingTags
-        .filter((tag: string) => !['completed', 'payment-received'].includes(tag.toLowerCase()))
-        .join(', ');
-
-      await axios.put(
-        `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-        {
-          order: {
-            id: orderId,
-            note: reopenNote,
-            tags: newTags,
-          },
-        },
-        {
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      order.notes.push({
+        text: `[REOPENED - ${timestamp}] Reason: ${note} - Reopened by: ${req.user.email || 'Admin'}`,
+        addedBy: (req.user as any)._id,
+        addedAt: new Date(),
+      });
     }
 
     // Audit log
@@ -1097,7 +1071,11 @@ export const reopenOrder = async (
     res.json({
       success: true,
       message: 'Order reopened successfully',
-      data: response.data.order ? transformOrder(response.data.order) : null,
+      data: {
+        id: (order as any)._id.toString(),
+        orderId: order.orderId,
+        fulfillmentStatus: order.fulfillmentStatus,
+      },
     });
   } catch (error: any) {
     if (error.response?.data?.errors) {
@@ -1190,9 +1168,9 @@ async function syncShopifyOrderToLocal(
   // Convert Shopify price strings to paise (multiply by 100)
   const toPaise = (priceStr: string): number => Math.round(parseFloat(priceStr || '0') * 100);
 
-  const orderData = {
+  const orderData: any = {
     shopifyOrderId: shopifyOrder.id,
-    shopifyOrderName: shopifyOrder.name,
+    shopifyOrderName: shopifyOrder.name || '',
     shopifyOrderNumber: shopifyOrder.order_number,
     storeConnectionId: storeConnection._id,
     userId,
@@ -1241,7 +1219,7 @@ async function syncShopifyOrderToLocal(
   };
 
   // Upsert the order
-  const order = await Order.findOneAndUpdate(
+  const order: any = await Order.findOneAndUpdate(
     { storeConnectionId: storeConnection._id, shopifyOrderId: shopifyOrder.id },
     { $set: orderData },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -1281,45 +1259,32 @@ export const syncAndGetOrder = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Get order from internal store
+    const order = await StoreOrder.findOne({ 
+      storeId: store._id,
+      orderId: orderId 
+    });
 
-    // Fetch order from Shopify
-    const response = await axios.get(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-        timeout: 10000,
-      }
-    );
-
-    const shopifyOrder = response.data.order;
-    if (!shopifyOrder) {
+    if (!order) {
       throw createError('Order not found', 404);
     }
 
-    // Sync to local database
-    const localOrder = await syncShopifyOrderToLocal(shopifyOrder, store, userId);
+    // Order is already in local database (internal store)
+    const localOrder = order;
 
     res.json({
       success: true,
       data: {
         localOrder: {
-          id: localOrder._id,
-          shopifyOrderId: localOrder.shopifyOrderId,
-          shopifyOrderName: localOrder.shopifyOrderName,
-          zenStatus: localOrder.zenStatus,
-          productCost: localOrder.productCost,
-          shippingCost: localOrder.shippingCost,
-          walletChargeAmount: localOrder.walletChargeAmount,
-          totalPrice: localOrder.totalPrice,
+          id: (localOrder as any)._id,
+          orderId: localOrder.orderId,
+          zenStatus: (localOrder as any).zenStatus || 'pending',
+          productCost: (localOrder as any).productCost || 0,
+          shippingCost: localOrder.shipping || 0,
+          walletChargeAmount: (localOrder as any).walletChargeAmount || 0,
+          totalPrice: localOrder.total || 0,
           currency: localOrder.currency,
         },
-        shopifyOrder: transformOrder(shopifyOrder),
       },
     });
   } catch (error: any) {
@@ -1380,29 +1345,7 @@ export const setOrderCosts = async (
     });
 
     if (!localOrder) {
-      // Fetch from Shopify and sync
-      const accessToken = decrypt(store.accessToken);
-      const apiVersion = store.apiVersion || '2024-01';
-
-      const response = await axios.get(
-        `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-        {
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.data.order) {
-        throw createError('Order not found', 404);
-      }
-
-      const syncedOrder = await syncShopifyOrderToLocal(response.data.order, store, userId);
-      if (!syncedOrder) {
-        throw createError('Failed to sync order', 500);
-      }
-      localOrder = syncedOrder;
+      throw createError('Order not found in internal store', 404);
     }
 
     // Check if order can be modified
@@ -1481,29 +1424,7 @@ export const fulfillViaZen = async (
     });
 
     if (!localOrder) {
-      // Fetch from Shopify and sync
-      const accessToken = decrypt(store.accessToken);
-      const apiVersion = store.apiVersion || '2024-01';
-
-      const response = await axios.get(
-        `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-        {
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.data.order) {
-        throw createError('Order not found', 404);
-      }
-
-      const syncedOrder = await syncShopifyOrderToLocal(response.data.order, store, userId);
-      if (!syncedOrder) {
-        throw createError('Failed to sync order', 500);
-      }
-      localOrder = syncedOrder;
+      throw createError('Order not found in internal store', 404);
     }
 
     // TypeScript assertion - we've handled the null case above
@@ -1661,7 +1582,7 @@ export const fulfillViaZen = async (
       balanceAfter,
       metadata: {
         shopifyOrderId: order.shopifyOrderId,
-        shopifyOrderName: order.shopifyOrderName,
+        shopifyOrderName: (order as any).orderId || '',
         productCost: order.productCost,
         shippingCost: order.shippingCost,
         serviceFee: order.serviceFee,
@@ -1682,7 +1603,7 @@ export const fulfillViaZen = async (
       userId,
       storeConnectionId: store._id,
       shopifyOrderName: order.shopifyOrderName,
-      storeName: store.storeName,
+      storeName: store.name,
       customerName: `${order.customer.firstName} ${order.customer.lastName}`.trim() || 'Guest',
       customerEmail: order.email,
       customerPhone: order.shippingAddress?.phone || '',
@@ -1736,7 +1657,7 @@ export const fulfillViaZen = async (
       userId,
       type: 'system_update',
       title: 'Order Submitted for Fulfillment',
-      message: `Order ${order.shopifyOrderName} has been submitted for ZEN fulfillment. ₹${(requiredAmount / 100).toLocaleString('en-IN')} deducted from wallet.`,
+      message: `Order ${(order as any).orderId || 'N/A'} has been submitted for ZEN fulfillment. ₹${(requiredAmount / 100).toLocaleString('en-IN')} deducted from wallet.`,
       link: '/dashboard/orders',
       metadata: {
         orderId: order._id,

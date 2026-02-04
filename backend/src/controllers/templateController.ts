@@ -937,7 +937,7 @@ export const getTemplate = async (
       message: 'Theme preview is coming soon for internal stores',
       data: {
         ...template,
-        preview,
+        preview: null,
       },
     });
   } catch (error) {
@@ -1009,54 +1009,6 @@ export const applyTemplate = async (
     
     // Theme application coming soon for internal stores
     throw createError('Theme application is coming soon for internal stores', 501);
-    
-    // Audit log
-    await AuditLog.create({
-      userId: (req.user as any)._id,
-      storeId: storeConnection._id,
-      action: 'APPLY_TEMPLATE',
-      success: result.success,
-      errorMessage: result.errors.length > 0 ? result.errors.join('; ') : undefined,
-      details: {
-        templateId: id,
-        templateName: template.name,
-        themeId: result.themeId,
-        assetsUploaded: result.assetsUploaded,
-        pagesCreated: result.pagesCreated,
-      },
-      ipAddress: req.ip,
-    });
-    
-    // Create notification
-    await createNotification({
-      userId: (req.user as any)._id,
-      type: 'template_applied',
-      title: 'Template Applied',
-      message: result.success
-        ? `Template "${template.name}" has been successfully applied to your store "${storeConnection.storeName}".`
-        : `Template "${template.name}" was applied with some errors. Please check your store.`,
-      link: `/dashboard/stores/${(storeConnection as any)._id}`,
-      metadata: {
-        templateId: id.toString(),
-        templateName: template.name,
-        storeId: (storeConnection as any)._id.toString(),
-        storeName: storeConnection.storeName,
-      },
-    });
-    
-    const storeUrl = `https://${storeConnection.shopDomain.replace('.myshopify.com', '')}.myshopify.com`;
-    
-    res.json({
-      success: true,
-      message: result.success
-        ? 'Template applied successfully'
-        : 'Template applied with some errors',
-      data: {
-        ...result,
-        storeUrl,
-        adminUrl: `https://${storeConnection.shopDomain}/admin/themes/${result.themeId}`,
-      },
-    });
   } catch (error) {
     next(error);
   }
