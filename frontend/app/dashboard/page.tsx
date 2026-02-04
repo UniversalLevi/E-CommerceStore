@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   const fetchStores = async () => {
     try {
-      // Fetch Shopify stores
+      // Fetch stores (internal stores)
       const response = await api.get<{ success: boolean; data: any[] }>('/api/stores');
       setStores(response.data);
       
@@ -133,7 +133,7 @@ export default function DashboardPage() {
                 Your Stores
               </h3>
               <div className="space-y-3">
-                {/* Shopify Stores */}
+                {/* Stores */}
                 {stores.map((store) => (
                   <div
                     key={store._id}
@@ -142,10 +142,7 @@ export default function DashboardPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-text-primary">{store.storeName}</h4>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40">
-                            Shopify
-                          </span>
+                          <h4 className="font-semibold text-text-primary">{store.name || store.storeName}</h4>
                           {store.status === 'active' ? (
                             <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/40">
                               Active
@@ -217,11 +214,10 @@ export default function DashboardPage() {
                 <IconBadge icon={Link2} label="Store connection" size="md" variant="primary" className="mt-1 flex-shrink-0" />
                 <div className="flex-1">
                   <h3 className="text-lg md:text-xl font-bold text-text-primary mb-2">
-                    Connect Your Shopify Store
+                    Create Your Store
                   </h3>
                   <p className="text-sm md:text-base text-text-secondary mb-4">
-                    Connect your Shopify store credentials to start creating and managing products.
-                    You can connect multiple stores and switch between them.
+                    Create your store to start adding and managing products.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Link
@@ -322,7 +318,7 @@ export default function DashboardPage() {
                   Manage Stores
                 </h4>
                 <p className="text-sm text-text-secondary">
-                  Connect and manage your Shopify stores
+                  Create and manage your stores
                 </p>
               </Link>
 

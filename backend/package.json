@@ -24,7 +24,6 @@
     "test:coverage": "jest --coverage"
   },
   "keywords": [
-    "shopify",
     "ecommerce",
     "store-builder"
   ],

@@ -164,7 +164,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
                     <div className="mt-2">
                       <p className="text-text-secondary mb-6">
                         Welcome to EAZY DROPSHIPPING! Let's get you started by personalizing
-                        your experience and connecting your first Shopify store.
+                        your experience and creating your first store.
                       </p>
                       <div className="bg-surface-hover border border-border-default rounded-lg p-4">
                         <p className="text-sm text-text-secondary">
@@ -293,21 +293,17 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
                 {step === 4 && (
                   <div>
                     <Dialog.Title as="h3" className="text-2xl font-bold leading-6 text-text-primary mb-4">
-                      How to Create a Shopify Custom App
+                      Create Your Store
                     </Dialog.Title>
                     <div className="mt-2">
-                      <ol className="list-decimal list-inside space-y-3 text-text-secondary mb-6">
-                        <li>Go to your Shopify Admin Dashboard</li>
-                        <li>Navigate to Settings → Apps and sales channels → Develop apps</li>
-                        <li>Click "Create an app"</li>
-                        <li>Name your app and click "Create app"</li>
-                        <li>Go to "API credentials" tab</li>
-                        <li>Click "Configure Admin API scopes"</li>
-                        <li>Select scopes: <code className="bg-surface-hover px-1 rounded">write_products</code> and <code className="bg-surface-hover px-1 rounded">read_products</code></li>
-                        <li>Click "Save" and then "Install app"</li>
-                        <li>Copy the Admin API access token</li>
-                        <li>Use this token when connecting your store on our platform</li>
-                      </ol>
+                      <p className="text-text-secondary mb-6">
+                        You can create your store right here on our platform. Simply choose a name and you're ready to start adding products!
+                      </p>
+                      <div className="bg-surface-hover border border-border-default rounded-lg p-4">
+                        <p className="text-sm text-text-secondary">
+                          <strong>Next:</strong> Click "Get Started" to create your store and start adding products.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -319,8 +315,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
                     </Dialog.Title>
                     <div className="mt-2">
                       <p className="text-text-secondary mb-6">
-                        Once you've connected your store, you can start adding products and creating
-                        your Shopify store directly from our platform.
+                        Once you've created your store, you can start adding products and managing
+                        your store directly from our platform.
                       </p>
                       <div className="bg-surface-hover border border-border-default rounded-lg p-4">
                         <p className="text-sm text-text-secondary">

@@ -1,15 +1,14 @@
 import { Response, NextFunction } from 'express';
-import axios from 'axios';
 import { User } from '../models/User';
 import { Product } from '../models/Product';
-import { StoreConnection } from '../models/StoreConnection';
-import { decrypt } from '../utils/encryption';
+import { Store } from '../models/Store';
+import { StoreProduct } from '../models/StoreProduct';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
 import { requirePaidPlan, checkProductLimit } from '../middleware/subscription';
 import { createNotification } from '../utils/notifications';
 
-// Create a new Shopify store with selected product
+// Add product to internal store
 export const createStore = async (
   req: AuthRequest,
   res: Response,
@@ -26,7 +25,7 @@ export const createStore = async (
       throw createError('Valid Product ID is required', 400);
     }
 
-    console.log('🛍️ Creating store with product:', productId);
+    console.log('🛍️ Adding product to store:', productId);
 
     // Fetch product details
     const product = await Product.findById(productId);
@@ -34,140 +33,77 @@ export const createStore = async (
       throw createError('Product not found', 404);
     }
 
-    // Get store connection (either specified or default)
-    let storeConnection;
+    // Get store (either specified or user's store)
+    let store;
 
     if (storeId) {
       // Use specified store
-      storeConnection = await StoreConnection.findById(storeId);
+      store = await Store.findById(storeId);
       
-      if (!storeConnection) {
-        throw createError('Store connection not found', 404);
+      if (!store) {
+        throw createError('Store not found', 404);
       }
 
       // Verify ownership or admin
-      const isOwner = storeConnection.owner.toString() === (req.user as any)._id.toString();
+      const isOwner = store.owner.toString() === (req.user as any)._id.toString();
       const isAdmin = req.user.role === 'admin';
 
       if (!isOwner && !isAdmin) {
         throw createError('You do not have access to this store', 403);
       }
     } else {
-      // Use user's default store (select only needed fields)
-      storeConnection = await StoreConnection.findOne({
+      // Use user's store (one store per user)
+      store = await Store.findOne({
         owner: (req.user as any)._id,
-        isDefault: true,
-      }).select('storeName shopDomain accessToken status apiVersion');
+      });
 
-      if (!storeConnection) {
+      if (!store) {
         throw createError(
-          'No default store connected. Please connect a Shopify store first or specify a store ID.',
+          'No store found. Please create a store first.',
           400
         );
       }
     }
 
     // Check store status
-    if (storeConnection.status !== 'active') {
+    if (store.status !== 'active') {
       throw createError(
-        `Store connection is ${storeConnection.status}. Please test and fix the connection first.`,
+        `Store is ${store.status}. Please activate your store first.`,
         400
       );
     }
 
-    // Decrypt credentials
-    const shopifyAccessToken = decrypt(storeConnection.accessToken);
-    const shopifyShop = storeConnection.shopDomain;
-
-    console.log('📦 Using shop:', shopifyShop);
-    console.log('🔗 Store:', storeConnection.storeName);
+    console.log('📦 Using store:', store.name);
+    console.log('🔗 Store slug:', store.slug);
 
     // Use custom description if provided, otherwise use product description
     const productDescription = customDescription || product.description;
     
-    // Prepare product data for Shopify (without images initially for trial accounts)
-    const shopifyProduct = {
-      product: {
-        title: product.title,
-        body_html: productDescription,
-        vendor: 'EAZY DROPSHIPPING',
-        product_type: product.category,
-        variants: [
-          {
-            price: product.price.toString(),
-            inventory_management: null,
-            inventory_policy: 'continue',
-          },
-        ],
-        // Don't include images initially (trial account issue)
-        // images: product.images.map((url) => ({ src: url })),
-        status: 'active',
+    // Convert product price from rupees to paise
+    const basePriceInPaise = Math.round(product.price * 100);
+
+    // Create store product
+    const storeProduct = await StoreProduct.create({
+      storeId: store._id,
+      title: product.title,
+      description: productDescription,
+      basePrice: basePriceInPaise,
+      status: 'active',
+      images: product.images.slice(0, 5), // Max 5 images
+      importedFrom: product._id,
+      importedAt: new Date(),
+      metadata: {
+        nicheId: product.niche,
+        tags: product.tags || [],
+        supplierLink: product.supplierLink,
       },
-    };
+    });
 
-    console.log('📤 Sending product to Shopify...');
+    console.log('✅ Product created in store:', storeProduct._id);
 
-    // Add product to Shopify store using Admin API
-    const apiVersion = storeConnection.apiVersion || '2024-01';
-    const shopifyResponse = await axios.post(
-      `https://${shopifyShop}/admin/api/${apiVersion}/products.json`,
-      shopifyProduct,
-      {
-        headers: {
-          'X-Shopify-Access-Token': shopifyAccessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    const createdProduct = shopifyResponse.data.product;
-    console.log('✅ Product created in Shopify:', createdProduct.id);
-
-    // Try to add images if any (separate request to handle trial account limitations)
-    if (product.images && product.images.length > 0) {
-      try {
-        console.log('🖼️ Attempting to add images...');
-        await axios.put(
-          `https://${shopifyShop}/admin/api/${apiVersion}/products/${createdProduct.id}.json`,
-          {
-            product: {
-              id: createdProduct.id,
-              images: product.images.map((url) => ({ src: url })),
-            },
-          },
-          {
-            headers: {
-              'X-Shopify-Access-Token': shopifyAccessToken,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        console.log('✅ Images added successfully');
-      } catch (imageError: any) {
-        console.log('⚠️ Could not add images (trial account limitation):', imageError.response?.data?.errors);
-        // Don't fail the entire operation if images can't be added
-      }
-    }
-
-    // Store URL (customer-facing)
-    const cleanShop = shopifyShop.replace('.myshopify.com', '');
-    const storeUrl = `https://${cleanShop}.myshopify.com`;
-
-    // Admin URL for the created product
-    const adminUrl = `https://${shopifyShop}/admin/products/${createdProduct.id}`;
-
-    // Save store info to user record (for backward compatibility)
-    // Also increment productsAdded counter
+    // Increment productsAdded counter
     await User.findByIdAndUpdate((req.user as any)._id, {
-      $push: {
-        stores: {
-          storeUrl: storeUrl,
-          productId: product._id,
-          productName: product.title,
-          createdAt: new Date(),
-        },
-      },
-      $inc: { productsAdded: 1 }, // Increment product counter
+      $inc: { productsAdded: 1 },
     });
 
     // Create notification
@@ -175,72 +111,42 @@ export const createStore = async (
       userId: (req.user as any)._id,
       type: 'product_added',
       title: 'Product Added Successfully',
-      message: `"${product.title}" has been successfully added to your Shopify store "${storeConnection.storeName}".`,
+      message: `"${product.title}" has been successfully added to your store "${store.name}".`,
       link: `/products/${(product as any)._id}`,
       metadata: {
         productId: (product as any)._id.toString(),
         productTitle: product.title,
-        storeId: (storeConnection as any)._id.toString(),
-        storeName: storeConnection.storeName,
-        shopifyProductId: createdProduct.id,
+        storeId: (store as any)._id.toString(),
+        storeName: store.name,
+        storeProductId: (storeProduct as any)._id.toString(),
       },
     });
 
     res.status(201).json({
       success: true,
-      message: 'Store created successfully with product',
+      message: 'Product added to store successfully',
       data: {
-        storeUrl,
-        adminUrl,
-        productUrl: `${storeUrl}/products/${createdProduct.handle}`,
-        productId: createdProduct.id,
+        storeId: store._id,
+        storeName: store.name,
+        storeSlug: store.slug,
+        productId: (storeProduct as any)._id,
         product: {
           title: product.title,
           price: product.price,
           images: product.images,
         },
         usedStore: {
-          id: storeConnection._id,
-          name: storeConnection.storeName,
-          domain: storeConnection.shopDomain,
+          id: store._id,
+          name: store.name,
+          slug: store.slug,
         },
       },
     });
   } catch (error: any) {
-    console.error('❌ Store creation error:', {
+    console.error('❌ Product addition error:', {
       message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
     });
-    
-    // Handle Shopify API errors
-    if (error.response?.status === 401) {
-      return next(
-        createError(
-          'Shopify authentication failed. Please check your store credentials or test the connection.',
-          401
-        )
-      );
-    } else if (error.response?.status === 429) {
-      return next(createError('Rate limit exceeded. Please try again later.', 429));
-    } else if (error.response?.status === 422) {
-      const errorMsg = JSON.stringify(error.response.data.errors || error.response.data);
-      return next(
-        createError(
-          `Shopify validation error: ${errorMsg}`,
-          422
-        )
-      );
-    } else if (error.response?.data?.errors) {
-      return next(
-        createError(
-          `Shopify API error: ${JSON.stringify(error.response.data.errors)}`,
-          error.response.status || 500
-        )
-      );
-    } else {
-      return next(error);
-    }
+    return next(error);
   }
 };
 

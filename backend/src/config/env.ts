@@ -11,12 +11,6 @@ const envSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('1d'),
   CORS_ORIGIN: Joi.string().uri().required(),
   ENCRYPTION_KEY: Joi.string().base64().length(44).required(), // 32 bytes base64 = 44 chars
-  SHOPIFY_API_KEY: Joi.string().allow('').optional(),
-  SHOPIFY_API_SECRET: Joi.string().allow('').optional(),
-  SHOPIFY_SCOPES: Joi.string().default('write_products,read_products,write_themes,read_themes'),
-  SHOPIFY_REDIRECT_URI: Joi.string().uri().allow('').optional(),
-  SHOPIFY_SHOP: Joi.string().allow('').optional(),
-  SHOPIFY_ACCESS_TOKEN: Joi.string().allow('').optional(),
   // Email configuration (optional - if not set, emails will be logged only)
   SMTP_HOST: Joi.string().allow('').optional(),
   SMTP_PORT: Joi.string().allow('').optional(),
@@ -69,14 +63,6 @@ export const config = {
   jwtExpiresIn: value.JWT_EXPIRES_IN,
   corsOrigin: value.CORS_ORIGIN,
   encryptionKey: value.ENCRYPTION_KEY,
-  shopify: {
-    apiKey: value.SHOPIFY_API_KEY || '',
-    apiSecret: value.SHOPIFY_API_SECRET || '',
-    redirectUri: value.SHOPIFY_REDIRECT_URI || 'http://localhost:5000/api/shopify/callback',
-    scopes: value.SHOPIFY_SCOPES,
-    accessToken: value.SHOPIFY_ACCESS_TOKEN || '',
-    shop: value.SHOPIFY_SHOP || '',
-  },
   razorpay: {
     keyId: value.RAZORPAY_KEY_ID,
     keySecret: value.RAZORPAY_KEY_SECRET,

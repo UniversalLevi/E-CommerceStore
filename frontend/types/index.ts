@@ -5,8 +5,6 @@ export interface User {
   mobile?: string | null;
   country?: string | null;
   role: 'user' | 'admin';
-  shopifyConnected?: boolean;
-  shopifyShop?: string;
   stores: Store[];
   createdAt?: string;
   lastLogin?: string;

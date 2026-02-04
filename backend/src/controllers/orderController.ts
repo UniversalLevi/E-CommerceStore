@@ -1,19 +1,17 @@
 import { Response, NextFunction } from 'express';
-import axios from 'axios';
 import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
-import { StoreConnection } from '../models/StoreConnection';
+import { Store } from '../models/Store';
 import { AuditLog } from '../models/AuditLog';
 import { Order, IOrder, ZenStatus } from '../models/Order';
 import { ZenOrder } from '../models/ZenOrder';
 import { Wallet } from '../models/Wallet';
 import { WalletTransaction } from '../models/WalletTransaction';
-import { Store } from '../models/Store';
 import { StoreOrder } from '../models/StoreOrder';
-import { decrypt } from '../utils/encryption';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
 
+// Legacy interface - kept for backward compatibility but not used
 interface ShopifyOrder {
   id: number;
   name: string;
@@ -106,9 +104,9 @@ interface OrderResponse {
 }
 
 /**
- * Transform Shopify order to our response format
+ * Transform StoreOrder to our response format
  */
-function transformOrder(order: ShopifyOrder, storeInfo?: { id: string; name: string; domain: string }): OrderResponse {
+function transformStoreOrderToResponse(order: any, storeInfo?: { id: string; name: string; slug: string }): OrderResponse {
   const fulfillmentStatus = order.fulfillment_status || 'unfulfilled';
   
   return {
@@ -131,7 +129,7 @@ function transformOrder(order: ShopifyOrder, storeInfo?: { id: string; name: str
       lastName: order.customer.last_name,
       fullName: `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim(),
     } : null,
-    lineItems: order.line_items.map(item => ({
+    lineItems: order.line_items.map((item: any) => ({
       id: item.id,
       title: item.title,
       quantity: item.quantity,
@@ -153,7 +151,7 @@ function transformOrder(order: ShopifyOrder, storeInfo?: { id: string; name: str
         order.shipping_address.country,
       ].filter(Boolean).join(', '),
     } : null,
-    fulfillments: order.fulfillments?.map(f => ({
+    fulfillments: order.fulfillments?.map((f: any) => ({
       id: f.id,
       status: f.status,
       createdAt: f.created_at,
@@ -163,13 +161,13 @@ function transformOrder(order: ShopifyOrder, storeInfo?: { id: string; name: str
     ...(storeInfo && {
       storeId: storeInfo.id,
       storeName: storeInfo.name,
-      shopDomain: storeInfo.domain,
+      slug: storeInfo.slug,
     }),
   };
 }
 
 /**
- * List orders for a specific store
+ * List orders for a specific store (internal store orders)
  * GET /api/orders/:storeId
  */
 export const listStoreOrders = async (
@@ -183,10 +181,10 @@ export const listStoreOrders = async (
     }
 
     const { storeId } = req.params;
-    const { status, fulfillmentStatus, limit = '50', since_id, startDate, endDate } = req.query;
+    const { paymentStatus, fulfillmentStatus, limit = '50', startDate, endDate } = req.query;
 
-    // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    // Get store
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -201,98 +199,79 @@ export const listStoreOrders = async (
 
     // Check store status
     if (store.status !== 'active') {
-      throw createError('Store connection is not active', 400);
+      throw createError('Store is not active', 400);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
-
-    // Build base URL for fetching orders with pagination
-    let baseUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?limit=250`;
+    // Build query for StoreOrder
+    const query: any = { storeId: store._id };
     
-    if (status && status !== 'any') {
-      baseUrl += `&status=${status}`;
-    } else {
-      baseUrl += '&status=any';
+    if (paymentStatus && paymentStatus !== 'any') {
+      query.paymentStatus = paymentStatus;
     }
     
     if (fulfillmentStatus && fulfillmentStatus !== 'any') {
-      baseUrl += `&fulfillment_status=${fulfillmentStatus}`;
+      query.fulfillmentStatus = fulfillmentStatus;
     }
     
     // Add date filters
-    if (startDate) {
-      baseUrl += `&created_at_min=${startDate}`;
-    }
-    if (endDate) {
-      baseUrl += `&created_at_max=${endDate}`;
-    }
-
-    // Fetch ALL orders with pagination
-    const allOrders: ShopifyOrder[] = [];
-    let hasNextPage = true;
-    let pageInfo: string | null = null;
-
-    while (hasNextPage) {
-      let currentUrl = baseUrl;
-      if (pageInfo) {
-        // When using page_info, we need to use a different URL format
-        currentUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?limit=250&page_info=${pageInfo}`;
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate as string);
       }
-
-      const response = await axios.get(currentUrl, {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
-      });
-
-      if (response.data?.orders) {
-        allOrders.push(...response.data.orders);
-      }
-
-      // Check for next page using Link header
-      const linkHeader = response.headers['link'];
-      if (linkHeader && linkHeader.includes('rel="next"')) {
-        const nextMatch = linkHeader.match(/page_info=([^&>]+)/);
-        if (nextMatch) {
-          pageInfo = nextMatch[1];
-        } else {
-          hasNextPage = false;
-        }
-      } else {
-        hasNextPage = false;
-      }
-
-      // Small delay to avoid rate limiting
-      if (hasNextPage) {
-        await new Promise(resolve => setTimeout(resolve, 300));
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate as string);
       }
     }
 
-    const transformedOrders = allOrders.map((order: ShopifyOrder) => transformOrder(order));
+    // Fetch orders
+    const orders = await StoreOrder.find(query)
+      .populate('items.productId', 'title images')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit as string, 10))
+      .lean();
 
-    // Calculate stats - only count paid/authorized for revenue
-    const paidRevenue = allOrders
-      .filter((o: ShopifyOrder) => o.financial_status === 'paid' || o.financial_status === 'authorized')
-      .reduce((sum: number, order: ShopifyOrder) => sum + parseFloat(order.total_price || '0'), 0);
+    // Transform orders to response format
+    const transformedOrders = orders.map((order: any) => ({
+      id: order._id.toString(),
+      orderId: order.orderId,
+      customer: {
+        name: order.customer.name,
+        email: order.customer.email,
+        phone: order.customer.phone,
+      },
+      items: order.items.map((item: any) => ({
+        title: item.title,
+        quantity: item.quantity,
+        price: item.price / 100, // Convert from paise to rupees
+        variant: item.variant,
+      })),
+      total: order.total / 100, // Convert from paise to rupees
+      subtotal: order.subtotal / 100,
+      shipping: order.shipping / 100,
+      currency: order.currency,
+      paymentStatus: order.paymentStatus,
+      fulfillmentStatus: order.fulfillmentStatus,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+    }));
 
-    const totalRevenue = allOrders.reduce((sum: number, order: ShopifyOrder) => {
-      return sum + parseFloat(order.total_price || '0');
-    }, 0);
+    // Calculate stats
+    const paidRevenue = orders
+      .filter((o: any) => o.paymentStatus === 'paid')
+      .reduce((sum: number, order: any) => sum + order.total, 0) / 100; // Convert to rupees
+
+    const totalRevenue = orders.reduce((sum: number, order: any) => sum + order.total, 0) / 100;
 
     const ordersByStatus = {
-      pending: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'pending').length,
-      paid: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'paid').length,
-      authorized: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'authorized').length,
-      refunded: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'refunded').length,
-      partially_refunded: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'partially_refunded').length,
-      voided: allOrders.filter((o: ShopifyOrder) => o.financial_status === 'voided').length,
-      unfulfilled: allOrders.filter((o: ShopifyOrder) => !o.fulfillment_status || o.fulfillment_status === null).length,
-      fulfilled: allOrders.filter((o: ShopifyOrder) => o.fulfillment_status === 'fulfilled').length,
-      partial: allOrders.filter((o: ShopifyOrder) => o.fulfillment_status === 'partial').length,
+      pending: orders.filter((o: any) => o.paymentStatus === 'pending').length,
+      paid: orders.filter((o: any) => o.paymentStatus === 'paid').length,
+      failed: orders.filter((o: any) => o.paymentStatus === 'failed').length,
+      refunded: orders.filter((o: any) => o.paymentStatus === 'refunded').length,
+      unfulfilled: orders.filter((o: any) => o.fulfillmentStatus === 'pending').length,
+      fulfilled: orders.filter((o: any) => o.fulfillmentStatus === 'fulfilled').length,
+      shipped: orders.filter((o: any) => o.fulfillmentStatus === 'shipped').length,
+      cancelled: orders.filter((o: any) => o.fulfillmentStatus === 'cancelled').length,
     };
 
     res.json({
@@ -301,23 +280,17 @@ export const listStoreOrders = async (
       data: transformedOrders,
       stats: {
         totalRevenue,
-        paidRevenue, // Only paid/authorized orders
-        currency: allOrders[0]?.currency || 'USD',
+        paidRevenue,
+        currency: store.currency || 'INR',
         ordersByStatus,
       },
       store: {
         id: store._id,
-        name: store.storeName,
-        domain: store.shopDomain,
+        name: store.name,
+        slug: store.slug,
       },
     });
   } catch (error: any) {
-    if (error.response?.status === 401) {
-      return next(createError('Shopify authentication failed. Please check store credentials.', 401));
-    }
-    if (error.response?.status === 429) {
-      return next(createError('Rate limit exceeded. Please try again later.', 429));
-    }
     next(error);
   }
 };
@@ -348,7 +321,7 @@ export const listAllStoreOrders = async (
       query._id = storeId;
     }
 
-    const stores = await StoreConnection.find(query)
+    const stores = await Store.find(query)
       .populate('owner', 'email name')
       .lean();
 
@@ -366,100 +339,67 @@ export const listAllStoreOrders = async (
       });
     }
 
-    // Fetch orders from all stores with pagination
+    // Fetch orders from all stores (internal stores)
     const allOrdersPromises = stores.map(async (store) => {
       try {
-        const accessToken = decrypt(store.accessToken);
-        const apiVersion = store.apiVersion || '2024-01';
-        
-        let baseUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?status=any&limit=250`;
+        // Build query for StoreOrder
+        const query: any = { storeId: store._id };
         
         // Add date filters
-        if (startDate) {
-          baseUrl += `&created_at_min=${startDate}`;
-        }
-        if (endDate) {
-          baseUrl += `&created_at_max=${endDate}`;
-        }
-
-        // Fetch ALL orders with pagination
-        const storeOrders: ShopifyOrder[] = [];
-        let hasNextPage = true;
-        let pageInfo: string | null = null;
-
-        while (hasNextPage) {
-          let currentUrl = baseUrl;
-          if (pageInfo) {
-            currentUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?limit=250&page_info=${pageInfo}`;
+        if (startDate || endDate) {
+          query.createdAt = {};
+          if (startDate) {
+            query.createdAt.$gte = new Date(startDate as string);
           }
-
-          const response = await axios.get(currentUrl, {
-            headers: {
-              'X-Shopify-Access-Token': accessToken,
-              'Content-Type': 'application/json',
-            },
-            timeout: 30000,
-          });
-
-          if (response.data?.orders) {
-            storeOrders.push(...response.data.orders);
-          }
-
-          // Check for next page
-          const linkHeader = response.headers['link'];
-          if (linkHeader && linkHeader.includes('rel="next"')) {
-            const nextMatch = linkHeader.match(/page_info=([^&>]+)/);
-            if (nextMatch) {
-              pageInfo = nextMatch[1];
-            } else {
-              hasNextPage = false;
-            }
-          } else {
-            hasNextPage = false;
-          }
-
-          if (hasNextPage) {
-            await new Promise(resolve => setTimeout(resolve, 300));
+          if (endDate) {
+            query.createdAt.$lte = new Date(endDate as string);
           }
         }
 
-        // Calculate stats - only paid/authorized for revenue
+        // Fetch orders from internal store
+        const storeOrders = await StoreOrder.find(query).lean();
+
+        // Calculate stats - only paid for revenue
         const paidRevenue = storeOrders
-          .filter((o: ShopifyOrder) => o.financial_status === 'paid' || o.financial_status === 'authorized')
-          .reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0);
+          .filter((o: any) => o.paymentStatus === 'paid')
+          .reduce((sum: number, o: any) => sum + (o.total || 0), 0);
 
         return {
           store: {
             id: store._id.toString(),
-            name: store.storeName,
-            domain: store.shopDomain,
+            name: store.name,
+            slug: store.slug,
             owner: store.owner,
           },
-          orders: storeOrders.map((order: ShopifyOrder) => 
-            transformOrder(order, {
-              id: store._id.toString(),
-              name: store.storeName,
-              domain: store.shopDomain,
-            })
-          ),
+          orders: storeOrders.map((order: any) => ({
+            id: order._id.toString(),
+            orderId: order.orderId,
+            customer: order.customer,
+            items: order.items,
+            total: order.total / 100, // Convert from paise to rupees
+            currency: order.currency,
+            paymentStatus: order.paymentStatus,
+            fulfillmentStatus: order.fulfillmentStatus,
+            createdAt: order.createdAt,
+          })),
           stats: {
             totalOrders: storeOrders.length,
-            totalRevenue: storeOrders.reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0),
-            paidRevenue,
-            currency: storeOrders[0]?.currency || 'USD',
+            totalRevenue: storeOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0) / 100, // Convert to rupees
+            paidRevenue: paidRevenue / 100, // Convert to rupees
+            currency: store.currency || 'INR',
           },
         };
       } catch (error: any) {
-        console.error(`Failed to fetch orders for store ${store.storeName}:`, error.message);
+        console.error(`Failed to fetch orders for store ${store.name}:`, error.message);
         return {
           store: {
             id: store._id.toString(),
-            name: store.storeName,
-            domain: store.shopDomain,
+            name: store.name,
+            slug: store.slug,
             owner: store.owner,
           },
           orders: [],
-          stats: { totalOrders: 0, totalRevenue: 0, paidRevenue: 0, currency: 'USD' },
+          stats: { totalOrders: 0, totalRevenue: 0, paidRevenue: 0, currency: store.currency || 'INR' },
           error: error.message,
         };
       }
@@ -488,7 +428,7 @@ export const listAllStoreOrders = async (
       storeStats: successfulResults.map(r => ({
         storeId: r.store.id,
         storeName: r.store.name,
-        shopDomain: r.store.domain,
+        slug: r.store.slug,
         owner: r.store.owner,
         totalOrders: r.stats.totalOrders,
         totalRevenue: r.stats.totalRevenue,
@@ -527,8 +467,8 @@ export const getOrderDetails = async (
 
     const { storeId, orderId } = req.params;
 
-    // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    // Get store (internal store)
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -541,34 +481,32 @@ export const getOrderDetails = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Fetch order from internal store
+    const order = await StoreOrder.findOne({ 
+      storeId: store._id,
+      orderId: orderId 
+    }).populate('items.productId', 'title images').lean();
 
-    // Fetch order from Shopify
-    const response = await axios.get(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-        timeout: 10000,
-      }
-    );
-
-    const order = response.data.order;
     if (!order) {
       throw createError('Order not found', 404);
     }
 
     res.json({
       success: true,
-      data: transformOrder(order, {
-        id: (store as any)._id.toString(),
-        name: store.storeName,
-        domain: store.shopDomain,
-      }),
+      data: {
+        id: (order as any)._id.toString(),
+        orderId: order.orderId,
+        customer: order.customer,
+        items: order.items,
+        total: order.total / 100, // Convert from paise to rupees
+        subtotal: order.subtotal / 100,
+        shipping: order.shipping / 100,
+        currency: order.currency,
+        paymentStatus: order.paymentStatus,
+        fulfillmentStatus: order.fulfillmentStatus,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+      },
     });
   } catch (error: any) {
     if (error.response?.status === 404) {
@@ -602,7 +540,7 @@ export const updateOrder = async (
     }
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -615,47 +553,27 @@ export const updateOrder = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Update order in internal store
+    const order = await StoreOrder.findOne({ 
+      storeId: store._id,
+      orderId: orderId 
+    });
 
-    let response;
-    const baseUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}`;
-
-    if (action === 'cancel') {
-      response = await axios.post(
-        `${baseUrl}/cancel.json`,
-        { reason: note || 'other', email: true },
-        {
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    } else if (action === 'close') {
-      response = await axios.post(
-        `${baseUrl}/close.json`,
-        {},
-        {
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    } else if (action === 'open') {
-      response = await axios.post(
-        `${baseUrl}/open.json`,
-        {},
-        {
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+    if (!order) {
+      throw createError('Order not found', 404);
     }
+
+    // Update order based on action
+    if (action === 'cancel') {
+      order.fulfillmentStatus = 'cancelled';
+    } else if (action === 'close') {
+      // Mark as completed
+      order.fulfillmentStatus = 'fulfilled';
+    } else if (action === 'open') {
+      order.fulfillmentStatus = 'pending';
+    }
+
+    await order.save();
 
     // Audit log
     await AuditLog.create({
@@ -674,12 +592,13 @@ export const updateOrder = async (
     res.json({
       success: true,
       message: `Order ${action}ed successfully`,
-      data: response?.data?.order ? transformOrder(response.data.order) : null,
+      data: {
+        id: (order as any)._id.toString(),
+        orderId: order.orderId,
+        fulfillmentStatus: order.fulfillmentStatus,
+      },
     });
   } catch (error: any) {
-    if (error.response?.data?.errors) {
-      return next(createError(`Shopify error: ${JSON.stringify(error.response.data.errors)}`, 400));
-    }
     next(error);
   }
 };
@@ -702,7 +621,7 @@ export const fulfillOrder = async (
     const { note, notifyCustomer = true } = req.body;
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -715,107 +634,34 @@ export const fulfillOrder = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Fulfill order in internal store
+    const order = await StoreOrder.findOne({ 
+      storeId: store._id,
+      orderId: orderId 
+    });
 
-    // First, get the order
-    const orderResponse = await axios.get(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    const order = orderResponse.data.order;
     if (!order) {
       throw createError('Order not found', 404);
     }
 
     // Check if order is already fulfilled
-    if (order.fulfillment_status === 'fulfilled') {
-      throw createError('Order is already fully fulfilled', 400);
+    if (order.fulfillmentStatus === 'fulfilled') {
+      throw createError('Order is already fulfilled', 400);
     }
 
-    // Get fulfillment orders
-    const fulfillmentOrdersResponse = await axios.get(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/fulfillment_orders.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    const fulfillmentOrders = fulfillmentOrdersResponse.data.fulfillment_orders || [];
+    // Update fulfillment status
+    order.fulfillmentStatus = 'fulfilled';
     
-    // Find any fulfillable order (open, in_progress, or scheduled)
-    const fulfillableOrder = fulfillmentOrders.find(
-      (fo: any) => ['open', 'in_progress', 'scheduled'].includes(fo.status)
-    );
-
-    if (!fulfillableOrder) {
-      // Check if there are any line items that can be fulfilled
-      const allFulfilled = fulfillmentOrders.every(
-        (fo: any) => fo.status === 'closed' || fo.status === 'cancelled'
-      );
-      
-      if (allFulfilled) {
-        throw createError('All items in this order have already been fulfilled or cancelled', 400);
-      }
-      
-      throw createError('No fulfillable items found in this order', 400);
-    }
-
-    // Create fulfillment using the Fulfillment Orders API
-    const fulfillmentData: any = {
-      fulfillment: {
-        line_items_by_fulfillment_order: [
-          {
-            fulfillment_order_id: fulfillableOrder.id,
-          }
-        ],
-        notify_customer: notifyCustomer,
-      },
-    };
-
-    const fulfillResponse = await axios.post(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/fulfillments.json`,
-      fulfillmentData,
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    // Add note to order if provided
+    // Add note if provided
     if (note) {
-      try {
-        await axios.put(
-          `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-          {
-            order: {
-              id: orderId,
-              note: `${order.note ? order.note + '\n' : ''}[Fulfilled] ${note}`,
-            },
-          },
-          {
-            headers: {
-              'X-Shopify-Access-Token': accessToken,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-      } catch (noteError) {
-        console.log('Could not add note to order:', noteError);
-      }
+      order.notes.push({
+        text: `[Fulfilled] ${note}`,
+        addedBy: (req.user as any)._id,
+        addedAt: new Date(),
+      });
     }
+
+    await order.save();
 
     // Audit log
     await AuditLog.create({
@@ -825,8 +671,6 @@ export const fulfillOrder = async (
       success: true,
       details: {
         orderId,
-        orderName: order.name,
-        fulfillmentId: fulfillResponse.data.fulfillment?.id,
         note,
       },
       ipAddress: req.ip,
@@ -836,14 +680,12 @@ export const fulfillOrder = async (
       success: true,
       message: 'Order fulfilled successfully',
       data: {
-        fulfillment: fulfillResponse.data.fulfillment,
+        id: (order as any)._id.toString(),
+        orderId: order.orderId,
+        fulfillmentStatus: order.fulfillmentStatus,
       },
     });
   } catch (error: any) {
-    console.error('Fulfillment error:', error.response?.data || error.message);
-    if (error.response?.data?.errors) {
-      return next(createError(`Shopify error: ${JSON.stringify(error.response.data.errors)}`, 400));
-    }
     next(error);
   }
 };
@@ -865,7 +707,7 @@ export const cancelFulfillment = async (
     const { storeId, orderId, fulfillmentId } = req.params;
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -878,21 +720,19 @@ export const cancelFulfillment = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Cancel fulfillment in internal store
+    const order = await StoreOrder.findOne({ 
+      storeId: store._id,
+      orderId: orderId 
+    });
 
-    // Cancel the fulfillment
-    const response = await axios.post(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/fulfillments/${fulfillmentId}/cancel.json`,
-      {},
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    if (!order) {
+      throw createError('Order not found', 404);
+    }
+
+    // Reset fulfillment status
+    order.fulfillmentStatus = 'pending';
+    await order.save();
 
     // Audit log
     await AuditLog.create({
@@ -910,7 +750,11 @@ export const cancelFulfillment = async (
     res.json({
       success: true,
       message: 'Fulfillment cancelled successfully',
-      data: response.data.fulfillment,
+      data: {
+        id: (order as any)._id.toString(),
+        orderId: order.orderId,
+        fulfillmentStatus: order.fulfillmentStatus,
+      },
     });
   } catch (error: any) {
     if (error.response?.data?.errors) {
@@ -941,111 +785,74 @@ export const getStoreRevenueAnalytics = async (
     const { startDate, endDate } = req.query;
 
     // Get all active stores
-    const stores = await StoreConnection.find({ status: 'active' })
+    const stores = await Store.find({ status: 'active' })
       .populate('owner', 'email name')
       .lean();
 
-    // Fetch ALL orders from all stores with pagination
+    // Fetch orders from all stores (internal stores)
     const revenuePromises = stores.map(async (store) => {
       try {
-        const accessToken = decrypt(store.accessToken);
-        const apiVersion = store.apiVersion || '2024-01';
-
-        // Build base URL with filters
-        let baseUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?status=any&limit=250`;
-        if (startDate) {
-          baseUrl += `&created_at_min=${startDate}`;
-        }
-        if (endDate) {
-          baseUrl += `&created_at_max=${endDate}`;
-        }
-
-        // Fetch ALL orders with pagination
-        const allOrders: ShopifyOrder[] = [];
-        let hasNextPage = true;
-        let pageInfo: string | null = null;
-
-        while (hasNextPage) {
-          let currentUrl = baseUrl;
-          if (pageInfo) {
-            // When using page_info, only use page_info and limit
-            currentUrl = `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json?limit=250&page_info=${pageInfo}`;
-          }
-
-          const response = await axios.get(currentUrl, {
-            headers: {
-              'X-Shopify-Access-Token': accessToken,
-              'Content-Type': 'application/json',
-            },
-            timeout: 30000,
-          });
-
-          if (response.data?.orders) {
-            allOrders.push(...response.data.orders);
-          }
-
-          // Check for next page
-          const linkHeader = response.headers['link'];
-          if (linkHeader && linkHeader.includes('rel="next"')) {
-            const nextMatch = linkHeader.match(/page_info=([^&>]+)/);
-            if (nextMatch) {
-              pageInfo = nextMatch[1];
-            } else {
-              hasNextPage = false;
-            }
-          } else {
-            hasNextPage = false;
-          }
-
-          if (hasNextPage) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        }
-
-        console.log(`Revenue: Fetched ${allOrders.length} orders from ${store.storeName}`);
+        // Build query for StoreOrder
+        const query: any = { storeId: store._id };
         
-        // Calculate revenue by status
+        // Add date filters
+        if (startDate || endDate) {
+          query.createdAt = {};
+          if (startDate) {
+            query.createdAt.$gte = new Date(startDate as string);
+          }
+          if (endDate) {
+            query.createdAt.$lte = new Date(endDate as string);
+          }
+        }
+
+        // Fetch orders from internal store
+        const allOrders = await StoreOrder.find(query).lean();
+
+        console.log(`Revenue: Fetched ${allOrders.length} orders from ${store.name}`);
+        
+        // Calculate revenue by status (orders are in paise, convert to rupees)
         const revenueByStatus = {
           paid: allOrders
-            .filter((o: ShopifyOrder) => o.financial_status === 'paid')
-            .reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0),
+            .filter((o: any) => o.paymentStatus === 'paid')
+            .reduce((sum: number, o: any) => sum + (o.total || 0), 0) / 100,
           pending: allOrders
-            .filter((o: ShopifyOrder) => o.financial_status === 'pending')
-            .reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0),
+            .filter((o: any) => o.paymentStatus === 'pending')
+            .reduce((sum: number, o: any) => sum + (o.total || 0), 0) / 100,
           refunded: allOrders
-            .filter((o: ShopifyOrder) => o.financial_status === 'refunded')
-            .reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0),
+            .filter((o: any) => o.paymentStatus === 'refunded')
+            .reduce((sum: number, o: any) => sum + (o.total || 0), 0) / 100,
           authorized: allOrders
-            .filter((o: ShopifyOrder) => o.financial_status === 'authorized')
-            .reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0),
+            .filter((o: any) => o.paymentStatus === 'authorized')
+            .reduce((sum: number, o: any) => sum + (o.total || 0), 0) / 100,
         };
 
         return {
           storeId: store._id.toString(),
-          storeName: store.storeName,
-          shopDomain: store.shopDomain,
+          storeName: store.name,
+          slug: store.slug,
           owner: store.owner,
           totalOrders: allOrders.length,
-          totalRevenue: allOrders.reduce((sum: number, o: ShopifyOrder) => sum + parseFloat(o.total_price || '0'), 0),
+          totalRevenue: allOrders.reduce((sum: number, o: any) => sum + (o.total || 0), 0) / 100, // Convert to rupees
           revenueByStatus,
-          currency: allOrders[0]?.currency || 'USD',
+          currency: store.currency || 'INR',
           ordersByFulfillment: {
-            unfulfilled: allOrders.filter((o: ShopifyOrder) => !o.fulfillment_status || o.fulfillment_status === 'unfulfilled').length,
-            fulfilled: allOrders.filter((o: ShopifyOrder) => o.fulfillment_status === 'fulfilled').length,
-            partial: allOrders.filter((o: ShopifyOrder) => o.fulfillment_status === 'partial').length,
+            unfulfilled: allOrders.filter((o: any) => !o.fulfillmentStatus || o.fulfillmentStatus === 'pending').length,
+            fulfilled: allOrders.filter((o: any) => o.fulfillmentStatus === 'fulfilled').length,
+            partial: 0, // Internal stores don't have partial fulfillment yet
           },
         };
       } catch (error: any) {
-        console.error(`Failed to fetch revenue for store ${store.storeName}:`, error.message);
+        console.error(`Failed to fetch revenue for store ${store.name}:`, error.message);
         return {
           storeId: store._id.toString(),
-          storeName: store.storeName,
-          shopDomain: store.shopDomain,
+          storeName: store.name,
+          slug: store.slug,
           owner: store.owner,
           totalOrders: 0,
           totalRevenue: 0,
           revenueByStatus: { paid: 0, pending: 0, refunded: 0, authorized: 0 },
-          currency: 'USD',
+          currency: store.currency || 'INR',
           ordersByFulfillment: { unfulfilled: 0, fulfilled: 0, partial: 0 },
           error: error.message,
         };
@@ -1058,7 +865,7 @@ export const getStoreRevenueAnalytics = async (
     const successfulStores = storeRevenues.filter(s => !s.error);
     const failedStores = storeRevenues.filter(s => s.error).map(s => ({
       storeId: s.storeId,
-      storeName: s.storeName,
+      storeName: s.storeName || s.slug,
       error: s.error,
     }));
 
@@ -1108,7 +915,7 @@ export const markOrderCompleted = async (
     const { note, paymentReceived = true } = req.body;
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -1121,185 +928,37 @@ export const markOrderCompleted = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Get order from internal store
+    const order = await StoreOrder.findOne({ 
+      storeId: store._id,
+      orderId: orderId 
+    });
 
-    // First, get the current order
-    const orderResponse = await axios.get(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    const order = orderResponse.data.order;
     if (!order) {
       throw createError('Order not found', 404);
     }
 
     const timestamp = new Date().toISOString();
     const completedBy = req.user.email || 'Admin';
-    let paymentMarked = false;
 
-    // If payment should be marked and order is not already paid
-    if (paymentReceived && order.financial_status !== 'paid') {
-      try {
-        // Use GraphQL orderMarkAsPaid mutation - the official way to mark orders as paid
-        const graphqlEndpoint = `https://${store.shopDomain}/admin/api/${apiVersion}/graphql.json`;
-        
-        // Convert REST order ID to GraphQL Global ID
-        const orderGid = `gid://shopify/Order/${orderId}`;
-        
-        const markAsPaidMutation = `
-          mutation orderMarkAsPaid($input: OrderMarkAsPaidInput!) {
-            orderMarkAsPaid(input: $input) {
-              order {
-                id
-                displayFinancialStatus
-                fullyPaid
-              }
-              userErrors {
-                field
-                message
-              }
-            }
-          }
-        `;
-        
-        const graphqlResponse = await axios.post(
-          graphqlEndpoint,
-          {
-            query: markAsPaidMutation,
-            variables: {
-              input: {
-                id: orderGid,
-              },
-            },
-          },
-          {
-            headers: {
-              'X-Shopify-Access-Token': accessToken,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-        const result = graphqlResponse.data;
-        
-        if (result.data?.orderMarkAsPaid?.order) {
-          paymentMarked = true;
-          console.log('Payment marked via GraphQL orderMarkAsPaid:', result.data.orderMarkAsPaid.order);
-        } else if (result.data?.orderMarkAsPaid?.userErrors?.length > 0) {
-          console.log('GraphQL userErrors:', result.data.orderMarkAsPaid.userErrors);
-          // Try REST API fallback
-          await tryRestApiPayment();
-        } else if (result.errors) {
-          console.log('GraphQL errors:', result.errors);
-          // Try REST API fallback
-          await tryRestApiPayment();
-        }
-        
-        async function tryRestApiPayment() {
-          // Fallback: Try REST API with transaction
-          try {
-            const transactionsResponse = await axios.get(
-              `https://${store!.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
-              {
-                headers: {
-                  'X-Shopify-Access-Token': accessToken,
-                  'Content-Type': 'application/json',
-                },
-              }
-            );
-
-            const transactions = transactionsResponse.data.transactions || [];
-            const authTransaction = transactions.find(
-              (t: any) => t.kind === 'authorization' && t.status === 'success'
-            );
-
-            if (authTransaction) {
-              // Capture existing authorization
-              await axios.post(
-                `https://${store!.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/transactions.json`,
-                {
-                  transaction: {
-                    kind: 'capture',
-                    parent_id: authTransaction.id,
-                  },
-                },
-                {
-                  headers: {
-                    'X-Shopify-Access-Token': accessToken,
-                    'Content-Type': 'application/json',
-                  },
-                }
-              );
-              paymentMarked = true;
-              console.log('Payment marked via REST capture');
-            }
-          } catch (restError: any) {
-            console.log('REST fallback failed:', restError.response?.data || restError.message);
-          }
-        }
-      } catch (paymentError: any) {
-        console.log('Payment marking error:', paymentError.response?.data || paymentError.message);
-        // If all methods fail, we'll still complete the order with tags
-      }
-    } else if (order.financial_status === 'paid') {
-      paymentMarked = true; // Already paid
+    // Update payment status if needed
+    if (paymentReceived && order.paymentStatus !== 'paid') {
+      order.paymentStatus = 'paid';
     }
 
-    // Build completion note
-    const completionNote = [
-      order.note || '',
-      `\n[COMPLETED - ${timestamp}]`,
-      paymentMarked ? 'Payment received and verified.' : (paymentReceived ? 'Payment marked (manual).' : ''),
-      note ? `Note: ${note}` : '',
-      `Marked by: ${completedBy}`,
-    ].filter(Boolean).join('\n');
+    // Mark as fulfilled
+    order.fulfillmentStatus = 'fulfilled';
 
-    // Get existing tags and add completion tags
-    const existingTags = order.tags ? order.tags.split(', ') : [];
-    const newTags = [...new Set([
-      ...existingTags,
-      'completed',
-      paymentMarked ? 'paid' : '',
-      paymentReceived ? 'payment-received' : '',
-    ].filter(Boolean))].join(', ');
+    // Add completion note
+    if (note) {
+      order.notes.push({
+        text: `[COMPLETED - ${timestamp}] ${note} - Marked by: ${completedBy}`,
+        addedBy: (req.user as any)._id,
+        addedAt: new Date(),
+      });
+    }
 
-    // Update order with tags and note
-    await axios.put(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-      {
-        order: {
-          id: orderId,
-          note: completionNote,
-          tags: newTags,
-        },
-      },
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    // Close the order (marks it as archived/completed in Shopify)
-    const closeResponse = await axios.post(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}/close.json`,
-      {},
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    await order.save();
 
     // Audit log
     await AuditLog.create({
@@ -1309,12 +968,9 @@ export const markOrderCompleted = async (
       success: true,
       details: {
         orderId,
-        orderName: order.name,
-        totalPrice: order.total_price,
+        totalPrice: order.total / 100, // Convert from paise
         currency: order.currency,
         paymentReceived,
-        paymentMarked,
-        previousFinancialStatus: order.financial_status,
         note,
         completedBy,
       },
@@ -1360,7 +1016,7 @@ export const reopenOrder = async (
     const { note } = req.body;
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -1473,7 +1129,7 @@ export const addOrderNote = async (
     }
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -1486,31 +1142,33 @@ export const addOrderNote = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Get order and add note
+    const order = await StoreOrder.findOne({ 
+      storeId: store._id,
+      orderId: orderId 
+    });
 
-    // Update order note
-    const response = await axios.put(
-      `https://${store.shopDomain}/admin/api/${apiVersion}/orders/${orderId}.json`,
-      {
-        order: {
-          id: orderId,
-          note,
-        },
-      },
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    if (!order) {
+      throw createError('Order not found', 404);
+    }
+
+    // Add note
+    order.notes.push({
+      text: note,
+      addedBy: (req.user as any)._id,
+      addedAt: new Date(),
+    });
+
+    await order.save();
 
     res.json({
       success: true,
       message: 'Note added successfully',
-      data: transformOrder(response.data.order),
+      data: {
+        id: (order as any)._id.toString(),
+        orderId: order.orderId,
+        notes: order.notes,
+      },
     });
   } catch (error: any) {
     if (error.response?.data?.errors) {
@@ -1610,7 +1268,7 @@ export const syncAndGetOrder = async (
     const userId = (req.user as any)._id;
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -1702,7 +1360,7 @@ export const setOrderCosts = async (
     }
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -1797,7 +1455,7 @@ export const fulfillViaZen = async (
     const userId = (req.user as any)._id;
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -2139,7 +1797,7 @@ export const getOrderZenStatus = async (
     const userId = (req.user as any)._id;
 
     // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }

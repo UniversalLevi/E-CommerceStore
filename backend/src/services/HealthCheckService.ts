@@ -1,12 +1,10 @@
 import cron from 'node-cron';
-import { StoreConnection } from '../models/StoreConnection';
+import { Store } from '../models/Store';
 import { AuditLog } from '../models/AuditLog';
-import { validateShopifyCredentials } from '../utils/shopify';
-import { decrypt } from '../utils/encryption';
 
 /**
  * Background health check service
- * Runs weekly to test all store connections
+ * Runs weekly to check all internal stores
  */
 export class HealthCheckService {
   private static cronJob: ReturnType<typeof cron.schedule> | null = null;
@@ -48,85 +46,54 @@ export class HealthCheckService {
   static async runHealthCheck(): Promise<{
     total: number;
     active: number;
-    invalid: number;
-    revoked: number;
+    inactive: number;
+    suspended: number;
   }> {
     if (this.isRunning) {
       console.log('⏳ Health check already in progress, skipping...');
-      return { total: 0, active: 0, invalid: 0, revoked: 0 };
+      return { total: 0, active: 0, inactive: 0, suspended: 0 };
     }
 
     this.isRunning = true;
     console.log('\n🏥 Starting store health check...');
 
     try {
-      const stores = await StoreConnection.find({ status: { $ne: 'revoked' } });
+      const stores = await Store.find({});
       console.log(`📊 Found ${stores.length} stores to check`);
 
       let activeCount = 0;
-      let invalidCount = 0;
-      let revokedCount = 0;
-      let errorCount = 0;
+      let inactiveCount = 0;
+      let suspendedCount = 0;
 
       for (const store of stores) {
         try {
-          console.log(`\n🔍 Checking: ${store.storeName} (${store.shopDomain})`);
+          console.log(`\n🔍 Checking: ${store.name} (${store.slug})`);
 
-          // Decrypt access token
-          const accessToken = decrypt(store.accessToken);
-
-          // Validate credentials
-          const validation = await validateShopifyCredentials(
-            store.shopDomain,
-            accessToken,
-            store.apiVersion
-          );
-
-          // Update store status
-          store.lastTestedAt = new Date();
-
-          if (validation.ok) {
-            store.status = 'active';
-            store.lastTestResult = 'success';
+          // Internal stores don't need connection testing
+          // Just log the status
+          if (store.status === 'active') {
             activeCount++;
             console.log(`  ✅ Active`);
-          } else {
-            // Check if credentials are revoked or just invalid
-            if (validation.statusCode === 401 || validation.statusCode === 403) {
-              store.status = 'revoked';
-              store.lastTestResult = validation.error || 'credentials revoked';
-              revokedCount++;
-              console.log(`  ❌ Revoked: ${validation.error}`);
-            } else {
-              store.status = 'invalid';
-              store.lastTestResult = validation.error || 'validation failed';
-              invalidCount++;
-              console.log(`  ⚠️ Invalid: ${validation.error}`);
-            }
+          } else if (store.status === 'inactive') {
+            inactiveCount++;
+            console.log(`  ⚠️ Inactive`);
+          } else if (store.status === 'suspended') {
+            suspendedCount++;
+            console.log(`  ❌ Suspended`);
           }
 
-          // Save updated status
-          await store.save();
-
-          // Create audit log
+          // Log the check
           await AuditLog.create({
             userId: store.owner,
             storeId: store._id,
             action: 'AUTO_HEALTH_CHECK',
-            success: validation.ok,
-            errorMessage: validation.ok ? undefined : validation.error,
+            success: true,
             details: {
-              statusCode: validation.statusCode,
-              previousStatus: store.status,
-              newStatus: validation.ok ? 'active' : 'invalid',
+              status: store.status,
             },
           });
-
-          // Small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error: any) {
-          console.error(`  ❌ Error checking ${store.storeName}:`, error.message);
-          errorCount++;
+          console.error(`  ❌ Error checking ${store.name}:`, error.message);
 
           // Log the error
           await AuditLog.create({
@@ -145,15 +112,14 @@ export class HealthCheckService {
       console.log('\n📈 Health check complete:');
       console.log(`   Total checked: ${stores.length}`);
       console.log(`   ✅ Active: ${activeCount}`);
-      console.log(`   ⚠️ Invalid: ${invalidCount}`);
-      console.log(`   ❌ Revoked: ${revokedCount}`);
-      console.log(`   🚫 Errors: ${errorCount}\n`);
+      console.log(`   ⚠️ Inactive: ${inactiveCount}`);
+      console.log(`   ❌ Suspended: ${suspendedCount}\n`);
 
       return {
         total: stores.length,
         active: activeCount,
-        invalid: invalidCount,
-        revoked: revokedCount,
+        inactive: inactiveCount,
+        suspended: suspendedCount,
       };
     } catch (error: any) {
       console.error('❌ Health check failed:', error);

@@ -38,10 +38,10 @@ const benefits = [
 ];
 
 const trustedLogos = [
-  'Shopify Partner',
   'SSL Secured',
   'GDPR Compliant',
   'PCI DSS',
+  'Secure Platform',
 ];
 
 export default function HeroSection({ onGetStarted }: HeroSectionProps) {
@@ -204,7 +204,7 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
                   Launch Your
                 </span>
                 <span className="block text-gradient-blue mt-2">
-                  Dream Shopify
+                  Dream Store
                 </span>
                 <span className="block text-white mt-2">
                   Store Today
@@ -218,7 +218,7 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
               >
                 Transform your e-commerce vision into reality. Browse our curated catalog of 
                 <span className="text-white font-semibold"> 1000+ winning products</span>, 
-                connect your Shopify store, and watch your business come to life — 
+                create your store, and watch your business come to life — 
                 <span className="text-purple-400 font-semibold"> all in under 5 minutes</span>.
               </motion.p>
               
@@ -324,7 +324,7 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
                       />
                     </div>
                     <div className="flex-1 h-8 rounded-lg bg-white/5 ml-4 flex items-center px-3">
-                      <span className="text-xs text-text-muted">yourstore.myshopify.com</span>
+                      <span className="text-xs text-text-muted">your-store-slug</span>
                     </div>
                   </div>
                   

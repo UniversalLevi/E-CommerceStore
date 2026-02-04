@@ -1,5 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+/**
+ * @deprecated This model is deprecated. StoreConnection was used for Shopify store connections.
+ * Existing records are preserved for data integrity but should not be used for new connections.
+ * Use the internal Store model instead.
+ */
 export interface IStoreConnection extends Document {
   owner: mongoose.Types.ObjectId;
   storeName: string;
@@ -15,6 +20,7 @@ export interface IStoreConnection extends Document {
   lastTestedAt?: Date;
   lastTestResult?: string;
   metadata: Record<string, any>;
+  deprecated: boolean; // Mark as deprecated
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +90,11 @@ const storeConnectionSchema = new Schema<IStoreConnection>(
     metadata: {
       type: Schema.Types.Mixed,
       default: {},
+    },
+    deprecated: {
+      type: Boolean,
+      default: true, // All existing records are deprecated
+      index: true,
     },
   },
   {

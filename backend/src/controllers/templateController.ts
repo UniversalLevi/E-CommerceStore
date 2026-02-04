@@ -6,7 +6,7 @@ import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
 import * as templateService from '../services/templateService';
-import * as shopifyThemeService from '../services/shopifyThemeService';
+// Theme service removed - using internal store themes (Coming Soon)
 import { generateTemplateCode, generateCompleteTheme } from '../services/OpenAIService';
 import { decrypt } from '../utils/encryption';
 
@@ -860,12 +860,11 @@ export const getStoreThemes = async (
       throw createError('Store connection is not active. Please test the connection first.', 400);
     }
     
-    // Get all themes from the store
-    const themes = await shopifyThemeService.getThemes(storeConnection);
-    
+    // Theme management coming soon for internal stores
     res.json({
       success: true,
-      data: themes,
+      message: 'Theme management is coming soon for internal stores',
+      data: [],
     });
   } catch (error) {
     next(error);
@@ -932,11 +931,10 @@ export const getTemplate = async (
       throw createError('Template not found', 404);
     }
     
-    // Get preview of what will be applied
-    const preview = await shopifyThemeService.previewTemplateApplication(template.slug);
-    
+    // Theme preview coming soon for internal stores
     res.json({
       success: true,
+      message: 'Theme preview is coming soon for internal stores',
       data: {
         ...template,
         preview,
@@ -1009,13 +1007,8 @@ export const applyTemplate = async (
       throw createError('Store connection is not active. Please test the connection first.', 400);
     }
     
-    // Apply template
-    const result = await shopifyThemeService.applyTemplate(storeConnection, template.slug);
-    
-    // Increment applied count
-    await Template.findByIdAndUpdate(id, {
-      $inc: { appliedCount: 1 },
-    });
+    // Theme application coming soon for internal stores
+    throw createError('Theme application is coming soon for internal stores', 501);
     
     // Audit log
     await AuditLog.create({
@@ -1127,63 +1120,8 @@ export const setDefaultTheme = async (
       throw createError('Store connection is not active. Please test the connection first.', 400);
     }
     
-    // Set theme as main
-    console.log(`[Set Default Theme Controller] Setting theme ${themeId} as main for store ${storeConnection.storeName}`);
-    const updatedTheme = await shopifyThemeService.setThemeAsMain(storeConnection, themeId);
-    console.log(`[Set Default Theme Controller] Theme updated: ${updatedTheme.name}, role: ${updatedTheme.role}`);
-    
-    // Verify one more time
-    const finalThemes = await shopifyThemeService.getThemes(storeConnection);
-    const finalMainTheme = finalThemes.find(theme => theme.role === 'main');
-    console.log(`[Set Default Theme Controller] Final verification - Main theme: ${finalMainTheme?.id} (${finalMainTheme?.name})`);
-    
-    if (finalMainTheme?.id !== themeId) {
-      console.error(`[Set Default Theme Controller] WARNING: Theme change verification failed. Expected ${themeId}, got ${finalMainTheme?.id}`);
-    }
-    
-    // Audit log
-    await AuditLog.create({
-      userId: (req.user as any)._id,
-      storeId: storeConnection._id,
-      action: 'SET_DEFAULT_THEME',
-      success: finalMainTheme?.id === themeId,
-      details: {
-        themeId,
-        themeName: updatedTheme.name,
-        storeName: storeConnection.storeName,
-        verifiedMainThemeId: finalMainTheme?.id,
-        verificationPassed: finalMainTheme?.id === themeId,
-      },
-      ipAddress: req.ip,
-    });
-    
-    // Create notification
-    await createNotification({
-      userId: (req.user as any)._id,
-      type: 'system_update',
-      title: 'Default Theme Changed',
-      message: `Theme "${updatedTheme.name}" has been set as the default theme for your store "${storeConnection.storeName}".`,
-      link: `/dashboard/stores/${(storeConnection as any)._id}`,
-      metadata: {
-        storeId: (storeConnection as any)._id.toString(),
-        storeName: storeConnection.storeName,
-        themeId: themeId.toString(),
-        themeName: updatedTheme.name,
-      },
-    });
-    
-    const storeUrl = `https://${storeConnection.shopDomain.replace('.myshopify.com', '')}.myshopify.com`;
-    
-    res.json({
-      success: true,
-      message: `Theme "${updatedTheme.name}" has been set as the default theme`,
-      data: {
-        themeId: updatedTheme.id,
-        themeName: updatedTheme.name,
-        storeUrl,
-        adminUrl: `https://${storeConnection.shopDomain}/admin/themes/${updatedTheme.id}`,
-      },
-    });
+    // Theme management coming soon for internal stores
+    throw createError('Theme management is coming soon for internal stores', 501);
   } catch (error) {
     next(error);
   }

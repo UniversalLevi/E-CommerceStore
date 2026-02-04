@@ -14,10 +14,6 @@ export const getDashboardStats = async (
 
     const stats = {
       storeCount: req.user.stores?.length || 0,
-      shopifyConnected: !!(
-        req.user.shopifyAccessToken && req.user.shopifyShop
-      ),
-      shopifyShop: req.user.shopifyShop || null,
       email: req.user.email,
       role: req.user.role,
       recentStores: req.user.stores?.slice(-5).reverse() || [],

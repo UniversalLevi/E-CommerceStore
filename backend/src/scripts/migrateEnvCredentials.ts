@@ -16,17 +16,10 @@ async function migrateEnvCredentials() {
     // Connect to database
     await connectDatabase();
 
-    // Get credentials from env
-    const shopDomain = config.shopify.shop;
-    const accessToken = config.shopify.accessToken;
-
-    if (!shopDomain || !accessToken) {
-      console.log('❌ No legacy credentials found in environment variables.');
-      console.log('   SHOPIFY_SHOP and SHOPIFY_ACCESS_TOKEN must be set.\n');
-      process.exit(1);
-    }
-
-    console.log(`Found legacy credentials for: ${shopDomain}\n`);
+    // Legacy Shopify migration - no longer supported
+    console.log('❌ This migration script is deprecated.');
+    console.log('   Shopify integration has been removed. Use internal stores instead.\n');
+    process.exit(1);
 
     // Find or create admin user
     let adminUser = await User.findOne({ role: 'admin' });
@@ -58,8 +51,7 @@ async function migrateEnvCredentials() {
     console.log('\n🔐 Encrypting credentials...');
     const encryptedToken = encrypt(accessToken);
 
-    // Create store connection
-    const scopes = config.shopify.scopes.split(',').map((s: string) => s.trim());
+    // Legacy Shopify migration - no longer supported
 
     const store = await StoreConnection.create({
       owner: adminUser._id,

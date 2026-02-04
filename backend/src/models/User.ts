@@ -14,8 +14,6 @@ export interface IUser extends Document {
   country?: string;
   password: string;
   role: 'user' | 'admin';
-  shopifyAccessToken?: string;
-  shopifyShop?: string;
   stores: IStore[];
   isActive: boolean;
   lastLogin?: Date;
@@ -107,14 +105,6 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ['user', 'admin'],
       default: 'user',
-    },
-    shopifyAccessToken: {
-      type: String,
-      default: undefined,
-    },
-    shopifyShop: {
-      type: String,
-      default: undefined,
     },
     stores: [storeSchema],
     isActive: {

@@ -2,11 +2,10 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { User } from '../models/User';
 import { Product } from '../models/Product';
-import { StoreConnection } from '../models/StoreConnection';
+import { Store } from '../models/Store';
+import { StoreOrder } from '../models/StoreOrder';
 import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
-import { decrypt } from '../utils/encryption';
-import { fetchShopifyOrders } from '../utils/shopify';
 import mongoose from 'mongoose';
 
 /**
@@ -33,8 +32,8 @@ export const getUserAnalytics = async (
     const start = startDate ? new Date(startDate as string) : defaultStartDate;
     const end = endDate ? new Date(endDate as string) : new Date();
 
-    // Get user's stores
-    const stores = await StoreConnection.find({ owner: userId }).lean();
+    // Get user's stores (internal stores)
+    const stores = await Store.find({ owner: userId }).lean();
     const storeIds = stores.map((s) => s._id);
 
     // Get user's products added over time
@@ -56,19 +55,16 @@ export const getUserAnalytics = async (
       .sort((a, b) => a.date.localeCompare(b.date));
 
     // Get store performance
-    const storePerformance = stores.map((store) => {
-      const storeUrl = `https://${store.shopDomain.replace('.myshopify.com', '')}.myshopify.com`;
-      const productsInStore = userStores.filter(
-        (s: any) => s.storeUrl === storeUrl
-      ).length;
+    const { StoreProduct } = await import('../models/StoreProduct');
+    const storePerformance = await Promise.all(stores.map(async (store) => {
+      const productCount = await StoreProduct.countDocuments({ storeId: store._id });
       return {
-        storeName: store.storeName,
-        shopDomain: store.shopDomain,
+        storeName: store.name,
+        slug: store.slug,
         status: store.status,
-        productCount: productsInStore,
-        lastTestedAt: store.lastTestedAt,
+        productCount,
       };
-    });
+    }));
 
     // Get most popular niches (from user's products)
     const productIds = Array.from(
@@ -111,7 +107,7 @@ export const getUserAnalytics = async (
       },
     ]);
 
-    // Get user revenue stats from Shopify stores
+    // Get user revenue stats from internal stores
     const activeStores = stores.filter((s) => s.status === 'active');
     let totalRevenue = 0;
     let totalOrders = 0;
@@ -129,53 +125,42 @@ export const getUserAnalytics = async (
     // Fetch orders from all active stores
     for (const store of activeStores) {
       try {
-        // Decrypt access token
-        const accessToken = decrypt(store.accessToken);
-
-        // Fetch all orders (we'll filter by date in memory)
-        const allOrders = await fetchShopifyOrders(
-          store.shopDomain,
-          accessToken,
-          store.apiVersion
-        );
+        // Fetch all orders from internal store
+        const allOrders = await StoreOrder.find({ storeId: store._id }).lean();
 
         // Process all orders
-        allOrders.forEach((order) => {
+        allOrders.forEach((order: any) => {
           const orderDate = new Date(order.createdAt);
           const isInRange = orderDate >= start && orderDate <= end;
           
-          // Track financial status (all orders)
-          const financialStatus = order.financialStatus || 'pending';
-          financialStatusMap[financialStatus] = (financialStatusMap[financialStatus] || 0) + 1;
+          // Track payment status (all orders)
+          const paymentStatus = order.paymentStatus || 'pending';
+          financialStatusMap[paymentStatus] = (financialStatusMap[paymentStatus] || 0) + 1;
           
           // Track fulfillment status (all orders)
-          const fulfillmentStatus = order.fulfillmentStatus || 'unfulfilled';
+          const fulfillmentStatus = order.fulfillmentStatus || 'pending';
           fulfillmentStatusMap[fulfillmentStatus] = (fulfillmentStatusMap[fulfillmentStatus] || 0) + 1;
           
           // Track status in date range
           if (isInRange) {
-            financialStatusInRangeMap[financialStatus] = (financialStatusInRangeMap[financialStatus] || 0) + 1;
+            financialStatusInRangeMap[paymentStatus] = (financialStatusInRangeMap[paymentStatus] || 0) + 1;
             fulfillmentStatusInRangeMap[fulfillmentStatus] = (fulfillmentStatusInRangeMap[fulfillmentStatus] || 0) + 1;
           }
 
-          // Only count paid/authorized orders for revenue
-          if (order.financialStatus === 'paid' || order.financialStatus === 'authorized') {
-            // Shopify returns prices as strings (e.g., "99.99")
-            // Convert to number and then to smallest currency unit (paise for INR, cents for USD)
-            const priceValue = parseFloat(order.totalPrice) || 0;
-            // Store in smallest currency unit (multiply by 100)
-            const amount = Math.round(priceValue * 100);
+          // Only count paid orders for revenue (orders are already in paise)
+          if (order.paymentStatus === 'paid') {
+            const amount = order.total || 0;
             
             // Add to total revenue (all time)
             totalRevenue += amount;
             totalOrders += 1;
 
             // Group by store
-            if (!revenueByStoreMap[store.storeName]) {
-              revenueByStoreMap[store.storeName] = { amount: 0, count: 0 };
+            if (!revenueByStoreMap[store.name]) {
+              revenueByStoreMap[store.name] = { amount: 0, count: 0 };
             }
-            revenueByStoreMap[store.storeName].amount += amount;
-            revenueByStoreMap[store.storeName].count += 1;
+            revenueByStoreMap[store.name].amount += amount;
+            revenueByStoreMap[store.name].count += 1;
 
             // Check if order is in date range
             if (isInRange) {
@@ -192,11 +177,8 @@ export const getUserAnalytics = async (
             }
           }
         });
-
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error: any) {
-        console.error(`Error fetching orders from store ${store.storeName}:`, error.message);
+        console.error(`Error fetching orders from store ${store.name}:`, error.message);
         // Continue with other stores even if one fails
       }
     }

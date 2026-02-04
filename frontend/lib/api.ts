@@ -347,7 +347,6 @@ class ApiClient {
       data: {
         hasLocalOrder: boolean;
         orderId?: string;
-        shopifyOrderId?: number;
         zenStatus: string;
         productCost?: number;
         shippingCost?: number;
@@ -377,7 +376,7 @@ class ApiClient {
       message: string;
       data: {
         id: string;
-        shopifyOrderId: number;
+        orderId: string;
         productCost: number;
         shippingCost: number;
         serviceFee: number;
