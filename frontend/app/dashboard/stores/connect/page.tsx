@@ -9,18 +9,14 @@ import SubscriptionLock from '@/components/SubscriptionLock';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 
-export default function ConnectStorePage() {
+export default function CreateStorePage() {
   const router = useRouter();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { hasActiveSubscription } = useSubscription();
   const [formData, setFormData] = useState({
-    storeName: '',
-    shopDomain: '',
-    accessToken: '',
-    apiKey: '',
-    apiSecret: '',
-    environment: 'production' as 'production' | 'development',
-    isDefault: false,
+    name: '',
+    slug: '',
+    currency: 'INR',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,7 +29,7 @@ export default function ConnectStorePage() {
 
   // Check subscription before rendering
   if (!authLoading && isAuthenticated && !hasActiveSubscription) {
-    return <SubscriptionLock featureName="Connect Store" />;
+    return <SubscriptionLock featureName="Create Store" />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,29 +38,34 @@ export default function ConnectStorePage() {
     setLoading(true);
 
     try {
-      // Normalize domain
-      let domain = formData.shopDomain.trim().toLowerCase();
-      if (!domain.endsWith('.myshopify.com')) {
-        domain = `${domain}.myshopify.com`;
-      }
-
-      const response = await api.post<{ success: boolean; data: any; shopInfo?: any }>('/api/stores', {
-        ...formData,
-        shopDomain: domain,
+      const response = await api.post<{ success: boolean; data: any }>('/api/stores', {
+        name: formData.name.trim(),
+        slug: formData.slug.trim() || undefined,
+        currency: formData.currency,
       });
 
-      notify.success(`Store connected successfully! ${response.data?.shopInfo?.name || ''}`);
+      notify.success('Store created successfully!');
       router.push('/dashboard/stores');
     } catch (error: any) {
-      console.error('Error connecting store:', error);
+      console.error('Error creating store:', error);
       setError(
         error.response?.data?.error ||
           error.response?.data?.message ||
-          'Failed to connect store. Please check your credentials.'
+          'Failed to create store. Please try again.'
       );
     } finally {
       setLoading(false);
     }
+  };
+
+  // Auto-generate slug from name
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const name = e.target.value;
+    setFormData({
+      ...formData,
+      name,
+      slug: formData.slug || name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''),
+    });
   };
 
   return (
@@ -89,32 +90,11 @@ export default function ConnectStorePage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-3xl font-bold text-text-primary mb-2">
-            Connect Your Shopify Store
+            Create Your Store
           </h1>
           <p className="text-text-secondary mb-8">
-            Enter your custom Shopify app credentials to connect your store
+            Set up your internal store to start selling products
           </p>
-
-          {/* Instructions */}
-          <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 mb-8">
-            <h3 className="font-semibold text-white mb-3">
-              How to get your credentials:
-            </h3>
-            <ol className="list-decimal list-inside space-y-2 text-gray-300 text-sm">
-              <li>
-                Go to your Shopify admin → Settings → Apps and sales channels → Develop apps
-              </li>
-              <li>Click "Create an app" and give it a name</li>
-              <li>
-                Configure Admin API scopes: <code className="bg-[#1AC8ED] bg-opacity-20 text-[#1AC8ED] px-2 py-1 rounded font-mono text-xs">
-                  write_products, read_products, write_themes, read_themes
-                </code>
-              </li>
-              <li>Click "Install app" to generate credentials</li>
-              <li>Copy the "Admin API access token" (you'll only see it once!)</li>
-              <li>Paste it below along with your store domain</li>
-            </ol>
-          </div>
 
           {error && (
             <div className="mb-6 bg-red-900 bg-opacity-20 border border-red-700 text-red-300 px-4 py-3 rounded-lg">
@@ -131,104 +111,54 @@ export default function ConnectStorePage() {
               <input
                 type="text"
                 required
-                value={formData.storeName}
-                onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
+                value={formData.name}
+                onChange={handleNameChange}
                 placeholder="My Awesome Store"
                 className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] placeholder-gray-500"
               />
               <p className="mt-1 text-sm text-gray-400">
-                A friendly name to identify this store
+                A friendly name to identify your store
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Shop Domain <span className="text-red-400">*</span>
+                Store URL Slug <span className="text-red-400">*</span>
               </label>
               <div className="flex gap-2 items-center">
+                <span className="text-gray-400 text-sm">https://</span>
                 <input
                   type="text"
                   required
-                  value={formData.shopDomain}
-                  onChange={(e) => setFormData({ ...formData, shopDomain: e.target.value })}
-                  placeholder="your-store"
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') })}
+                  placeholder="my-store"
                   className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] placeholder-gray-500"
                 />
-                <span className="text-gray-400 text-sm">.myshopify.com</span>
+                <span className="text-gray-400 text-sm">.eazydropshipping.com</span>
               </div>
               <p className="mt-1 text-sm text-gray-400">
-                Your Shopify store domain (without https://)
+                Your store's unique URL identifier (lowercase letters, numbers, and hyphens only)
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Access Token <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="password"
-                required
-                value={formData.accessToken}
-                onChange={(e) => setFormData({ ...formData, accessToken: e.target.value })}
-                placeholder="shpat_xxxxxxxxxxxxxxxxxxxxxxxx"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] font-mono text-sm placeholder-gray-500"
-              />
-              <p className="mt-1 text-sm text-gray-400">
-                Admin API access token from your custom app
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                API Key (optional)
-              </label>
-              <input
-                type="text"
-                value={formData.apiKey}
-                onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                placeholder="API Key"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] font-mono text-sm placeholder-gray-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                API Secret (optional)
-              </label>
-              <input
-                type="password"
-                value={formData.apiSecret}
-                onChange={(e) => setFormData({ ...formData, apiSecret: e.target.value })}
-                placeholder="API Secret"
-                className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] font-mono text-sm placeholder-gray-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Environment
+                Currency <span className="text-red-400">*</span>
               </label>
               <select
-                value={formData.environment}
-                onChange={(e) => setFormData({ ...formData, environment: e.target.value as any })}
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                 className="w-full px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED]"
               >
-                <option value="production">Production</option>
-                <option value="development">Development</option>
+                <option value="INR">INR (Indian Rupee)</option>
+                <option value="USD">USD (US Dollar)</option>
+                <option value="EUR">EUR (Euro)</option>
+                <option value="GBP">GBP (British Pound)</option>
               </select>
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isDefault"
-                checked={formData.isDefault}
-                onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })}
-                className="h-4 w-4 text-[#1AC8ED] focus:ring-[#1AC8ED] border-gray-700 rounded bg-gray-900"
-              />
-              <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-300">
-                Set as default store
-              </label>
+              <p className="mt-1 text-sm text-gray-400">
+                Default currency for your store
+              </p>
             </div>
 
             <div className="flex gap-4">
@@ -259,10 +189,10 @@ export default function ConnectStorePage() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    Validating & Connecting...
+                    Creating Store...
                   </span>
                 ) : (
-                  'Connect Store'
+                  'Create Store'
                 )}
               </button>
 
@@ -274,19 +204,8 @@ export default function ConnectStorePage() {
               </Link>
             </div>
           </form>
-
-          {/* Security Note */}
-          <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4">
-            <p className="text-sm text-gray-300">
-              <strong>Security:</strong> Your credentials are encrypted using AES-256-GCM before storage.
-              They are only decrypted when needed to perform operations on your behalf.
-            </p>
-          </div>
         </div>
       </div>
     </div>
   );
 }
-
-
-

@@ -1,10 +1,11 @@
 import { Response, NextFunction } from 'express';
-import axios from 'axios';
 import { AuthRequest } from '../middleware/auth';
-import { StoreConnection } from '../models/StoreConnection';
-import { decrypt } from '../utils/encryption';
+import { Store } from '../models/Store';
+import { StoreOrder } from '../models/StoreOrder';
+import { StoreProduct } from '../models/StoreProduct';
 import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
+import mongoose from 'mongoose';
 
 interface GenerateFakeOrdersBody {
   count?: number;
@@ -17,11 +18,11 @@ interface GenerateFakeOrdersBody {
 }
 
 interface GeneratedOrderSummary {
-  id: number;
-  name: string;
-  totalPrice: string;
+  id: string;
+  orderId: string;
+  totalPrice: number;
   currency: string;
-  createdAt: string;
+  createdAt: Date;
 }
 
 function getRandomNumber(min: number, max: number) {
@@ -36,11 +37,8 @@ function getRandomDateWithinDays(backfillDays: number): Date {
 }
 
 /**
- * Auto-place (test) orders for a specific store
+ * Auto-place (test) orders for a specific internal store
  * POST /api/auto-orders/:storeId/generate
- *
- * This mirrors the behavior of the shopifyFakeOrderAutomation project but is
- * fully integrated with our StoreConnection model and multi-store setup.
  */
 export const generateFakeOrders = async (
   req: AuthRequest,
@@ -64,7 +62,7 @@ export const generateFakeOrders = async (
       backfillDays = 30,
       markPaid = true,
       markFulfilled = false,
-      currency = 'USD',
+      currency = 'INR',
     } = req.body as GenerateFakeOrdersBody;
 
     if (!storeId) {
@@ -84,8 +82,8 @@ export const generateFakeOrders = async (
       throw createError('backfillDays must be between 1 and 365', 400);
     }
 
-    // Get store connection
-    const store = await StoreConnection.findById(storeId);
+    // Get internal store
+    const store = await Store.findById(storeId);
     if (!store) {
       throw createError('Store not found', 404);
     }
@@ -98,70 +96,71 @@ export const generateFakeOrders = async (
     }
 
     if (store.status !== 'active') {
-      throw createError('Store connection is not active', 400);
+      throw createError('Store is not active', 400);
     }
 
-    const accessToken = decrypt(store.accessToken);
-    const apiVersion = store.apiVersion || '2024-01';
+    // Get products from the store to use in fake orders
+    const products = await StoreProduct.find({ storeId: store._id }).limit(10).lean();
+    if (products.length === 0) {
+      throw createError('Store has no products. Please add products before generating fake orders.', 400);
+    }
 
     const generatedOrders: GeneratedOrderSummary[] = [];
 
     for (let i = 0; i < count; i++) {
       const total = getRandomNumber(minTotal, maxTotal);
-      const taxPortion = total * 0.08; // ~8% tax
-      const subtotal = total - taxPortion;
+      const subtotal = Math.round(total * 0.92 * 100); // Convert to paise, ~92% of total
+      const shipping = Math.round(total * 0.08 * 100); // ~8% shipping
+      const totalInPaise = subtotal + shipping;
 
       const createdAt = getRandomDateWithinDays(backfillDays);
+      
+      // Pick a random product
+      const randomProduct = products[Math.floor(Math.random() * products.length)];
+      const quantity = Math.floor(getRandomNumber(1, 5));
 
-      const orderPayload = {
-        order: {
+      const order = await StoreOrder.create({
+        storeId: store._id,
+        customer: {
+          name: `Test Customer ${i + 1}`,
           email: `fake+${Date.now()}-${i}@example.com`,
-          financial_status: markPaid ? 'paid' : 'pending',
-          fulfillment_status: markFulfilled ? 'fulfilled' : 'unfulfilled',
-          send_receipt: false,
-          send_fulfillment_receipt: false,
-          test: true,
-          currency,
-          created_at: createdAt.toISOString(),
-          line_items: [
-            {
-              title: 'Auto-generated order',
-              quantity: 1,
-              price: subtotal.toFixed(2),
-            },
-          ],
-          total_tax: taxPortion.toFixed(2),
+          phone: `+91${Math.floor(Math.random() * 10000000000)}`,
         },
-      };
+        shippingAddress: {
+          name: `Test Customer ${i + 1}`,
+          address1: `${Math.floor(Math.random() * 100)} Test Street`,
+          address2: 'Test Area',
+          city: 'Test City',
+          state: 'Test State',
+          zip: `${Math.floor(Math.random() * 100000)}`,
+          country: 'India',
+          phone: `+91${Math.floor(Math.random() * 10000000000)}`,
+        },
+        items: [{
+          productId: randomProduct._id,
+          title: randomProduct.title,
+          variant: randomProduct.variants?.[0]?.name || '',
+          quantity: quantity,
+          price: Math.round((subtotal / quantity) / 100), // Price per item in paise
+        }],
+        subtotal: subtotal,
+        shipping: shipping,
+        total: totalInPaise,
+        currency: currency,
+        paymentMethod: markPaid ? 'razorpay' : 'cod',
+        paymentStatus: markPaid ? 'paid' : 'pending',
+        fulfillmentStatus: markFulfilled ? 'fulfilled' : 'pending',
+        createdAt: createdAt,
+        updatedAt: createdAt,
+      });
 
-      const response = await axios.post(
-        `https://${store.shopDomain}/admin/api/${apiVersion}/orders.json`,
-        orderPayload,
-        {
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-          timeout: 15000,
-        }
-      );
-
-      const createdOrder = response.data?.order;
-      if (createdOrder) {
-        generatedOrders.push({
-          id: createdOrder.id,
-          name: createdOrder.name,
-          totalPrice: createdOrder.total_price,
-          currency: createdOrder.currency,
-          createdAt: createdOrder.created_at,
-        });
-      }
-
-      // Small delay to avoid hitting API rate limits too aggressively
-      if (i < count - 1) {
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise((resolve) => setTimeout(resolve, 200));
-      }
+      generatedOrders.push({
+        id: (order._id as mongoose.Types.ObjectId).toString(),
+        orderId: order.orderId,
+        totalPrice: order.total / 100, // Convert to rupees
+        currency: order.currency,
+        createdAt: order.createdAt,
+      });
     }
 
     // Audit log
@@ -188,9 +187,9 @@ export const generateFakeOrders = async (
       message: `Successfully generated ${generatedOrders.length} fake test orders`,
       data: {
         store: {
-          id: store._id,
-          name: store.storeName,
-          domain: store.shopDomain,
+          id: (store._id as mongoose.Types.ObjectId).toString(),
+          name: store.name,
+          slug: store.slug,
         },
         summary: {
           requested: count,
@@ -200,16 +199,6 @@ export const generateFakeOrders = async (
       },
     });
   } catch (error: any) {
-    if (error.response?.data?.errors) {
-      return next(
-        createError(
-          `Shopify error while creating fake orders: ${JSON.stringify(
-            error.response.data.errors
-          )}`,
-          400
-        )
-      );
-    }
     next(error);
   }
 };

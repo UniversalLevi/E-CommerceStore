@@ -34,10 +34,10 @@ export interface IVariant {
 export interface IZenOrder extends Document {
   orderId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  storeConnectionId: mongoose.Types.ObjectId;
+  storeId: mongoose.Types.ObjectId;
 
   // Display info (denormalized for quick access)
-  shopifyOrderName: string;
+  orderName: string; // Order identifier (e.g., "ORD-20250101-001")
   storeName: string;
   customerName: string;
   customerEmail: string;
@@ -158,15 +158,15 @@ const zenOrderSchema = new Schema<IZenOrder>(
       required: true,
       index: true,
     },
-    storeConnectionId: {
+    storeId: {
       type: Schema.Types.ObjectId,
-      ref: 'StoreConnection',
+      ref: 'Store',
       required: true,
       index: true,
     },
 
     // Display info
-    shopifyOrderName: {
+    orderName: {
       type: String,
       required: true,
     },
@@ -380,7 +380,7 @@ const zenOrderSchema = new Schema<IZenOrder>(
 // Compound indexes for common queries
 zenOrderSchema.index({ status: 1, createdAt: -1 });
 zenOrderSchema.index({ userId: 1, status: 1 });
-zenOrderSchema.index({ storeConnectionId: 1, status: 1 });
+zenOrderSchema.index({ storeId: 1, status: 1 });
 zenOrderSchema.index({ assignedPicker: 1, status: 1 });
 zenOrderSchema.index({ assignedPacker: 1, status: 1 });
 zenOrderSchema.index({ isPriority: -1, createdAt: 1 }); // Priority orders first

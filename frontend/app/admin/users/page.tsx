@@ -65,15 +65,12 @@ interface UserDetails {
   };
   stores: Array<{
     _id: string;
-    storeName: string;
-    shopDomain: string;
-    status: 'active' | 'invalid' | 'revoked';
-    environment: 'development' | 'production';
-    isDefault: boolean;
+    name: string;
+    slug: string;
+    status: 'active' | 'inactive' | 'suspended';
+    currency: string;
     createdAt: string;
     updatedAt: string;
-    lastTestedAt?: string;
-    lastTestResult?: string;
   }>;
   passwordChanges: Array<{
     _id: string;
@@ -741,23 +738,18 @@ export default function AdminUsersPage() {
                             >
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-text-primary">{store.storeName}</span>
-                                  {store.isDefault && (
-                                    <span className="px-2 py-0.5 bg-primary-500/20 text-primary-400 text-xs rounded-full border border-primary-500/50">
-                                      Default
-                                    </span>
-                                  )}
+                                  <span className="font-medium text-text-primary">{store.name}</span>
                                   <span className={`px-2 py-0.5 rounded-full text-xs border ${
                                     store.status === 'active'
                                       ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
-                                      : store.status === 'invalid'
+                                      : store.status === 'suspended'
                                       ? 'bg-red-500/20 text-red-400 border-red-500/50'
                                       : 'bg-amber-500/20 text-amber-400 border-amber-500/50'
                                   }`}>
                                     {store.status}
                                   </span>
                                 </div>
-                                <p className="text-sm text-text-muted">{store.shopDomain}</p>
+                                <p className="text-sm text-text-muted">{store.slug}.eazydropshipping.com</p>
                                 <p className="text-xs text-text-muted mt-1">
                                   Created: {formatDate(store.createdAt)}
                                 </p>

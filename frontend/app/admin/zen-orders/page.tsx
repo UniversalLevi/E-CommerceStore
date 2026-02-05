@@ -31,7 +31,7 @@ import {
 interface ZenOrder {
   id: string;
   orderId: string;
-  shopifyOrderName: string;
+  orderName: string;
   storeName: string;
   customerName: string;
   customerEmail: string;
@@ -524,7 +524,7 @@ export default function ZenOrdersPage() {
                             {order.isPriority && <Star className="w-4 h-4 text-amber-400 fill-amber-400" />}
                             {order.hasIssue && <AlertTriangle className="w-4 h-4 text-rose-400" />}
                             <div>
-                              <p className="font-semibold text-text-primary">{order.shopifyOrderName}</p>
+                              <p className="font-semibold text-text-primary">{order.orderName}</p>
                               <p className="text-xs text-text-muted">{order.storeName}</p>
                             </div>
                           </div>
@@ -615,7 +615,7 @@ export default function ZenOrdersPage() {
               <div className="flex items-center justify-between p-6 border-b border-border-default bg-surface-elevated">
                 <div>
                   <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-                    {selectedOrder.shopifyOrderName}
+                    {selectedOrder.orderName}
                     {selectedOrder.isPriority && <Star className="w-5 h-5 text-amber-400 fill-amber-400" />}
                   </h2>
                   <p className="text-sm text-text-secondary">{selectedOrder.storeName}</p>

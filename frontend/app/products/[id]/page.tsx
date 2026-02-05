@@ -14,11 +14,10 @@ import IconBadge from '@/components/IconBadge';
 import { notify } from '@/lib/toast';
 import { CheckCircle2, Tag, ShoppingCart, PenLine, Target, LogIn, Store } from 'lucide-react';
 
-interface StoreConnection {
+interface InternalStore {
   _id: string;
-  storeName: string;
-  shopDomain: string;
-  isDefault: boolean;
+  name: string;
+  slug: string;
   status: string;
 }
 
@@ -28,7 +27,7 @@ export default function ProductDetailPage() {
   const { user, isAuthenticated } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [niche, setNiche] = useState<Niche | null>(null);
-  const [stores, setStores] = useState<StoreConnection[]>([]);
+  const [stores, setStores] = useState<InternalStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingStores, setLoadingStores] = useState(true);
   const [error, setError] = useState('');
@@ -141,12 +140,15 @@ export default function ProductDetailPage() {
   const fetchStores = async () => {
     try {
       setLoadingStores(true);
-      const response = await api.get<{ success: boolean; data: StoreConnection[] }>(
-        '/api/stores'
-      );
-      setStores(response.data);
+      const response = await api.getMyStore();
+      if (response.success && response.data) {
+        setStores([response.data]);
+      } else {
+        setStores([]);
+      }
     } catch (err: any) {
       console.error('Error fetching stores:', err);
+      setStores([]);
     } finally {
       setLoadingStores(false);
     }
@@ -229,7 +231,7 @@ export default function ProductDetailPage() {
                 Store Created Successfully!
               </h2>
               <p className="text-text-secondary">
-                Your Shopify store is now live with the selected product
+                Your store is now live with the selected product
               </p>
             </div>
 
@@ -504,7 +506,7 @@ export default function ProductDetailPage() {
                                       >
                         <span className="flex items-center justify-center gap-2">
                           <IconBadge icon={ShoppingCart} label="Add to store" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
-                          Add to Shopify Store
+                          Add to Store
                         </span>
                       </button>
                       {myStore && (
@@ -540,7 +542,7 @@ export default function ProductDetailPage() {
                         </span>
                       </button>
                       <p className="text-sm text-text-muted text-center">
-                        You'll need to log in and connect a store first
+                        You'll need to log in and create a store first
                       </p>
                     </>
                   )}
@@ -552,10 +554,10 @@ export default function ProductDetailPage() {
                   </h3>
                   <ul className="space-y-2 text-sm text-text-secondary">
                     {[
-                      'Product added to your Shopify store',
+                      'Product added to your store',
                       'Professional descriptions & images',
                       'Ready to start selling immediately',
-                      'Full control in Shopify admin',
+                      'Full control in store dashboard',
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2">
                         <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>

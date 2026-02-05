@@ -64,7 +64,7 @@ interface Order {
   fulfillmentStatus: string;
   storeId?: string;
   storeName?: string;
-  shopDomain?: string;
+  storeSlug?: string;
   customer: {
     id: number;
     email: string;
@@ -93,7 +93,7 @@ interface Order {
 interface StoreStat {
   storeId: string;
   storeName: string;
-  shopDomain: string;
+  storeSlug?: string;
   owner: StoreOwner;
   totalOrders: number;
   totalRevenue: number;
@@ -113,7 +113,7 @@ interface RevenueData {
   stores: Array<{
     storeId: string;
     storeName: string;
-    shopDomain: string;
+    storeSlug?: string;
     owner: StoreOwner;
     totalOrders: number;
     totalRevenue: number;
@@ -244,13 +244,62 @@ export default function AdminOrdersPage() {
       
       const response = await api.get<{
         success: boolean;
-        data: Order[];
+        data: any[];
         stores: StoreInfo[];
         aggregatedStats: AggregatedStats;
       }>(url);
       
-      setOrders(response.data);
-      setStores(response.stores);
+      // Transform orders to match expected format
+      const transformedOrders: Order[] = response.data.map((order: any) => ({
+        id: parseInt(order.id) || 0,
+        name: order.orderId || `Order ${order.id}`,
+        orderNumber: parseInt(order.orderId?.split('-').pop() || '0') || 0,
+        email: order.customer?.email || '',
+        createdAt: order.createdAt || new Date().toISOString(),
+        updatedAt: order.updatedAt || order.createdAt || new Date().toISOString(),
+        totalPrice: (order.total || 0).toString(),
+        subtotalPrice: (order.subtotal || order.total || 0).toString(),
+        totalTax: '0',
+        currency: order.currency || 'INR',
+        financialStatus: order.paymentStatus || 'pending',
+        fulfillmentStatus: order.fulfillmentStatus || 'pending',
+        storeId: order.storeId,
+        storeName: order.storeName,
+        storeSlug: order.storeSlug,
+        customer: order.customer ? {
+          id: 0,
+          email: order.customer.email || '',
+          firstName: order.customer.name?.split(' ')[0] || '',
+          lastName: order.customer.name?.split(' ').slice(1).join(' ') || '',
+          fullName: order.customer.name || 'N/A',
+        } : null,
+        lineItems: (order.lineItems || order.items || []).map((item: any, idx: number) => ({
+          id: idx,
+          title: item.title || 'Unknown',
+          quantity: item.quantity || 0,
+          price: ((item.price || 0) / 100).toString(),
+          variantTitle: item.variant || '',
+          sku: item.sku || '',
+        })),
+        shippingAddress: order.shippingAddress ? {
+          address1: order.shippingAddress.address1 || '',
+          city: order.shippingAddress.city || '',
+          province: order.shippingAddress.state || order.shippingAddress.province || '',
+          country: order.shippingAddress.country || '',
+          zip: order.shippingAddress.zip || '',
+          formatted: [
+            order.shippingAddress.address1,
+            order.shippingAddress.address2,
+            order.shippingAddress.city,
+            order.shippingAddress.state || order.shippingAddress.province,
+            order.shippingAddress.zip,
+            order.shippingAddress.country,
+          ].filter(Boolean).join(', '),
+        } : null,
+      }));
+      
+      setOrders(transformedOrders);
+      setStores(response.stores || []);
       setAggregatedStats(response.aggregatedStats);
     } catch (error: any) {
       console.error('Error fetching orders:', error);
@@ -625,11 +674,11 @@ export default function AdminOrdersPage() {
                           >
                             <td className="px-6 py-4">
                               <div className="font-semibold text-text-primary">{order.name}</div>
-                              <div className="text-sm text-text-muted">{order.lineItems.length} items</div>
+                              <div className="text-sm text-text-muted">{order.lineItems?.length || 0} items</div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="font-medium text-text-primary">{order.storeName}</div>
-                              <div className="text-xs text-text-muted">{order.shopDomain}</div>
+                              <div className="text-xs text-text-muted">{order.storeSlug ? `${order.storeSlug}.eazydropshipping.com` : 'N/A'}</div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="font-medium text-text-primary">{order.customer?.fullName || 'Guest'}</div>
@@ -748,7 +797,7 @@ export default function AdminOrdersPage() {
                               </div>
                               <div>
                                 <div className="font-semibold text-text-primary">{store.storeName}</div>
-                                <div className="text-sm text-text-muted">{store.shopDomain}</div>
+                                <div className="text-sm text-text-muted">{store.storeSlug ? `${store.storeSlug}.eazydropshipping.com` : 'N/A'}</div>
                                 <div className="text-xs text-text-muted">Owner: {store.owner?.email || 'N/A'}</div>
                               </div>
                             </div>
@@ -954,10 +1003,10 @@ export default function AdminOrdersPage() {
                 {/* Items */}
                 <div className="bg-surface-elevated rounded-xl p-4">
                   <h3 className="font-semibold text-text-primary flex items-center gap-2 mb-3">
-                    <Package className="w-4 h-4" /> Items ({selectedOrder.lineItems.length})
+                    <Package className="w-4 h-4" /> Items ({selectedOrder.lineItems?.length || 0})
                   </h3>
                   <div className="divide-y divide-border-default">
-                    {selectedOrder.lineItems.map(item => (
+                    {(selectedOrder.lineItems || []).map(item => (
                       <div key={item.id} className="py-3 flex items-center justify-between">
                         <div>
                           <p className="font-medium text-text-primary">{item.title}</p>

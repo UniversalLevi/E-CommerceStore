@@ -9,9 +9,8 @@ import { notify } from '@/lib/toast';
 
 interface Store {
   _id: string;
-  storeName: string;
-  shopDomain: string;
-  isDefault: boolean;
+  name: string;
+  slug: string;
   status: string;
 }
 
@@ -32,7 +31,7 @@ export default function StoreSelectionModal({
 }: StoreSelectionModalProps) {
   const router = useRouter();
   const [selectedStoreId, setSelectedStoreId] = useState<string>(
-    stores.find((s) => s.isDefault)?._id || stores[0]?._id || ''
+    stores[0]?._id || ''
   );
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
@@ -74,7 +73,7 @@ export default function StoreSelectionModal({
 
   const handleConnectNewStore = () => {
     onClose();
-    router.push('/dashboard/stores/connect');
+    router.push('/dashboard/store/create');
   };
 
   return (
@@ -120,12 +119,11 @@ export default function StoreSelectionModal({
                 {stores.length === 0 ? (
                   <div className="mb-4">
                     <p className="text-text-secondary mb-4">
-                      You don't have any stores connected yet. Connect a Shopify store to
-                      add products.
+                      You don't have a store yet. Create a store to add products.
                     </p>
                     <div className="flex gap-3">
                       <Button onClick={handleConnectNewStore} className="flex-1">
-                        Connect Store
+                        Create Store
                       </Button>
                       <Button variant="secondary" onClick={onClose}>
                         Cancel
@@ -147,7 +145,7 @@ export default function StoreSelectionModal({
                                 ? 'border-purple-500 bg-purple-500/20'
                                 : 'border-white/10 hover:border-white/20 bg-white/5'
                             }`}
-                            aria-label={`Select store ${store.storeName}`}
+                            aria-label={`Select store ${store.name}`}
                           >
                             <input
                               type="radio"
@@ -161,13 +159,8 @@ export default function StoreSelectionModal({
                             <div className="flex-1" id={`store-${store._id}-label`}>
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-text-primary">
-                                  {store.storeName}
+                                  {store.name}
                                 </span>
-                                {store.isDefault && (
-                                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-500/30 text-purple-300">
-                                    Default
-                                  </span>
-                                )}
                                 {store.status !== 'active' && (
                                   <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-500/30 text-yellow-300">
                                     {store.status}
@@ -175,7 +168,7 @@ export default function StoreSelectionModal({
                                 )}
                               </div>
                               <p className="text-sm text-text-secondary mt-1">
-                                {store.shopDomain}
+                                {store.slug}.eazydropshipping.com
                               </p>
                             </div>
                           </label>

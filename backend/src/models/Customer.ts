@@ -1,9 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ICustomer extends Document {
-  storeConnectionId: mongoose.Types.ObjectId;
+  storeId: mongoose.Types.ObjectId;
   owner: mongoose.Types.ObjectId; // Store owner
-  shopifyCustomerId: string; // Shopify customer ID
   email?: string;
   phone?: string;
   firstName?: string;
@@ -29,9 +28,9 @@ export interface ICustomer extends Document {
 
 const customerSchema = new Schema<ICustomer>(
   {
-    storeConnectionId: {
+    storeId: {
       type: Schema.Types.ObjectId,
-      ref: 'StoreConnection',
+      ref: 'Store',
       required: true,
       index: true,
     },
@@ -40,10 +39,6 @@ const customerSchema = new Schema<ICustomer>(
       ref: 'User',
       required: true,
       index: true,
-    },
-    shopifyCustomerId: {
-      type: String,
-      required: true,
     },
     email: {
       type: String,
@@ -107,11 +102,11 @@ const customerSchema = new Schema<ICustomer>(
 );
 
 // Compound indexes
-customerSchema.index({ storeConnectionId: 1, shopifyCustomerId: 1 }, { unique: true });
+customerSchema.index({ storeId: 1, email: 1 }, { unique: true });
 customerSchema.index({ owner: 1, email: 1 });
 customerSchema.index({ owner: 1, phone: 1 });
-customerSchema.index({ storeConnectionId: 1, email: 1 });
-customerSchema.index({ storeConnectionId: 1, phone: 1 });
+customerSchema.index({ storeId: 1, email: 1 });
+customerSchema.index({ storeId: 1, phone: 1 });
 customerSchema.index({ acceptsMarketing: 1 });
 
 export const Customer = mongoose.model<ICustomer>('Customer', customerSchema);

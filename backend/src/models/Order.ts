@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export type ZenStatus =
-  | 'shopify' // Default - not processed via ZEN
+  | 'pending' // Default - not processed via ZEN
   | 'awaiting_wallet' // User clicked fulfill but insufficient balance
   | 'ready_for_fulfillment' // Wallet deducted, ready for ops
   | 'sourcing' // Ops is sourcing the product
@@ -17,14 +17,14 @@ export type ZenStatus =
   | 'failed'; // Failed for some reason
 
 export interface ILineItem {
-  shopifyLineItemId: number;
+  lineItemId: string; // Internal line item ID
   title: string;
   quantity: number;
   price: number; // in paise
   variantTitle: string;
   sku: string;
-  productId: number | null;
-  variantId: number | null;
+  productId: mongoose.Types.ObjectId | null;
+  variantId: string | null;
 }
 
 export interface IShippingAddress {
@@ -42,7 +42,6 @@ export interface IShippingAddress {
 }
 
 export interface ICustomer {
-  shopifyCustomerId: number | null;
   email: string;
   firstName: string;
   lastName: string;
@@ -56,11 +55,10 @@ export interface IInternalNote {
 }
 
 export interface IOrder extends Document {
-  // Shopify identifiers
-  shopifyOrderId: number;
-  shopifyOrderName: string; // e.g., "#1001"
-  shopifyOrderNumber: number;
-  storeConnectionId: mongoose.Types.ObjectId;
+  // Order identifiers
+  orderId: string; // Unique order identifier (e.g., "ORD-20250101-001")
+  orderNumber: number; // Sequential order number
+  storeId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
 
   // Customer info
@@ -76,11 +74,9 @@ export interface IOrder extends Document {
   totalTax: number; // in paise
   totalShipping: number; // in paise
 
-  // Shopify statuses
+  // Order statuses
   financialStatus: string;
   fulfillmentStatus: string | null;
-  shopifyCreatedAt: Date;
-  shopifyUpdatedAt: Date;
 
   // ZEN Fulfillment fields
   zenStatus: ZenStatus;
@@ -111,14 +107,14 @@ export interface IOrder extends Document {
 
 const lineItemSchema = new Schema<ILineItem>(
   {
-    shopifyLineItemId: { type: Number, required: true },
+    lineItemId: { type: String, required: true },
     title: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true }, // in paise
     variantTitle: { type: String, default: '' },
     sku: { type: String, default: '' },
-    productId: { type: Number, default: null },
-    variantId: { type: Number, default: null },
+    productId: { type: Schema.Types.ObjectId, ref: 'StoreProduct', default: null },
+    variantId: { type: String, default: null },
   },
   { _id: false }
 );
@@ -142,7 +138,6 @@ const shippingAddressSchema = new Schema<IShippingAddress>(
 
 const customerSchema = new Schema<ICustomer>(
   {
-    shopifyCustomerId: { type: Number, default: null },
     email: { type: String, default: '' },
     firstName: { type: String, default: '' },
     lastName: { type: String, default: '' },
@@ -162,23 +157,21 @@ const internalNoteSchema = new Schema<IInternalNote>(
 
 const orderSchema = new Schema<IOrder>(
   {
-    // Shopify identifiers
-    shopifyOrderId: {
+    // Order identifiers
+    orderId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+    orderNumber: {
       type: Number,
       required: true,
       index: true,
     },
-    shopifyOrderName: {
-      type: String,
-      required: true,
-    },
-    shopifyOrderNumber: {
-      type: Number,
-      required: true,
-    },
-    storeConnectionId: {
+    storeId: {
       type: Schema.Types.ObjectId,
-      ref: 'StoreConnection',
+      ref: 'Store',
       required: true,
       index: true,
     },
@@ -232,7 +225,7 @@ const orderSchema = new Schema<IOrder>(
       default: 0,
     },
 
-    // Shopify statuses
+    // Order statuses
     financialStatus: {
       type: String,
       default: 'pending',
@@ -243,20 +236,12 @@ const orderSchema = new Schema<IOrder>(
       default: null,
       index: true,
     },
-    shopifyCreatedAt: {
-      type: Date,
-      required: true,
-    },
-    shopifyUpdatedAt: {
-      type: Date,
-      required: true,
-    },
 
     // ZEN Fulfillment fields
     zenStatus: {
       type: String,
       enum: [
-        'shopify',
+        'pending',
         'awaiting_wallet',
         'ready_for_fulfillment',
         'sourcing',
@@ -271,7 +256,7 @@ const orderSchema = new Schema<IOrder>(
         'returned',
         'failed',
       ],
-      default: 'shopify',
+      default: 'pending',
       index: true,
     },
     productCost: {
@@ -341,7 +326,8 @@ const orderSchema = new Schema<IOrder>(
 );
 
 // Compound indexes
-orderSchema.index({ storeConnectionId: 1, shopifyOrderId: 1 }, { unique: true });
+orderSchema.index({ storeId: 1, orderNumber: 1 }, { unique: true });
+orderSchema.index({ storeId: 1, orderId: 1 }, { unique: true });
 orderSchema.index({ userId: 1, zenStatus: 1 });
 orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ zenStatus: 1, createdAt: -1 });

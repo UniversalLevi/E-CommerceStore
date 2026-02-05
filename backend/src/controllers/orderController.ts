@@ -11,50 +11,6 @@ import { StoreOrder } from '../models/StoreOrder';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
 
-// Legacy interface - kept for backward compatibility but not used
-interface ShopifyOrder {
-  id: number;
-  name: string;
-  order_number: number;
-  email: string;
-  created_at: string;
-  updated_at: string;
-  total_price: string;
-  subtotal_price: string;
-  total_tax: string;
-  currency: string;
-  financial_status: string;
-  fulfillment_status: string | null;
-  customer: {
-    id: number;
-    email: string;
-    first_name: string;
-    last_name: string;
-  } | null;
-  line_items: Array<{
-    id: number;
-    title: string;
-    quantity: number;
-    price: string;
-    variant_title: string;
-    sku: string;
-  }>;
-  shipping_address: {
-    address1: string;
-    city: string;
-    province: string;
-    country: string;
-    zip: string;
-  } | null;
-  fulfillments: Array<{
-    id: number;
-    status: string;
-    created_at: string;
-    tracking_number: string | null;
-    tracking_url: string | null;
-  }>;
-}
-
 interface OrderResponse {
   id: number;
   name: string;
@@ -100,7 +56,7 @@ interface OrderResponse {
   }>;
   storeId?: string;
   storeName?: string;
-  shopDomain?: string;
+  slug?: string;
 }
 
 /**
@@ -374,13 +330,21 @@ export const listAllStoreOrders = async (
           orders: storeOrders.map((order: any) => ({
             id: order._id.toString(),
             orderId: order.orderId,
+            storeId: store._id.toString(),
+            storeName: store.name,
+            storeSlug: store.slug,
             customer: order.customer,
             items: order.items,
+            lineItems: order.items, // Alias for compatibility
+            shippingAddress: order.shippingAddress,
             total: order.total / 100, // Convert from paise to rupees
+            subtotal: order.subtotal / 100,
+            shipping: order.shipping / 100,
             currency: order.currency,
             paymentStatus: order.paymentStatus,
             fulfillmentStatus: order.fulfillmentStatus,
             createdAt: order.createdAt,
+            updatedAt: order.updatedAt || order.createdAt,
           })),
           stats: {
             totalOrders: storeOrders.length,
@@ -757,9 +721,6 @@ export const cancelFulfillment = async (
       },
     });
   } catch (error: any) {
-    if (error.response?.data?.errors) {
-      return next(createError(`Shopify error: ${JSON.stringify(error.response.data.errors)}`, 400));
-    }
     next(error);
   }
 };
@@ -1078,9 +1039,6 @@ export const reopenOrder = async (
       },
     });
   } catch (error: any) {
-    if (error.response?.data?.errors) {
-      return next(createError(`Shopify error: ${JSON.stringify(error.response.data.errors)}`, 400));
-    }
     next(error);
   }
 };
@@ -1149,84 +1107,11 @@ export const addOrderNote = async (
       },
     });
   } catch (error: any) {
-    if (error.response?.data?.errors) {
-      return next(createError(`Shopify error: ${JSON.stringify(error.response.data.errors)}`, 400));
-    }
     next(error);
   }
 };
 
-/**
- * Sync a Shopify order to local database
- * This creates or updates a local Order record from Shopify data
- */
-async function syncShopifyOrderToLocal(
-  shopifyOrder: ShopifyOrder,
-  storeConnection: any,
-  userId: mongoose.Types.ObjectId
-) {
-  // Convert Shopify price strings to paise (multiply by 100)
-  const toPaise = (priceStr: string): number => Math.round(parseFloat(priceStr || '0') * 100);
-
-  const orderData: any = {
-    shopifyOrderId: shopifyOrder.id,
-    shopifyOrderName: shopifyOrder.name || '',
-    shopifyOrderNumber: shopifyOrder.order_number,
-    storeConnectionId: storeConnection._id,
-    userId,
-    customer: {
-      shopifyCustomerId: shopifyOrder.customer?.id || null,
-      email: shopifyOrder.customer?.email || shopifyOrder.email || '',
-      firstName: shopifyOrder.customer?.first_name || '',
-      lastName: shopifyOrder.customer?.last_name || '',
-      phone: '',
-    },
-    email: shopifyOrder.email || '',
-    lineItems: shopifyOrder.line_items.map((item) => ({
-      shopifyLineItemId: item.id,
-      title: item.title,
-      quantity: item.quantity,
-      price: toPaise(item.price),
-      variantTitle: item.variant_title || '',
-      sku: item.sku || '',
-      productId: null,
-      variantId: null,
-    })),
-    shippingAddress: shopifyOrder.shipping_address
-      ? {
-          firstName: '',
-          lastName: '',
-          address1: shopifyOrder.shipping_address.address1 || '',
-          address2: '',
-          city: shopifyOrder.shipping_address.city || '',
-          province: shopifyOrder.shipping_address.province || '',
-          provinceCode: '',
-          country: shopifyOrder.shipping_address.country || '',
-          countryCode: '',
-          zip: shopifyOrder.shipping_address.zip || '',
-          phone: '',
-        }
-      : null,
-    currency: shopifyOrder.currency || 'INR',
-    totalPrice: toPaise(shopifyOrder.total_price),
-    subtotalPrice: toPaise(shopifyOrder.subtotal_price),
-    totalTax: toPaise(shopifyOrder.total_tax),
-    totalShipping: 0,
-    financialStatus: shopifyOrder.financial_status || 'pending',
-    fulfillmentStatus: shopifyOrder.fulfillment_status,
-    shopifyCreatedAt: new Date(shopifyOrder.created_at),
-    shopifyUpdatedAt: new Date(shopifyOrder.updated_at),
-  };
-
-  // Upsert the order
-  const order: any = await Order.findOneAndUpdate(
-    { storeConnectionId: storeConnection._id, shopifyOrderId: shopifyOrder.id },
-    { $set: orderData },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-
-  return order;
-}
+// Removed: syncShopifyOrderToLocal - Shopify integration removed
 
 /**
  * Sync order and get local record
@@ -1338,18 +1223,72 @@ export const setOrderCosts = async (
       throw createError('You do not have access to this store', 403);
     }
 
-    // Find or sync the local order
-    let localOrder = await Order.findOne({
-      storeConnectionId: storeId,
-      shopifyOrderId: parseInt(orderId),
+    // Find the order from StoreOrder
+    const storeOrder = await StoreOrder.findOne({
+      storeId: store._id,
+      orderId: orderId,
     });
 
-    if (!localOrder) {
+    if (!storeOrder) {
       throw createError('Order not found in internal store', 404);
     }
 
+    // Find or create corresponding Order record for ZEN fulfillment tracking
+    let localOrder = await Order.findOne({
+      storeId: store._id,
+      orderId: orderId,
+    });
+
+    if (!localOrder) {
+      // Create Order record from StoreOrder for ZEN tracking
+      localOrder = await Order.create({
+        orderId: storeOrder.orderId,
+        orderNumber: parseInt(storeOrder.orderId.split('-').pop() || '0', 10),
+        storeId: store._id,
+        userId: userId,
+        customer: {
+          email: storeOrder.customer.email,
+          firstName: storeOrder.customer.name.split(' ')[0] || '',
+          lastName: storeOrder.customer.name.split(' ').slice(1).join(' ') || '',
+          phone: storeOrder.customer.phone,
+        },
+        email: storeOrder.customer.email,
+        lineItems: storeOrder.items.map((item, idx) => ({
+          lineItemId: `${storeOrder.orderId}-${idx}`,
+          title: item.title,
+          quantity: item.quantity,
+          price: item.price,
+          variantTitle: item.variant || '',
+          sku: '',
+          productId: item.productId,
+          variantId: null,
+        })),
+        shippingAddress: storeOrder.shippingAddress ? {
+          firstName: storeOrder.shippingAddress.name.split(' ')[0] || '',
+          lastName: storeOrder.shippingAddress.name.split(' ').slice(1).join(' ') || '',
+          address1: storeOrder.shippingAddress.address1,
+          address2: storeOrder.shippingAddress.address2 || '',
+          city: storeOrder.shippingAddress.city,
+          province: storeOrder.shippingAddress.state,
+          provinceCode: '',
+          country: storeOrder.shippingAddress.country,
+          countryCode: '',
+          zip: storeOrder.shippingAddress.zip,
+          phone: storeOrder.shippingAddress.phone,
+        } : null,
+        currency: storeOrder.currency,
+        totalPrice: storeOrder.total,
+        subtotalPrice: storeOrder.subtotal,
+        totalTax: 0,
+        totalShipping: storeOrder.shipping,
+        financialStatus: storeOrder.paymentStatus,
+        fulfillmentStatus: storeOrder.fulfillmentStatus,
+        zenStatus: 'pending',
+      });
+    }
+
     // Check if order can be modified
-    if (localOrder!.zenStatus !== 'shopify' && localOrder!.zenStatus !== 'awaiting_wallet') {
+    if (localOrder.zenStatus !== 'pending' && localOrder.zenStatus !== 'awaiting_wallet') {
       throw createError('Order costs cannot be modified once fulfillment has started', 400);
     }
 
@@ -1366,12 +1305,12 @@ export const setOrderCosts = async (
       success: true,
       message: 'Order costs updated',
       data: {
-        id: order._id,
-        shopifyOrderId: order.shopifyOrderId,
-        productCost: order.productCost,
-        shippingCost: order.shippingCost,
-        serviceFee: order.serviceFee,
-        totalRequired: order.productCost + order.shippingCost + order.serviceFee,
+        id: localOrder._id,
+        orderId: localOrder.orderId,
+        productCost: localOrder.productCost,
+        shippingCost: localOrder.shippingCost,
+        serviceFee: localOrder.serviceFee,
+        totalRequired: localOrder.productCost + localOrder.shippingCost + localOrder.serviceFee,
       },
     });
   } catch (error: any) {
@@ -1417,21 +1356,75 @@ export const fulfillViaZen = async (
       wallet = await Wallet.create({ userId });
     }
 
-    // Find or sync the local order
+    // Find the order from StoreOrder
+    const storeOrder = await StoreOrder.findOne({
+      storeId: store._id,
+      orderId: orderId,
+    });
+
+    if (!storeOrder) {
+      throw createError('Order not found in internal store', 404);
+    }
+
+    // Find or create corresponding Order record for ZEN fulfillment tracking
     let localOrder = await Order.findOne({
-      storeConnectionId: storeId,
-      shopifyOrderId: parseInt(orderId),
+      storeId: store._id,
+      orderId: orderId,
     });
 
     if (!localOrder) {
-      throw createError('Order not found in internal store', 404);
+      // Create Order record from StoreOrder for ZEN tracking
+      localOrder = await Order.create({
+        orderId: storeOrder.orderId,
+        orderNumber: parseInt(storeOrder.orderId.split('-').pop() || '0', 10),
+        storeId: store._id,
+        userId: userId,
+        customer: {
+          email: storeOrder.customer.email,
+          firstName: storeOrder.customer.name.split(' ')[0] || '',
+          lastName: storeOrder.customer.name.split(' ').slice(1).join(' ') || '',
+          phone: storeOrder.customer.phone,
+        },
+        email: storeOrder.customer.email,
+        lineItems: storeOrder.items.map((item, idx) => ({
+          lineItemId: `${storeOrder.orderId}-${idx}`,
+          title: item.title,
+          quantity: item.quantity,
+          price: item.price,
+          variantTitle: item.variant || '',
+          sku: '',
+          productId: item.productId,
+          variantId: null,
+        })),
+        shippingAddress: storeOrder.shippingAddress ? {
+          firstName: storeOrder.shippingAddress.name.split(' ')[0] || '',
+          lastName: storeOrder.shippingAddress.name.split(' ').slice(1).join(' ') || '',
+          address1: storeOrder.shippingAddress.address1,
+          address2: storeOrder.shippingAddress.address2 || '',
+          city: storeOrder.shippingAddress.city,
+          province: storeOrder.shippingAddress.state,
+          provinceCode: '',
+          country: storeOrder.shippingAddress.country,
+          countryCode: '',
+          zip: storeOrder.shippingAddress.zip,
+          phone: storeOrder.shippingAddress.phone,
+        } : null,
+        currency: storeOrder.currency,
+        totalPrice: storeOrder.total,
+        subtotalPrice: storeOrder.subtotal,
+        totalTax: 0,
+        totalShipping: storeOrder.shipping,
+        financialStatus: storeOrder.paymentStatus,
+        fulfillmentStatus: storeOrder.fulfillmentStatus,
+        zenStatus: 'pending',
+      });
     }
 
     // TypeScript assertion - we've handled the null case above
     const order = localOrder!;
 
     // Check if already processed
-    if (order.zenStatus !== 'shopify' && order.zenStatus !== 'awaiting_wallet') {
+    if (order.zenStatus !== 'pending' && order.zenStatus !== 'awaiting_wallet') {
       throw createError('Order has already been processed via ZEN', 400);
     }
 
@@ -1581,8 +1574,8 @@ export const fulfillViaZen = async (
       balanceBefore,
       balanceAfter,
       metadata: {
-        shopifyOrderId: order.shopifyOrderId,
-        shopifyOrderName: (order as any).orderId || '',
+        orderId: order.orderId,
+        orderName: order.orderId,
         productCost: order.productCost,
         shippingCost: order.shippingCost,
         serviceFee: order.serviceFee,
@@ -1601,8 +1594,8 @@ export const fulfillViaZen = async (
     const zenOrder = await ZenOrder.create({
       orderId: order._id,
       userId,
-      storeConnectionId: store._id,
-      shopifyOrderName: order.shopifyOrderName,
+      storeId: store._id,
+      orderName: order.orderId,
       storeName: store.name,
       customerName: `${order.customer.firstName} ${order.customer.lastName}`.trim() || 'Guest',
       customerEmail: order.email,
@@ -1674,7 +1667,7 @@ export const fulfillViaZen = async (
       success: true,
       details: {
         orderId: order._id,
-        shopifyOrderId: order.shopifyOrderId,
+        orderName: order.orderId,
         zenOrderId: zenOrder._id,
         walletDeducted: requiredAmount,
         newBalance: balanceAfter,
@@ -1733,8 +1726,8 @@ export const getOrderZenStatus = async (
 
     // Find local order
     const localOrder = await Order.findOne({
-      storeConnectionId: storeId,
-      shopifyOrderId: parseInt(orderId),
+      storeId: store._id,
+      orderId: orderId,
     }).populate('walletTransactionId');
 
     if (!localOrder) {
@@ -1742,7 +1735,7 @@ export const getOrderZenStatus = async (
         success: true,
         data: {
           hasLocalOrder: false,
-          zenStatus: 'shopify',
+          zenStatus: 'pending',
         },
       });
     }
@@ -1755,7 +1748,7 @@ export const getOrderZenStatus = async (
       data: {
         hasLocalOrder: true,
         orderId: localOrder._id,
-        shopifyOrderId: localOrder.shopifyOrderId,
+        orderName: localOrder.orderId,
         zenStatus: localOrder.zenStatus,
         productCost: localOrder.productCost,
         shippingCost: localOrder.shippingCost,
@@ -1873,7 +1866,7 @@ export const getAllInternalStoreOrders = async (
       partial: allOrders.filter(order => order.fulfillmentStatus === 'shipped').length,
     };
 
-    // Transform internal store orders to match Shopify order format
+    // Transform internal store orders to response format
     const transformedOrders = orders.map((order) => {
       const orderNumber = parseInt(order.orderId.split('-').pop() || '0', 10);
       return {
@@ -1919,8 +1912,8 @@ export const getAllInternalStoreOrders = async (
             order.shippingAddress.country,
           ].filter(Boolean).join(', '),
         } : null,
-        isInternalStore: true, // Flag to identify internal store orders
         storeName: store.name,
+        slug: store.slug,
         storeSlug: store.slug,
       };
     });

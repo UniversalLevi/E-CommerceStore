@@ -108,7 +108,7 @@ export const listZenOrders = async (
     }
 
     if (storeId) {
-      query.storeConnectionId = new mongoose.Types.ObjectId(storeId as string);
+      query.storeId = new mongoose.Types.ObjectId(storeId as string);
     }
 
     if (assignedPicker) {
@@ -125,7 +125,7 @@ export const listZenOrders = async (
 
     if (search) {
       query.$or = [
-        { shopifyOrderName: { $regex: search, $options: 'i' } },
+        { orderName: { $regex: search, $options: 'i' } },
         { customerName: { $regex: search, $options: 'i' } },
         { customerEmail: { $regex: search, $options: 'i' } },
         { trackingNumber: { $regex: search, $options: 'i' } },
@@ -175,7 +175,7 @@ export const listZenOrders = async (
       data: orders.map((order) => ({
         id: order._id,
         orderId: order.orderId,
-        shopifyOrderName: order.shopifyOrderName,
+        orderName: order.orderName,
         storeName: order.storeName,
         customerName: order.customerName,
         customerEmail: order.customerEmail,
@@ -302,15 +302,43 @@ export const updateZenOrderStatus = async (
     zenOrder.addStatusChange(status, adminId, note || '');
     await zenOrder.save();
 
-    // Also update the local Order zenStatus
-    await Order.findByIdAndUpdate(zenOrder.orderId, { zenStatus: status });
+    // Also update the local Order zenStatus (if orderId exists)
+    // Map ZenOrderStatus to Order.ZenStatus (they have slightly different values)
+    if (zenOrder.orderId) {
+      try {
+        // Map ZenOrderStatus to Order ZenStatus
+        const orderStatusMap: Partial<Record<ZenOrderStatus, string>> = {
+          'pending': 'pending',
+          'sourcing': 'sourcing',
+          'sourced': 'sourcing', // Order doesn't have 'sourced', use 'sourcing'
+          'packing': 'packing',
+          'packed': 'packing', // Order doesn't have 'packed', use 'packing'
+          'ready_for_dispatch': 'ready_for_dispatch',
+          'dispatched': 'dispatched',
+          'shipped': 'shipped',
+          'out_for_delivery': 'out_for_delivery',
+          'delivered': 'delivered',
+          'rto_initiated': 'rto_initiated',
+          'rto_delivered': 'rto_delivered',
+          'returned': 'returned',
+          'cancelled': 'failed', // Order doesn't have 'cancelled', use 'failed'
+          'failed': 'failed',
+        };
+        
+        const mappedStatus = (orderStatusMap[status as ZenOrderStatus] || status) as string;
+        await Order.findByIdAndUpdate(zenOrder.orderId, { zenStatus: mappedStatus });
+      } catch (orderError: any) {
+        // Log but don't fail - zen order update is primary
+        console.warn(`Failed to update Order zenStatus for ${zenOrder.orderId}:`, orderError.message);
+      }
+    }
 
     // Create notification for user
     await createNotification({
       userId: zenOrder.userId,
       type: 'system_update',
       title: 'Order Status Updated',
-      message: `Your order ${zenOrder.shopifyOrderName} status has been updated to: ${status.replace(/_/g, ' ').toUpperCase()}`,
+      message: `Your order ${zenOrder.orderName} status has been updated to: ${status.replace(/_/g, ' ').toUpperCase()}`,
       link: '/dashboard/orders',
       metadata: {
         zenOrderId: zenOrder._id,
@@ -456,7 +484,7 @@ export const updateTracking = async (
         userId: zenOrder.userId,
         type: 'system_update',
         title: 'Tracking Info Added',
-        message: `Tracking number ${trackingNumber} has been added to your order ${zenOrder.shopifyOrderName}`,
+        message: `Tracking number ${trackingNumber} has been added to your order ${zenOrder.orderName}`,
         link: '/dashboard/orders',
         metadata: {
           zenOrderId: zenOrder._id,

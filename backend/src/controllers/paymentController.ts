@@ -1122,8 +1122,8 @@ async function autoResumeAwaitingOrders(
         // We have enough balance - this will be processed by the fulfill-via-zen endpoint
         // For now, just log that orders are ready to be resumed
         console.log('Order ready to be auto-resumed:', {
-          orderId: order._id,
-          shopifyOrderName: order.shopifyOrderName,
+          orderDocumentId: order._id,
+          orderId: order.orderId,
           requiredAmount,
           currentBalance,
         });

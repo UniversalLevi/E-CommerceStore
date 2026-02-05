@@ -24,6 +24,7 @@ import subscriptionRoutes from './subscriptionRoutes';
 import productAnalyticsRoutes from './productAnalyticsRoutes';
 import emailSenderRoutes from './emailSenderRoutes';
 import adminInternalStoreRoutes from './adminInternalStoreRoutes';
+import { listInternalStores } from '../controllers/adminInternalStoreController';
 import { sendNotification, getNotificationHistory, getNotificationDetails } from '../controllers/notificationController';
 import { getAllCustomers } from '../controllers/customerController';
 import { createCallLog, getUserCallLogs, getAllCallLogs, updateCallLog, deleteCallLog } from '../controllers/callLogController';
@@ -89,6 +90,8 @@ router.delete('/call-logs/:id', deleteCallLog);
 
 // Internal store management routes
 router.use('/internal-stores', adminInternalStoreRoutes);
+// Alias for /stores to maintain compatibility
+router.get('/stores', listInternalStores);
 
 export default router;
 

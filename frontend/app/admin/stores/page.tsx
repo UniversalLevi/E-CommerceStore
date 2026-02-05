@@ -9,15 +9,12 @@ import { notify } from '@/lib/toast';
 import IconBadge from '@/components/IconBadge';
 import { Store as StoreIcon } from 'lucide-react';
 
-interface StoreConnection {
+interface InternalStore {
   _id: string;
-  storeName: string;
-  shopDomain: string;
-  environment: string;
-  isDefault: boolean;
-  status: 'active' | 'invalid' | 'revoked';
-  lastTestedAt?: string;
-  lastTestResult?: string;
+  name: string;
+  slug: string;
+  status: 'active' | 'inactive' | 'suspended';
+  currency: string;
   createdAt: string;
   owner: {
     _id: string;
@@ -29,14 +26,11 @@ interface StoreConnection {
 export default function AdminStoresPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
-  const [stores, setStores] = useState<StoreConnection[]>([]);
+  const [stores, setStores] = useState<InternalStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [testing, setTesting] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-
-  // Note: This page is for Shopify stores only. Internal stores are managed at /admin/internal-stores
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -55,34 +49,16 @@ export default function AdminStoresPage() {
   const fetchStores = async () => {
     try {
       setLoading(true);
-      const response = await api.get<{ success: boolean; data: StoreConnection[] }>(
-        '/api/stores'
+      // Fetch all internal stores (admin endpoint)
+      const response = await api.get<{ success: boolean; data: InternalStore[] }>(
+        '/api/admin/stores'
       );
-      setStores(response.data);
+      setStores(response.data || []);
     } catch (error: any) {
       console.error('Error fetching stores:', error);
       setError(error.response?.data?.error || 'Failed to load stores');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleTest = async (storeId: string) => {
-    setTesting(storeId);
-    try {
-      const response = await api.post<{ success: boolean; valid: boolean; message: string }>(
-        `/api/stores/${storeId}/test`
-      );
-      if (response.valid) {
-        notify.success(response.message);
-      } else {
-        notify.error(response.message || 'Connection test failed');
-      }
-      await fetchStores();
-    } catch (error: any) {
-      notify.error(error.response?.data?.error || 'Failed to test connection');
-    } finally {
-      setTesting(null);
     }
   };
 
@@ -117,8 +93,8 @@ export default function AdminStoresPage() {
   // Filter stores
   const filteredStores = stores.filter((store) => {
     const matchesSearch =
-      store.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      store.shopDomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      store.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
       store.owner?.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || store.status === statusFilter;
@@ -147,7 +123,7 @@ export default function AdminStoresPage() {
               <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
                 EAZY DROPSHIPPING
               </Link>
-              <p className="text-sm text-text-secondary mt-1">Shopify Store Connections</p>
+              <p className="text-sm text-text-secondary mt-1">Internal Stores</p>
             </div>
             <div className="flex items-center gap-4">
               <Link href="/dashboard" className="text-text-secondary hover:text-primary-500">
@@ -167,12 +143,9 @@ export default function AdminStoresPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-text-primary">Shopify Stores</h1>
+            <h1 className="text-3xl font-bold text-text-primary">Internal Stores</h1>
             <p className="mt-2 text-text-secondary">
-              Manage all connected Shopify stores across all users. For internal stores, see{' '}
-              <Link href="/admin/internal-stores" className="text-primary-500 hover:underline">
-                Internal Stores
-              </Link>
+              Manage all internal stores across all users
             </p>
           </div>
 
@@ -191,7 +164,7 @@ export default function AdminStoresPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Search by store name, domain, or owner email..."
+                  placeholder="Search by store name, slug, or owner email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -219,7 +192,7 @@ export default function AdminStoresPage() {
               <span>Total Stores: <strong>{stores.length}</strong></span>
               <span>Filtered: <strong>{filteredStores.length}</strong></span>
               <span>Active: <strong>{stores.filter(s => s.status === 'active').length}</strong></span>
-              <span>Invalid: <strong>{stores.filter(s => s.status === 'invalid').length}</strong></span>
+              <span>Inactive: <strong>{stores.filter(s => s.status === 'inactive').length}</strong></span>
             </div>
           </div>
 
@@ -254,7 +227,7 @@ export default function AdminStoresPage() {
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                        Last Tested
+                        Currency
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                         Actions
@@ -267,15 +240,9 @@ export default function AdminStoresPage() {
                         <td className="px-6 py-4">
                           <div>
                             <div className="font-medium text-text-primary">
-                              {store.storeName}
-                              {store.isDefault && (
-                                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-secondary-500/20 text-secondary-400 border border-secondary-500/50">
-                                  Default
-                                </span>
-                              )}
+                              {store.name}
                             </div>
-                            <div className="text-sm text-text-muted">{store.shopDomain}</div>
-                            <div className="text-xs text-text-muted">{store.environment}</div>
+                            <div className="text-sm text-text-muted">{store.slug}.eazydropshipping.com</div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -286,21 +253,12 @@ export default function AdminStoresPage() {
                           {getStatusBadge(store.status)}
                         </td>
                         <td className="px-6 py-4 text-sm text-text-muted">
-                          {store.lastTestedAt
-                            ? new Date(store.lastTestedAt).toLocaleString()
-                            : 'Never'}
+                          {store.currency || 'INR'}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleTest(store._id)}
-                              disabled={testing === store._id}
-                              className="px-3 py-1 bg-primary-500 hover:bg-primary-600 text-black rounded text-sm font-medium transition-colors disabled:opacity-50"
-                            >
-                              {testing === store._id ? 'Testing...' : 'Test'}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(store._id, store.storeName, store.owner?.email || 'Unknown')}
+                              onClick={() => handleDelete(store._id, store.name, store.owner?.email || 'Unknown')}
                               className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium transition-colors"
                             >
                               Delete

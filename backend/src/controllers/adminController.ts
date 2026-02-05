@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { User } from '../models/User';
-import { StoreConnection } from '../models/StoreConnection';
 import { Store } from '../models/Store';
 import { AuditLog } from '../models/AuditLog';
 import { Product } from '../models/Product';
@@ -38,10 +37,6 @@ export const getDashboardStats = async (
     const [
       totalUsers,
       activeUsers,
-      totalShopifyStores,
-      activeShopifyStores,
-      invalidStores,
-      revokedStores,
       totalInternalStores,
       activeInternalStores,
       suspendedInternalStores,
@@ -51,10 +46,6 @@ export const getDashboardStats = async (
       User.countDocuments({
         lastLogin: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
       }),
-      StoreConnection.countDocuments(),
-      StoreConnection.countDocuments({ status: 'active' }),
-      StoreConnection.countDocuments({ status: 'invalid' }),
-      StoreConnection.countDocuments({ status: 'revoked' }),
       Store.countDocuments(),
       Store.countDocuments({ status: 'active' }),
       Store.countDocuments({ status: 'suspended' }),
@@ -82,8 +73,8 @@ export const getDashboardStats = async (
       },
     ]);
 
-    // Get store connection trends (last 30 days)
-    const storeConnections = await StoreConnection.aggregate([
+    // Get internal store creation trends (last 30 days)
+    const storeConnections = await Store.aggregate([
       {
         $match: {
           createdAt: { $gte: thirtyDaysAgo },
@@ -103,7 +94,7 @@ export const getDashboardStats = async (
     ]);
 
     // Store status distribution
-    const storeStatusDistribution = await StoreConnection.aggregate([
+    const storeStatusDistribution = await Store.aggregate([
       {
         $group: {
           _id: '$status',
@@ -126,12 +117,6 @@ export const getDashboardStats = async (
         active: activeUsers,
       },
       stores: {
-        total: totalShopifyStores,
-        active: activeShopifyStores,
-        invalid: invalidStores,
-        revoked: revokedStores,
-      },
-      internalStores: {
         total: totalInternalStores,
         active: activeInternalStores,
         suspended: suspendedInternalStores,
@@ -150,7 +135,7 @@ export const getDashboardStats = async (
         timestamp: log.timestamp,
         userEmail: (log.userId as any)?.email || 'System',
         action: log.action,
-        target: (log.storeId as any)?.storeName || 'N/A',
+        target: (log.storeId as any)?.name || (log.storeId as any)?.storeName || 'N/A',
         success: log.success,
         details: log.details,
       })),
@@ -246,7 +231,7 @@ export const listUsers = async (
 
     // Get store counts for each user
     const userIds = users.map((u: any) => u._id);
-    const storeCounts = await StoreConnection.aggregate([
+    const storeCounts = await Store.aggregate([
       { $match: { owner: { $in: userIds } } },
       { $group: { _id: '$owner', count: { $sum: 1 } } },
     ]);
@@ -385,7 +370,7 @@ export const getUserDetails = async (
     }
 
     // Get all stores for this user
-    const stores = await StoreConnection.find({ owner: id })
+    const stores = await Store.find({ owner: id })
       .select('-accessToken -apiKey -apiSecret')
       .sort({ createdAt: -1 })
       .lean();
@@ -494,7 +479,7 @@ export const getComprehensiveUserData = async (
       auditLogs,
     ] = await Promise.all([
       // Stores
-      StoreConnection.find({ owner: id })
+      Store.find({ owner: id })
         .select('-accessToken -apiKey -apiSecret')
         .sort({ createdAt: -1 })
         .lean(),
@@ -522,7 +507,7 @@ export const getComprehensiveUserData = async (
 
       // Wallet Transactions
       WalletTransaction.find({ userId: id })
-        .populate('orderId', 'shopifyOrderName')
+        .populate('orderId', 'orderName')
         .sort({ createdAt: -1 })
         .limit(100)
         .lean(),
@@ -759,8 +744,8 @@ export const updateOrderZenStatus = async (
       action: 'UPDATE_ORDER_ZEN_STATUS',
       success: true,
       details: {
-        orderId: order._id,
-        shopifyOrderName: order.shopifyOrderName,
+        orderDocumentId: order._id,
+        orderId: order.orderId,
         previousStatus: oldStatus,
         newStatus: zenStatus,
         note,
@@ -802,7 +787,7 @@ export const deleteUser = async (
 
     // Cascade delete: stores and audit logs
     await Promise.all([
-      StoreConnection.deleteMany({ owner: id }),
+      Store.deleteMany({ owner: id }),
       AuditLog.deleteMany({ userId: id }),
       User.findByIdAndDelete(id),
     ]);

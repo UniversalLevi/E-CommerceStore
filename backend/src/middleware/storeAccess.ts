@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth';
-import { StoreConnection } from '../models/StoreConnection';
+import { Store } from '../models/Store';
 import { createError } from './errorHandler';
 
 /**
@@ -23,7 +23,7 @@ export const requireStoreOwner = async (
       throw createError('Store ID is required', 400);
     }
 
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
 
     if (!store) {
       throw createError('Store not found', 404);
@@ -66,7 +66,7 @@ export const optionalStoreAccess = async (
       return next();
     }
 
-    const store = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
 
     if (store) {
       const isOwner = store.owner.toString() === (req.user as any)._id.toString();
@@ -88,7 +88,7 @@ export const optionalStoreAccess = async (
 declare global {
   namespace Express {
     interface Request {
-      storeDoc?: any; // Will be populated with StoreConnection document
+      storeDoc?: any; // Will be populated with Store document
     }
   }
 }

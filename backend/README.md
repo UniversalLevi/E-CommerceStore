@@ -1,6 +1,6 @@
 # Backend - EAZY DROPSHIPPING
 
-Express.js API server with TypeScript, MongoDB, and Shopify OAuth integration.
+Express.js API server with TypeScript, MongoDB, and internal store management.
 
 ## 🚀 Quick Start
 
@@ -60,14 +60,6 @@ RAZORPAY_WEBHOOK_SECRET=your-razorpay-webhook-secret
 
 ### Optional Variables
 ```env
-# Shopify Configuration
-SHOPIFY_API_KEY=your-shopify-api-key
-SHOPIFY_API_SECRET=your-shopify-api-secret
-SHOPIFY_REDIRECT_URI=http://localhost:5000/api/shopify/callback
-SHOPIFY_SCOPES=write_products,read_products,write_themes,read_themes
-SHOPIFY_SHOP=
-SHOPIFY_ACCESS_TOKEN=
-
 # Email Configuration (if not set, emails will be logged only)
 SMTP_HOST=
 SMTP_PORT=
@@ -98,7 +90,7 @@ AI_CACHE_TTL=3600
 - `dotenv` - Environment variables
 - `morgan` - HTTP request logger
 - `cookie-parser` - Cookie parsing
-- `axios` - HTTP client for Shopify API
+- `axios` - HTTP client
 - `zod` - Schema validation
 
 ### Development
@@ -129,13 +121,8 @@ All routes are prefixed with `/api`
 - `PUT /:id` - Update product (admin only)
 - `DELETE /:id` - Delete product (admin only)
 
-### Shopify (`/shopify`)
-- `GET /auth` - Start OAuth flow
-- `GET /callback` - OAuth callback
-- `GET /status` - Check connection status (protected)
-
 ### Stores (`/stores`)
-- `POST /create` - Create new Shopify store (protected)
+- `POST /create` - Create new internal store (protected)
 
 ### Dashboard (`/dashboard`)
 - `GET /stats` - User statistics (protected)
@@ -200,7 +187,6 @@ curl -X POST http://localhost:5000/api/auth/login \
 ## 📝 Notes
 
 - MongoDB must be running before starting the server
-- Shopify credentials are required for OAuth functionality
 - First user must be manually set as admin in MongoDB
 - Use morgan logger to track all HTTP requests
 - Zod validation ensures type-safe API inputs

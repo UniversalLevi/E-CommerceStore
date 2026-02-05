@@ -1,13 +1,12 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { Customer } from '../models/Customer';
-import { StoreConnection } from '../models/StoreConnection';
-import { decrypt } from '../utils/encryption';
+import { Store } from '../models/Store';
+import { StoreOrder } from '../models/StoreOrder';
 import { createError } from '../middleware/errorHandler';
-import axios from 'axios';
 
 /**
- * Sync customers from Shopify store
+ * Sync customers from internal store orders
  * POST /api/customers/sync/:storeId
  */
 export const syncCustomers = async (
@@ -21,74 +20,50 @@ export const syncCustomers = async (
     }
 
     const storeId = req.params.storeId;
-    const storeConnection = await StoreConnection.findById(storeId);
+    const store = await Store.findById(storeId);
 
-    if (!storeConnection) {
-      throw createError('Store connection not found', 404);
+    if (!store) {
+      throw createError('Store not found', 404);
     }
 
     // Verify ownership or admin
-    const isOwner = storeConnection.owner.toString() === (req.user as any)._id.toString();
+    const isOwner = store.owner.toString() === (req.user as any)._id.toString();
     const isAdmin = req.user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       throw createError('You do not have access to this store', 403);
     }
 
-    if (storeConnection.status !== 'active') {
-      throw createError('Store connection is not active', 400);
+    if (store.status !== 'active') {
+      throw createError('Store is not active', 400);
     }
 
-    // Decrypt access token
-    const accessToken = decrypt(storeConnection.accessToken);
-    const shopDomain = storeConnection.shopDomain;
-    const apiVersion = storeConnection.apiVersion || '2024-01';
+    // Fetch all orders from internal store
+    const orders = await StoreOrder.find({ storeId: store._id }).lean();
 
-    let allCustomers: any[] = [];
-    let hasNextPage = true;
-    let cursor: string | null = null;
+    // Extract unique customers from orders
+    const customerMap = new Map<string, any>();
 
-    // Fetch all customers using pagination
-    while (hasNextPage) {
-      const url = `https://${shopDomain}/admin/api/${apiVersion}/customers.json`;
-      const params: any = { limit: 250 };
-      
-      if (cursor) {
-        params.page_info = cursor;
+    for (const order of orders) {
+      const email = order.customer.email?.toLowerCase();
+      if (!email) continue;
+
+      if (!customerMap.has(email)) {
+        const nameParts = order.customer.name?.split(' ') || [];
+        customerMap.set(email, {
+          email: order.customer.email,
+          phone: order.customer.phone,
+          firstName: nameParts[0] || '',
+          lastName: nameParts.slice(1).join(' ') || '',
+          fullName: order.customer.name || '',
+          orders: [],
+          totalSpent: 0,
+        });
       }
 
-      const response = await axios.get(url, {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-        params,
-        timeout: 30000,
-      });
-
-      if (response.data?.customers) {
-        allCustomers = allCustomers.concat(response.data.customers);
-      }
-
-      // Check for next page
-      const linkHeader = response.headers['link'];
-      if (linkHeader && linkHeader.includes('rel="next"')) {
-        const nextMatch = linkHeader.match(/<([^>]+)>; rel="next"/);
-        if (nextMatch) {
-          const nextUrl = new URL(nextMatch[1]);
-          cursor = nextUrl.searchParams.get('page_info');
-          hasNextPage = !!cursor;
-        } else {
-          hasNextPage = false;
-        }
-      } else {
-        hasNextPage = false;
-      }
-
-      // Rate limiting - wait a bit between requests
-      if (hasNextPage) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
+      const customer = customerMap.get(email)!;
+      customer.orders.push(order._id);
+      customer.totalSpent += order.total;
     }
 
     // Process and save customers
@@ -96,65 +71,51 @@ export const syncCustomers = async (
     let updated = 0;
     let skipped = 0;
 
-    for (const shopifyCustomer of allCustomers) {
+    for (const [email, customerData] of customerMap.entries()) {
       try {
-        const customerData = {
-          storeConnectionId: storeConnection._id,
-          owner: storeConnection.owner,
-          shopifyCustomerId: shopifyCustomer.id.toString(),
-          email: shopifyCustomer.email || undefined,
-          phone: shopifyCustomer.phone || undefined,
-          firstName: shopifyCustomer.first_name || undefined,
-          lastName: shopifyCustomer.last_name || undefined,
-          fullName: shopifyCustomer.first_name && shopifyCustomer.last_name
-            ? `${shopifyCustomer.first_name} ${shopifyCustomer.last_name}`
-            : shopifyCustomer.first_name || shopifyCustomer.last_name || undefined,
-          acceptsMarketing: shopifyCustomer.accepts_marketing || false,
-          totalSpent: parseFloat(shopifyCustomer.total_spent || '0'),
-          totalOrders: parseInt(shopifyCustomer.orders_count || '0', 10),
-          tags: shopifyCustomer.tags ? shopifyCustomer.tags.split(',').map((t: string) => t.trim()) : [],
-          address: shopifyCustomer.default_address
-            ? {
-                address1: shopifyCustomer.default_address.address1,
-                address2: shopifyCustomer.default_address.address2,
-                city: shopifyCustomer.default_address.city,
-                province: shopifyCustomer.default_address.province,
-                country: shopifyCustomer.default_address.country,
-                zip: shopifyCustomer.default_address.zip,
-              }
-            : undefined,
-          metadata: {
-            shopifyData: shopifyCustomer,
-          },
+        const customerRecord = {
+          storeId: store._id,
+          owner: store.owner,
+          email: customerData.email,
+          phone: customerData.phone,
+          firstName: customerData.firstName,
+          lastName: customerData.lastName,
+          fullName: customerData.fullName,
+          acceptsMarketing: false,
+          totalSpent: customerData.totalSpent / 100, // Convert from paise to rupees
+          totalOrders: customerData.orders.length,
+          tags: [],
+          address: undefined,
+          metadata: {},
           lastSyncedAt: new Date(),
         };
 
         const existingCustomer = await Customer.findOne({
-          storeConnectionId: storeConnection._id,
-          shopifyCustomerId: shopifyCustomer.id.toString(),
+          storeId: store._id,
+          email: email.toLowerCase(),
         });
 
         if (existingCustomer) {
           // Update existing customer
-          Object.assign(existingCustomer, customerData);
+          Object.assign(existingCustomer, customerRecord);
           await existingCustomer.save();
           updated++;
         } else {
           // Create new customer
-          await Customer.create(customerData);
+          await Customer.create(customerRecord);
           created++;
         }
       } catch (error: any) {
-        console.error(`Error processing customer ${shopifyCustomer.id}:`, error);
+        console.error(`Error processing customer ${email}:`, error);
         skipped++;
       }
     }
 
     res.json({
       success: true,
-      message: `Synced ${allCustomers.length} customers`,
+      message: `Synced ${customerMap.size} customers from ${orders.length} orders`,
       data: {
-        total: allCustomers.length,
+        total: customerMap.size,
         created,
         updated,
         skipped,
@@ -186,7 +147,7 @@ export const getUserCustomers = async (
     };
 
     if (storeId) {
-      query.storeConnectionId = storeId;
+      query.storeId = storeId;
     }
 
     if (search) {
@@ -207,7 +168,7 @@ export const getUserCustomers = async (
 
     const [customers, total] = await Promise.all([
       Customer.find(query)
-        .populate('storeConnectionId', 'storeName shopDomain')
+        .populate('storeId', 'name slug')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit))
@@ -252,7 +213,7 @@ export const getAllCustomers = async (
 
     if (storeIds) {
       const storeIdArray = Array.isArray(storeIds) ? storeIds : [storeIds];
-      query.storeConnectionId = { $in: storeIdArray };
+      query.storeId = { $in: storeIdArray };
     }
 
     if (search) {
@@ -273,7 +234,7 @@ export const getAllCustomers = async (
 
     const [customers, total] = await Promise.all([
       Customer.find(query)
-        .populate('storeConnectionId', 'storeName shopDomain owner')
+        .populate('storeId', 'name slug owner')
         .populate('owner', 'email mobile name')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -320,7 +281,7 @@ export const getCustomerStats = async (
     };
 
     if (storeId) {
-      query.storeConnectionId = storeId;
+      query.storeId = storeId;
     }
 
     const [total, withEmail, withPhone, acceptsMarketing, totalSpent, totalOrders] =
