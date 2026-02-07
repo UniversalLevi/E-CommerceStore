@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -20,10 +20,10 @@ import {
   X,
 } from 'lucide-react';
 
-interface StoreConnection {
+interface InternalStore {
   _id: string;
-  storeName: string;
-  shopDomain: string;
+  name: string;
+  slug: string;
   status: string;
 }
 
@@ -36,16 +36,35 @@ interface CustomerStats {
   totalOrders: number;
 }
 
+interface CustomerRow {
+  _id: string;
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  totalOrders: number;
+  totalSpent: number;
+  storeId?: { name?: string; slug?: string };
+}
+
 export default function CustomersPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [stores, setStores] = useState<StoreConnection[]>([]);
+  const [stores, setStores] = useState<InternalStore[]>([]);
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [stats, setStats] = useState<CustomerStats | null>(null);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [showStoreSelector, setShowStoreSelector] = useState(true);
+
+  // Customer list
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [customerPage, setCustomerPage] = useState(1);
+  const [customerPagination, setCustomerPagination] = useState<{ page: number; limit: number; total: number; pages: number } | null>(null);
+  const [customerSearch, setCustomerSearch] = useState('');
 
   // Email sending state
   const [showSendModal, setShowSendModal] = useState(false);
@@ -86,17 +105,58 @@ export default function CustomersPage() {
 
   const fetchStores = async () => {
     try {
-      const response = await api.get<{ success: boolean; data: StoreConnection[] }>('/api/stores');
-      const activeStores = response.data.filter((s: StoreConnection) => s.status === 'active');
-      setStores(activeStores);
-      if (activeStores.length > 0 && selectedStores.length === 0) {
-        setSelectedStores([activeStores[0]._id]);
+      // Use same store as orders page: get my store (one per user) so customers list matches orders
+      const response = await api.getMyStore();
+      if (response.success && response.data) {
+        const store = response.data as InternalStore;
+        setStores([store]);
+        if (selectedStores.length === 0) {
+          setSelectedStores([store._id]);
+        }
+      } else {
+        const fallback = await api.get<{ success: boolean; count?: number; data: InternalStore[] }>('/api/stores');
+        const list = Array.isArray(fallback.data) ? fallback.data : [];
+        setStores(list);
+        if (list.length > 0 && selectedStores.length === 0) {
+          setSelectedStores([list[0]._id]);
+        }
       }
     } catch (error: any) {
       console.error('Failed to fetch stores:', error);
       notify.error('Failed to load stores');
     }
   };
+
+  const fetchCustomers = useCallback(async () => {
+    if (selectedStores.length === 0) {
+      setCustomers([]);
+      setCustomerPagination(null);
+      return;
+    }
+    try {
+      setCustomersLoading(true);
+      const storeId = selectedStores.length === 1 ? selectedStores[0] : undefined;
+      const response = await api.getCustomers({
+        storeId,
+        page: customerPage,
+        limit: 20,
+        search: customerSearch.trim() || undefined,
+      });
+      if (response.success && response.data) {
+        setCustomers(response.data.customers || []);
+        setCustomerPagination(response.data.pagination || null);
+      } else {
+        setCustomers([]);
+        setCustomerPagination(null);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch customers:', error);
+      setCustomers([]);
+      setCustomerPagination(null);
+    } finally {
+      setCustomersLoading(false);
+    }
+  }, [selectedStores, customerPage, customerSearch]);
 
   const fetchStats = async () => {
     if (selectedStores.length === 0) {
@@ -147,6 +207,10 @@ export default function CustomersPage() {
       setStats(null);
     }
   }, [selectedStores]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   const handleSyncCustomers = async (storeId: string) => {
     try {
@@ -263,7 +327,7 @@ export default function CustomersPage() {
               My Customers
             </span>
           </h1>
-          <p className="mt-2 text-text-secondary">Manage and email your Shopify customers</p>
+          <p className="mt-2 text-text-secondary">Manage and email your store customers</p>
         </div>
         <button
           onClick={() => {
@@ -349,9 +413,9 @@ export default function CustomersPage() {
                             >
                               {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
                             </div>
-                            <span className="font-semibold text-text-primary">{store.storeName}</span>
+                            <span className="font-semibold text-text-primary">{store.name}</span>
                           </div>
-                          <p className="text-xs text-text-muted ml-7">{store.shopDomain}</p>
+                          <p className="text-xs text-text-muted ml-7">{store.slug}</p>
                         </div>
                         <button
                           onClick={(e) => {
@@ -360,7 +424,7 @@ export default function CustomersPage() {
                           }}
                           disabled={syncing === store._id}
                           className="p-1.5 text-text-secondary hover:text-violet-400 transition-colors disabled:opacity-50"
-                          title="Sync customers from Shopify"
+                          title="Sync customers from orders"
                         >
                           <RefreshCw
                             className={`w-4 h-4 ${syncing === store._id ? 'animate-spin' : ''}`}
@@ -417,12 +481,94 @@ export default function CustomersPage() {
         </div>
       )}
 
+      {/* Customer list */}
+      {stores.length > 0 && selectedStores.length > 0 && (
+        <div className="bg-surface-raised border border-border-default rounded-xl overflow-hidden">
+          <div className="p-4 border-b border-border-default flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+            <h2 className="text-lg font-semibold text-text-primary">All customers</h2>
+            <div className="flex gap-2 items-center">
+              <input
+                type="search"
+                placeholder="Search by name, email, phone..."
+                value={customerSearch}
+                onChange={(e) => {
+                  setCustomerSearch(e.target.value);
+                  setCustomerPage(1);
+                }}
+                className="px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary text-sm w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+            </div>
+          </div>
+          {customersLoading ? (
+            <div className="p-8 text-center text-text-secondary">Loading customers...</div>
+          ) : customers.length === 0 ? (
+            <div className="p-8 text-center text-text-secondary">
+              No customers yet. Customers will appear here after orders are placed. You can sync from orders using the refresh button above.
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border-default bg-surface-elevated">
+                      <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider p-3">Name</th>
+                      <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider p-3">Email</th>
+                      <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider p-3">Phone</th>
+                      <th className="text-right text-xs font-medium text-text-muted uppercase tracking-wider p-3">Orders</th>
+                      <th className="text-right text-xs font-medium text-text-muted uppercase tracking-wider p-3">Total spent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customers.map((c) => (
+                      <tr key={c._id} className="border-b border-border-default hover:bg-surface-elevated/50">
+                        <td className="p-3 text-text-primary">{c.fullName || [c.firstName, c.lastName].filter(Boolean).join(' ') || '—'}</td>
+                        <td className="p-3 text-text-secondary">
+                {c.email && !c.email.includes('@placeholder.local') ? c.email : '—'}
+              </td>
+                        <td className="p-3 text-text-secondary">{c.phone || '—'}</td>
+                        <td className="p-3 text-right text-text-primary">{c.totalOrders ?? 0}</td>
+                        <td className="p-3 text-right text-text-primary">₹{(c.totalSpent ?? 0).toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {customerPagination && customerPagination.pages > 1 && (
+                <div className="p-3 border-t border-border-default flex items-center justify-between">
+                  <p className="text-sm text-text-muted">
+                    Page {customerPagination.page} of {customerPagination.pages} ({customerPagination.total} total)
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCustomerPage((p) => Math.max(1, p - 1))}
+                      disabled={customerPagination.page <= 1}
+                      className="px-3 py-1.5 text-sm bg-surface-elevated border border-border-default rounded-lg disabled:opacity-50 text-text-primary"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomerPage((p) => Math.min(customerPagination.pages, p + 1))}
+                      disabled={customerPagination.page >= customerPagination.pages}
+                      className="px-3 py-1.5 text-sm bg-surface-elevated border border-border-default rounded-lg disabled:opacity-50 text-text-primary"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {stores.length === 0 && (
         <div className="text-center py-12 bg-surface-raised border border-border-default rounded-xl">
           <Store className="w-12 h-12 text-text-muted mx-auto mb-4" />
           <p className="text-text-secondary">No stores connected</p>
           <p className="text-text-muted text-sm mt-2">
-            Connect a Shopify store to start syncing customers
+            Create or connect your store to see customers from orders
           </p>
         </div>
       )}
@@ -470,7 +616,7 @@ export default function CustomersPage() {
                           key={storeId}
                           className="px-3 py-1 bg-violet-500/20 text-violet-400 rounded-lg text-sm"
                         >
-                          {store.storeName}
+                          {store.name}
                         </span>
                       ) : null;
                     })}
