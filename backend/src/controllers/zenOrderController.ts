@@ -7,12 +7,8 @@ import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
 
-// Valid status transitions - flexible for admin operations
-// Admins can move forward freely but cannot revert from terminal states
-const TERMINAL_STATES: ZenOrderStatus[] = ['delivered', 'returned', 'cancelled'];
-
-// Forward progression order
-const STATUS_ORDER: ZenOrderStatus[] = [
+// All valid ZenOrderStatus values (admin can set any of these)
+const ALL_ZEN_ORDER_STATUSES: ZenOrderStatus[] = [
   'pending',
   'sourcing',
   'sourced',
@@ -23,36 +19,16 @@ const STATUS_ORDER: ZenOrderStatus[] = [
   'shipped',
   'out_for_delivery',
   'delivered',
+  'rto_initiated',
+  'rto_delivered',
+  'returned',
+  'cancelled',
+  'failed',
 ];
 
-// RTO progression
-const RTO_PROGRESSION: ZenOrderStatus[] = ['rto_initiated', 'rto_delivered', 'returned'];
-
-// Get all valid transitions for a status (more permissive for admin)
-const getValidTransitions = (currentStatus: ZenOrderStatus): ZenOrderStatus[] => {
-  // Terminal states cannot transition
-  if (TERMINAL_STATES.includes(currentStatus)) {
-    return [];
-  }
-
-  // From failed, can go back to pending to retry
-  if (currentStatus === 'failed') {
-    return ['pending', 'cancelled'];
-  }
-
-  // RTO progression
-  if (RTO_PROGRESSION.includes(currentStatus)) {
-    const currentIndex = RTO_PROGRESSION.indexOf(currentStatus);
-    const forwardStates = RTO_PROGRESSION.slice(currentIndex + 1);
-    return [...forwardStates, 'cancelled', 'failed'];
-  }
-
-  // Main progression - allow jumping forward to any state + rto + cancel/fail
-  const currentIndex = STATUS_ORDER.indexOf(currentStatus);
-  const forwardStates = STATUS_ORDER.slice(currentIndex + 1);
-  
-  return [...forwardStates, 'rto_initiated', 'cancelled', 'failed'];
-};
+function isValidZenOrderStatus(s: string): s is ZenOrderStatus {
+  return ALL_ZEN_ORDER_STATUSES.includes(s as ZenOrderStatus);
+}
 
 /**
  * List all ZEN orders (Admin)
@@ -291,21 +267,22 @@ export const updateZenOrderStatus = async (
       throw createError('Invalid session', 401);
     }
 
+    // Normalize to snake_case in case frontend sends label (e.g. "Ready for Dispatch" -> "ready_for_dispatch")
+    const statusNormalized = String(status).trim().toLowerCase().replace(/\s+/g, '_');
+    if (!isValidZenOrderStatus(statusNormalized)) {
+      throw createError(
+        `Invalid status "${status}". Must be one of: ${ALL_ZEN_ORDER_STATUSES.join(', ')}`,
+        400
+      );
+    }
+    const statusToSet = statusNormalized as ZenOrderStatus;
+
     // Load only fields needed for validation and side effects (avoid full-doc validation on save)
     const zenOrder = await ZenOrder.findById(zenOrderId)
       .select('orderId userId orderName status statusHistory')
       .lean();
     if (!zenOrder) {
       throw createError('ZEN order not found', 404);
-    }
-
-    // Validate transition
-    const validTransitions = getValidTransitions(zenOrder.status as ZenOrderStatus);
-    if (!validTransitions.includes(status as ZenOrderStatus)) {
-      throw createError(
-        `Invalid status transition from ${zenOrder.status} to ${status}. Valid transitions: ${validTransitions.join(', ') || 'none (terminal state)'}`,
-        400
-      );
     }
 
     const adminObjectId = mongoose.Types.ObjectId.isValid(adminId) ? (adminId instanceof mongoose.Types.ObjectId ? adminId : new mongoose.Types.ObjectId(adminId)) : null;
@@ -315,22 +292,22 @@ export const updateZenOrderStatus = async (
 
     // Update via findByIdAndUpdate so we don't re-validate entire document (legacy docs may lack orderName/storeId)
     const statusHistoryEntry = {
-      status: status as ZenOrderStatus,
+      status: statusToSet,
       changedBy: adminObjectId,
       changedAt: new Date(),
       note: note || '',
     };
     const timestampUpdates: Record<string, Date> = { updatedAt: new Date() };
-    if (status === 'sourced') timestampUpdates.sourcedAt = new Date();
-    else if (status === 'packed') timestampUpdates.packedAt = new Date();
-    else if (status === 'dispatched') timestampUpdates.dispatchedAt = new Date();
-    else if (status === 'shipped') timestampUpdates.shippedAt = new Date();
-    else if (status === 'delivered') timestampUpdates.deliveredAt = new Date();
+    if (statusToSet === 'sourced') timestampUpdates.sourcedAt = new Date();
+    else if (statusToSet === 'packed') timestampUpdates.packedAt = new Date();
+    else if (statusToSet === 'dispatched') timestampUpdates.dispatchedAt = new Date();
+    else if (statusToSet === 'shipped') timestampUpdates.shippedAt = new Date();
+    else if (statusToSet === 'delivered') timestampUpdates.deliveredAt = new Date();
 
     const updated = await ZenOrder.findByIdAndUpdate(
       zenOrderId,
       {
-        $set: { status, ...timestampUpdates },
+        $set: { status: statusToSet, ...timestampUpdates },
         $push: { statusHistory: statusHistoryEntry },
       },
       { new: true, runValidators: false }
@@ -363,7 +340,7 @@ export const updateZenOrderStatus = async (
           'failed': 'failed',
         };
         
-        const mappedStatus = (orderStatusMap[status as ZenOrderStatus] || status) as string;
+        const mappedStatus = (orderStatusMap[statusToSet] || statusToSet) as string;
         await Order.findByIdAndUpdate(orderIdRef, { zenStatus: mappedStatus });
       } catch (orderError: any) {
         console.warn(`Failed to update Order zenStatus for ${orderIdRef}:`, orderError.message);
@@ -377,11 +354,11 @@ export const updateZenOrderStatus = async (
       userId,
       type: 'system_update',
       title: 'Order Status Updated',
-      message: `Your order ${orderName} status has been updated to: ${String(status).replace(/_/g, ' ').toUpperCase()}`,
+      message: `Your order ${orderName} status has been updated to: ${String(statusToSet).replace(/_/g, ' ').toUpperCase()}`,
       link: '/dashboard/orders',
       metadata: {
         zenOrderId: zenOrderId,
-        status,
+        status: statusToSet,
       },
     }).catch((err) => console.warn('Notification create failed:', err?.message));
 
@@ -393,7 +370,7 @@ export const updateZenOrderStatus = async (
       details: {
         zenOrderId: zenOrderId,
         previousStatus: prevHistory[prevHistory.length - 2]?.status,
-        newStatus: status,
+        newStatus: statusToSet,
         note: note || '',
       },
       ipAddress: req.ip,
@@ -402,7 +379,7 @@ export const updateZenOrderStatus = async (
 
     res.json({
       success: true,
-      message: `Order status updated to ${status}`,
+      message: `Order status updated to ${statusToSet}`,
       data: {
         id: updated._id,
         status: updated.status,
@@ -756,23 +733,43 @@ export const bulkUpdateZenOrders = async (
         }
 
         switch (action) {
-          case 'update_status':
+          case 'update_status': {
             if (!status) {
               results.failed.push({ id, error: 'Status required for status update' });
               continue;
             }
-            const bulkValidTransitions = getValidTransitions(zenOrder.status);
-            if (!bulkValidTransitions.includes(status)) {
-              results.failed.push({
-                id,
-                error: `Invalid transition from ${zenOrder.status} to ${status}`,
-              });
+            const statusNorm = String(status).trim().toLowerCase().replace(/\s+/g, '_');
+            if (!isValidZenOrderStatus(statusNorm)) {
+              results.failed.push({ id, error: `Invalid status: ${status}` });
               continue;
             }
-            zenOrder.addStatusChange(status, adminId, note || 'Bulk status update');
-            await zenOrder.save();
-            await Order.findByIdAndUpdate(zenOrder.orderId, { zenStatus: status });
+            const statusToSetBulk = statusNorm as ZenOrderStatus;
+            const adminObjId = mongoose.Types.ObjectId.isValid(adminId) ? (adminId instanceof mongoose.Types.ObjectId ? adminId : new mongoose.Types.ObjectId(adminId)) : null;
+            if (!adminObjId) {
+              results.failed.push({ id, error: 'Invalid session' });
+              continue;
+            }
+            const entry = { status: statusToSetBulk, changedBy: adminObjId, changedAt: new Date(), note: note || 'Bulk status update' };
+            const ts: Record<string, Date> = { updatedAt: new Date() };
+            if (statusToSetBulk === 'sourced') ts.sourcedAt = new Date();
+            else if (statusToSetBulk === 'packed') ts.packedAt = new Date();
+            else if (statusToSetBulk === 'dispatched') ts.dispatchedAt = new Date();
+            else if (statusToSetBulk === 'shipped') ts.shippedAt = new Date();
+            else if (statusToSetBulk === 'delivered') ts.deliveredAt = new Date();
+            await ZenOrder.findByIdAndUpdate(id, { $set: { status: statusToSetBulk, ...ts }, $push: { statusHistory: entry } }, { runValidators: false });
+            if (zenOrder.orderId) {
+              try {
+                const orderStatusMap: Partial<Record<ZenOrderStatus, string>> = {
+                  'pending': 'pending', 'sourcing': 'sourcing', 'sourced': 'sourcing', 'packing': 'packing', 'packed': 'packing',
+                  'ready_for_dispatch': 'ready_for_dispatch', 'dispatched': 'dispatched', 'shipped': 'shipped', 'out_for_delivery': 'out_for_delivery',
+                  'delivered': 'delivered', 'rto_initiated': 'rto_initiated', 'rto_delivered': 'rto_delivered', 'returned': 'returned', 'cancelled': 'failed', 'failed': 'failed',
+                };
+                const mapped = (orderStatusMap[statusToSetBulk] || statusToSetBulk) as string;
+                await Order.findByIdAndUpdate(zenOrder.orderId, { zenStatus: mapped });
+              } catch (_) {}
+            }
             break;
+          }
 
           case 'assign_picker':
             if (pickerId) {
