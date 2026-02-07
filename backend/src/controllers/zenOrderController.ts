@@ -291,13 +291,16 @@ export const updateZenOrderStatus = async (
       throw createError('Invalid session', 401);
     }
 
-    const zenOrder = await ZenOrder.findById(zenOrderId);
+    // Load only fields needed for validation and side effects (avoid full-doc validation on save)
+    const zenOrder = await ZenOrder.findById(zenOrderId)
+      .select('orderId userId orderName status statusHistory')
+      .lean();
     if (!zenOrder) {
       throw createError('ZEN order not found', 404);
     }
 
     // Validate transition
-    const validTransitions = getValidTransitions(zenOrder.status);
+    const validTransitions = getValidTransitions(zenOrder.status as ZenOrderStatus);
     if (!validTransitions.includes(status as ZenOrderStatus)) {
       throw createError(
         `Invalid status transition from ${zenOrder.status} to ${status}. Valid transitions: ${validTransitions.join(', ') || 'none (terminal state)'}`,
@@ -305,17 +308,41 @@ export const updateZenOrderStatus = async (
       );
     }
 
-    // Update status (ensure adminId is ObjectId for schema)
     const adminObjectId = mongoose.Types.ObjectId.isValid(adminId) ? (adminId instanceof mongoose.Types.ObjectId ? adminId : new mongoose.Types.ObjectId(adminId)) : null;
     if (!adminObjectId) {
       throw createError('Invalid session', 401);
     }
-    zenOrder.addStatusChange(status as ZenOrderStatus, adminObjectId, note || '');
-    await zenOrder.save();
+
+    // Update via findByIdAndUpdate so we don't re-validate entire document (legacy docs may lack orderName/storeId)
+    const statusHistoryEntry = {
+      status: status as ZenOrderStatus,
+      changedBy: adminObjectId,
+      changedAt: new Date(),
+      note: note || '',
+    };
+    const timestampUpdates: Record<string, Date> = { updatedAt: new Date() };
+    if (status === 'sourced') timestampUpdates.sourcedAt = new Date();
+    else if (status === 'packed') timestampUpdates.packedAt = new Date();
+    else if (status === 'dispatched') timestampUpdates.dispatchedAt = new Date();
+    else if (status === 'shipped') timestampUpdates.shippedAt = new Date();
+    else if (status === 'delivered') timestampUpdates.deliveredAt = new Date();
+
+    const updated = await ZenOrder.findByIdAndUpdate(
+      zenOrderId,
+      {
+        $set: { status, ...timestampUpdates },
+        $push: { statusHistory: statusHistoryEntry },
+      },
+      { new: true, runValidators: false }
+    );
+
+    if (!updated) {
+      throw createError('ZEN order not found', 404);
+    }
 
     // Also update the local Order zenStatus (if orderId exists)
-    // Map ZenOrderStatus to Order.ZenStatus (they have slightly different values)
-    if (zenOrder.orderId) {
+    const orderIdRef = zenOrder.orderId;
+    if (orderIdRef) {
       try {
         // Map ZenOrderStatus to Order ZenStatus
         const orderStatusMap: Partial<Record<ZenOrderStatus, string>> = {
@@ -337,34 +364,35 @@ export const updateZenOrderStatus = async (
         };
         
         const mappedStatus = (orderStatusMap[status as ZenOrderStatus] || status) as string;
-        await Order.findByIdAndUpdate(zenOrder.orderId, { zenStatus: mappedStatus });
+        await Order.findByIdAndUpdate(orderIdRef, { zenStatus: mappedStatus });
       } catch (orderError: any) {
-        // Log but don't fail - zen order update is primary
-        console.warn(`Failed to update Order zenStatus for ${zenOrder.orderId}:`, orderError.message);
+        console.warn(`Failed to update Order zenStatus for ${orderIdRef}:`, orderError.message);
       }
     }
 
-    // Create notification for user (non-blocking)
+    const orderName = (zenOrder as any).orderName || (updated as any).orderName || 'Order';
+    const userId = zenOrder.userId || (updated as any).userId;
+
     createNotification({
-      userId: zenOrder.userId,
+      userId,
       type: 'system_update',
       title: 'Order Status Updated',
-      message: `Your order ${zenOrder.orderName} status has been updated to: ${String(status).replace(/_/g, ' ').toUpperCase()}`,
+      message: `Your order ${orderName} status has been updated to: ${String(status).replace(/_/g, ' ').toUpperCase()}`,
       link: '/dashboard/orders',
       metadata: {
-        zenOrderId: zenOrder._id,
+        zenOrderId: zenOrderId,
         status,
       },
     }).catch((err) => console.warn('Notification create failed:', err?.message));
 
-    // Audit log (non-blocking, do not fail request)
+    const prevHistory = Array.isArray(zenOrder.statusHistory) ? zenOrder.statusHistory : [];
     AuditLog.create({
       userId: adminId,
       action: 'ZEN_ORDER_STATUS_UPDATE',
       success: true,
       details: {
-        zenOrderId: zenOrder._id,
-        previousStatus: zenOrder.statusHistory?.[zenOrder.statusHistory.length - 2]?.status,
+        zenOrderId: zenOrderId,
+        previousStatus: prevHistory[prevHistory.length - 2]?.status,
         newStatus: status,
         note: note || '',
       },
@@ -376,9 +404,9 @@ export const updateZenOrderStatus = async (
       success: true,
       message: `Order status updated to ${status}`,
       data: {
-        id: zenOrder._id,
-        status: zenOrder.status,
-        statusHistory: zenOrder.statusHistory,
+        id: updated._id,
+        status: updated.status,
+        statusHistory: updated.statusHistory,
       },
     });
   } catch (error) {
@@ -407,38 +435,33 @@ export const assignStaff = async (
     const { zenOrderId } = req.params;
     const { pickerId, packerId, qcId, courierPersonId } = req.body;
 
-    const zenOrder = await ZenOrder.findById(zenOrderId);
-    if (!zenOrder) {
+    const update: Record<string, any> = { updatedAt: new Date() };
+    if (pickerId !== undefined) update.assignedPicker = pickerId ? new mongoose.Types.ObjectId(pickerId) : null;
+    if (packerId !== undefined) update.assignedPacker = packerId ? new mongoose.Types.ObjectId(packerId) : null;
+    if (qcId !== undefined) update.assignedQc = qcId ? new mongoose.Types.ObjectId(qcId) : null;
+    if (courierPersonId !== undefined) {
+      update.assignedCourierPerson = courierPersonId ? new mongoose.Types.ObjectId(courierPersonId) : null;
+    }
+
+    const updated = await ZenOrder.findByIdAndUpdate(
+      zenOrderId,
+      { $set: update },
+      { new: true, runValidators: false }
+    ).select('assignedPicker assignedPacker assignedQc assignedCourierPerson');
+
+    if (!updated) {
       throw createError('ZEN order not found', 404);
     }
-
-    // Update assignments
-    if (pickerId !== undefined) {
-      zenOrder.assignedPicker = pickerId ? new mongoose.Types.ObjectId(pickerId) : null;
-    }
-    if (packerId !== undefined) {
-      zenOrder.assignedPacker = packerId ? new mongoose.Types.ObjectId(packerId) : null;
-    }
-    if (qcId !== undefined) {
-      zenOrder.assignedQc = qcId ? new mongoose.Types.ObjectId(qcId) : null;
-    }
-    if (courierPersonId !== undefined) {
-      zenOrder.assignedCourierPerson = courierPersonId
-        ? new mongoose.Types.ObjectId(courierPersonId)
-        : null;
-    }
-
-    await zenOrder.save();
 
     res.json({
       success: true,
       message: 'Staff assignments updated',
       data: {
-        id: zenOrder._id,
-        assignedPicker: zenOrder.assignedPicker,
-        assignedPacker: zenOrder.assignedPacker,
-        assignedQc: zenOrder.assignedQc,
-        assignedCourierPerson: zenOrder.assignedCourierPerson,
+        id: updated._id,
+        assignedPicker: (updated as any).assignedPicker,
+        assignedPacker: (updated as any).assignedPacker,
+        assignedQc: (updated as any).assignedQc,
+        assignedCourierPerson: (updated as any).assignedCourierPerson,
       },
     });
   } catch (error) {
@@ -467,50 +490,51 @@ export const updateTracking = async (
     const { zenOrderId } = req.params;
     const { trackingNumber, trackingUrl, courierProvider, estimatedDeliveryDate } = req.body;
 
-    const zenOrder = await ZenOrder.findById(zenOrderId);
-    if (!zenOrder) {
+    // Build update object (only set provided fields) – use findByIdAndUpdate to avoid full-doc validation
+    const update: Record<string, any> = { updatedAt: new Date() };
+    if (trackingNumber !== undefined) update.trackingNumber = trackingNumber;
+    if (trackingUrl !== undefined) update.trackingUrl = trackingUrl;
+    if (courierProvider !== undefined) update.courierProvider = courierProvider;
+    if (estimatedDeliveryDate !== undefined) {
+      update.estimatedDeliveryDate = estimatedDeliveryDate ? new Date(estimatedDeliveryDate) : null;
+    }
+
+    const updated = await ZenOrder.findByIdAndUpdate(
+      zenOrderId,
+      { $set: update },
+      { new: true, runValidators: false }
+    ).select('orderId userId orderName trackingNumber trackingUrl courierProvider estimatedDeliveryDate');
+
+    if (!updated) {
       throw createError('ZEN order not found', 404);
     }
 
-    // Update tracking info
-    if (trackingNumber !== undefined) zenOrder.trackingNumber = trackingNumber;
-    if (trackingUrl !== undefined) zenOrder.trackingUrl = trackingUrl;
-    if (courierProvider !== undefined) zenOrder.courierProvider = courierProvider;
-    if (estimatedDeliveryDate !== undefined) {
-      zenOrder.estimatedDeliveryDate = estimatedDeliveryDate
-        ? new Date(estimatedDeliveryDate)
-        : null;
-    }
-
-    await zenOrder.save();
-
-    // Also update the local Order (optional; do not fail if Order missing or update fails)
-    if (zenOrder.orderId) {
+    if ((updated as any).orderId) {
       try {
         const orderUpdate: Record<string, string | null> = {};
-        if (zenOrder.trackingNumber != null) orderUpdate.trackingNumber = zenOrder.trackingNumber;
-        if (zenOrder.trackingUrl != null) orderUpdate.trackingUrl = zenOrder.trackingUrl;
-        if (zenOrder.courierProvider != null) orderUpdate.courierProvider = zenOrder.courierProvider;
+        if ((updated as any).trackingNumber != null) orderUpdate.trackingNumber = (updated as any).trackingNumber;
+        if ((updated as any).trackingUrl != null) orderUpdate.trackingUrl = (updated as any).trackingUrl;
+        if ((updated as any).courierProvider != null) orderUpdate.courierProvider = (updated as any).courierProvider;
         if (Object.keys(orderUpdate).length > 0) {
-          await Order.findByIdAndUpdate(zenOrder.orderId, orderUpdate);
+          await Order.findByIdAndUpdate((updated as any).orderId, orderUpdate);
         }
       } catch (orderErr: any) {
         console.warn('Order tracking update failed:', orderErr?.message);
       }
     }
 
-    // Notify user if tracking number added (non-blocking)
     if (trackingNumber) {
+      const orderName = (updated as any).orderName || 'Order';
       createNotification({
-        userId: zenOrder.userId,
+        userId: (updated as any).userId,
         type: 'system_update',
         title: 'Tracking Info Added',
-        message: `Tracking number ${trackingNumber} has been added to your order ${zenOrder.orderName}`,
+        message: `Tracking number ${trackingNumber} has been added to your order ${orderName}`,
         link: '/dashboard/orders',
         metadata: {
-          zenOrderId: zenOrder._id,
+          zenOrderId,
           trackingNumber,
-          courierProvider: zenOrder.courierProvider,
+          courierProvider: (updated as any).courierProvider,
         },
       }).catch((err) => console.warn('Notification create failed:', err?.message));
     }
@@ -519,11 +543,11 @@ export const updateTracking = async (
       success: true,
       message: 'Tracking info updated',
       data: {
-        id: zenOrder._id,
-        trackingNumber: zenOrder.trackingNumber,
-        trackingUrl: zenOrder.trackingUrl,
-        courierProvider: zenOrder.courierProvider,
-        estimatedDeliveryDate: zenOrder.estimatedDeliveryDate,
+        id: updated._id,
+        trackingNumber: (updated as any).trackingNumber,
+        trackingUrl: (updated as any).trackingUrl,
+        courierProvider: (updated as any).courierProvider,
+        estimatedDeliveryDate: (updated as any).estimatedDeliveryDate,
       },
     });
   } catch (error) {
@@ -551,16 +575,9 @@ export const updateRtoAddress = async (
 
     const { zenOrderId } = req.params;
     const body = req.body || {};
-    // Coerce to strings (form data or JSON may send arrays/other types)
     const str = (v: any) => (v == null || v === '') ? '' : String(Array.isArray(v) ? v[0] : v);
 
-    const zenOrder = await ZenOrder.findById(zenOrderId);
-    if (!zenOrder) {
-      throw createError('ZEN order not found', 404);
-    }
-
-    // Update RTO address
-    zenOrder.rtoAddress = {
+    const rtoAddress = {
       name: str(body.name),
       phone: str(body.phone),
       addressLine1: str(body.addressLine1),
@@ -571,14 +588,22 @@ export const updateRtoAddress = async (
       country: str(body.country) || 'India',
     };
 
-    await zenOrder.save();
+    const updated = await ZenOrder.findByIdAndUpdate(
+      zenOrderId,
+      { $set: { rtoAddress, updatedAt: new Date() } },
+      { new: true, runValidators: false }
+    ).select('rtoAddress');
+
+    if (!updated) {
+      throw createError('ZEN order not found', 404);
+    }
 
     res.json({
       success: true,
       message: 'RTO address updated successfully',
       data: {
-        id: zenOrder._id,
-        rtoAddress: zenOrder.rtoAddress,
+        id: updated._id,
+        rtoAddress: (updated as any).rtoAddress ?? rtoAddress,
       },
     });
   } catch (error) {
