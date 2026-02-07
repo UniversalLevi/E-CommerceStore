@@ -277,11 +277,18 @@ export const updateZenOrderStatus = async (
     }
 
     const { zenOrderId } = req.params;
-    const { status, note } = req.body;
-    const adminId = (req.user as any)._id;
+    const rawStatus = req.body?.status;
+    const note = req.body?.note;
+    const adminId = (req.user as any)?._id;
 
-    if (!status) {
+    if (!rawStatus) {
       throw createError('Status is required', 400);
+    }
+    // Normalize status (may be string or array from form data)
+    const status = Array.isArray(rawStatus) ? String(rawStatus[0]) : String(rawStatus);
+
+    if (!adminId) {
+      throw createError('Invalid session', 401);
     }
 
     const zenOrder = await ZenOrder.findById(zenOrderId);
@@ -291,15 +298,19 @@ export const updateZenOrderStatus = async (
 
     // Validate transition
     const validTransitions = getValidTransitions(zenOrder.status);
-    if (!validTransitions.includes(status)) {
+    if (!validTransitions.includes(status as ZenOrderStatus)) {
       throw createError(
         `Invalid status transition from ${zenOrder.status} to ${status}. Valid transitions: ${validTransitions.join(', ') || 'none (terminal state)'}`,
         400
       );
     }
 
-    // Update status
-    zenOrder.addStatusChange(status, adminId, note || '');
+    // Update status (ensure adminId is ObjectId for schema)
+    const adminObjectId = mongoose.Types.ObjectId.isValid(adminId) ? (adminId instanceof mongoose.Types.ObjectId ? adminId : new mongoose.Types.ObjectId(adminId)) : null;
+    if (!adminObjectId) {
+      throw createError('Invalid session', 401);
+    }
+    zenOrder.addStatusChange(status as ZenOrderStatus, adminObjectId, note || '');
     await zenOrder.save();
 
     // Also update the local Order zenStatus (if orderId exists)
@@ -333,31 +344,33 @@ export const updateZenOrderStatus = async (
       }
     }
 
-    // Create notification for user
-    await createNotification({
+    // Create notification for user (non-blocking)
+    createNotification({
       userId: zenOrder.userId,
       type: 'system_update',
       title: 'Order Status Updated',
-      message: `Your order ${zenOrder.orderName} status has been updated to: ${status.replace(/_/g, ' ').toUpperCase()}`,
+      message: `Your order ${zenOrder.orderName} status has been updated to: ${String(status).replace(/_/g, ' ').toUpperCase()}`,
       link: '/dashboard/orders',
       metadata: {
         zenOrderId: zenOrder._id,
         status,
       },
-    });
+    }).catch((err) => console.warn('Notification create failed:', err?.message));
 
-    // Audit log
-    await AuditLog.create({
+    // Audit log (non-blocking, do not fail request)
+    AuditLog.create({
       userId: adminId,
       action: 'ZEN_ORDER_STATUS_UPDATE',
       success: true,
       details: {
         zenOrderId: zenOrder._id,
-        previousStatus: zenOrder.statusHistory[zenOrder.statusHistory.length - 2]?.status,
+        previousStatus: zenOrder.statusHistory?.[zenOrder.statusHistory.length - 2]?.status,
         newStatus: status,
-        note,
+        note: note || '',
       },
-    });
+      ipAddress: req.ip,
+      timestamp: new Date(),
+    }).catch((err) => console.warn('AuditLog create failed:', err?.message));
 
     res.json({
       success: true,
@@ -471,16 +484,24 @@ export const updateTracking = async (
 
     await zenOrder.save();
 
-    // Also update the local Order
-    await Order.findByIdAndUpdate(zenOrder.orderId, {
-      trackingNumber: zenOrder.trackingNumber,
-      trackingUrl: zenOrder.trackingUrl,
-      courierProvider: zenOrder.courierProvider,
-    });
+    // Also update the local Order (optional; do not fail if Order missing or update fails)
+    if (zenOrder.orderId) {
+      try {
+        const orderUpdate: Record<string, string | null> = {};
+        if (zenOrder.trackingNumber != null) orderUpdate.trackingNumber = zenOrder.trackingNumber;
+        if (zenOrder.trackingUrl != null) orderUpdate.trackingUrl = zenOrder.trackingUrl;
+        if (zenOrder.courierProvider != null) orderUpdate.courierProvider = zenOrder.courierProvider;
+        if (Object.keys(orderUpdate).length > 0) {
+          await Order.findByIdAndUpdate(zenOrder.orderId, orderUpdate);
+        }
+      } catch (orderErr: any) {
+        console.warn('Order tracking update failed:', orderErr?.message);
+      }
+    }
 
-    // Notify user if tracking number added
+    // Notify user if tracking number added (non-blocking)
     if (trackingNumber) {
-      await createNotification({
+      createNotification({
         userId: zenOrder.userId,
         type: 'system_update',
         title: 'Tracking Info Added',
@@ -489,9 +510,9 @@ export const updateTracking = async (
         metadata: {
           zenOrderId: zenOrder._id,
           trackingNumber,
-          courierProvider,
+          courierProvider: zenOrder.courierProvider,
         },
-      });
+      }).catch((err) => console.warn('Notification create failed:', err?.message));
     }
 
     res.json({
@@ -529,7 +550,9 @@ export const updateRtoAddress = async (
     }
 
     const { zenOrderId } = req.params;
-    const { name, phone, addressLine1, addressLine2, city, state, pincode, country } = req.body;
+    const body = req.body || {};
+    // Coerce to strings (form data or JSON may send arrays/other types)
+    const str = (v: any) => (v == null || v === '') ? '' : String(Array.isArray(v) ? v[0] : v);
 
     const zenOrder = await ZenOrder.findById(zenOrderId);
     if (!zenOrder) {
@@ -538,14 +561,14 @@ export const updateRtoAddress = async (
 
     // Update RTO address
     zenOrder.rtoAddress = {
-      name: name || '',
-      phone: phone || '',
-      addressLine1: addressLine1 || '',
-      addressLine2: addressLine2 || '',
-      city: city || '',
-      state: state || '',
-      pincode: pincode || '',
-      country: country || 'India',
+      name: str(body.name),
+      phone: str(body.phone),
+      addressLine1: str(body.addressLine1),
+      addressLine2: str(body.addressLine2),
+      city: str(body.city),
+      state: str(body.state),
+      pincode: str(body.pincode),
+      country: str(body.country) || 'India',
     };
 
     await zenOrder.save();
