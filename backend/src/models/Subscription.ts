@@ -14,7 +14,7 @@ export interface ISubscription extends Document {
   razorpayPlanId?: string; // Razorpay plan ID reference
   razorpayPaymentId?: string;
   tokenPaymentId?: string; // Payment ID for ₹20 token charge
-  status: 'active' | 'cancelled' | 'expired' | 'trial' | 'trialing' | 'manually_granted';
+  status: 'active' | 'cancelled' | 'expired' | 'trial' | 'trialing' | 'manually_granted' | 'pending';
   startDate: Date;
   trialEndsAt?: Date; // When trial period ends
   endDate?: Date | null;
@@ -93,7 +93,7 @@ const subscriptionSchema = new Schema<ISubscription>(
     status: {
       type: String,
       required: true,
-      enum: ['active', 'cancelled', 'expired', 'trial', 'trialing', 'manually_granted'],
+      enum: ['active', 'cancelled', 'expired', 'trial', 'trialing', 'manually_granted', 'pending'],
       default: 'active',
       index: true,
     },

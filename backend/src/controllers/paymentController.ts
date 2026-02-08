@@ -153,13 +153,13 @@ export const createSubscription = async (
       },
     });
 
-    // Create subscription record in database (status: active)
+    // Create subscription record in database (status: pending until payment is verified)
     const dbSubscription = await Subscription.create({
       userId: userId,
       planCode: planCode as PlanCode,
       razorpaySubscriptionId: subscription.id,
       razorpayPlanId: plan.razorpayPlanId,
-      status: 'active',
+      status: 'pending',
       startDate: new Date(),
       amountPaid: 0, // Will be updated when charged
       source: 'razorpay',
@@ -312,7 +312,7 @@ export const verifyPayment = async (
       }
       
       // For subscription payments, if order_id is provided in response, use it for signature verification
-      // Otherwise, verify that payment exists and belongs to subscription
+      // Otherwise, verify via Razorpay API that payment is actually captured (never trust client-only data)
       if (razorpay_order_id) {
         // Razorpay may return order_id even for subscription payments (internal order)
         isValidSignature = razorpayService.verifyPaymentSignature(
@@ -321,10 +321,16 @@ export const verifyPayment = async (
           razorpay_signature
         );
       } else {
-        // For subscription payments without order_id, verify payment exists and amount matches
-        // Note: Signature verification might not be possible without order_id
-        // But we can verify payment belongs to subscription and amount is correct
-        isValidSignature = true; // We'll verify via payment details instead
+        // Subscription payments without order_id: require payment to be captured in Razorpay
+        // Do NOT set isValidSignature = true without verification - that allowed free access
+        const isCaptured = paymentDetails.status === 'captured' || (paymentDetails as any).captured === true;
+        if (!isCaptured) {
+          throw createError(
+            `Payment not captured. Current status: ${(paymentDetails as any).status || 'unknown'}. Only captured payments can activate a subscription.`,
+            400
+          );
+        }
+        isValidSignature = true; // Verified via Razorpay API: payment exists, belongs to subscription, and is captured
       }
       
       // Find payment record by subscription_id from metadata
