@@ -34,7 +34,7 @@ export default function Cart({ storeSlug, currency }: CartProps) {
           Your cart is empty
         </p>
         <a
-          href={`https://${storeSlug}.eazydropshipping.com`}
+          href={`https://${storeSlug}.eazyds.com`}
           className="inline-block px-6 py-3 rounded-lg font-medium text-white"
           style={{ backgroundColor: colors.accent }}
         >
@@ -118,7 +118,7 @@ export default function Cart({ storeSlug, currency }: CartProps) {
           </span>
         </div>
         <a
-          href={`https://${storeSlug}.eazydropshipping.com/checkout`}
+          href={`https://${storeSlug}.eazyds.com/checkout`}
           className="block w-full px-6 py-4 rounded-lg font-medium text-white transition-all hover:opacity-90 text-center"
           style={{ backgroundColor: colors.accent }}
         >

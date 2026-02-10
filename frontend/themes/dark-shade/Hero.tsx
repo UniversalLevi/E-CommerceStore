@@ -88,7 +88,7 @@ export default function Hero({
           )}
           {ctaLink && (
             <a
-              href={ctaLink || `https://${storeSlug}.eazydropshipping.com?category=all`}
+              href={ctaLink || `https://${storeSlug}.eazyds.com?category=all`}
               className="inline-block px-10 py-5 rounded-xl font-semibold text-white transition-all hover:scale-110 shadow-2xl relative overflow-hidden group"
               style={{ 
                 backgroundColor: '#64748b',

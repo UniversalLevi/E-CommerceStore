@@ -138,7 +138,7 @@ export default function EditStorePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
-              EAZY DROPSHIPPING
+              EazyDS
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/dashboard/stores" className="text-text-secondary hover:text-text-primary">

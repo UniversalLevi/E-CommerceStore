@@ -375,7 +375,7 @@ export default function WalletPage() {
           key: keyId,
           amount: orderAmount,
           currency,
-          name: 'EAZY DROPSHIPPING',
+          name: 'EazyDS',
           description: 'Wallet Top-up',
           order_id: orderId,
           theme: { color: '#22c55e' },

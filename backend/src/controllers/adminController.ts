@@ -1111,11 +1111,11 @@ export const replyToContact = async (
             <p style="color: #808080; margin-top: 30px; border-top: 1px solid #404040; padding-top: 20px;">
               Best regards,<br>
               <strong style="color: #e0e0e0;">Support Team</strong><br>
-              EAZY DROPSHIPPING
+              EazyDS
             </p>
           </div>
         `,
-        text: `Hello ${contact.name},\n\nThank you for contacting us. We've received your message and here is our response:\n\n--- Your Original Message ---\n${originalMessage}\n\n--- Our Response ---\n${reply}\n\nIf you have any further questions, please don't hesitate to contact us again.\n\nBest regards,\nSupport Team\nEAZY DROPSHIPPING`,
+        text: `Hello ${contact.name},\n\nThank you for contacting us. We've received your message and here is our response:\n\n--- Your Original Message ---\n${originalMessage}\n\n--- Our Response ---\n${reply}\n\nIf you have any further questions, please don't hesitate to contact us again.\n\nBest regards,\nSupport Team\nEazyDS`,
       });
     } catch (emailError) {
       // Log but don't fail if email fails

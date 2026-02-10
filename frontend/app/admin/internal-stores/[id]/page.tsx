@@ -146,7 +146,7 @@ export default function AdminInternalStoreDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-text-primary mb-2">{store.name}</h1>
-              <p className="text-text-secondary">{store.slug}.eazydropshipping.com</p>
+              <p className="text-text-secondary">{store.slug}.eazyds.com</p>
             </div>
             <div className="flex items-center gap-3">
               {getStatusBadge(store.status)}
@@ -259,7 +259,7 @@ export default function AdminInternalStoreDetailPage() {
             <div>
               <p className="text-sm text-text-secondary mb-1">Store URL</p>
               <a
-                href={`https://${store.slug}.eazydropshipping.com`}
+                href={`https://${store.slug}.eazyds.com`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary-500 hover:underline"

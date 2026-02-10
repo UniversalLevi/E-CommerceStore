@@ -30,7 +30,7 @@ export default function ProductCard({ product, storeSlug, currency }: ProductCar
 
   return (
     <a
-      href={`https://${storeSlug}.eazydropshipping.com/products/${product._id}`}
+      href={`https://${storeSlug}.eazyds.com/products/${product._id}`}
       className="group block h-full"
     >
       <div

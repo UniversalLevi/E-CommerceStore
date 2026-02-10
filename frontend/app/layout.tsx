@@ -14,11 +14,11 @@ const playfairDisplay = Playfair_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  title: 'EAZY DROPSHIPPING',
-  description: 'Build Shopify stores in minutes',
+  title: 'EazyDS',
+  description: 'Build your store in minutes',
   openGraph: {
-    title: 'EAZY DROPSHIPPING',
-    description: 'Build Shopify stores in minutes',
+    title: 'EazyDS',
+    description: 'Build your store in minutes',
   },
 }
 

@@ -150,7 +150,7 @@ export default function ServicesPage() {
           amount: amount,
           currency: 'INR',
           order_id: razorpayOrderId,
-          name: 'EAZY DROPSHIPPING',
+          name: 'EazyDS',
           description: `Ads Management - ${adsPlans.find(p => p.type === planType)?.name}`,
         },
         async (response: any) => {
@@ -218,7 +218,7 @@ export default function ServicesPage() {
           amount: amount,
           currency: 'INR',
           order_id: razorpayOrderId,
-          name: 'EAZY DROPSHIPPING',
+          name: 'EazyDS',
           description: `Connect with Experts - ${plan.name}`,
         },
         async (response: any) => {

@@ -28,7 +28,7 @@ export default function Home({ storeSlug, storeName, products, currency }: HomeP
         heading={`Welcome to ${storeName}`}
         subheading="Discover our premium collection of products"
         ctaText="Shop Now"
-        ctaLink={`https://${storeSlug}.eazydropshipping.com?category=all`}
+        ctaLink={`https://${storeSlug}.eazyds.com?category=all`}
       />
 
       <section className="py-16" style={{ backgroundColor: colors.background }}>

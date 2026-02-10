@@ -75,7 +75,7 @@ function TopupModal({ isOpen, onClose, onSuccess }: TopupModalProps) {
           key: keyId,
           amount: orderAmount,
           currency,
-          name: 'EAZY DROPSHIPPING',
+          name: 'EazyDS',
           description: 'Wallet Top-up',
           order_id: orderId,
           theme: {

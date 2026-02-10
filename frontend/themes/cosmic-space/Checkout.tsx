@@ -40,7 +40,7 @@ export default function Checkout({ storeSlug, currency }: CheckoutProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     notify.success('Order placed successfully!');
-    window.location.href = `https://${storeSlug}.eazydropshipping.com`;
+    window.location.href = `https://${storeSlug}.eazyds.com`;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

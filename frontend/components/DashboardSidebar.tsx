@@ -97,7 +97,7 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
               <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse-glow"></div>
               <div className="absolute inset-0 w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 blur-sm opacity-50"></div>
             </div>
-            EAZY DROPSHIPPING
+            EazyDS
           </Link>
           {/* Close button for mobile */}
           <button

@@ -66,7 +66,7 @@ export default function BillingPage() {
         {
           key: keyId,
           currency: currency || 'INR',
-          name: 'EAZY DROPSHIPPING',
+          name: 'EazyDS',
           description: `Purchase ${planName}`,
           subscription_id: subscriptionId,
           theme: {

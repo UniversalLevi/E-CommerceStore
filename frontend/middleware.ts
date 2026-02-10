@@ -16,10 +16,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if this is a subdomain request (e.g., {store-slug}.eazydropshipping.com)
+  // Check if this is a subdomain request (e.g., {store-slug}.eazyds.com)
   // In development, you might use localhost:3000 with a subdomain setup
-  // In production, this would be {store-slug}.eazydropshipping.com
-  const subdomainMatch = hostname.match(/^([^.]+)\.(eazydropshipping\.com|localhost)/);
+  // In production, this would be {store-slug}.eazyds.com
+  const subdomainMatch = hostname.match(/^([^.]+)\.(eazyds\.com|localhost)/);
   
   if (subdomainMatch && subdomainMatch[1] !== 'www' && subdomainMatch[1] !== 'api') {
     const storeSlug = subdomainMatch[1];
@@ -33,7 +33,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Path-based fallback: /storefront/[slug] works without subdomain
-  // This allows access via https://eazydropshipping.com/storefront/teststore
+  // This allows access via https://eazyds.com/storefront/teststore
   // when DNS isn't configured yet
   if (url.pathname.startsWith('/storefront/')) {
     return NextResponse.next();

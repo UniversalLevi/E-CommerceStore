@@ -1,4 +1,4 @@
-# Backend - EAZY DROPSHIPPING
+# Backend - EazyDS
 
 Express.js API server with TypeScript, MongoDB, and internal store management.
 
@@ -48,7 +48,7 @@ Create a `.env` file with the following variables:
 ```env
 PORT=5000
 NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/eazy-dropshipping
+MONGODB_URI=mongodb://localhost:27017/eazyds
 JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
 JWT_EXPIRES_IN=1d
 CORS_ORIGIN=http://localhost:3000
@@ -67,7 +67,7 @@ SMTP_SECURE=true
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=
-SMTP_FROM_NAME=EAZY DROPSHIPPING
+SMTP_FROM_NAME=EazyDS
 SMTP_IGNORE_TLS=false
 CONTACT_EMAIL=
 

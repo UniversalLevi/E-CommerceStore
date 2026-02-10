@@ -168,7 +168,7 @@ export default function StoreSelectionModal({
                                 )}
                               </div>
                               <p className="text-sm text-text-secondary mt-1">
-                                {store.slug}.eazydropshipping.com
+                                {store.slug}.eazyds.com
                               </p>
                             </div>
                           </label>

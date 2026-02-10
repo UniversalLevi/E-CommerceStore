@@ -678,7 +678,7 @@ export default function AdminOrdersPage() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="font-medium text-text-primary">{order.storeName}</div>
-                              <div className="text-xs text-text-muted">{order.storeSlug ? `${order.storeSlug}.eazydropshipping.com` : 'N/A'}</div>
+                              <div className="text-xs text-text-muted">{order.storeSlug ? `${order.storeSlug}.eazyds.com` : 'N/A'}</div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="font-medium text-text-primary">{order.customer?.fullName || 'Guest'}</div>
@@ -797,7 +797,7 @@ export default function AdminOrdersPage() {
                               </div>
                               <div>
                                 <div className="font-semibold text-text-primary">{store.storeName}</div>
-                                <div className="text-sm text-text-muted">{store.storeSlug ? `${store.storeSlug}.eazydropshipping.com` : 'N/A'}</div>
+                                <div className="text-sm text-text-muted">{store.storeSlug ? `${store.storeSlug}.eazyds.com` : 'N/A'}</div>
                                 <div className="text-xs text-text-muted">Owner: {store.owner?.email || 'N/A'}</div>
                               </div>
                             </div>

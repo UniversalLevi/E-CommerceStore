@@ -121,7 +121,7 @@ export default function AdminStoresPage() {
           <div className="flex justify-between items-center">
             <div>
               <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
-                EAZY DROPSHIPPING
+                EazyDS
               </Link>
               <p className="text-sm text-text-secondary mt-1">Internal Stores</p>
             </div>
@@ -242,7 +242,7 @@ export default function AdminStoresPage() {
                             <div className="font-medium text-text-primary">
                               {store.name}
                             </div>
-                            <div className="text-sm text-text-muted">{store.slug}.eazydropshipping.com</div>
+                            <div className="text-sm text-text-muted">{store.slug}.eazyds.com</div>
                           </div>
                         </td>
                         <td className="px-6 py-4">

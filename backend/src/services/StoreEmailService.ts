@@ -249,7 +249,7 @@ export async function sendNewOrderNotificationEmail(
         <p style="margin-top: 30px;">Please process this order as soon as possible.</p>
       </div>
       <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} EAZY DROPSHIPPING. All rights reserved.</p>
+        <p>© ${new Date().getFullYear()} EazyDS. All rights reserved.</p>
       </div>
     </body>
     </html>

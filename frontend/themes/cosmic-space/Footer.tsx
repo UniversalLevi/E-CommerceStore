@@ -44,7 +44,7 @@ export default function Footer({ storeSlug, storeName }: FooterProps) {
             <ul className="space-y-2">
               <li>
                 <a
-                  href={`https://${storeSlug}.eazydropshipping.com`}
+                  href={`https://${storeSlug}.eazyds.com`}
                   className="text-sm hover:opacity-100 transition-all duration-300 hover:translate-x-1 relative z-10"
                   style={{ color: '#e0e7ff', opacity: 0.8 }}
                 >
@@ -53,7 +53,7 @@ export default function Footer({ storeSlug, storeName }: FooterProps) {
               </li>
               <li>
                 <a
-                  href={`https://${storeSlug}.eazydropshipping.com?category=all`}
+                  href={`https://${storeSlug}.eazyds.com?category=all`}
                   className="text-sm hover:opacity-100 transition-all duration-300 hover:translate-x-1 relative z-10"
                   style={{ color: '#e0e7ff', opacity: 0.8 }}
                 >
@@ -73,7 +73,7 @@ export default function Footer({ storeSlug, storeName }: FooterProps) {
             <ul className="space-y-2">
               <li>
                 <a
-                  href={`https://${storeSlug}.eazydropshipping.com/contact`}
+                  href={`https://${storeSlug}.eazyds.com/contact`}
                   className="text-sm hover:opacity-100 transition-all duration-300 hover:translate-x-1 relative z-10"
                   style={{ color: '#e0e7ff', opacity: 0.8 }}
                 >
@@ -82,7 +82,7 @@ export default function Footer({ storeSlug, storeName }: FooterProps) {
               </li>
               <li>
                 <a
-                  href={`https://${storeSlug}.eazydropshipping.com/about`}
+                  href={`https://${storeSlug}.eazyds.com/about`}
                   className="text-sm hover:opacity-100 transition-all duration-300 hover:translate-x-1 relative z-10"
                   style={{ color: '#e0e7ff', opacity: 0.8 }}
                 >

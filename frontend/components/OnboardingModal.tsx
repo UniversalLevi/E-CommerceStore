@@ -163,7 +163,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
                     </Dialog.Title>
                     <div className="mt-2">
                       <p className="text-text-secondary mb-6">
-                        Welcome to EAZY DROPSHIPPING! Let's get you started by personalizing
+                        Welcome to EazyDS! Let's get you started by personalizing
                         your experience and creating your first store.
                       </p>
                       <div className="bg-surface-hover border border-border-default rounded-lg p-4">

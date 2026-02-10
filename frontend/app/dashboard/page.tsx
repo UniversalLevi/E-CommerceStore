@@ -186,7 +186,7 @@ export default function DashboardPage() {
                           )}
                         </div>
                         <p className="text-sm text-text-secondary mt-1">
-                          {process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://'}{internalStore.slug}.{process.env.NEXT_PUBLIC_STOREFRONT_DOMAIN || 'eazydropshipping.com'}
+                          {process.env.NEXT_PUBLIC_STOREFRONT_URL || 'https://'}{internalStore.slug}.{process.env.NEXT_PUBLIC_STOREFRONT_DOMAIN || 'eazyds.com'}
                         </p>
                       </div>
                       <Link

@@ -245,7 +245,7 @@ export default function StoreSettingsPage() {
                   Visit Store (Path)
                 </a>
                 <a
-                  href={`https://${store.slug}.eazydropshipping.com`}
+                  href={`https://${store.slug}.eazyds.com`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 px-4 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary hover:bg-surface-hover transition-colors"

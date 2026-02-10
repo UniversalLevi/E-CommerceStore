@@ -1,7 +1,7 @@
 {
-  "name": "eazy-dropshipping-backend",
+  "name": "eazyds-backend",
   "version": "1.0.0",
-  "description": "Backend API for EAZY DROPSHIPPING",
+  "description": "Backend API for EazyDS",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",

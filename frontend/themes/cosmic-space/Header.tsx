@@ -28,7 +28,7 @@ export default function Header({ storeSlug, storeName, onCartClick }: HeaderProp
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `https://${storeSlug}.eazydropshipping.com?search=${encodeURIComponent(searchQuery)}`;
+      window.location.href = `https://${storeSlug}.eazyds.com?search=${encodeURIComponent(searchQuery)}`;
     }
   };
 
@@ -44,7 +44,7 @@ export default function Header({ storeSlug, storeName, onCartClick }: HeaderProp
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link
-            href={`https://${storeSlug}.eazydropshipping.com`}
+            href={`https://${storeSlug}.eazyds.com`}
             className="text-2xl font-bold tracking-tight"
             style={{ color: colors.primary }}
           >

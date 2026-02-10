@@ -51,7 +51,7 @@ export default function AdsLayout({
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Link href="/dashboard" className="text-xl font-bold text-text-primary hover:text-text-secondary transition-colors">
-                EAZY DROPSHIPPING
+                EazyDS
               </Link>
               <span className="mx-4 text-text-secondary">/</span>
               <span className="text-text-primary font-medium">Ad Builder</span>

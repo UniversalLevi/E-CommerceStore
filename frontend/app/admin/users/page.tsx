@@ -274,7 +274,7 @@ export default function AdminUsersPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <Link href="/dashboard" className="text-2xl font-bold text-primary-500">
-              EAZY DROPSHIPPING
+              EazyDS
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/admin/dashboard" className="text-text-secondary hover:text-primary-500">
@@ -749,7 +749,7 @@ export default function AdminUsersPage() {
                                     {store.status}
                                   </span>
                                 </div>
-                                <p className="text-sm text-text-muted">{store.slug}.eazydropshipping.com</p>
+                                <p className="text-sm text-text-muted">{store.slug}.eazyds.com</p>
                                 <p className="text-xs text-text-muted mt-1">
                                   Created: {formatDate(store.createdAt)}
                                 </p>

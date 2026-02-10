@@ -112,7 +112,7 @@ export default function AffiliateDashboardPage() {
       if (navigator.share) {
         try {
           await navigator.share({
-            title: 'Join EAZY DROPSHIPPING',
+            title: 'Join EazyDS',
             text: 'Start your dropshipping journey with me!',
             url: link,
           });

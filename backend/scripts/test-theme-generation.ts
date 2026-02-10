@@ -9,7 +9,7 @@ dotenv.config({ path: '.env' });
 async function testThemeGeneration() {
   try {
     // Connect to MongoDB
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/eazy-dropshipping';
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/eazyds';
     await mongoose.connect(mongoUri);
     console.log('✓ Connected to MongoDB');
 

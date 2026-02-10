@@ -107,10 +107,10 @@ export default function StoreDashboardLayout({
                 <h1 className="text-2xl font-bold text-text-primary">{store.name}</h1>
                 <div className="flex items-center gap-2 mt-1">
                   <p className="text-sm text-text-secondary">
-                    {store.slug}.eazydropshipping.com
+                    {store.slug}.eazyds.com
                   </p>
                   <a
-                    href={`https://${store.slug}.eazydropshipping.com`}
+                    href={`https://${store.slug}.eazyds.com`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-purple-400 hover:text-purple-300 underline"

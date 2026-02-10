@@ -76,7 +76,7 @@ export default function ProductDetail({ product, storeSlug, currency }: ProductD
       quantity,
     };
     addItem(cartItem);
-    window.location.href = `https://${storeSlug}.eazydropshipping.com/checkout`;
+    window.location.href = `https://${storeSlug}.eazyds.com/checkout`;
   };
 
   return (

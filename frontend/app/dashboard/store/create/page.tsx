@@ -97,7 +97,7 @@ export default function CreateStorePage() {
               placeholder="my-awesome-store"
             />
             <p className="mt-1 text-sm text-text-secondary">
-              Your store will be accessible at: {formData.slug ? `${formData.slug}.eazydropshipping.com` : 'your-slug.eazydropshipping.com'}
+              Your store will be accessible at: {formData.slug ? `${formData.slug}.eazyds.com` : 'your-slug.eazyds.com'}
             </p>
           </div>
 

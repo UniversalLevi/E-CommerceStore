@@ -119,7 +119,7 @@ export async function openRazorpayCheckout(
     const razorpayOptions: any = {
       key: options.key,
       currency: options.currency || 'INR',
-      name: options.name || 'EAZY DROPSHIPPING',
+      name: options.name || 'EazyDS',
       description: options.description || 'Subscription payment',
       handler: (response: RazorpayResponse) => {
         onSuccess(response);

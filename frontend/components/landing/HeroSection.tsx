@@ -178,7 +178,7 @@ export default function HeroSection({ onGetStarted }: HeroSectionProps) {
                   <Sparkles className="w-4 h-4 text-purple-400" />
                 </motion.div>
                 <span className="text-sm text-text-secondary">
-                  #1 Dropshipping Platform
+                  #1 EazyDS Platform
                 </span>
                 <span className="px-2 py-0.5 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full text-xs font-bold">
                   NEW

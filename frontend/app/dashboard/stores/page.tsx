@@ -156,7 +156,7 @@ export default function MyStoresPage() {
                             {internalStore.name}
                           </h3>
                           <p className="text-sm text-text-secondary mt-1">
-                            {internalStore.slug}.eazydropshipping.com
+                            {internalStore.slug}.eazyds.com
                           </p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -195,7 +195,7 @@ export default function MyStoresPage() {
                         Manage Store
                       </Link>
                       <a
-                        href={`https://${internalStore.slug}.eazydropshipping.com`}
+                        href={`https://${internalStore.slug}.eazyds.com`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 bg-surface-hover hover:bg-surface-elevated text-text-primary rounded-lg text-sm font-medium text-center transition-colors flex items-center justify-center gap-1"

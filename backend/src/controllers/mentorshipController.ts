@@ -254,7 +254,7 @@ export const sendMentorshipReply = async (
           <p>Best regards,<br>Mentorship Team</p>
         </div>
         <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
-          <p>© ${new Date().getFullYear()} EAZY DROPSHIPPING. All rights reserved.</p>
+          <p>© ${new Date().getFullYear()} EazyDS. All rights reserved.</p>
         </div>
       </body>
       </html>

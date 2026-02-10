@@ -75,7 +75,7 @@ export default function CreateStorePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <Link href="/dashboard" className="text-2xl font-bold text-[#1AC8ED]">
-              EAZY DROPSHIPPING
+              EazyDS
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/dashboard/stores" className="text-gray-300 hover:text-white">
@@ -135,7 +135,7 @@ export default function CreateStorePage() {
                   placeholder="my-store"
                   className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-[#1AC8ED] focus:border-[#1AC8ED] placeholder-gray-500"
                 />
-                <span className="text-gray-400 text-sm">.eazydropshipping.com</span>
+                <span className="text-gray-400 text-sm">.eazyds.com</span>
               </div>
               <p className="mt-1 text-sm text-gray-400">
                 Your store's unique URL identifier (lowercase letters, numbers, and hyphens only)

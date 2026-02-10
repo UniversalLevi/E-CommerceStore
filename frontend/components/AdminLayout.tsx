@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <Link href="/dashboard" className="text-xl md:text-2xl font-bold text-yellow-500 hover:text-yellow-400 transition-colors">
-              EAZY DROPSHIPPING
+              EazyDS
             </Link>
             <div className="flex flex-wrap items-center gap-2 md:gap-4">
               {navItems.map((item) => (

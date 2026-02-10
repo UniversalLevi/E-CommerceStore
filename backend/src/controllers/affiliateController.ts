@@ -113,7 +113,7 @@ export const getMyAffiliate = async (
     }
 
     // Get referral link
-    const baseUrl = process.env.FRONTEND_URL || 'https://eazydropshipping.com';
+    const baseUrl = process.env.FRONTEND_URL || 'https://eazyds.com';
     const referralLink = `${baseUrl}/register?ref=${affiliate.referralCode}`;
 
     res.json({

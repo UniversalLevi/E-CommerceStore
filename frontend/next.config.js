@@ -16,7 +16,7 @@ const nextConfig = {
       bodySizeLimit: '2mb',
       allowedOrigins: process.env.NEXT_PUBLIC_API_URL 
         ? [new URL(process.env.NEXT_PUBLIC_API_URL).origin]
-        : ['https://eazydropshipping.com', 'http://localhost:3000'],
+        : ['https://eazyds.com', 'http://localhost:3000'],
     },
   },
   // Ensure proper headers for production

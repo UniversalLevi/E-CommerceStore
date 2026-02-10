@@ -72,7 +72,7 @@ export default function Footer() {
                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 animate-pulse-glow" />
                 <div className="absolute inset-0 w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 blur-sm opacity-50" />
               </div>
-              EAZY DROPSHIPPING
+              EazyDS
             </Link>
             
             <p className="text-text-secondary text-sm mb-6 max-w-sm leading-relaxed">
@@ -210,7 +210,7 @@ export default function Footer() {
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-text-secondary text-sm">
-              © {currentYear} EAZY DROPSHIPPING. All rights reserved.
+              © {currentYear} EazyDS. All rights reserved.
             </p>
             
             <p className="text-text-secondary text-sm flex items-center gap-2">
