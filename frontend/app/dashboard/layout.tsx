@@ -44,11 +44,43 @@ export default function DashboardLayout({
     return null;
   }
 
+  const isEazyStoresTab =
+    pathname === '/dashboard/stores' || (pathname?.startsWith('/dashboard/store') ?? false);
+
   return (
     <div className="min-h-screen bg-surface-base flex">
       <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <DashboardTopbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        {/* Top-level tabs: EazyDS (platform) vs Eazy Stores */}
+        <div className="sticky top-16 z-30 shrink-0 border-b border-white/10 bg-black/30 backdrop-blur-sm">
+          <nav className="flex gap-1 px-4 md:px-6 py-2" aria-label="Dashboard sections">
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard')}
+              aria-current={!isEazyStoresTab ? 'page' : undefined}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                !isEazyStoresTab
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25'
+                  : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'
+              }`}
+            >
+              EazyDS
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/stores')}
+              aria-current={isEazyStoresTab ? 'page' : undefined}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                isEazyStoresTab
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25'
+                  : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'
+              }`}
+            >
+              Eazy Stores
+            </button>
+          </nav>
+        </div>
         <main className="flex-1 overflow-y-auto bg-surface-base p-4 md:p-6">
           {children}
         </main>
