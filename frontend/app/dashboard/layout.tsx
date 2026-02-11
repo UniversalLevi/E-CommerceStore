@@ -53,13 +53,15 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <DashboardTopbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         {/* Top-level tabs: EazyDS (platform) vs Eazy Stores */}
-        <div className="sticky top-16 z-30 shrink-0 border-b border-white/10 bg-black/30 backdrop-blur-sm">
-          <nav className="flex gap-1 px-4 md:px-6 py-2" aria-label="Dashboard sections">
+        <div className="sticky top-16 z-30 shrink-0 border-b border-white/10 bg-black/30 backdrop-blur-sm overflow-x-auto">
+          <nav className="flex gap-1 px-4 md:px-6 py-2 min-w-0" aria-label="Dashboard sections" role="tablist">
             <button
               type="button"
+              role="tab"
               onClick={() => router.push('/dashboard')}
               aria-current={!isEazyStoresTab ? 'page' : undefined}
-              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              aria-selected={!isEazyStoresTab}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all shrink-0 ${
                 !isEazyStoresTab
                   ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25'
                   : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'
@@ -69,9 +71,11 @@ export default function DashboardLayout({
             </button>
             <button
               type="button"
+              role="tab"
               onClick={() => router.push('/dashboard/stores')}
               aria-current={isEazyStoresTab ? 'page' : undefined}
-              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              aria-selected={isEazyStoresTab}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all shrink-0 ${
                 isEazyStoresTab
                   ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25'
                   : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'
