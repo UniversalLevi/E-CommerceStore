@@ -516,7 +516,7 @@ export default function ProductDetailPage() {
                         >
                           <span className="flex items-center justify-center gap-2">
                             <IconBadge icon={Store} label="Import to store" size="sm" variant="neutral" className="bg-black/10 border-white/30" />
-                            Import to My Store Dashboard
+                            Import to Eazy Stores
                           </span>
                         </button>
                       )}
@@ -557,7 +557,7 @@ export default function ProductDetailPage() {
                       'Product added to your store',
                       'Professional descriptions & images',
                       'Ready to start selling immediately',
-                      'Full control in store dashboard',
+                      'Full control in Eazy Stores',
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2">
                         <span className="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>

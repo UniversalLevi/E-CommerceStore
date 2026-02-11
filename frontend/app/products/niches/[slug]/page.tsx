@@ -328,7 +328,7 @@ export default function NicheProductsPage() {
                           <button
                             onClick={(e) => handleImportClick(product, e)}
                             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-lg flex items-center gap-2"
-                            title="Import to Store Dashboard"
+                            title="Import to Eazy Stores"
                           >
                             <Store className="h-4 w-4" />
                             Import

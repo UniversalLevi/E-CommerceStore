@@ -22,6 +22,7 @@ import {
   Video,
   Palette,
   Share2,
+  Plus,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -36,10 +37,8 @@ interface DashboardSidebarProps {
   onClose?: () => void;
 }
 
-const navItems: NavItem[] = [
+const platformNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/stores', label: 'My Stores', icon: Store },
-  { href: '/dashboard/store', label: 'Store Dashboard', icon: Store },
   { href: '/dashboard/templates', label: 'Templates', icon: Palette },
   { href: '/dashboard/customers', label: 'Customers', icon: Mail },
   { href: '/dashboard/orders', label: 'Orders', icon: ShoppingCart },
@@ -58,9 +57,20 @@ const navItems: NavItem[] = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
+const eazyStoresNavItems: NavItem[] = [
+  { href: '/dashboard/stores', label: 'My Stores', icon: Store },
+  { href: '/dashboard/store/create', label: 'Create Store', icon: Plus },
+];
+
+function isEazyStoresTab(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname === '/dashboard/stores' || pathname.startsWith('/dashboard/store');
+}
+
 export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const navItems = isEazyStoresTab(pathname) ? eazyStoresNavItems : platformNavItems;
 
   return (
     <>
@@ -109,21 +119,16 @@ export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSi
           </button>
         </div>
 
-      {/* Navigation - Scrollable */}
+      {/* Navigation - Scrollable (platform vs Eazy Stores items by tab) */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-1 pb-24">
         {navItems.map((item) => {
-          // Check if this route matches
           const routeMatches = pathname === item.href || pathname.startsWith(item.href + '/');
-          
-          // Check if there's a more specific route that also matches
           const hasMoreSpecificMatch = navItems.some(
             (otherItem) =>
               otherItem.href !== item.href &&
               otherItem.href.length > item.href.length &&
               (pathname === otherItem.href || pathname.startsWith(otherItem.href + '/'))
           );
-          
-          // Only active if this route matches AND there's no more specific match
           const isActive = routeMatches && !hasMoreSpecificMatch;
           
           return (
