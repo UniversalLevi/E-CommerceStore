@@ -9,7 +9,7 @@ export interface ISubscriptionHistory {
 
 export interface ISubscription extends Document {
   userId: mongoose.Types.ObjectId;
-  planCode: 'starter_30' | 'growth_90' | 'lifetime';
+  planCode: 'starter_30' | 'growth_90' | 'lifetime' | 'stores_basic_free' | 'stores_grow' | 'stores_advanced';
   razorpaySubscriptionId?: string;
   razorpayPlanId?: string; // Razorpay plan ID reference
   razorpayPaymentId?: string;
@@ -72,7 +72,7 @@ const subscriptionSchema = new Schema<ISubscription>(
     planCode: {
       type: String,
       required: true,
-      enum: ['starter_30', 'growth_90', 'lifetime'],
+      enum: ['starter_30', 'growth_90', 'lifetime', 'stores_basic_free', 'stores_grow', 'stores_advanced'],
     },
     razorpaySubscriptionId: {
       type: String,
@@ -147,6 +147,11 @@ subscriptionSchema.index({ userId: 1, status: 1 });
 subscriptionSchema.index({ status: 1, createdAt: -1 });
 subscriptionSchema.index({ planCode: 1 });
 subscriptionSchema.index({ createdAt: -1 });
+
+// Helper function to check if subscription is for stores
+export function isStoreSubscription(subscription: ISubscription): boolean {
+  return subscription.planCode.startsWith('stores_');
+}
 
 export const Subscription = mongoose.model<ISubscription>('Subscription', subscriptionSchema);
 

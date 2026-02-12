@@ -105,7 +105,7 @@ export interface PaginatedResponse<T> {
 }
 
 // Subscription types
-export type PlanCode = 'starter_30' | 'growth_90' | 'lifetime';
+export type PlanCode = 'starter_30' | 'growth_90' | 'lifetime' | 'stores_basic_free' | 'stores_grow' | 'stores_advanced';
 export type SubscriptionStatus = 'active' | 'expired' | 'none' | 'trialing';
 
 export interface Plan {

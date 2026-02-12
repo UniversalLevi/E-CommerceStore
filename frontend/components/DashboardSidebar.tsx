@@ -23,6 +23,7 @@ import {
   Palette,
   Share2,
   Plus,
+  Info,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -40,16 +41,12 @@ interface DashboardSidebarProps {
 const platformNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/templates', label: 'Templates', icon: Palette },
-  { href: '/dashboard/customers', label: 'Customers', icon: Mail },
-  { href: '/dashboard/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
-  { href: '/dashboard/products', label: 'My Products', icon: Package },
   { href: '/dashboard/affiliate', label: 'Affiliate', icon: Share2 },
   { href: '/dashboard/ad-builder/instagram', label: 'Ad Builder', icon: Megaphone },
   { href: '/dashboard/video-mutator', label: 'Video Mutator', icon: Video },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
   { href: '/dashboard/services', label: 'Connect with Experts', icon: Users },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/activity', label: 'Activity', icon: Activity },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/dashboard/help', label: 'Help', icon: HelpCircle },
@@ -57,9 +54,22 @@ const platformNavItems: NavItem[] = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
-const eazyStoresNavItems: NavItem[] = [
+const eazyStoresBaseNavItems: NavItem[] = [
   { href: '/dashboard/stores', label: 'My Stores', icon: Store },
   { href: '/dashboard/store/create', label: 'Create Store', icon: Plus },
+];
+
+const eazyStoresInternalNavItems: NavItem[] = [
+  { href: '/dashboard/store/overview', label: 'Overview', icon: LayoutDashboard },
+  { href: '/dashboard/customers', label: 'Customers', icon: Mail },
+  { href: '/dashboard/store/products', label: 'My Products', icon: Package },
+  { href: '/dashboard/store/orders', label: 'Orders', icon: ShoppingCart },
+  { href: '/dashboard/store/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/dashboard/store/information', label: 'Store Information', icon: Info },
+  { href: '/dashboard/store/payment', label: 'Payment Settings', icon: CreditCard },
+  { href: '/dashboard/store/theme', label: 'Theme & Appearance', icon: Palette },
+  { href: '/dashboard/store/notifications', label: 'Email Notifications', icon: Bell },
+  { href: '/dashboard/stores/billing', label: 'Billing', icon: CreditCard },
 ];
 
 function isEazyStoresTab(pathname: string | null): boolean {
@@ -67,10 +77,20 @@ function isEazyStoresTab(pathname: string | null): boolean {
   return pathname === '/dashboard/stores' || pathname.startsWith('/dashboard/store');
 }
 
+function isInsideStoreContext(pathname: string | null): boolean {
+  if (!pathname) return false;
+  if (pathname === '/dashboard/store' || pathname === '/dashboard/store/create') return false;
+  return pathname.startsWith('/dashboard/store/');
+}
+
 export default function DashboardSidebar({ isOpen = true, onClose }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const navItems = isEazyStoresTab(pathname) ? eazyStoresNavItems : platformNavItems;
+  const isEazyStores = isEazyStoresTab(pathname);
+  // Always show all Eazy Stores nav items when in Eazy Stores tab
+  const navItems = isEazyStores
+    ? [...eazyStoresBaseNavItems, ...eazyStoresInternalNavItems]
+    : platformNavItems;
 
   return (
     <>

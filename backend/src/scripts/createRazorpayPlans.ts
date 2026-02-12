@@ -99,13 +99,47 @@ async function createRazorpayPlans() {
     console.log(`   Amount verified: ₹${actualAmount / 100} (${actualAmount} paise) - Correct!`);
     console.log(`   Add to .env: RAZORPAY_PLAN_TOKEN_ID=${tokenPlan.id}\n`);
 
-    console.log('\n📋 Summary:');
+    // Eazy Stores - Grow Plan: ₹7000 for 3 months (₹20 first month is token charge, handled separately)
+    console.log('Creating Eazy Stores Grow Plan (₹7000 for 3 months)...');
+    const storesGrowPlan = await razorpay.plans.create({
+      period: 'monthly',
+      interval: 3,
+      item: {
+        name: 'Eazy Stores Grow Plan',
+        amount: 700000, // ₹7000 in paise
+        currency: 'INR',
+        description: '₹7000 for 3 months (₹20 first month, then ₹7000 for 3 months)',
+      },
+    });
+    console.log(`✅ Eazy Stores Grow Plan created: ${storesGrowPlan.id}`);
+    console.log(`   Add to .env: RAZORPAY_PLAN_STORES_GROW_ID=${storesGrowPlan.id}\n`);
+
+    // Eazy Stores - Advanced Plan: ₹30000 for 3 months
+    console.log('Creating Eazy Stores Advanced Plan (₹30000 for 3 months)...');
+    const storesAdvancedPlan = await razorpay.plans.create({
+      period: 'monthly',
+      interval: 3,
+      item: {
+        name: 'Eazy Stores Advanced Plan',
+        amount: 3000000, // ₹30000 in paise
+        currency: 'INR',
+        description: '₹30000 for 3 months (₹20 first month, then ₹30000 for 3 months)',
+      },
+    });
+    console.log(`✅ Eazy Stores Advanced Plan created: ${storesAdvancedPlan.id}`);
+    console.log(`   Add to .env: RAZORPAY_PLAN_STORES_ADVANCED_ID=${storesAdvancedPlan.id}\n`);
+
+    console.log('\n📋 Summary – copy and paste into your .env file:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('Add these to your .env file:');
+    console.log('# EazyDS Platform plans');
     console.log(`RAZORPAY_PLAN_MONTHLY_ID=${monthlyPlan.id}`);
     console.log(`RAZORPAY_PLAN_PRO_ID=${proPlan.id}`);
     console.log(`RAZORPAY_PLAN_LIFETIME_ID=${lifetimePlan.id}`);
+    console.log('# Token charge (₹20 for UPI autopay mandate)');
     console.log(`RAZORPAY_PLAN_TOKEN_ID=${tokenPlan.id}`);
+    console.log('# Eazy Stores plans (stores_basic_free has no plan – free tier)');
+    console.log(`RAZORPAY_PLAN_STORES_GROW_ID=${storesGrowPlan.id}`);
+    console.log(`RAZORPAY_PLAN_STORES_ADVANCED_ID=${storesAdvancedPlan.id}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     process.exit(0);

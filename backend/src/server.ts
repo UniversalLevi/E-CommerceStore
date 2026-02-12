@@ -85,6 +85,7 @@ import storeRazorpayWebhookRoutes from './routes/storeRazorpayWebhookRoutes';
 import serviceRoutes from './routes/serviceRoutes';
 import affiliateRoutes from './routes/affiliateRoutes';
 import adminAffiliateRoutes from './routes/adminAffiliateRoutes';
+import storePlanRoutes from './routes/storePlanRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -99,6 +100,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api', storePlanRoutes);
 app.use('/api/subscriptions', userSubscriptionRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);

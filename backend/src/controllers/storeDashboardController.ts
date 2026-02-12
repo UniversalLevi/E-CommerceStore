@@ -7,6 +7,7 @@ import { StoreProduct } from '../models/StoreProduct';
 import { StoreOrder } from '../models/StoreOrder';
 import * as themeService from '../services/storeThemeService';
 import { logInternalStoreActivity, getInternalStoreLogContext } from '../services/internalStoreLogger';
+import { hasStoreSubscription } from '../middleware/subscription';
 
 /**
  * Create store (one per user)
@@ -24,6 +25,14 @@ export const createStore = async (req: AuthRequest, res: Response, next: NextFun
     }
 
     const userId = (req.user as any)._id;
+
+    // Check if user has active store subscription (admins bypass)
+    if (req.user.role !== 'admin') {
+      const hasAccess = await hasStoreSubscription(req.user);
+      if (!hasAccess) {
+        throw createError('Store subscription required. Please upgrade to a store plan to create a store.', 403);
+      }
+    }
 
     // Check if user already has a store
     const existingStore = await Store.findOne({ owner: userId });

@@ -3,14 +3,38 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { openRazorpayCheckout, formatAmount } from '@/lib/razorpay';
-import { Plan, SubscriptionInfo, PlanCode } from '@/types';
+import { PlanCode } from '@/types';
 import { notify } from '@/lib/toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
-export default function BillingPage() {
+interface StorePlan {
+  code: string;
+  name: string;
+  price: number;
+  firstMonthPrice?: number | null;
+  durationDays: number | null;
+  isLifetime: boolean;
+  maxProducts: number | null;
+  features: string[];
+}
+
+interface StoreSubscriptionInfo {
+  planCode: string;
+  planName: string;
+  status: string;
+  startDate: string;
+  endDate: string | null;
+  renewalDate: string | null;
+  amountPaid: number;
+  razorpaySubscriptionId: string | null;
+}
+
+export default function StoreBillingPage() {
   const router = useRouter();
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [currentPlan, setCurrentPlan] = useState<SubscriptionInfo | null>(null);
+  const [plans, setPlans] = useState<StorePlan[]>([]);
+  const [currentPlan, setCurrentPlan] = useState<StoreSubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
 
@@ -22,15 +46,12 @@ export default function BillingPage() {
     try {
       setLoading(true);
       const [plansResponse, currentPlanResponse] = await Promise.all([
-        api.getPlans().catch(() => ({ success: false, data: { plans: [] } })),
-        api.getCurrentPlan().catch(() => ({ success: false, data: null })),
+        api.getStorePlans().catch(() => ({ success: false, data: { plans: [] } })),
+        api.getCurrentStorePlan().catch(() => ({ success: false, data: null })),
       ]);
 
       if (plansResponse.success && plansResponse.data) {
-        const allPlans = plansResponse.data.plans || [];
-        // Only show platform plans (EazyDS), exclude store plans
-        const platformPlans = allPlans.filter((p: Plan) => !p.code.startsWith('stores_'));
-        setPlans(platformPlans);
+        setPlans(plansResponse.data.plans || []);
       }
 
       if (currentPlanResponse.success && currentPlanResponse.data) {
@@ -45,6 +66,31 @@ export default function BillingPage() {
   };
 
   const handlePurchase = async (planCode: PlanCode) => {
+    // Handle free plan
+    if (planCode === 'stores_basic_free') {
+      try {
+        setProcessing(planCode);
+        // Create free subscription via API
+        const subscriptionResponse = await api.createSubscription(planCode);
+        if (subscriptionResponse.success) {
+          notify.success('Free plan activated successfully!');
+          await loadData();
+          setTimeout(() => {
+            router.push('/dashboard/stores');
+          }, 1000);
+        } else {
+          throw new Error('Failed to activate free plan');
+        }
+        setProcessing(null);
+        return;
+      } catch (error: any) {
+        const errorMessage = error?.response?.data?.message || error?.response?.data?.error || error?.message || 'Failed to activate free plan';
+        notify.error(errorMessage);
+        setProcessing(null);
+        return;
+      }
+    }
+
     try {
       setProcessing(planCode);
 
@@ -69,7 +115,7 @@ export default function BillingPage() {
         {
           key: keyId,
           currency: currency || 'INR',
-          name: 'EazyDS',
+          name: 'EazyDS Stores',
           description: `Purchase ${planName}`,
           subscription_id: subscriptionId,
           theme: {
@@ -88,12 +134,12 @@ export default function BillingPage() {
             });
 
             if (verifyResponse.success) {
-              notify.success(`Plan purchased successfully! Your subscription is now active.`);
+              notify.success(`Plan purchased successfully! Your store subscription is now active.`);
               // Reload current plan
               await loadData();
-              // Redirect to dashboard after a short delay
+              // Redirect to stores after a short delay
               setTimeout(() => {
-                router.push('/dashboard');
+                router.push('/dashboard/stores');
               }, 2000);
             } else {
               throw new Error('Payment verification failed');
@@ -117,18 +163,18 @@ export default function BillingPage() {
     }
   };
 
-
   const formatDuration = (days: number | null): string => {
-    if (days === null) return 'Lifetime';
-    if (days === 30) return '30 days';
+    if (days === null) return 'Free Forever';
     if (days === 90) return '3 months';
-    if (days === 150) return '5 months';
     return `${days} days`;
   };
 
-  const formatProductLimit = (maxProducts: number | null): string => {
-    if (maxProducts === null) return 'Unlimited';
-    return `Up to ${maxProducts} products`;
+  const formatPrice = (plan: StorePlan): string => {
+    if (plan.price === 0) return 'Free';
+    if (plan.firstMonthPrice) {
+      return `₹${plan.firstMonthPrice / 100} first month, then ${formatAmount(plan.price)}`;
+    }
+    return formatAmount(plan.price);
   };
 
   if (loading) {
@@ -142,10 +188,18 @@ export default function BillingPage() {
   return (
     <div className="min-h-screen bg-surface-base py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        <Link
+          href="/dashboard/stores"
+          className="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary mb-6"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Stores
+        </Link>
+
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-text-primary mb-4">Choose Your Plan</h1>
+          <h1 className="text-4xl font-bold text-text-primary mb-4">Choose Your Store Plan</h1>
           <p className="text-text-secondary text-lg">
-            Select a subscription plan that fits your needs
+            Select a subscription plan for your Eazy Stores
           </p>
         </div>
 
@@ -153,36 +207,28 @@ export default function BillingPage() {
           <div className="mb-8 bg-secondary-500/20 border border-secondary-500/50 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-secondary-400 font-semibold">Current Plan</p>
+                <p className="text-secondary-400 font-semibold">Current Store Plan</p>
                 <p className="text-text-primary">
-                  {plans.find(p => p.code === currentPlan.plan)?.name || 'Active Plan'}
+                  {currentPlan.planName}
                 </p>
-                {currentPlan.maxProducts !== null && (
+                {currentPlan.endDate && (
                   <p className="text-text-muted text-sm mt-1">
-                    {currentPlan.productsAdded} / {currentPlan.maxProducts} products used
+                    Expires on {new Date(currentPlan.endDate).toLocaleDateString()}
                   </p>
                 )}
-                {currentPlan.maxProducts === null && (
+                {!currentPlan.endDate && (
                   <p className="text-text-muted text-sm mt-1">
-                    {currentPlan.productsAdded} products added (Unlimited)
+                    Active (No expiration)
                   </p>
                 )}
               </div>
-              {currentPlan.planExpiresAt && !currentPlan.isLifetime && (
-                <div className="text-right">
-                  <p className="text-text-muted text-sm">Expires on</p>
-                  <p className="text-text-primary">
-                    {new Date(currentPlan.planExpiresAt).toLocaleDateString()}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan) => {
-            const isCurrentPlan = currentPlan?.plan === plan.code;
+            const isCurrentPlan = currentPlan?.planCode === plan.code;
             const isProcessing = processing === plan.code;
 
             return (
@@ -197,10 +243,14 @@ export default function BillingPage() {
                 <div className="text-center mb-6">
                   <h3 className="text-2xl font-bold text-text-primary mb-2">{plan.name}</h3>
                   <div className="text-4xl font-bold text-primary-500 mb-2">
-                    {formatAmount(plan.price)}
+                    {plan.price === 0 ? 'Free' : formatAmount(plan.price)}
                   </div>
                   <p className="text-text-secondary">{formatDuration(plan.durationDays)}</p>
-                  <p className="text-text-secondary mt-2">{formatProductLimit(plan.maxProducts)}</p>
+                  {plan.firstMonthPrice && plan.firstMonthPrice > 0 && (
+                    <p className="text-text-secondary mt-2 text-sm">
+                      ₹{plan.firstMonthPrice / 100} for first month
+                    </p>
+                  )}
                 </div>
 
                 <ul className="space-y-3 mb-8">
@@ -225,13 +275,15 @@ export default function BillingPage() {
                 </ul>
 
                 <button
-                  onClick={() => handlePurchase(plan.code)}
+                  onClick={() => handlePurchase(plan.code as PlanCode)}
                   disabled={isCurrentPlan || processing === plan.code}
                   className={`w-full py-3 px-6 rounded-lg font-semibold transition-all ${
                     isCurrentPlan
                       ? 'bg-surface-raised text-text-muted cursor-not-allowed border border-border-default'
                       : processing === plan.code
                       ? 'bg-primary-500 text-black cursor-wait opacity-75'
+                      : plan.price === 0
+                      ? 'bg-green-600 text-white hover:bg-green-700'
                       : 'bg-primary-500 text-black hover:bg-primary-600'
                   }`}
                 >
@@ -239,7 +291,9 @@ export default function BillingPage() {
                     ? 'Processing...'
                     : isCurrentPlan
                     ? 'Current Plan'
-                    : `Purchase Plan – ${formatAmount(plan.price)}`}
+                    : plan.price === 0
+                    ? 'Activate Free Plan'
+                    : `Purchase Plan – ${formatPrice(plan)}`}
                 </button>
               </div>
             );
@@ -249,4 +303,3 @@ export default function BillingPage() {
     </div>
   );
 }
-

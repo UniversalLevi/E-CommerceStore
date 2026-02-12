@@ -9,7 +9,7 @@ import { notify } from '@/lib/toast';
 import ConfirmModal from '@/components/ConfirmModal';
 import IconBadge from '@/components/IconBadge';
 import SubscriptionLock from '@/components/SubscriptionLock';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useStoreSubscription } from '@/hooks/useStoreSubscription';
 import { Store, ShoppingBag, ExternalLink } from 'lucide-react';
 
 interface InternalStore {
@@ -24,22 +24,11 @@ interface InternalStore {
 
 export default function MyStoresPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
-  const { hasActiveSubscription } = useSubscription();
+  const { hasActiveStoreSubscription, loading: subscriptionLoading } = useStoreSubscription();
   const router = useRouter();
   const [internalStore, setInternalStore] = useState<InternalStore | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  // Check subscription before rendering
-  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
-    return <SubscriptionLock featureName="My Stores" />;
-  }
 
   const fetchStores = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -68,9 +57,19 @@ export default function MyStoresPage() {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
     fetchStores();
   }, [fetchStores]);
 
+  // Check store subscription before rendering
+  if (!authLoading && !subscriptionLoading && isAuthenticated && !hasActiveStoreSubscription) {
+    return <SubscriptionLock featureName="My Stores" planType="stores" />;
+  }
 
   if (authLoading || loading) {
     return (

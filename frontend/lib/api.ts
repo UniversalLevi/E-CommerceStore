@@ -161,6 +161,15 @@ class ApiClient {
     return this.get<{ success: boolean; data: any }>('/api/payments/current-plan');
   }
 
+  // Store subscription methods
+  async getStorePlans() {
+    return this.get<{ success: boolean; data: { plans: any[] } }>('/api/store-plans');
+  }
+
+  async getCurrentStorePlan() {
+    return this.get<{ success: boolean; data: any }>('/api/store-subscription');
+  }
+
   // Service orders methods
   async createServiceOrder(data: { serviceType: string; planType: string; targetGoal?: number }) {
     return this.post<{ success: boolean; data: any }>('/api/services/orders', data);

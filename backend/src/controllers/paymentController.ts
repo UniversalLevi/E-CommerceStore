@@ -8,7 +8,7 @@ import { Wallet } from '../models/Wallet';
 import { WalletTransaction } from '../models/WalletTransaction';
 import { Order } from '../models/Order';
 import { razorpayService } from '../services/RazorpayService';
-import { plans, isValidPlanCode, PlanCode, TOKEN_CHARGE_AMOUNT } from '../config/plans';
+import { plans, isValidPlanCode, PlanCode, TOKEN_CHARGE_AMOUNT, isStorePlan } from '../config/plans';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
@@ -40,12 +40,47 @@ export const createSubscription = async (
 
     const plan = plans[planCode];
     
-    // Check if Razorpay plan ID is configured
-    if (!plan.razorpayPlanId) {
-      throw createError(`Razorpay plan ID not configured for ${planCode}. Please run: npm run create-razorpay-plans`, 500);
-    }
-
     const userId = (req.user as any)._id;
+    
+    // Handle free plan (stores_basic_free) - no Razorpay needed
+    if (planCode === 'stores_basic_free') {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw createError('User not found', 404);
+      }
+      
+      // Create free subscription directly in database
+      const freeSubscription = new Subscription({
+        userId,
+        planCode: 'stores_basic_free',
+        status: 'active',
+        startDate: new Date(),
+        endDate: null, // Free plan has no expiration
+        amountPaid: 0,
+        source: 'manual',
+      });
+      
+      await freeSubscription.save();
+      
+      // Update user's store plan (optional - we check subscriptions primarily)
+      // But for consistency, we can update user.plan if needed
+      
+      return res.status(200).json({
+        success: true,
+        data: {
+          subscriptionId: (freeSubscription._id as mongoose.Types.ObjectId).toString(),
+          message: 'Free plan activated successfully',
+        },
+      });
+    }
+    
+    // Check if Razorpay plan ID is configured for paid plans
+    if (!plan.razorpayPlanId || plan.razorpayPlanId.trim() === '') {
+      throw createError(
+        'Payment is not configured for this plan. Please contact support or try again later.',
+        503
+      );
+    }
     
     // Check if user exists
     const user = await User.findById(userId);
@@ -107,72 +142,81 @@ export const createSubscription = async (
 
     console.log('Creating direct subscription (no trial) for plan:', planCode, 'start_at:', startAt);
 
-    // Verify the plan exists before creating subscription
+    let subscription: { id: string };
     try {
+      // Verify the plan exists before creating subscription
       await razorpayService.fetchPlan(plan.razorpayPlanId);
       console.log(`✅ Verified Razorpay plan exists: ${plan.razorpayPlanId}`);
-    } catch (planError: any) {
-      console.error(`❌ Failed to verify Razorpay plan ${plan.razorpayPlanId}:`, planError);
-      throw createError(`Razorpay plan ${plan.razorpayPlanId} not found or invalid. Please run: npm run create-razorpay-plans`, 500);
-    }
-    
-    // Create subscription that starts immediately (no trial)
-    // IMPORTANT: When startAt is in the future, Razorpay charges ₹5 by default for authentication
-    // To charge the full plan amount immediately, we use addons to add the full amount upfront
-    const subscription = await razorpayService.createSubscription({
-      planId: plan.razorpayPlanId,
-      startAt: startAt,
-      totalCount: totalCount,
-      customerNotify: 1, // Notify customer for direct purchase
-      // Add upfront addon to charge full plan amount immediately instead of default ₹5
-      addons: [
-        {
-          item: {
-            name: `Plan Purchase - ${plan.name}`,
-            amount: plan.price, // Full plan amount in paise
-            currency: 'INR',
+
+      // Create subscription that starts immediately (no trial)
+      // IMPORTANT: When startAt is in the future, Razorpay charges ₹5 by default for authentication
+      // To charge the full plan amount immediately, we use addons to add the full amount upfront
+      subscription = await razorpayService.createSubscription({
+        planId: plan.razorpayPlanId,
+        startAt: startAt,
+        totalCount: totalCount,
+        customerNotify: 1, // Notify customer for direct purchase
+        // Add upfront addon to charge full plan amount immediately instead of default ₹5
+        addons: [
+          {
+            item: {
+              name: `Plan Purchase - ${plan.name}`,
+              amount: plan.price, // Full plan amount in paise
+              currency: 'INR',
+            },
           },
-        },
-      ],
-    });
+        ],
+      });
+    } catch (razorpayError: any) {
+      console.error('[Payment] Razorpay error in create-subscription:', razorpayError?.message || razorpayError);
+      throw createError(
+        razorpayError?.message?.includes('not found') || razorpayError?.message?.includes('invalid')
+          ? 'Payment plan is not set up. Please contact support.'
+          : 'Payment provider is temporarily unavailable. Please try again in a few moments.',
+        503
+      );
+    }
 
     console.log('Direct subscription created:', subscription.id);
 
-    // Save payment record
-    const payment = await Payment.create({
-      userId: userId,
-      orderId: subscription.id,
-      razorpayOrderId: subscription.id,
-      planCode: planCode as PlanCode,
-      status: 'created',
-      amount: plan.price, // Full plan amount
-      currency: 'INR',
-      metadata: {
-        type: 'direct_purchase',
-        subscriptionId: subscription.id,
-      },
-    });
-
-    // Create subscription record in database (status: pending until payment is verified)
-    const dbSubscription = await Subscription.create({
-      userId: userId,
-      planCode: planCode as PlanCode,
-      razorpaySubscriptionId: subscription.id,
-      razorpayPlanId: plan.razorpayPlanId,
-      status: 'pending',
-      startDate: new Date(),
-      amountPaid: 0, // Will be updated when charged
-      source: 'razorpay',
-      history: [
-        {
-          action: 'direct_purchase',
-          timestamp: new Date(),
-          notes: `Direct purchase - no trial. Subscription: ${subscription.id}`,
+    try {
+      // Save payment record
+      await Payment.create({
+        userId: userId,
+        orderId: subscription.id,
+        razorpayOrderId: subscription.id,
+        planCode: planCode as PlanCode,
+        status: 'created',
+        amount: plan.price, // Full plan amount
+        currency: 'INR',
+        metadata: {
+          type: 'direct_purchase',
+          subscriptionId: subscription.id,
         },
-      ],
-    });
+      });
 
-    console.log('Subscription record created:', dbSubscription._id);
+      // Create subscription record in database (status: pending until payment is verified)
+      await Subscription.create({
+        userId: userId,
+        planCode: planCode as PlanCode,
+        razorpaySubscriptionId: subscription.id,
+        razorpayPlanId: plan.razorpayPlanId,
+        status: 'pending',
+        startDate: new Date(),
+        amountPaid: 0, // Will be updated when charged
+        source: 'razorpay',
+        history: [
+          {
+            action: 'direct_purchase',
+            timestamp: new Date(),
+            notes: `Direct purchase - no trial. Subscription: ${subscription.id}`,
+          },
+        ],
+      });
+    } catch (dbError: any) {
+      console.error('[Payment] Database error in create-subscription:', dbError?.message || dbError);
+      throw createError('Unable to save subscription. Please try again or contact support.', 503);
+    }
 
     res.status(200).json({
       success: true,
@@ -445,28 +489,35 @@ export const verifyPayment = async (
 
     const planName = plan.name;
 
-    // Set full plan expiry
-    user.plan = planCode;
-    if (!plan.isLifetime && plan.durationDays) {
-      user.planExpiresAt = new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000);
-    } else {
-      user.planExpiresAt = null;
+    // IMPORTANT: Only set user.plan for PLATFORM plans, not store plans
+    // Store plans are tracked in the Subscription model only
+    if (!isStorePlan(planCode)) {
+      // Set full plan expiry for platform plans only
+      user.plan = planCode;
+      if (!plan.isLifetime && plan.durationDays) {
+        user.planExpiresAt = new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000);
+      } else {
+        user.planExpiresAt = null;
+      }
+      user.isLifetime = plan.isLifetime || false;
+      await user.save();
     }
-    user.isLifetime = plan.isLifetime || false;
-    await user.save();
+    // For store plans, we don't update user.plan - subscription is tracked in Subscription model only
 
-    // Create affiliate commission
-    try {
-      console.log(`[Payment] Creating commission for user ${(req.user as any)._id}`);
-      await createCommission({
-        userId: (req.user as any)._id,
-        subscriptionId: subscription._id as mongoose.Types.ObjectId,
-        paymentId: payment._id as mongoose.Types.ObjectId,
-        planCode: planCode,
-        subscriptionAmount: plan.price,
-      });
-    } catch (commissionError) {
-      console.error('[Payment] Failed to create commission during payment verification:', commissionError);
+    // Create affiliate commission (only for platform plans, not store plans)
+    if (!isStorePlan(planCode)) {
+      try {
+        console.log(`[Payment] Creating commission for user ${(req.user as any)._id}`);
+        await createCommission({
+          userId: (req.user as any)._id,
+          subscriptionId: subscription._id as mongoose.Types.ObjectId,
+          paymentId: payment._id as mongoose.Types.ObjectId,
+          planCode: planCode as 'starter_30' | 'growth_90' | 'lifetime',
+          subscriptionAmount: plan.price,
+        });
+      } catch (commissionError) {
+        console.error('[Payment] Failed to create commission during payment verification:', commissionError);
+      }
     }
 
     // Create notification
@@ -581,13 +632,15 @@ export const handleWebhook = async (
       await paymentRecord.save();
 
       // Update user subscription (same logic as verify endpoint)
+      // IMPORTANT: Only update user.plan for PLATFORM plans, not store plans
       const user = await User.findById(paymentRecord.userId);
       if (user) {
         const now = new Date();
-        const isUpgrade = user.plan && user.plan !== paymentRecord.planCode;
+        const isStorePlanCode = isStorePlan(paymentRecord.planCode);
+        const isUpgrade = user.plan && user.plan !== paymentRecord.planCode && !isStorePlan(user.plan);
         const isRenewal = user.plan === paymentRecord.planCode;
 
-        // Calculate end date
+        // Calculate end date (needed for Subscription record for both platform and store plans)
         let endDate: Date | null = null;
         if (plan.isLifetime) {
           endDate = null;
@@ -599,26 +652,29 @@ export const handleWebhook = async (
             : null;
         }
 
-        if (isUpgrade) {
-          user.plan = paymentRecord.planCode;
-          user.productsAdded = 0;
-          if (plan.isLifetime) {
-            user.planExpiresAt = null;
-            user.isLifetime = true;
-          } else {
+        // Only process user.plan updates for platform plans
+        if (!isStorePlanCode) {
+          if (isUpgrade) {
+            user.plan = paymentRecord.planCode;
+            user.productsAdded = 0;
+            if (plan.isLifetime) {
+              user.planExpiresAt = null;
+              user.isLifetime = true;
+            } else {
+              user.planExpiresAt = endDate;
+              user.isLifetime = false;
+            }
+          } else if (isRenewal) {
             user.planExpiresAt = endDate;
-            user.isLifetime = false;
+            user.isLifetime = plan.isLifetime;
+          } else {
+            user.plan = paymentRecord.planCode;
+            user.planExpiresAt = endDate;
+            user.isLifetime = plan.isLifetime;
           }
-        } else if (isRenewal) {
-          user.planExpiresAt = endDate;
-          user.isLifetime = plan.isLifetime;
-        } else {
-          user.plan = paymentRecord.planCode;
-          user.planExpiresAt = endDate;
-          user.isLifetime = plan.isLifetime;
+          await user.save();
         }
-
-        await user.save();
+        // For store plans, we don't update user.plan - subscription is tracked in Subscription model only
 
         // Create or update Subscription record
         let subscription = await Subscription.findOne({
@@ -673,14 +729,15 @@ export const handleWebhook = async (
 
         // Create affiliate commission if this is a new subscription (not renewal)
         // Only create commission on first payment, not renewals
-        if (!isRenewal && subscription) {
+        // IMPORTANT: Only create commissions for platform plans, not store plans
+        if (!isRenewal && subscription && !isStorePlan(paymentRecord.planCode)) {
           try {
             console.log(`[Webhook payment.captured] Creating commission for subscription ${subscription._id}, user ${paymentRecord.userId}, plan ${paymentRecord.planCode}, amount ${plan.price}`);
             const commission = await createCommission({
               userId: paymentRecord.userId,
               subscriptionId: subscription._id as mongoose.Types.ObjectId,
               paymentId: paymentRecord._id as mongoose.Types.ObjectId,
-              planCode: paymentRecord.planCode,
+              planCode: paymentRecord.planCode as 'starter_30' | 'growth_90' | 'lifetime',
               subscriptionAmount: plan.price,
             });
             if (commission) {
@@ -693,7 +750,7 @@ export const handleWebhook = async (
             console.error('[Webhook payment.captured] Failed to create affiliate commission:', error);
           }
         } else {
-          console.log(`[Webhook payment.captured] Skipping commission creation - isRenewal: ${isRenewal}, hasSubscription: ${!!subscription}`);
+          console.log(`[Webhook payment.captured] Skipping commission creation - isRenewal: ${isRenewal}, hasSubscription: ${!!subscription}, isStorePlan: ${isStorePlan(paymentRecord.planCode)}`);
         }
       }
     }
@@ -756,15 +813,16 @@ export const handleWebhook = async (
         });
         await subRecord.save();
 
-        // Update user access
+        // Update user access - only for platform plans
         const user = await User.findById(subRecord.userId);
-        if (user && user.plan === subRecord.planCode) {
-          // Only revoke if this is their current plan
+        if (user && !isStorePlan(subRecord.planCode) && user.plan === subRecord.planCode) {
+          // Only revoke if this is their current platform plan
           user.plan = null;
           user.planExpiresAt = null;
           user.isLifetime = false;
           await user.save();
         }
+        // For store plans, we don't update user.plan - subscription is tracked in Subscription model only
       }
     }
 
@@ -784,9 +842,9 @@ export const handleWebhook = async (
         });
         await subRecord.save();
 
-        // Update user access - revoke after current period ends
+        // Update user access - revoke after current period ends (only for platform plans)
         const user = await User.findById(subRecord.userId);
-        if (user && user.plan === subRecord.planCode) {
+        if (user && !isStorePlan(subRecord.planCode) && user.plan === subRecord.planCode) {
           // Set expiry to current date
           user.planExpiresAt = new Date();
           await user.save();
@@ -799,6 +857,7 @@ export const handleWebhook = async (
             link: '/dashboard/billing',
           });
         }
+        // For store plans, we don't update user.plan - subscription is tracked in Subscription model only
       }
     }
 
@@ -1005,6 +1064,92 @@ export const getCurrentPlan = async (
         productsAdded: user.productsAdded,
         productsRemaining,
         subscriptionId: subscription?.razorpaySubscriptionId || null,
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get store plans only
+ * GET /api/store-plans
+ */
+export const getStorePlans = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const storePlansArray = Object.entries(plans)
+      .filter(([code]) => isStorePlan(code))
+      .map(([code, plan]) => ({
+        code,
+        name: plan.name,
+        price: plan.price,
+        firstMonthPrice: (plan as any).firstMonthPrice || null,
+        durationDays: plan.durationDays,
+        isLifetime: plan.isLifetime,
+        maxProducts: plan.maxProducts,
+        features: plan.features,
+      }));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        plans: storePlansArray,
+      },
+    });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get current store subscription status
+ * GET /api/store-subscription
+ */
+export const getCurrentStorePlan = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      throw createError('Authentication required', 401);
+    }
+
+    // Check for active store subscription
+    const storeSubscription = await Subscription.findOne({
+      userId: (req.user as any)._id,
+      planCode: { $in: ['stores_basic_free', 'stores_grow', 'stores_advanced'] },
+      status: { $in: ['active', 'manually_granted'] },
+    }).sort({ createdAt: -1 });
+
+    if (!storeSubscription) {
+      return res.status(200).json({
+        success: true,
+        data: null,
+      });
+    }
+
+    const isActive = storeSubscription.status === 'active' || storeSubscription.status === 'manually_granted';
+    const isExpired = storeSubscription.endDate ? new Date(storeSubscription.endDate) <= new Date() : false;
+    const status = storeSubscription.planCode === 'stores_basic_free' 
+      ? 'active' 
+      : (isActive && !isExpired ? 'active' : 'expired');
+
+    res.status(200).json({
+      success: true,
+      data: {
+        planCode: storeSubscription.planCode,
+        planName: plans[storeSubscription.planCode as PlanCode]?.name || storeSubscription.planCode,
+        status,
+        startDate: storeSubscription.startDate,
+        endDate: storeSubscription.endDate,
+        renewalDate: storeSubscription.renewalDate,
+        amountPaid: storeSubscription.amountPaid,
+        razorpaySubscriptionId: storeSubscription.razorpaySubscriptionId || null,
       },
     });
   } catch (error: any) {

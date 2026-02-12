@@ -5,7 +5,7 @@ export interface IPayment extends Document {
   orderId: string;
   paymentId: string;
   signature: string;
-  planCode: 'starter_30' | 'growth_90' | 'lifetime';
+  planCode: 'starter_30' | 'growth_90' | 'lifetime' | 'stores_basic_free' | 'stores_grow' | 'stores_advanced';
   status: 'created' | 'paid' | 'failed' | 'refunded';
   amount: number;
   currency: string;
@@ -45,7 +45,7 @@ const paymentSchema = new Schema<IPayment>(
     planCode: {
       type: String,
       required: true,
-      enum: ['starter_30', 'growth_90', 'lifetime'],
+      enum: ['starter_30', 'growth_90', 'lifetime', 'stores_basic_free', 'stores_grow', 'stores_advanced'],
       index: true,
     },
     status: {

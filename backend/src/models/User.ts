@@ -142,7 +142,7 @@ const userSchema = new Schema<IUser>(
     plan: {
       type: String,
       default: null,
-      enum: [null, 'starter_30', 'growth_90', 'lifetime'],
+      enum: [null, 'starter_30', 'growth_90', 'lifetime', 'stores_basic_free', 'stores_grow', 'stores_advanced'],
     },
     planExpiresAt: {
       type: Date,
@@ -223,6 +223,11 @@ export function getSubscriptionStatus(user: IUser): 'active' | 'expired' | 'none
   if (user.isLifetime) return 'active';
   if (!user.plan || !user.planExpiresAt) return 'none';
   return user.planExpiresAt > new Date() ? 'active' : 'expired';
+}
+
+// Helper function to check if plan code is for stores
+export function isStorePlan(planCode: string | null): boolean {
+  return planCode ? planCode.startsWith('stores_') : false;
 }
 
 export const User = mongoose.model<IUser>('User', userSchema);

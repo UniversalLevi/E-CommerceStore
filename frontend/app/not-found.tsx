@@ -1,6 +1,24 @@
+'use client';
+
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function NotFound() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (typeof pathname !== 'string' || !pathname.startsWith('/dashboard')) return;
+    const isEazyStores =
+      pathname === '/dashboard/stores' || pathname.startsWith('/dashboard/store');
+    router.replace(isEazyStores ? '/dashboard/stores' : '/dashboard');
+  }, [pathname, router]);
+
+  if (typeof pathname === 'string' && pathname.startsWith('/dashboard')) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-surface-base flex items-center justify-center px-4">
       <div className="text-center">
@@ -19,4 +37,3 @@ export default function NotFound() {
     </div>
   );
 }
-

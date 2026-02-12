@@ -32,22 +32,18 @@ export default function DashboardPage() {
 
   const fetchStores = async () => {
     try {
-      // Fetch stores (internal stores)
-      const response = await api.get<{ success: boolean; data: any[] }>('/api/stores');
-      setStores(response.data);
-      
-      // Fetch internal store
-      try {
-        const internalResponse = await api.getMyStore();
-        if (internalResponse.success && internalResponse.data) {
-          setInternalStore(internalResponse.data);
-        }
-      } catch (internalError: any) {
-        // Internal store might not exist, that's okay
+      // Fetch internal store only (Eazy Stores); /api/stores is for store connections and requires platform plan
+      const internalResponse = await api.getMyStore();
+      if (internalResponse.success && internalResponse.data) {
+        setInternalStore(internalResponse.data);
+        setStores([internalResponse.data]);
+      } else {
         setInternalStore(null);
+        setStores([]);
       }
     } catch (error) {
-      // Ignore errors
+      setInternalStore(null);
+      setStores([]);
     }
   };
 

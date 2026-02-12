@@ -5,7 +5,7 @@ import { Subscription } from '../models/Subscription';
 import { Payment } from '../models/Payment';
 import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
-import { plans, isValidPlanCode, PlanCode } from '../config/plans';
+import { plans, isValidPlanCode, PlanCode, isStorePlan } from '../config/plans';
 import mongoose from 'mongoose';
 import { razorpayService } from '../services/RazorpayService';
 import {
@@ -368,13 +368,16 @@ export const grantSubscription = async (
       ],
     });
 
-    // Update user model
-    user.plan = planCode;
-    user.planExpiresAt = calculatedEndDate;
-    user.isLifetime = plan.isLifetime;
-    user.productsAdded = 0; // Reset on new grant
-
-    await user.save();
+    // Update user model - only for platform plans
+    // IMPORTANT: Only set user.plan for PLATFORM plans, not store plans
+    if (!isStorePlan(planCode)) {
+      user.plan = planCode;
+      user.planExpiresAt = calculatedEndDate;
+      user.isLifetime = plan.isLifetime;
+      user.productsAdded = 0; // Reset on new grant
+      await user.save();
+    }
+    // For store plans, we don't update user.plan - subscription is tracked in Subscription model only
 
     // Create audit log
     try {
@@ -478,11 +481,15 @@ export const revokeSubscription = async (
     });
     await subscription.save();
 
-    // Update user model
-    user.plan = null;
-    user.planExpiresAt = null;
-    user.isLifetime = false;
-    await user.save();
+    // Update user model - only for platform plans
+    // IMPORTANT: Only update user.plan for PLATFORM plans, not store plans
+    if (!isStorePlan(subscription.planCode)) {
+      user.plan = null;
+      user.planExpiresAt = null;
+      user.isLifetime = false;
+      await user.save();
+    }
+    // For store plans, we don't update user.plan - subscription is tracked in Subscription model only
 
     // Create audit log
     try {
@@ -585,11 +592,15 @@ export const updateSubscription = async (
           subscription.endDate = new Date(now.getTime() + newPlan.durationDays * 24 * 60 * 60 * 1000);
         }
 
-        // Update user model
-        user.plan = planCode;
-        user.planExpiresAt = subscription.endDate || null;
-        user.isLifetime = newPlan.isLifetime;
-        user.productsAdded = 0; // Reset on upgrade
+        // Update user model - only for platform plans
+        // IMPORTANT: Only set user.plan for PLATFORM plans, not store plans
+        if (!isStorePlan(planCode)) {
+          user.plan = planCode;
+          user.planExpiresAt = subscription.endDate || null;
+          user.isLifetime = newPlan.isLifetime;
+          user.productsAdded = 0; // Reset on upgrade
+        }
+        // For store plans, we don't update user.plan - subscription is tracked in Subscription model only
       }
     }
 

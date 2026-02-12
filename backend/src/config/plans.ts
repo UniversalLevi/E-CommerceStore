@@ -1,4 +1,5 @@
 export const plans = {
+  // EazyDS Platform Plans
   starter_30: {
     price: 99900, // in paise (₹999) - full amount
     durationDays: 30, // Monthly subscription duration
@@ -8,7 +9,6 @@ export const plans = {
     razorpayPlanId: process.env.RAZORPAY_PLAN_MONTHLY_ID || '', // Set via env
     features: [
       'Basic product addition (up to 5 products)',
-      'Limited stores',
     ],
   },
   growth_90: {
@@ -20,7 +20,6 @@ export const plans = {
     razorpayPlanId: process.env.RAZORPAY_PLAN_PRO_ID || '', // Set via env
     features: [
       'Medium product addition (up to 15 products)',
-      'Multiple stores',
       'Priority support',
     ],
   },
@@ -35,6 +34,48 @@ export const plans = {
       'Unlimited products',
       'All features forever',
       'Premium support',
+    ],
+  },
+  // Eazy Stores Plans
+  stores_basic_free: {
+    price: 0, // Free plan
+    durationDays: null, // Free tier - no expiration
+    isLifetime: false,
+    maxProducts: null,
+    name: 'Basic Plan',
+    razorpayPlanId: '', // No Razorpay plan for free tier
+    features: [
+      'Basic store features',
+      'Free forever',
+    ],
+  },
+  stores_grow: {
+    price: 700000, // in paise (₹7000) - 3 months after first month
+    firstMonthPrice: 2000, // in paise (₹20) - first month token charge
+    durationDays: 90, // 3 months (90 days)
+    isLifetime: false,
+    maxProducts: null,
+    name: 'Grow Plan',
+    razorpayPlanId: process.env.RAZORPAY_PLAN_STORES_GROW_ID || '', // Set via env
+    features: [
+      'All store features',
+      'Priority support',
+      'Advanced analytics',
+    ],
+  },
+  stores_advanced: {
+    price: 3000000, // in paise (₹30000) - 3 months after first month
+    firstMonthPrice: 2000, // in paise (₹20) - first month token charge
+    durationDays: 90, // 3 months (90 days)
+    isLifetime: false,
+    maxProducts: null,
+    name: 'Advanced Plan',
+    razorpayPlanId: process.env.RAZORPAY_PLAN_STORES_ADVANCED_ID || '', // Set via env
+    features: [
+      'All store features',
+      'Premium support',
+      'Advanced analytics',
+      'Custom integrations',
     ],
   },
 } as const;
@@ -52,5 +93,15 @@ export function getPlan(planCode: string) {
 // Helper function to check if plan code is valid
 export function isValidPlanCode(planCode: string): planCode is PlanCode {
   return planCode in plans;
+}
+
+// Helper function to check if plan code is for Eazy Stores
+export function isStorePlan(planCode: string): boolean {
+  return planCode.startsWith('stores_');
+}
+
+// Helper function to check if plan code is for EazyDS Platform
+export function isPlatformPlan(planCode: string): boolean {
+  return !isStorePlan(planCode);
 }
 

@@ -7,10 +7,13 @@ import Button from './Button';
 
 interface SubscriptionLockProps {
   featureName: string;
+  planType?: 'eazyds' | 'stores';
 }
 
-export default function SubscriptionLock({ featureName }: SubscriptionLockProps) {
+export default function SubscriptionLock({ featureName, planType = 'eazyds' }: SubscriptionLockProps) {
   const router = useRouter();
+  
+  const billingUrl = planType === 'stores' ? '/dashboard/stores/billing' : '/dashboard/billing';
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center bg-surface-base">
@@ -38,7 +41,7 @@ export default function SubscriptionLock({ featureName }: SubscriptionLockProps)
 
         <div className="space-y-3">
           <Button
-            onClick={() => router.push('/dashboard/billing')}
+            onClick={() => router.push(billingUrl)}
             className="w-full"
             variant="primary"
           >

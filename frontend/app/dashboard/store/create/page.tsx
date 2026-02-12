@@ -1,15 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import SubscriptionLock from '@/components/SubscriptionLock';
+import { useStoreSubscription } from '@/hooks/useStoreSubscription';
 
 export default function CreateStorePage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { hasActiveStoreSubscription, loading: subscriptionLoading } = useStoreSubscription();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -55,6 +58,11 @@ export default function CreateStorePage() {
       slug: formData.slug || generateSlug(name),
     });
   };
+
+  // Check store subscription before rendering
+  if (!authLoading && !subscriptionLoading && isAuthenticated && !hasActiveStoreSubscription) {
+    return <SubscriptionLock featureName="Create Store" planType="stores" />;
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
