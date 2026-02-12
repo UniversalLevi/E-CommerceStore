@@ -99,7 +99,7 @@ async function createRazorpayPlans() {
     console.log(`   Amount verified: ₹${actualAmount / 100} (${actualAmount} paise) - Correct!`);
     console.log(`   Add to .env: RAZORPAY_PLAN_TOKEN_ID=${tokenPlan.id}\n`);
 
-    // Eazy Stores - Grow Plan: ₹7000 for 3 months (₹20 first month is token charge, handled separately)
+    // Eazy Stores - Grow Plan: ₹7000 for 3 months (full payment)
     console.log('Creating Eazy Stores Grow Plan (₹7000 for 3 months)...');
     const storesGrowPlan = await razorpay.plans.create({
       period: 'monthly',
@@ -108,13 +108,13 @@ async function createRazorpayPlans() {
         name: 'Eazy Stores Grow Plan',
         amount: 700000, // ₹7000 in paise
         currency: 'INR',
-        description: '₹7000 for 3 months (₹20 first month, then ₹7000 for 3 months)',
+        description: '₹7000 for 3 months (full payment)',
       },
     });
     console.log(`✅ Eazy Stores Grow Plan created: ${storesGrowPlan.id}`);
     console.log(`   Add to .env: RAZORPAY_PLAN_STORES_GROW_ID=${storesGrowPlan.id}\n`);
 
-    // Eazy Stores - Advanced Plan: ₹30000 for 3 months
+    // Eazy Stores - Advanced Plan: ₹30000 for 3 months (full payment)
     console.log('Creating Eazy Stores Advanced Plan (₹30000 for 3 months)...');
     const storesAdvancedPlan = await razorpay.plans.create({
       period: 'monthly',
@@ -123,7 +123,7 @@ async function createRazorpayPlans() {
         name: 'Eazy Stores Advanced Plan',
         amount: 3000000, // ₹30000 in paise
         currency: 'INR',
-        description: '₹30000 for 3 months (₹20 first month, then ₹30000 for 3 months)',
+        description: '₹30000 for 3 months (full payment)',
       },
     });
     console.log(`✅ Eazy Stores Advanced Plan created: ${storesAdvancedPlan.id}`);

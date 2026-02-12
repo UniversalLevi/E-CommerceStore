@@ -50,8 +50,7 @@ export const plans = {
     ],
   },
   stores_grow: {
-    price: 700000, // in paise (₹7000) - 3 months after first month
-    firstMonthPrice: 2000, // in paise (₹20) - first month token charge
+    price: 700000, // in paise (₹7000) - 3 months full payment
     durationDays: 90, // 3 months (90 days)
     isLifetime: false,
     maxProducts: null,
@@ -64,8 +63,7 @@ export const plans = {
     ],
   },
   stores_advanced: {
-    price: 3000000, // in paise (₹30000) - 3 months after first month
-    firstMonthPrice: 2000, // in paise (₹20) - first month token charge
+    price: 3000000, // in paise (₹30000) - 3 months full payment
     durationDays: 90, // 3 months (90 days)
     isLifetime: false,
     maxProducts: null,

@@ -1087,7 +1087,6 @@ export const getStorePlans = async (
         code,
         name: plan.name,
         price: plan.price,
-        firstMonthPrice: (plan as any).firstMonthPrice || null,
         durationDays: plan.durationDays,
         isLifetime: plan.isLifetime,
         maxProducts: plan.maxProducts,

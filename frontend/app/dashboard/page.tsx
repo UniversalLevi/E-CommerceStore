@@ -36,7 +36,7 @@ export default function DashboardPage() {
       const internalResponse = await api.getMyStore();
       if (internalResponse.success && internalResponse.data) {
         setInternalStore(internalResponse.data);
-        setStores([internalResponse.data]);
+        setStores([]); // Only internal store; legacy store connections use /api/stores (paid plan)
       } else {
         setInternalStore(null);
         setStores([]);

@@ -13,7 +13,6 @@ interface StorePlan {
   code: string;
   name: string;
   price: number;
-  firstMonthPrice?: number | null;
   durationDays: number | null;
   isLifetime: boolean;
   maxProducts: number | null;
@@ -171,9 +170,6 @@ export default function StoreBillingPage() {
 
   const formatPrice = (plan: StorePlan): string => {
     if (plan.price === 0) return 'Free';
-    if (plan.firstMonthPrice) {
-      return `₹${plan.firstMonthPrice / 100} first month, then ${formatAmount(plan.price)}`;
-    }
     return formatAmount(plan.price);
   };
 
@@ -246,11 +242,6 @@ export default function StoreBillingPage() {
                     {plan.price === 0 ? 'Free' : formatAmount(plan.price)}
                   </div>
                   <p className="text-text-secondary">{formatDuration(plan.durationDays)}</p>
-                  {plan.firstMonthPrice && plan.firstMonthPrice > 0 && (
-                    <p className="text-text-secondary mt-2 text-sm">
-                      ₹{plan.firstMonthPrice / 100} for first month
-                    </p>
-                  )}
                 </div>
 
                 <ul className="space-y-3 mb-8">

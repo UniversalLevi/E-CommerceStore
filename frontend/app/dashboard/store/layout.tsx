@@ -34,7 +34,10 @@ export default function StoreDashboardLayout({
         }
       }
     } catch (error: any) {
-      console.error('Error fetching store:', error);
+      setStore(null);
+      if (pathname !== '/dashboard/store' && !pathname?.includes('/create')) {
+        router.push('/dashboard/store');
+      }
     } finally {
       setLoading(false);
     }
