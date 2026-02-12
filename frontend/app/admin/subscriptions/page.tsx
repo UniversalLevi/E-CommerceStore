@@ -63,6 +63,7 @@ export default function AdminSubscriptionsPage() {
     total: 0,
     pages: 0,
   });
+  const [subscriptionFilter, setSubscriptionFilter] = useState<'all' | 'platform' | 'stores'>('all');
 
   // Modal states
   const [grantModalOpen, setGrantModalOpen] = useState(false);
@@ -93,7 +94,7 @@ export default function AdminSubscriptionsPage() {
     } else if (isAuthenticated && user?.role === 'admin') {
       fetchAllSubscriptions();
     }
-  }, [authLoading, isAuthenticated, user, router, subscriptionsPagination.page]);
+  }, [authLoading, isAuthenticated, user, router, subscriptionsPagination.page, subscriptionFilter]);
 
   const fetchAllSubscriptions = async () => {
     try {
@@ -104,7 +105,20 @@ export default function AdminSubscriptionsPage() {
       }>(`/api/admin/subscriptions?page=${subscriptionsPagination.page}&limit=${subscriptionsPagination.limit}&status=active`);
 
       if (response.data) {
-        setAllSubscriptions(response.data.subscriptions);
+        let filteredSubscriptions = response.data.subscriptions;
+        
+        // Filter by subscription type
+        if (subscriptionFilter === 'platform') {
+          filteredSubscriptions = filteredSubscriptions.filter(
+            (sub) => !sub.planCode.startsWith('stores_')
+          );
+        } else if (subscriptionFilter === 'stores') {
+          filteredSubscriptions = filteredSubscriptions.filter(
+            (sub) => sub.planCode.startsWith('stores_')
+          );
+        }
+        
+        setAllSubscriptions(filteredSubscriptions);
         setSubscriptionsPagination(response.data.pagination);
       }
     } catch (error: any) {
@@ -259,6 +273,7 @@ export default function AdminSubscriptionsPage() {
       notify.success('Subscription granted successfully');
       setGrantModalOpen(false);
       setGrantForm({ planCode: 'starter_30', daysValid: '', endDate: '', adminNote: '' });
+      await fetchAllSubscriptions();
       await fetchUserSubscription(searchedUser._id);
       await fetchSubscriptionHistory(searchedUser._id);
       await fetchAllSubscriptions(); // Refresh the list
@@ -389,7 +404,50 @@ export default function AdminSubscriptionsPage() {
 
       {/* All Subscriptions List */}
       <div className="bg-surface-raised border border-border-default rounded-xl shadow-lg p-6 hover-lift animate-scaleIn">
-        <h2 className="text-lg font-semibold text-text-primary mb-4">All Active Subscriptions</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-text-primary">All Active Subscriptions</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setSubscriptionFilter('all');
+                setSubscriptionsPagination({ ...subscriptionsPagination, page: 1 });
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                subscriptionFilter === 'all'
+                  ? 'bg-primary-500 text-black shadow-lg'
+                  : 'bg-surface-base border border-border-default text-text-secondary hover:bg-surface-hover'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => {
+                setSubscriptionFilter('platform');
+                setSubscriptionsPagination({ ...subscriptionsPagination, page: 1 });
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                subscriptionFilter === 'platform'
+                  ? 'bg-primary-500 text-black shadow-lg'
+                  : 'bg-surface-base border border-border-default text-text-secondary hover:bg-surface-hover'
+              }`}
+            >
+              Platform
+            </button>
+            <button
+              onClick={() => {
+                setSubscriptionFilter('stores');
+                setSubscriptionsPagination({ ...subscriptionsPagination, page: 1 });
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                subscriptionFilter === 'stores'
+                  ? 'bg-primary-500 text-black shadow-lg'
+                  : 'bg-surface-base border border-border-default text-text-secondary hover:bg-surface-hover'
+              }`}
+            >
+              Stores
+            </button>
+          </div>
+        </div>
         {loadingSubscriptions ? (
           <div className="text-center py-8">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mb-4"></div>
@@ -785,9 +843,16 @@ export default function AdminSubscriptionsPage() {
                         onChange={(e) => setGrantForm({ ...grantForm, planCode: e.target.value })}
                         className="w-full px-3 py-2 bg-surface-elevated border border-border-default rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
                       >
-                        <option value="starter_30">Starter Monthly</option>
-                        <option value="growth_90">Growth Quarterly</option>
-                        <option value="lifetime">Lifetime</option>
+                        <optgroup label="EazyDS Platform Plans">
+                          <option value="starter_30">Starter Monthly (₹999)</option>
+                          <option value="growth_90">Growth Quarterly (₹3,999)</option>
+                          <option value="lifetime">Lifetime (₹9,999)</option>
+                        </optgroup>
+                        <optgroup label="Eazy Stores Plans">
+                          <option value="stores_basic_free">Basic Plan (Free)</option>
+                          <option value="stores_grow">Grow Plan (₹7,000 / 3 months)</option>
+                          <option value="stores_advanced">Advanced Plan (₹30,000 / 3 months)</option>
+                        </optgroup>
                       </select>
                     </div>
                     <div>
@@ -911,9 +976,16 @@ export default function AdminSubscriptionsPage() {
                         className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary"
                       >
                         <option value="">No change</option>
-                        <option value="starter_30">Starter Monthly</option>
-                        <option value="growth_90">Growth Quarterly</option>
-                        <option value="lifetime">Lifetime</option>
+                        <optgroup label="EazyDS Platform Plans">
+                          <option value="starter_30">Starter Monthly (₹999)</option>
+                          <option value="growth_90">Growth Quarterly (₹3,999)</option>
+                          <option value="lifetime">Lifetime (₹9,999)</option>
+                        </optgroup>
+                        <optgroup label="Eazy Stores Plans">
+                          <option value="stores_basic_free">Basic Plan (Free)</option>
+                          <option value="stores_grow">Grow Plan (₹7,000 / 3 months)</option>
+                          <option value="stores_advanced">Advanced Plan (₹30,000 / 3 months)</option>
+                        </optgroup>
                       </select>
                     </div>
                     <div>
