@@ -230,7 +230,7 @@ async function syncSubscriptionsFromRazorpay() {
 
     if (!isStorePlan(planCode)) {
       user.plan = planCode;
-      user.planExpiresAt = endDate || undefined;
+      user.planExpiresAt = endDate || null;
       user.isLifetime = plan.isLifetime;
       await user.save();
     }
