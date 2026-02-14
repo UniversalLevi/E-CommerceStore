@@ -66,11 +66,17 @@ function buildPlanIdToCodeMap(): Map<string, PlanCode> {
       map.set(planId.trim(), planCode);
     }
   }
-  // Legacy plan IDs (from old Razorpay plans, before store plans were added)
+  // Legacy plan IDs (from old Razorpay plans)
   const legacyPlans: [string, PlanCode][] = [
     ['plan_SAyRvpiqMHHAPx', 'growth_90'],   // Pro Plan ₹3999
     ['plan_SAyRwPyT7kMF3Q', 'lifetime'],    // Lifetime Plan ₹9999
     ['plan_SAyRvArjRDefdY', 'starter_30'],  // Monthly Plan ₹999
+    ['plan_S4qrSlRvfOKm2c', 'starter_30'],  // Monthly ₹999
+    ['plan_S4WBElVqLqIfwF', 'starter_30'],  // Monthly Plan ₹999
+    ['plan_S4W4aO0JfefyVp', 'starter_30'],  // Monthly Plan ₹999
+    ['plan_S4UHPZdB9JLKU3', 'starter_30'],  // Monthly Plan ₹999
+    ['plan_S3lDwbXBWvlWIp', 'starter_30'],  // Monthly Plan ₹999
+    ['plan_RpOc46MsBhprwW', 'starter_30'],  // Eazy Dropshipping ₹999
   ];
   for (const [planId, planCode] of legacyPlans) {
     if (!map.has(planId)) map.set(planId, planCode);
