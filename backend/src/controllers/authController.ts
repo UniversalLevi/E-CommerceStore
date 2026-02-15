@@ -334,29 +334,31 @@ export const getMe = async (
 
     if (activeSubscription) {
       const plan = plans[activeSubscription.planCode as PlanCode];
-      if (plan) {
-        // Check if User model needs to be synced with Subscription model
-        const userPlanMatches = user.plan === activeSubscription.planCode;
-        const userIsLifetimeMatches = user.isLifetime === plan.isLifetime;
-        const userExpiresAtMatches = 
-          (plan.isLifetime && user.planExpiresAt === null) ||
-          (!plan.isLifetime && user.planExpiresAt && activeSubscription.endDate && 
-           Math.abs(user.planExpiresAt.getTime() - activeSubscription.endDate.getTime()) < 1000);
+      const isLifetime = plan
+        ? plan.isLifetime
+        : activeSubscription.planCode === 'lifetime' || !activeSubscription.endDate;
+      const planExpiresAt = plan
+        ? (plan.isLifetime ? null : (activeSubscription.endDate || null))
+        : (isLifetime ? null : (activeSubscription.endDate || null));
 
-        if (!userPlanMatches || !userIsLifetimeMatches || !userExpiresAtMatches) {
-          // Sync User model with Subscription model
-          const userDoc = await User.findById((req.user as any)._id);
-          if (userDoc) {
-            userDoc.plan = activeSubscription.planCode as PlanCode;
-            userDoc.isLifetime = plan.isLifetime;
-            userDoc.planExpiresAt = plan.isLifetime ? null : (activeSubscription.endDate || null);
-            await userDoc.save();
-            
-            // Update user object for response
-            user = userDoc.toObject();
-            delete (user as any).password;
-            needsUpdate = true;
-          }
+      const userPlanMatches = user.plan === activeSubscription.planCode;
+      const userIsLifetimeMatches = user.isLifetime === isLifetime;
+      const userExpiresAtMatches =
+        (isLifetime && user.planExpiresAt === null) ||
+        (!isLifetime && user.planExpiresAt && activeSubscription.endDate &&
+          Math.abs(user.planExpiresAt.getTime() - activeSubscription.endDate.getTime()) < 1000);
+
+      if (!userPlanMatches || !userIsLifetimeMatches || !userExpiresAtMatches) {
+        const userDoc = await User.findById((req.user as any)._id);
+        if (userDoc) {
+          userDoc.plan = activeSubscription.planCode as PlanCode;
+          userDoc.isLifetime = isLifetime;
+          userDoc.planExpiresAt = planExpiresAt;
+          await userDoc.save();
+
+          user = userDoc.toObject();
+          delete (user as any).password;
+          needsUpdate = true;
         }
       }
     } else {

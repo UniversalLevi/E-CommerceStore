@@ -3,7 +3,7 @@ import { AuthRequest } from './auth';
 import { IUser } from '../models/User';
 import { getSubscriptionStatus, isStorePlan } from '../models/User';
 import { Subscription, isStoreSubscription } from '../models/Subscription';
-import { plans, PlanCode, isStorePlan as isStorePlanCode } from '../config/plans';
+import { plans, PlanCode, isStorePlan as isStorePlanCode, PLATFORM_PLAN_CODES } from '../config/plans';
 
 /**
  * Check if user has an active paid subscription (including trial)
@@ -23,7 +23,7 @@ export async function isPaidUser(user: IUser): Promise<boolean> {
   if (user.plan && !isStorePlanCode(user.plan)) {
     const subscription = await Subscription.findOne({
       userId: (user as any)._id,
-      planCode: { $in: ['starter_30', 'growth_90', 'lifetime'] }, // Only platform plans
+      planCode: { $in: PLATFORM_PLAN_CODES },
       status: { $in: ['active', 'trialing', 'manually_granted'] },
     }).lean();
     
@@ -40,7 +40,7 @@ export async function isPaidUser(user: IUser): Promise<boolean> {
   // Also check Subscription model for active platform subscription
   const platformSubscription = await Subscription.findOne({
     userId: (user as any)._id,
-    planCode: { $in: ['starter_30', 'growth_90', 'lifetime'] }, // Only platform plans
+    planCode: { $in: PLATFORM_PLAN_CODES },
     status: { $in: ['active', 'trialing', 'manually_granted'] },
   }).lean();
   
@@ -97,7 +97,7 @@ export async function canAddProduct(user: IUser): Promise<{ allowed: boolean; re
   if (user.plan && !isStorePlanCode(user.plan)) {
     const subscription = await Subscription.findOne({
       userId: (user as any)._id,
-      planCode: { $in: ['starter_30', 'growth_90', 'lifetime'] }, // Only platform plans
+      planCode: { $in: PLATFORM_PLAN_CODES },
       status: { $in: ['active', 'trialing', 'manually_granted'] },
     }).lean();
     

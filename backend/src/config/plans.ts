@@ -103,3 +103,8 @@ export function isPlatformPlan(planCode: string): boolean {
   return !isStorePlan(planCode);
 }
 
+// Single source of truth for platform plan codes (used in subscription checks)
+export const PLATFORM_PLAN_CODES: PlanCode[] = (Object.keys(plans) as PlanCode[]).filter(
+  (code) => isPlatformPlan(code)
+);
+
