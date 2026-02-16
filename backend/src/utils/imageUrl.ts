@@ -9,15 +9,38 @@ function getBackendBaseUrl(): string {
 }
 
 /**
- * Convert a single image URL to absolute if it is relative.
- * Relative paths (e.g. /uploads/...) are resolved against BACKEND_URL.
+ * Extract pathname from a URL (e.g. http://localhost:5000/uploads/foo.png -> /uploads/foo.png).
+ */
+function getPathFromUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.pathname + (u.search || '') + (u.hash || '');
+  } catch {
+    return url.startsWith('/') ? url : '/' + url;
+  }
+}
+
+/**
+ * Convert a single image URL to absolute and production-safe.
+ * - Relative paths (e.g. /uploads/...) are resolved against BACKEND_URL.
+ * - URLs pointing to localhost/127.0.0.1 are rewritten to BACKEND_URL so they work in production.
  */
 export function toAbsoluteImageUrl(url: string): string {
   if (!url || typeof url !== 'string') return url;
   const trimmed = url.trim();
   if (!trimmed) return url;
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+
   const base = getBackendBaseUrl();
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    const lower = trimmed.toLowerCase();
+    if (base && (lower.includes('localhost') || lower.includes('127.0.0.1'))) {
+      const pathPart = getPathFromUrl(trimmed);
+      return `${base}${pathPart.startsWith('/') ? pathPart : '/' + pathPart}`;
+    }
+    return trimmed;
+  }
+
   if (!base) return url;
   return `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
 }

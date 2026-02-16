@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar';
 import FindWinningProductModal from '@/components/FindWinningProductModal';
 import IconBadge from '@/components/IconBadge';
 import { useAuth } from '@/contexts/AuthContext';
+import ProductImage from '@/components/ProductImage';
 import { Package, Target } from 'lucide-react';
 
 export default function ProductsPage() {
@@ -85,7 +86,7 @@ export default function ProductsPage() {
       >
         <div className="aspect-square relative flex items-center justify-center bg-gradient-to-br from-purple-500/10 to-blue-500/10">
           {niche.image ? (
-            <img
+            <ProductImage
               src={niche.image}
               alt={niche.name}
               className="w-full h-full object-cover"

@@ -13,6 +13,7 @@ import StoreSelectionModal from '@/components/StoreSelectionModal';
 import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
 import ImportProductModal from '@/components/store/ImportProductModal';
 import IconBadge from '@/components/IconBadge';
+import ProductImage from '@/components/ProductImage';
 import { notify } from '@/lib/toast';
 import { CheckCircle2, Tag, ShoppingCart, PenLine, Target, LogIn, Store } from 'lucide-react';
 
@@ -65,14 +66,13 @@ export default function ProductDetailPage() {
       );
       setProduct(response.data);
       
-      // Track product view (only for authenticated users with active platform subscription; 403 is expected otherwise)
+      // Track product view (only for authenticated users with active platform subscription)
       if (isAuthenticated && hasActiveSubscription) {
         try {
           await api.post('/api/analytics/product-view', { productId: id });
         } catch (err: any) {
-          if (err?.response?.status !== 403) {
-            console.error('Failed to track product view:', err);
-          }
+          if (err?.response?.status === 403) return; // Subscription required – do not log
+          console.error('Failed to track product view:', err);
         }
       }
       
@@ -343,8 +343,8 @@ export default function ProductDetailPage() {
                   className="aspect-square rounded-lg overflow-hidden mb-4 cursor-zoom-in relative group"
                   onClick={() => setShowImageZoom(true)}
                 >
-                  <img
-                    src={getImageUrl(product.images[selectedImage])}
+                  <ProductImage
+                    src={product.images[selectedImage]}
                     alt={product.title}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   />
@@ -366,8 +366,8 @@ export default function ProductDetailPage() {
                             : 'border-border-default hover:border-primary-500'
                         }`}
                       >
-                        <img
-                          src={getImageUrl(image)}
+                        <ProductImage
+                          src={image}
                           alt={`${product.title} ${index + 1}`}
                           className="w-full h-full object-cover"
                         />
@@ -606,8 +606,8 @@ export default function ProductDetailPage() {
                   className="glass-card glass-card-hover rounded-xl overflow-hidden transition-all hover:-translate-y-1"
                 >
                   <div className="aspect-square relative">
-                    <img
-                      src={getImageUrl(relatedProduct.images[0])}
+                    <ProductImage
+                      src={relatedProduct.images[0]}
                       alt={relatedProduct.title}
                       className="w-full h-full object-cover"
                     />
@@ -642,12 +642,13 @@ export default function ProductDetailPage() {
           Close
           </button>
           <div className="max-w-4xl max-h-full">
-            <img
-              src={getImageUrl(product.images[selectedImage])}
+            <div onClick={(e) => e.stopPropagation()}>
+            <ProductImage
+              src={product.images[selectedImage]}
               alt={product.title}
               className="max-w-full max-h-[90vh] object-contain"
-              onClick={(e) => e.stopPropagation()}
             />
+          </div>
           </div>
           {product.images.length > 1 && (
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
@@ -664,8 +665,8 @@ export default function ProductDetailPage() {
                       : 'border-border-default opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img
-                    src={getImageUrl(image)}
+                  <ProductImage
+                    src={image}
                     alt={`${product.title} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />

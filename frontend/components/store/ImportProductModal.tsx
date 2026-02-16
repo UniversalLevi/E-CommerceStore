@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { getImageUrl } from '@/lib/imageUrl';
+import ProductImage from '@/components/ProductImage';
 import { notify } from '@/lib/toast';
 import { X, Loader2, Package } from 'lucide-react';
 
@@ -162,8 +162,8 @@ export default function ImportProductModal({
           {/* Product Preview */}
           <div className="flex gap-4">
             {product.images && product.images.length > 0 && (
-              <img
-                src={getImageUrl(product.images[0])}
+              <ProductImage
+                src={product.images[0]}
                 alt={product.title}
                 className="w-24 h-24 object-cover rounded-lg"
               />
