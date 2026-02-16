@@ -1,5 +1,6 @@
 'use client';
 
+import { getImageUrl } from '@/lib/imageUrl';
 import { useStoreTheme } from '@/contexts/StoreThemeContext';
 import { useCartStore } from '@/store/useCartStore';
 import { Trash2, Plus, Minus } from 'lucide-react';
@@ -69,7 +70,7 @@ export default function Cart({ storeSlug, currency }: CartProps) {
           >
             {item.image && (
               <img
-                src={item.image}
+                src={getImageUrl(item.image)}
                 alt={item.title}
                 className="w-24 h-24 object-cover border-2"
                 style={{ borderColor: colors.primary + '50' }}

@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import { Product, Niche } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import Navbar from '@/components/Navbar';
 import StoreSelectionModal from '@/components/StoreSelectionModal';
 import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
@@ -25,6 +27,7 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
   const [product, setProduct] = useState<Product | null>(null);
   const [niche, setNiche] = useState<Niche | null>(null);
   const [stores, setStores] = useState<InternalStore[]>([]);
@@ -62,13 +65,14 @@ export default function ProductDetailPage() {
       );
       setProduct(response.data);
       
-      // Track product view
-      if (isAuthenticated) {
+      // Track product view (only for authenticated users with active platform subscription; 403 is expected otherwise)
+      if (isAuthenticated && hasActiveSubscription) {
         try {
           await api.post('/api/analytics/product-view', { productId: id });
-        } catch (err) {
-          // Ignore tracking errors
-          console.error('Failed to track product view:', err);
+        } catch (err: any) {
+          if (err?.response?.status !== 403) {
+            console.error('Failed to track product view:', err);
+          }
         }
       }
       
@@ -340,7 +344,7 @@ export default function ProductDetailPage() {
                   onClick={() => setShowImageZoom(true)}
                 >
                   <img
-                    src={product.images[selectedImage]}
+                    src={getImageUrl(product.images[selectedImage])}
                     alt={product.title}
                     className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   />
@@ -363,7 +367,7 @@ export default function ProductDetailPage() {
                         }`}
                       >
                         <img
-                          src={image}
+                          src={getImageUrl(image)}
                           alt={`${product.title} ${index + 1}`}
                           className="w-full h-full object-cover"
                         />
@@ -603,7 +607,7 @@ export default function ProductDetailPage() {
                 >
                   <div className="aspect-square relative">
                     <img
-                      src={relatedProduct.images[0]}
+                      src={getImageUrl(relatedProduct.images[0])}
                       alt={relatedProduct.title}
                       className="w-full h-full object-cover"
                     />
@@ -639,7 +643,7 @@ export default function ProductDetailPage() {
           </button>
           <div className="max-w-4xl max-h-full">
             <img
-              src={product.images[selectedImage]}
+              src={getImageUrl(product.images[selectedImage])}
               alt={product.title}
               className="max-w-full max-h-[90vh] object-contain"
               onClick={(e) => e.stopPropagation()}
@@ -661,7 +665,7 @@ export default function ProductDetailPage() {
                   }`}
                 >
                   <img
-                    src={image}
+                    src={getImageUrl(image)}
                     alt={`${product.title} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />

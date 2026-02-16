@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import { Niche, Product, PaginatedResponse } from '@/types';
 import Navbar from '@/components/Navbar';
 import Pagination from '@/components/Pagination';
@@ -293,7 +294,7 @@ export default function NicheProductsPage() {
                     <Link href={`/products/${product._id}`}>
                       <div className="aspect-square relative">
                         <img
-                          src={product.images[0]}
+                          src={getImageUrl(product.images[0])}
                           alt={product.title}
                           className="w-full h-full object-cover"
                         />

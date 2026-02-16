@@ -3,6 +3,7 @@ import { AuthRequest } from '../middleware/auth';
 import { StoreProduct } from '../models/StoreProduct';
 import { Store } from '../models/Store';
 import { createError } from '../middleware/errorHandler';
+import { toAbsoluteImageUrls } from '../utils/imageUrl';
 import { createProductSchema, updateProductSchema } from '../validators/storeDashboardValidator';
 import { logInternalStoreActivity, getInternalStoreLogContext } from '../services/internalStoreLogger';
 
@@ -124,10 +125,15 @@ export const listProducts = async (req: AuthRequest, res: Response, next: NextFu
 
     const total = await StoreProduct.countDocuments(query);
 
+    const productsWithAbsoluteImages = products.map((p: any) => ({
+      ...p,
+      images: toAbsoluteImageUrls(p.images),
+    }));
+
     res.status(200).json({
       success: true,
       data: {
-        products,
+        products: productsWithAbsoluteImages,
         pagination: {
           page: parseInt(page as string, 10),
           limit: parseInt(limit as string, 10),
@@ -156,9 +162,12 @@ export const getProduct = async (req: AuthRequest, res: Response, next: NextFunc
       throw createError('Product not found', 404);
     }
 
+    const doc = (product as any).toObject ? (product as any).toObject() : product;
+    doc.images = toAbsoluteImageUrls(doc.images);
+
     res.status(200).json({
       success: true,
-      data: product,
+      data: doc,
     });
   } catch (error: any) {
     next(error);

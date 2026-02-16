@@ -3,6 +3,7 @@ import { Product } from '../models/Product';
 import { Niche } from '../models/Niche';
 import { User } from '../models/User';
 import { createError } from '../middleware/errorHandler';
+import { toAbsoluteImageUrls } from '../utils/imageUrl';
 import { AuthRequest } from '../middleware/auth';
 import { updateNicheProductCounts } from './nicheController';
 
@@ -84,9 +85,14 @@ export const getAllProducts = async (
 
     const pages = Math.ceil(total / limitNum);
 
+    const data = products.map((p: any) => ({
+      ...p,
+      images: toAbsoluteImageUrls(p.images),
+    }));
+
     res.status(200).json({
       success: true,
-      data: products,
+      data,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -120,9 +126,12 @@ export const getProductById = async (
       throw createError('Product not found', 404);
     }
 
+    const doc = (product as any).toObject ? (product as any).toObject() : product;
+    doc.images = toAbsoluteImageUrls(doc.images);
+
     res.status(200).json({
       success: true,
-      data: product,
+      data: doc,
     });
   } catch (error: any) {
     if (error.statusCode) {

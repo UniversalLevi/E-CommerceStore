@@ -1,6 +1,7 @@
 'use client';
 
 import { useStoreTheme } from '@/contexts/StoreThemeContext';
+import { getImageUrl } from '@/lib/imageUrl';
 
 interface ProductCardProps {
   product: {
@@ -44,7 +45,7 @@ export default function ProductCard({ product, storeSlug, currency }: ProductCar
         <div className="aspect-square relative overflow-hidden">
           {product.images && product.images.length > 0 ? (
             <img
-              src={product.images[0]}
+              src={getImageUrl(product.images[0])}
               alt={product.title}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               loading="lazy"

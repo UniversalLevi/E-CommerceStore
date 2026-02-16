@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
+import { getImageUrl } from '@/lib/imageUrl';
 import { X, ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react';
 
 interface CartSidebarProps {
@@ -89,7 +90,7 @@ export default function CartSidebar({ isOpen, onClose, storeSlug, currency = 'IN
                   <div className="flex gap-4">
                     {item.image && (
                       <img
-                        src={item.image}
+                        src={getImageUrl(item.image)}
                         alt={item.title || 'Product'}
                         className="w-20 h-20 object-cover rounded"
                       />

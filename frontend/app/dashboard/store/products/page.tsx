@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { api } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import { notify } from '@/lib/toast';
 import { Package, Plus, Loader2, Edit, Trash2, Eye, EyeOff, Search, Filter } from 'lucide-react';
 import Link from 'next/link';
@@ -200,7 +201,7 @@ export default function StoreProductsPage() {
               {product.images && product.images.length > 0 && (
                 <div className="relative w-full h-48 overflow-hidden bg-surface-base">
                   <img
-                    src={product.images[0]}
+                    src={getImageUrl(product.images[0])}
                     alt={product.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />

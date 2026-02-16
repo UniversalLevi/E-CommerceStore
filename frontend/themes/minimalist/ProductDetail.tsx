@@ -1,5 +1,6 @@
 'use client';
 
+import { getImageUrl } from '@/lib/imageUrl';
 import { useState } from 'react';
 import { useStoreTheme } from '@/contexts/StoreThemeContext';
 import { ShoppingCart } from 'lucide-react';
@@ -86,7 +87,7 @@ export default function ProductDetail({ product, storeSlug, currency }: ProductD
           <div className="aspect-square overflow-hidden mb-6 bg-gray-50" style={{ border: `1px solid ${colors.border || colors.primary + '10'}` }}>
             {product.images && product.images.length > 0 ? (
               <img
-                src={product.images[selectedImage]}
+                src={getImageUrl(product.images[selectedImage])}
                 alt={product.title}
                 className="w-full h-full object-cover"
               />
@@ -109,7 +110,7 @@ export default function ProductDetail({ product, storeSlug, currency }: ProductD
                     borderColor: selectedImage === idx ? colors.primary : 'transparent',
                   }}
                 >
-                  <img src={img} alt={`${product.title} ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img src={getImageUrl(img)} alt={`${product.title} ${idx + 1}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

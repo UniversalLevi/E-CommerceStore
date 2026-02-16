@@ -1,13 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Serve icon.svg at /favicon.ico to fix 404 (browsers request favicon.ico by default)
+  async rewrites() {
+    return [{ source: '/favicon.ico', destination: '/icon.svg' }];
+  },
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'eazyds.com'],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
+      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: '**' },
     ],
   },
   // Configure Server Actions properly to prevent errors

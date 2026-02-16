@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import { useCartStore } from '@/store/useCartStore';
 import { notify } from '@/lib/toast';
 import { Loader2, ShoppingCart, ArrowLeft } from 'lucide-react';
@@ -183,7 +184,7 @@ export default function StorefrontProductPage() {
           <div>
             {product.images && product.images.length > 0 ? (
               <img
-                src={product.images[0]}
+                src={getImageUrl(product.images[0])}
                 alt={product.title}
                 className="w-full rounded-xl"
                 style={{ border: `2px solid ${colors.primary}20` }}

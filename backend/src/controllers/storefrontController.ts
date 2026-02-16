@@ -9,6 +9,7 @@ import { storefrontService } from '../services/StorefrontService';
 import { razorpayConnectService } from '../services/RazorpayConnectService';
 import { razorpayService } from '../services/RazorpayService';
 import { createError } from '../middleware/errorHandler';
+import { toAbsoluteImageUrls } from '../utils/imageUrl';
 import { createOrderSchema } from '../validators/storeDashboardValidator';
 import {
   sendOrderConfirmationEmail,
@@ -77,9 +78,17 @@ export const listStorefrontProducts = async (
       sort: sort as 'price_asc' | 'price_desc' | 'newest' | 'oldest',
     });
 
+    const productsWithAbsoluteImages = (result.products || []).map((p: any) => ({
+      ...p,
+      images: toAbsoluteImageUrls(p.images),
+    }));
+
     res.status(200).json({
       success: true,
-      data: result,
+      data: {
+        ...result,
+        products: productsWithAbsoluteImages,
+      },
     });
   } catch (error: any) {
     next(error);
@@ -104,6 +113,10 @@ export const getStorefrontProduct = async (req: Request, res: Response, next: Ne
       (store._id as any).toString(),
       productId
     );
+
+    if (product && product.images) {
+      (product as any).images = toAbsoluteImageUrls(product.images);
+    }
 
     res.status(200).json({
       success: true,
