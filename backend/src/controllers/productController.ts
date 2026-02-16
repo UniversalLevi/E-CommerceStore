@@ -5,6 +5,7 @@ import { User } from '../models/User';
 import { createError } from '../middleware/errorHandler';
 import { toAbsoluteImageUrls } from '../utils/imageUrl';
 import { AuthRequest } from '../middleware/auth';
+import { isPaidUser } from '../middleware/subscription';
 import { updateNicheProductCounts } from './nicheController';
 
 // Get all active products (public)
@@ -111,7 +112,7 @@ export const getAllProducts = async (
   }
 };
 
-// Get single product (public)
+// Get single product (public). Tracks view server-side when caller is authenticated and has paid plan.
 export const getProductById = async (
   req: Request,
   res: Response,
@@ -119,6 +120,7 @@ export const getProductById = async (
 ) => {
   try {
     const { id } = req.params;
+    const authReq = req as AuthRequest;
 
     const product = await Product.findById(id).populate('niche', 'name slug icon description');
 
@@ -128,6 +130,15 @@ export const getProductById = async (
 
     const doc = (product as any).toObject ? (product as any).toObject() : product;
     doc.images = toAbsoluteImageUrls(doc.images);
+
+    // Track product view for authenticated paid users (fire-and-forget, no 403 from client)
+    if (authReq.user) {
+      isPaidUser(authReq.user).then((paid) => {
+        if (paid) {
+          Product.findByIdAndUpdate(id, { $inc: { 'analytics.views': 1 } }).catch(() => {});
+        }
+      });
+    }
 
     res.status(200).json({
       success: true,

@@ -7,7 +7,6 @@ import { api } from '@/lib/api';
 import { getImageUrl } from '@/lib/imageUrl';
 import { Product, Niche } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/hooks/useSubscription';
 import Navbar from '@/components/Navbar';
 import StoreSelectionModal from '@/components/StoreSelectionModal';
 import WriteProductDescriptionModal from '@/components/WriteProductDescriptionModal';
@@ -28,7 +27,6 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const { hasActiveSubscription } = useSubscription();
   const [product, setProduct] = useState<Product | null>(null);
   const [niche, setNiche] = useState<Niche | null>(null);
   const [stores, setStores] = useState<InternalStore[]>([]);
@@ -65,17 +63,8 @@ export default function ProductDetailPage() {
         `/api/products/${id}`
       );
       setProduct(response.data);
-      
-      // Track product view (only for authenticated users with active platform subscription)
-      if (isAuthenticated && hasActiveSubscription) {
-        try {
-          await api.post('/api/analytics/product-view', { productId: id });
-        } catch (err: any) {
-          if (err?.response?.status === 403) return; // Subscription required – do not log
-          console.error('Failed to track product view:', err);
-        }
-      }
-      
+      // Product view is tracked server-side when GET /api/products/:id is called with auth
+
       // Extract niche if populated
       if (response.data.niche && typeof response.data.niche === 'object') {
         const nicheData = response.data.niche as Niche;

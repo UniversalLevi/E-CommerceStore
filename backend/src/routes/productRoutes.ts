@@ -9,7 +9,7 @@ import {
   getUserProducts,
   updateProductMetadata,
 } from '../controllers/productController';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, optionalAuthenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
 import { requirePaidPlan } from '../middleware/subscription';
 import { validate } from '../middleware/validate';
@@ -24,7 +24,7 @@ const router = Router();
 router.get('/', getAllProducts);
 router.get('/categories', getCategories);
 router.get('/user', authenticateToken, requirePaidPlan, getUserProducts);
-router.get('/:id', getProductById);
+router.get('/:id', optionalAuthenticateToken, getProductById);
 
 // Admin only routes
 router.post(

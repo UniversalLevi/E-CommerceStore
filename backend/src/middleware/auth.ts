@@ -64,6 +64,41 @@ export const authenticateToken = async (
 };
 
 /**
+ * Optional auth: set req.user when valid token present; otherwise continue without user.
+ * Use for routes that work for both anonymous and authenticated users.
+ */
+export const optionalAuthenticateToken = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    let token = req.cookies?.auth_token;
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      token = authHeader && authHeader.split(' ')[1];
+    }
+    if (!token) return next();
+
+    const decoded = jwt.verify(token, config.jwtSecret) as {
+      userId: string;
+      passwordChangedAt?: number;
+    };
+    const user = await User.findById(decoded.userId).select('-password').lean();
+    if (!user || !user.isActive) return next();
+
+    const tokenPasswordChangedAt = decoded.passwordChangedAt || 0;
+    const userPasswordChangedAt = user.passwordChangedAt?.getTime() || 0;
+    if (userPasswordChangedAt > tokenPasswordChangedAt) return next();
+
+    req.user = user as unknown as IUser;
+    next();
+  } catch {
+    next();
+  }
+};
+
+/**
  * Require specific role middleware
  * @param role - Required role ('admin' or 'user')
  */

@@ -5,6 +5,7 @@ import { Product } from '../models/Product';
 import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
 import { clearNicheCache } from '../middleware/cache';
+import { toAbsoluteImageUrls } from '../utils/imageUrl';
 import { CreateNicheInput, UpdateNicheInput } from '../validators/nicheValidator';
 
 /**
@@ -265,9 +266,14 @@ export const getNicheProducts = async (
 
     const pages = Math.ceil(total / limitNum);
 
+    const data = products.map((p: any) => ({
+      ...p,
+      images: toAbsoluteImageUrls(p.images),
+    }));
+
     res.json({
       success: true,
-      data: products,
+      data,
       pagination: {
         page: pageNum,
         limit: limitNum,
