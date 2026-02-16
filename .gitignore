@@ -62,3 +62,6 @@ backend/public/uploads/
 frontend/public/uploads/
 backend/uploads/
 backend/uploads/**
+
+# Export outputs (subscriptions CSV/JSON)
+backend/exports/
