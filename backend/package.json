@@ -18,6 +18,7 @@
     "create-razorpay-plans": "ts-node src/scripts/createRazorpayPlans.ts",
     "sync-razorpay-subscriptions": "ts-node src/scripts/syncSubscriptionsFromRazorpay.ts",
     "export-subscriptions": "ts-node src/scripts/exportSubscriptions.ts",
+    "apply-subscriptions-export": "ts-node src/scripts/applySubscriptionsFromExport.ts",
     "reset-user-for-testing": "ts-node src/scripts/resetUserForTesting.ts",
     "generate:themes": "ts-node scripts/generate-niche-templates.ts",
     "generate:themes:force": "OVERWRITE_EXISTING=true ts-node scripts/generate-niche-templates.ts",
