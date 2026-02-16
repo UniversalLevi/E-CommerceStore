@@ -150,7 +150,7 @@ async function run() {
     const headers = Object.keys(rows[0] || {}) as (keyof ExportRow)[];
     const csvLines = [
       headers.map(escapeCsvCell).join(','),
-      ...rows.map((r) => headers.map((h) => escapeCsvCell(r[h])).join(',')),
+      ...rows.map((r) => headers.map((h) => escapeCsvCell(String(r[h] ?? ''))).join(',')),
     ];
     fs.writeFileSync(csvPath, csvLines.join('\n'), 'utf8');
 
