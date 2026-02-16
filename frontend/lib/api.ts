@@ -350,6 +350,51 @@ class ApiClient {
     }>(`/api/orders/internal/all${queryString ? `?${queryString}` : ''}`);
   }
 
+  async getManualOrders(params?: { status?: string; startDate?: string; endDate?: string; page?: number; limit?: number }) {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.page) queryParams.append('page', String(params.page));
+    if (params?.limit) queryParams.append('limit', String(params.limit));
+    const q = queryParams.toString();
+    return this.get<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/api/manual-orders${q ? `?${q}` : ''}`
+    );
+  }
+
+  async getManualOrder(id: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/manual-orders/${id}`);
+  }
+
+  async createManualOrder(body: {
+    customer: { name: string; email: string; phone: string };
+    shippingAddress: { name: string; address1: string; address2?: string; city: string; state: string; zip: string; country: string; phone: string };
+    items: { productId: string; title: string; quantity: number; price: number }[];
+    shipping?: number;
+    currency?: string;
+    status?: string;
+  }) {
+    return this.post<{ success: boolean; data: any }>('/api/manual-orders', body);
+  }
+
+  async updateManualOrder(id: string, body: Partial<{
+    customer: { name?: string; email?: string; phone?: string };
+    shippingAddress: { name?: string; address1?: string; address2?: string; city?: string; state?: string; zip?: string; country?: string; phone?: string };
+    items: { productId: string; title: string; quantity: number; price: number }[];
+    shipping?: number;
+    currency?: string;
+    status?: string;
+  }>) {
+    return this.put<{ success: boolean; data: any }>(`/api/manual-orders/${id}`, body);
+  }
+
+  async updateManualOrderStatus(id: string, status: string) {
+    const path = this.buildPath(`/api/manual-orders/${id}/status`);
+    const response = await this.client.patch(path, { status });
+    return response.data;
+  }
+
   async getOrderZenStatus(storeId: string, orderId: string) {
     return this.get<{
       success: boolean;

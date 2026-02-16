@@ -86,6 +86,7 @@ import serviceRoutes from './routes/serviceRoutes';
 import affiliateRoutes from './routes/affiliateRoutes';
 import adminAffiliateRoutes from './routes/adminAffiliateRoutes';
 import storePlanRoutes from './routes/storePlanRoutes';
+import manualOrderRoutes from './routes/manualOrderRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -105,6 +106,7 @@ app.use('/api/subscriptions', userSubscriptionRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/manual-orders', manualOrderRoutes);
 app.use('/api/auto-orders', autoOrderRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/admin/zen-orders', zenOrderRoutes);

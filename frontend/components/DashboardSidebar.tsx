@@ -24,6 +24,7 @@ import {
   Share2,
   Plus,
   Info,
+  FileText,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -42,6 +43,7 @@ const platformNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/templates', label: 'Templates', icon: Palette },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/dashboard/manual-orders', label: 'Manual Orders', icon: FileText },
   { href: '/dashboard/affiliate', label: 'Affiliate', icon: Share2 },
   { href: '/dashboard/ad-builder/instagram', label: 'Ad Builder', icon: Megaphone },
   { href: '/dashboard/video-mutator', label: 'Video Mutator', icon: Video },
