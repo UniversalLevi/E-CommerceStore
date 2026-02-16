@@ -20,15 +20,33 @@ function getPathFromUrl(url: string): string {
   }
 }
 
+/** Image extension pattern for validating path-like strings */
+const IMAGE_EXT = /\.(jpe?g|png|gif|webp)(\?|$)/i;
+
+/**
+ * True if the value looks like an image URL or file path, not a label (e.g. "Upload 1").
+ */
+export function isValidImageUrlOrPath(value: string): boolean {
+  const s = value.trim();
+  if (!s) return false;
+  if (s.startsWith('http://') || s.startsWith('https://')) return true;
+  if (s.startsWith('/')) return true;
+  if (s.includes('/') && IMAGE_EXT.test(s)) return true;
+  if (IMAGE_EXT.test(s)) return true; // e.g. "image-123.jpg"
+  return false;
+}
+
 /**
  * Convert a single image URL to absolute and production-safe.
+ * - Returns '' for non-URL-like values (e.g. "Upload 1" labels) so they are not used as image src.
  * - Relative paths (e.g. /uploads/...) are resolved against BACKEND_URL.
  * - URLs pointing to localhost/127.0.0.1 are rewritten to BACKEND_URL so they work in production.
  */
 export function toAbsoluteImageUrl(url: string): string {
-  if (!url || typeof url !== 'string') return url;
+  if (!url || typeof url !== 'string') return '';
   const trimmed = url.trim();
-  if (!trimmed) return url;
+  if (!trimmed) return '';
+  if (!isValidImageUrlOrPath(trimmed)) return '';
 
   const base = getBackendBaseUrl();
 
@@ -41,14 +59,15 @@ export function toAbsoluteImageUrl(url: string): string {
     return trimmed;
   }
 
-  if (!base) return url;
+  if (!base) return trimmed.startsWith('http') ? trimmed : '';
   return `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
 }
 
 /**
- * Convert an array of image URLs to absolute. Safe to pass undefined or non-arrays.
+ * Convert an array of image URLs to absolute. Invalid or label-like entries are omitted.
+ * Safe to pass undefined or non-arrays.
  */
 export function toAbsoluteImageUrls(images: string[] | undefined | null): string[] {
   if (!Array.isArray(images)) return [];
-  return images.map(toAbsoluteImageUrl);
+  return images.map(toAbsoluteImageUrl).filter(Boolean);
 }
