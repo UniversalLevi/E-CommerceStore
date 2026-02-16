@@ -23,7 +23,7 @@ interface ManualOrder {
   _id: string;
   orderId: string;
   customer: { name: string; email: string; phone: string };
-  shippingAddress: { name: string; address1: string; city: string; state: string; zip: string; country: string; phone: string };
+  shippingAddress: { name: string; address1: string; address2?: string; city: string; state: string; zip: string; country: string; phone: string };
   items: { productId: string; title: string; quantity: number; price: number }[];
   subtotal: number;
   shipping: number;
