@@ -25,8 +25,8 @@ function computeTotals(items: IManualOrderItem[], shippingPaise: number): { subt
 }
 
 /**
- * GET /api/manual-orders/available-products – products the user can add to a manual order.
- * First returns products from user's stores; if none, falls back to all active catalog products (so dropdown is never empty).
+ * GET /api/manual-orders/available-products – all products the user can add to a manual order.
+ * Always returns ALL active catalog products (no limit), so the dropdown has every product and every niche.
  * Auth only; no subscription required.
  */
 export const getAvailableProducts = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -36,39 +36,20 @@ export const getAvailableProducts = async (req: AuthRequest, res: Response, next
     const user = await User.findById(userId).lean();
     if (!user) throw createError('User not found', 404);
     const userStores = (user as any).stores || [];
-    const productIds = Array.from(
-      new Set(
-        userStores
-          .map((s: any) => {
-            const pid = s.productId;
-            return pid?.toString ? pid.toString() : pid;
-          })
-          .filter(Boolean)
-      )
-    );
 
-    let productsWithStores: any[];
-    if (productIds.length > 0) {
-      const products = await Product.find({ _id: { $in: productIds } })
-        .populate('niche', 'name slug icon')
-        .lean();
-      productsWithStores = products.map((p: any) => {
-        const productIdStr = p._id.toString();
-        const stores = userStores
-          .filter((s: any) => (s.productId?.toString ? s.productId.toString() : s.productId) === productIdStr)
-          .map((s: any) => ({ storeUrl: s.storeUrl, addedAt: s.createdAt || new Date() }));
-        return { ...p, stores, addedAt: stores.length > 0 ? stores[0].addedAt : new Date() };
-      });
-      productsWithStores.sort((a: any, b: any) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
-    } else {
-      // Fallback: no products in store – return all active catalog products so the dropdown has options
-      const products = await Product.find({ active: true })
-        .populate('niche', 'name slug icon')
-        .sort({ createdAt: -1 })
-        .limit(200)
-        .lean();
-      productsWithStores = products.map((p: any) => ({ ...p, stores: [], addedAt: p.createdAt || new Date() }));
-    }
+    const products = await Product.find({ active: true })
+      .populate('niche', 'name slug icon')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const productsWithStores = products.map((p: any) => {
+      const productIdStr = p._id.toString();
+      const stores = userStores
+        .filter((s: any) => (s.productId?.toString ? s.productId.toString() : s.productId) === productIdStr)
+        .map((s: any) => ({ storeUrl: s.storeUrl, addedAt: s.createdAt || new Date() }));
+      return { ...p, stores, addedAt: stores.length > 0 ? stores[0].addedAt : new Date(p.createdAt) };
+    });
+
     res.status(200).json({ success: true, data: productsWithStores });
   } catch (e) {
     next(e);
