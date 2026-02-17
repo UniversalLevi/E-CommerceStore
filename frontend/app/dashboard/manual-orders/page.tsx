@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
@@ -32,10 +32,17 @@ interface ManualOrder {
   updatedAt: string;
 }
 
+interface NicheRef {
+  _id: string;
+  name: string;
+  slug: string;
+}
+
 interface UserProduct {
   _id: string;
   title: string;
   price: number;
+  niche?: NicheRef;
 }
 
 const STATUS_OPTIONS = [
@@ -76,11 +83,24 @@ export default function ManualOrdersPage() {
   const [form, setForm] = useState({
     customer: { name: '', email: '', phone: '' },
     shippingAddress: { name: '', address1: '', address2: '', city: '', state: '', zip: '', country: 'India', phone: '' },
-    items: [] as { productId: string; title: string; quantity: number; price: number }[],
+    items: [] as { productId: string; title: string; quantity: number; price: number; selectedNicheId?: string }[],
     shipping: 0,
     currency: 'INR',
     status: 'pending',
   });
+
+  const nichesFromProducts = useMemo(() => {
+    const seen = new Set<string>();
+    const list: NicheRef[] = [];
+    for (const p of products) {
+      const n = p.niche;
+      if (n && n._id && !seen.has(n._id)) {
+        seen.add(n._id);
+        list.push({ _id: n._id, name: n.name, slug: n.slug });
+      }
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
   // Form stores price in rupees; we convert to paise when sending to API
 
   const fetchOrders = useCallback(async () => {
@@ -105,11 +125,12 @@ export default function ManualOrdersPage() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await api.get<{ success: boolean; data: UserProduct[] }>('/api/products/user');
-      if (res.success && Array.isArray(res.data)) setProducts(res.data);
+      const res = await api.get<{ success: boolean; data: UserProduct[] }>('/api/manual-orders/available-products');
+      if (res?.success && Array.isArray(res.data)) setProducts(res.data);
       else setProducts([]);
     } catch {
       setProducts([]);
+      notify.error('Could not load products; you can still add manual items.');
     }
   }, []);
 
@@ -137,24 +158,32 @@ export default function ManualOrdersPage() {
       currency: 'INR',
       status: 'pending',
     });
+    fetchProducts();
     setModalOpen(true);
   };
 
   const openEdit = (order: ManualOrder) => {
     setEditingId(order._id);
+    const productIdStr = (id: any) => (typeof id === 'object' ? (id as any)?._id : id) || '';
     setForm({
       customer: { ...order.customer },
       shippingAddress: { ...order.shippingAddress, address2: order.shippingAddress?.address2 || '' },
-      items: order.items.map((i) => ({
-        productId: typeof i.productId === 'object' ? (i.productId as any)?._id : (i.productId || ''),
-        title: i.title,
-        quantity: i.quantity,
-        price: (i.price || 0) / 100,
-      })),
+      items: order.items.map((i) => {
+        const pid = productIdStr(i.productId);
+        const product = products.find((p) => p._id === pid);
+        return {
+          productId: pid,
+          title: i.title,
+          quantity: i.quantity,
+          price: (i.price || 0) / 100,
+          selectedNicheId: product?.niche?._id ?? '',
+        };
+      }),
       shipping: (order.shipping || 0) / 100,
       currency: order.currency || 'INR',
       status: order.status,
     });
+    fetchProducts();
     setModalOpen(true);
   };
 
@@ -165,15 +194,20 @@ export default function ManualOrdersPage() {
   const addLineItem = () => {
     setForm((f) => ({
       ...f,
-      items: [...f.items, { productId: '', title: '', quantity: 1, price: 0 }],
+      items: [...f.items, { productId: '', title: '', quantity: 1, price: 0, selectedNicheId: '' }],
     }));
   };
 
-  const updateLineItem = (index: number, field: 'productId' | 'title' | 'quantity' | 'price', value: string | number) => {
+  const updateLineItem = (index: number, field: 'productId' | 'title' | 'quantity' | 'price' | 'selectedNicheId', value: string | number) => {
     setForm((f) => {
       const next = [...f.items];
       const item = { ...next[index] };
-      if (field === 'productId') {
+      if (field === 'selectedNicheId') {
+        item.selectedNicheId = typeof value === 'string' ? value : '';
+        item.productId = '';
+        item.title = '';
+        item.price = 0;
+      } else if (field === 'productId') {
         const product = products.find((p) => p._id === value);
         if (product) {
           item.productId = product._id;
@@ -378,134 +412,166 @@ export default function ManualOrdersPage() {
         )}
       </div>
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Modal – redesigned */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-surface-raised border border-border-default rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-border-default flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-text-primary">{editingId ? 'Edit Order' : 'New Manual Order'}</h2>
-              <button onClick={() => setModalOpen(false)} className="p-2 text-text-secondary hover:text-text-primary">
+          <div className="bg-surface-raised border border-border-default rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
+            <div className="p-6 border-b border-border-default flex items-center justify-between shrink-0">
+              <div>
+                <h2 className="text-xl font-semibold text-text-primary">{editingId ? 'Edit Order' : 'New Manual Order'}</h2>
+                <p className="text-sm text-text-secondary mt-0.5">{editingId ? 'Update customer, address and items' : 'Add customer details, shipping address and order items'}</p>
+              </div>
+              <button onClick={() => setModalOpen(false)} className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover" aria-label="Close">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Customer</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="p-6 space-y-6 overflow-y-auto">
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium text-text-primary">Customer</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <input
                     placeholder="Name"
                     value={form.customer.name}
                     onChange={(e) => setForm((f) => ({ ...f, customer: { ...f.customer, name: e.target.value } }))}
-                    className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm"
+                    className="px-3 py-2.5 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                   <input
                     placeholder="Email"
                     type="email"
                     value={form.customer.email}
                     onChange={(e) => setForm((f) => ({ ...f, customer: { ...f.customer, email: e.target.value } }))}
-                    className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm"
+                    className="px-3 py-2.5 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                   <input
                     placeholder="Phone"
                     value={form.customer.phone}
                     onChange={(e) => setForm((f) => ({ ...f, customer: { ...f.customer, phone: e.target.value } }))}
-                    className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm"
+                    className="px-3 py-2.5 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Shipping Address</label>
-                <div className="space-y-2">
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-sm font-medium text-text-primary">Shipping address</h3>
+                <div className="p-4 bg-surface-base rounded-lg border border-border-default space-y-3">
                   <input
-                    placeholder="Name"
+                    placeholder="Full name"
                     value={form.shippingAddress.name}
                     onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, name: e.target.value } }))}
-                    className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm"
+                    className="w-full px-3 py-2.5 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                   <input
                     placeholder="Address line 1"
                     value={form.shippingAddress.address1}
                     onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, address1: e.target.value } }))}
-                    className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm"
+                    className="w-full px-3 py-2.5 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                   <input
                     placeholder="Address line 2 (optional)"
                     value={form.shippingAddress.address2}
                     onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, address2: e.target.value } }))}
-                    className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm"
+                    className="w-full px-3 py-2.5 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <input placeholder="City" value={form.shippingAddress.city} onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, city: e.target.value } }))} className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm" />
-                    <input placeholder="State" value={form.shippingAddress.state} onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, state: e.target.value } }))} className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm" />
-                    <input placeholder="ZIP" value={form.shippingAddress.zip} onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, zip: e.target.value } }))} className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm" />
-                    <input placeholder="Country" value={form.shippingAddress.country} onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, country: e.target.value } }))} className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm" />
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <input placeholder="City" value={form.shippingAddress.city} onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, city: e.target.value } }))} className="px-3 py-2.5 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
+                    <input placeholder="State" value={form.shippingAddress.state} onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, state: e.target.value } }))} className="px-3 py-2.5 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
+                    <input placeholder="ZIP" value={form.shippingAddress.zip} onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, zip: e.target.value } }))} className="px-3 py-2.5 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
+                    <input placeholder="Country" value={form.shippingAddress.country} onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, country: e.target.value } }))} className="px-3 py-2.5 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
                   </div>
                   <input
                     placeholder="Phone"
                     value={form.shippingAddress.phone}
                     onChange={(e) => setForm((f) => ({ ...f, shippingAddress: { ...f.shippingAddress, phone: e.target.value } }))}
-                    className="w-full px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm"
+                    className="w-full px-3 py-2.5 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                 </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-text-secondary">Items (prices in ₹)</label>
-                  <button type="button" onClick={addLineItem} className="text-sm text-purple-400 hover:text-purple-300">
+              </section>
+
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-text-primary">Order items (prices in ₹)</h3>
+                  <button type="button" onClick={addLineItem} className="text-sm font-medium text-purple-400 hover:text-purple-300">
                     + Add item
                   </button>
                 </div>
+                {products.length === 0 && (
+                  <p className="text-sm text-text-secondary py-1">Add products to your store in the Products section to select them here, or use Manual product below.</p>
+                )}
                 {form.items.length === 0 ? (
-                  <p className="text-sm text-text-secondary py-2">No items. Click &quot;+ Add item&quot; to add a line.</p>
+                  <p className="text-sm text-text-secondary py-3">No items yet. Click &quot;+ Add item&quot; to add a line. Choose a product from the dropdown or &quot;Manual product&quot; and enter name and price.</p>
                 ) : (
-                  <div className="space-y-2">
-                    {form.items.map((item, i) => (
-                      <div key={i} className="flex flex-wrap items-center gap-2 p-2 bg-surface-base rounded-lg">
-                        {products.length > 0 ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 text-xs font-medium text-text-secondary">
+                      {nichesFromProducts.length > 0 && <span className="w-36 min-w-[8rem]">Niche</span>}
+                      <span className="w-44 min-w-[10rem]">Product</span>
+                      <span className="flex-1 min-w-[120px]">Item name</span>
+                      <span className="w-14">Qty</span>
+                      <span className="w-20">Price (₹)</span>
+                      <span className="w-8" aria-hidden />
+                    </div>
+                    {form.items.map((item, i) => {
+                      const selectedNicheId = item.selectedNicheId ?? '';
+                      const productsForRow = selectedNicheId ? products.filter((p) => p.niche?._id === selectedNicheId) : products;
+                      return (
+                        <div key={i} className="flex flex-wrap items-center gap-2 p-3 bg-surface-base rounded-lg border border-border-default">
+                          {nichesFromProducts.length > 0 && (
+                            <select
+                              value={selectedNicheId}
+                              onChange={(e) => updateLineItem(i, 'selectedNicheId', e.target.value)}
+                              className="w-36 min-w-[8rem] px-2.5 py-2 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                              aria-label="Niche"
+                            >
+                              <option value="">All niches</option>
+                              {nichesFromProducts.map((n) => (
+                                <option key={n._id} value={n._id}>{n.name}</option>
+                              ))}
+                            </select>
+                          )}
                           <select
                             value={item.productId}
                             onChange={(e) => updateLineItem(i, 'productId', e.target.value)}
-                            className="w-40 px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
+                            className="w-44 min-w-[10rem] px-2.5 py-2 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                            aria-label="Product"
                           >
-                            <option value="">Custom</option>
-                            {products.map((p) => (
-                              <option key={p._id} value={p._id}>{p.title} (₹{p.price})</option>
+                            <option value="">Manual product</option>
+                            {productsForRow.map((p) => (
+                              <option key={p._id} value={p._id}>{p.title} — ₹{p.price}</option>
                             ))}
                           </select>
-                        ) : null}
-                        <input
-                          placeholder="Product / item name"
-                          value={item.title}
-                          onChange={(e) => updateLineItem(i, 'title', e.target.value)}
-                          className="flex-1 min-w-[140px] px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
-                        />
-                        <input
-                          type="number"
-                          min={1}
-                          placeholder="Qty"
-                          value={item.quantity}
-                          onChange={(e) => updateLineItem(i, 'quantity', e.target.value)}
-                          className="w-16 px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
-                        />
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.01}
-                          placeholder="Price (₹)"
-                          value={item.price || ''}
-                          onChange={(e) => updateLineItem(i, 'price', e.target.value)}
-                          className="w-24 px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
-                        />
-                        <button type="button" onClick={() => removeLineItem(i)} className="p-1 text-red-400 hover:text-red-300" title="Remove">
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                          <input
+                            placeholder="Item name (required)"
+                            value={item.title}
+                            onChange={(e) => updateLineItem(i, 'title', e.target.value)}
+                            className="flex-1 min-w-[120px] px-2.5 py-2 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                          />
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder="Qty"
+                            value={item.quantity}
+                            onChange={(e) => updateLineItem(i, 'quantity', e.target.value)}
+                            className="w-14 px-2.5 py-2 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                          />
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            placeholder="0"
+                            value={item.price || ''}
+                            onChange={(e) => updateLineItem(i, 'price', e.target.value)}
+                            className="w-20 px-2.5 py-2 bg-surface-raised border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                          />
+                          <button type="button" onClick={() => removeLineItem(i)} className="p-2 text-red-400 hover:text-red-300 rounded-lg hover:bg-red-500/10" title="Remove item">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </>
                 )}
-                <div className="mt-2 flex flex-wrap gap-4 items-center text-sm">
+                <div className="flex flex-wrap gap-4 items-center text-sm pt-2 border-t border-border-default">
                   <span className="text-text-secondary">Subtotal: ₹{subtotalRupees.toFixed(2)}</span>
-                  <label className="flex items-center gap-1">
+                  <label className="flex items-center gap-2 text-text-secondary">
                     Shipping (₹)
                     <input
                       type="number"
@@ -514,34 +580,35 @@ export default function ManualOrdersPage() {
                       placeholder="0"
                       value={form.shipping || ''}
                       onChange={(e) => setForm((f) => ({ ...f, shipping: Math.max(0, parseFloat(e.target.value) || 0) }))}
-                      className="w-24 px-2 py-1 border border-border-default rounded text-text-primary bg-surface-base"
+                      className="w-24 px-2.5 py-1.5 border border-border-default rounded-lg text-text-primary bg-surface-base text-sm"
                     />
                   </label>
                   <span className="font-medium text-text-primary">Total: ₹{totalRupees.toFixed(2)}</span>
                 </div>
-              </div>
+              </section>
+
               {editingId && (
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1">Status</label>
+                <section className="space-y-2">
+                  <h3 className="text-sm font-medium text-text-primary">Status</h3>
                   <select
                     value={form.status}
                     onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-                    className="px-3 py-2 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm"
+                    className="px-3 py-2.5 bg-surface-base border border-border-default rounded-lg text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   >
                     {STATUS_OPTIONS.filter((o) => o.value !== 'all').map((o) => (
                       <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
                   </select>
-                </div>
+                </section>
               )}
             </div>
-            <div className="p-6 border-t border-border-default flex justify-end gap-2">
-              <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-lg border border-border-default text-text-primary hover:bg-surface-hover">
+            <div className="p-6 border-t border-border-default flex justify-end gap-3 shrink-0">
+              <button onClick={() => setModalOpen(false)} className="px-4 py-2.5 rounded-lg border border-border-default text-text-primary hover:bg-surface-hover font-medium text-sm">
                 Cancel
               </button>
-              <button onClick={saveOrder} disabled={saving} className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 inline-flex items-center gap-2">
+              <button onClick={saveOrder} disabled={saving} className="px-4 py-2.5 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 font-medium text-sm inline-flex items-center gap-2">
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                {editingId ? 'Update' : 'Create'}
+                {editingId ? 'Update order' : 'Create order'}
               </button>
             </div>
           </div>

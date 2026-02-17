@@ -101,7 +101,7 @@ const manualOrderSchema = new Schema<IManualOrder>(
     },
     orderId: {
       type: String,
-      required: true,
+      required: false,
       unique: true,
       index: true,
     },

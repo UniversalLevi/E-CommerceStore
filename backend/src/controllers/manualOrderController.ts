@@ -6,28 +6,14 @@ import { User } from '../models/User';
 import { Product } from '../models/Product';
 import { createError } from '../middleware/errorHandler';
 
-function getAllowedProductIds(userStores: { productId: mongoose.Types.ObjectId }[]): Set<string> {
-  const ids = new Set<string>();
-  for (const s of userStores || []) {
-    if (s.productId) ids.add(s.productId.toString());
-  }
-  return ids;
-}
-
 async function validateItemsBelongToUser(
-  userId: mongoose.Types.ObjectId,
+  _userId: mongoose.Types.ObjectId,
   items: { productId?: string | null; title: string; quantity: number; price: number }[]
 ): Promise<void> {
   const itemsWithProduct = items.filter((i) => i.productId && i.productId.toString().trim());
   if (itemsWithProduct.length === 0) return;
-  const user = await User.findById(userId).lean();
-  if (!user) throw createError('User not found', 404);
-  const allowedIds = getAllowedProductIds((user as any).stores || []);
   for (const item of itemsWithProduct) {
     const pid = item.productId!.toString().trim();
-    if (!allowedIds.has(pid)) {
-      throw createError(`Product ${pid} is not in your product list`, 400);
-    }
     const product = await Product.findById(pid).lean();
     if (!product) throw createError(`Product ${pid} not found`, 400);
   }
@@ -37,6 +23,57 @@ function computeTotals(items: IManualOrderItem[], shippingPaise: number): { subt
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   return { subtotal, total: subtotal + shippingPaise };
 }
+
+/**
+ * GET /api/manual-orders/available-products – products the user can add to a manual order.
+ * First returns products from user's stores; if none, falls back to all active catalog products (so dropdown is never empty).
+ * Auth only; no subscription required.
+ */
+export const getAvailableProducts = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) throw createError('Authentication required', 401);
+    const userId = (req.user as any)._id;
+    const user = await User.findById(userId).lean();
+    if (!user) throw createError('User not found', 404);
+    const userStores = (user as any).stores || [];
+    const productIds = Array.from(
+      new Set(
+        userStores
+          .map((s: any) => {
+            const pid = s.productId;
+            return pid?.toString ? pid.toString() : pid;
+          })
+          .filter(Boolean)
+      )
+    );
+
+    let productsWithStores: any[];
+    if (productIds.length > 0) {
+      const products = await Product.find({ _id: { $in: productIds } })
+        .populate('niche', 'name slug icon')
+        .lean();
+      productsWithStores = products.map((p: any) => {
+        const productIdStr = p._id.toString();
+        const stores = userStores
+          .filter((s: any) => (s.productId?.toString ? s.productId.toString() : s.productId) === productIdStr)
+          .map((s: any) => ({ storeUrl: s.storeUrl, addedAt: s.createdAt || new Date() }));
+        return { ...p, stores, addedAt: stores.length > 0 ? stores[0].addedAt : new Date() };
+      });
+      productsWithStores.sort((a: any, b: any) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
+    } else {
+      // Fallback: no products in store – return all active catalog products so the dropdown has options
+      const products = await Product.find({ active: true })
+        .populate('niche', 'name slug icon')
+        .sort({ createdAt: -1 })
+        .limit(200)
+        .lean();
+      productsWithStores = products.map((p: any) => ({ ...p, stores: [], addedAt: p.createdAt || new Date() }));
+    }
+    res.status(200).json({ success: true, data: productsWithStores });
+  } catch (e) {
+    next(e);
+  }
+};
 
 /**
  * GET /api/manual-orders – list manual orders for authenticated user
@@ -116,7 +153,6 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
 
     const order = await ManualOrder.create({
       userId,
-      orderId: '',
       customer: {
         name: customer.name.trim(),
         email: customer.email.trim().toLowerCase(),
