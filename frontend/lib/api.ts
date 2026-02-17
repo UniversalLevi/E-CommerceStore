@@ -370,7 +370,7 @@ class ApiClient {
   async createManualOrder(body: {
     customer: { name: string; email: string; phone: string };
     shippingAddress: { name: string; address1: string; address2?: string; city: string; state: string; zip: string; country: string; phone: string };
-    items: { productId: string; title: string; quantity: number; price: number }[];
+    items: { productId?: string; title: string; quantity: number; price: number }[];
     shipping?: number;
     currency?: string;
     status?: string;
@@ -381,7 +381,7 @@ class ApiClient {
   async updateManualOrder(id: string, body: Partial<{
     customer: { name?: string; email?: string; phone?: string };
     shippingAddress: { name?: string; address1?: string; address2?: string; city?: string; state?: string; zip?: string; country?: string; phone?: string };
-    items: { productId: string; title: string; quantity: number; price: number }[];
+    items: { productId?: string; title: string; quantity: number; price: number }[];
     shipping?: number;
     currency?: string;
     status?: string;

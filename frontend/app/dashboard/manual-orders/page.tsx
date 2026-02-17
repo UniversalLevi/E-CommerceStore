@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { notify } from '@/lib/toast';
-import { useSubscription } from '@/hooks/useSubscription';
-import SubscriptionLock from '@/components/SubscriptionLock';
 import {
   FileText,
   Plus,
@@ -65,7 +63,6 @@ function formatDate(iso: string) {
 export default function ManualOrdersPage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
-  const { hasActiveSubscription } = useSubscription();
   const [orders, setOrders] = useState<ManualOrder[]>([]);
   const [products, setProducts] = useState<UserProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +81,7 @@ export default function ManualOrdersPage() {
     currency: 'INR',
     status: 'pending',
   });
+  // Form stores price in rupees; we convert to paise when sending to API
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -120,14 +118,14 @@ export default function ManualOrdersPage() {
       router.push('/login');
       return;
     }
-    if (!authLoading && isAuthenticated && hasActiveSubscription) {
+    if (!authLoading && isAuthenticated) {
       fetchProducts();
     }
-  }, [authLoading, isAuthenticated, hasActiveSubscription, router, fetchProducts]);
+  }, [authLoading, isAuthenticated, router, fetchProducts]);
 
   useEffect(() => {
-    if (isAuthenticated && hasActiveSubscription) fetchOrders();
-  }, [isAuthenticated, hasActiveSubscription, statusFilter, pagination.page, fetchOrders]);
+    if (isAuthenticated) fetchOrders();
+  }, [isAuthenticated, statusFilter, pagination.page, fetchOrders]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -147,8 +145,13 @@ export default function ManualOrdersPage() {
     setForm({
       customer: { ...order.customer },
       shippingAddress: { ...order.shippingAddress, address2: order.shippingAddress?.address2 || '' },
-      items: order.items.map((i) => ({ ...i, productId: typeof i.productId === 'object' ? (i.productId as any)._id : i.productId })),
-      shipping: order.shipping || 0,
+      items: order.items.map((i) => ({
+        productId: typeof i.productId === 'object' ? (i.productId as any)?._id : (i.productId || ''),
+        title: i.title,
+        quantity: i.quantity,
+        price: (i.price || 0) / 100,
+      })),
+      shipping: (order.shipping || 0) / 100,
       currency: order.currency || 'INR',
       status: order.status,
     });
@@ -160,18 +163,13 @@ export default function ManualOrdersPage() {
   };
 
   const addLineItem = () => {
-    const first = products[0];
-    if (!first) {
-      notify.error('Add products to your account first');
-      return;
-    }
     setForm((f) => ({
       ...f,
-      items: [...f.items, { productId: first._id, title: first.title, quantity: 1, price: Math.round(first.price * 100) }],
+      items: [...f.items, { productId: '', title: '', quantity: 1, price: 0 }],
     }));
   };
 
-  const updateLineItem = (index: number, field: 'productId' | 'quantity' | 'price', value: string | number) => {
+  const updateLineItem = (index: number, field: 'productId' | 'title' | 'quantity' | 'price', value: string | number) => {
     setForm((f) => {
       const next = [...f.items];
       const item = { ...next[index] };
@@ -180,10 +178,13 @@ export default function ManualOrdersPage() {
         if (product) {
           item.productId = product._id;
           item.title = product.title;
-          item.price = Math.round(product.price * 100);
+          item.price = product.price;
+        } else {
+          item.productId = typeof value === 'string' ? value : '';
         }
-      } else if (field === 'quantity') item.quantity = Math.max(1, parseInt(String(value), 10) || 1);
-      else if (field === 'price') item.price = Math.max(0, Math.round(Number(value)));
+      } else if (field === 'title') item.title = String(value);
+      else if (field === 'quantity') item.quantity = Math.max(1, parseInt(String(value), 10) || 1);
+      else if (field === 'price') item.price = Math.max(0, Number(value));
       next[index] = item;
       return { ...f, items: next };
     });
@@ -193,8 +194,8 @@ export default function ManualOrdersPage() {
     setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== index) }));
   };
 
-  const subtotal = form.items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const total = subtotal + (form.shipping || 0);
+  const subtotalRupees = form.items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const totalRupees = subtotalRupees + (form.shipping || 0);
 
   const saveOrder = async () => {
     if (!form.customer.name?.trim() || !form.customer.email?.trim() || !form.customer.phone?.trim()) {
@@ -210,13 +211,23 @@ export default function ManualOrdersPage() {
       notify.error('Add at least one item');
       return;
     }
+    const missingTitle = form.items.some((i) => !i.title?.trim());
+    if (missingTitle) {
+      notify.error('Every item must have a name');
+      return;
+    }
     setSaving(true);
     try {
       const body = {
         customer: form.customer,
         shippingAddress: form.shippingAddress,
-        items: form.items,
-        shipping: form.shipping,
+        items: form.items.map((i) => ({
+          productId: i.productId || undefined,
+          title: i.title,
+          quantity: i.quantity,
+          price: Math.round(i.price * 100),
+        })),
+        shipping: Math.round((form.shipping || 0) * 100),
         currency: form.currency,
         status: form.status,
       };
@@ -246,10 +257,6 @@ export default function ManualOrdersPage() {
       notify.error(e?.response?.data?.message || 'Failed to update status');
     }
   };
-
-  if (!authLoading && isAuthenticated && !hasActiveSubscription) {
-    return <SubscriptionLock featureName="Manual Orders" />;
-  }
 
   const selectedOrder = detailId ? orders.find((o) => o._id === detailId) : null;
 
@@ -443,29 +450,39 @@ export default function ManualOrdersPage() {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-text-secondary">Items (price in paise)</label>
+                  <label className="block text-sm font-medium text-text-secondary">Items (prices in ₹)</label>
                   <button type="button" onClick={addLineItem} className="text-sm text-purple-400 hover:text-purple-300">
                     + Add item
                   </button>
                 </div>
                 {form.items.length === 0 ? (
-                  <p className="text-sm text-text-secondary py-2">No items. Add products from your catalog.</p>
+                  <p className="text-sm text-text-secondary py-2">No items. Click &quot;+ Add item&quot; to add a line.</p>
                 ) : (
                   <div className="space-y-2">
                     {form.items.map((item, i) => (
                       <div key={i} className="flex flex-wrap items-center gap-2 p-2 bg-surface-base rounded-lg">
-                        <select
-                          value={item.productId}
-                          onChange={(e) => updateLineItem(i, 'productId', e.target.value)}
-                          className="flex-1 min-w-[120px] px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
-                        >
-                          {products.map((p) => (
-                            <option key={p._id} value={p._id}>{p.title}</option>
-                          ))}
-                        </select>
+                        {products.length > 0 ? (
+                          <select
+                            value={item.productId}
+                            onChange={(e) => updateLineItem(i, 'productId', e.target.value)}
+                            className="w-40 px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
+                          >
+                            <option value="">Custom</option>
+                            {products.map((p) => (
+                              <option key={p._id} value={p._id}>{p.title} (₹{p.price})</option>
+                            ))}
+                          </select>
+                        ) : null}
+                        <input
+                          placeholder="Product / item name"
+                          value={item.title}
+                          onChange={(e) => updateLineItem(i, 'title', e.target.value)}
+                          className="flex-1 min-w-[140px] px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
+                        />
                         <input
                           type="number"
                           min={1}
+                          placeholder="Qty"
                           value={item.quantity}
                           onChange={(e) => updateLineItem(i, 'quantity', e.target.value)}
                           className="w-16 px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
@@ -473,29 +490,34 @@ export default function ManualOrdersPage() {
                         <input
                           type="number"
                           min={0}
-                          placeholder="Price (paise)"
-                          value={item.price}
+                          step={0.01}
+                          placeholder="Price (₹)"
+                          value={item.price || ''}
                           onChange={(e) => updateLineItem(i, 'price', e.target.value)}
                           className="w-24 px-2 py-1.5 bg-surface-raised border border-border-default rounded text-text-primary text-sm"
                         />
-                        <button type="button" onClick={() => removeLineItem(i)} className="p-1 text-red-400 hover:text-red-300">
+                        <button type="button" onClick={() => removeLineItem(i)} className="p-1 text-red-400 hover:text-red-300" title="Remove">
                           <X className="h-4 w-4" />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
-                <div className="mt-2 flex gap-4 text-sm">
-                  <span className="text-text-secondary">Subtotal: {formatCurrency(subtotal)}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="Shipping (paise)"
-                    value={form.shipping || ''}
-                    onChange={(e) => setForm((f) => ({ ...f, shipping: Math.max(0, parseInt(e.target.value, 10) || 0) }))}
-                    className="w-28 px-2 py-1 border border-border-default rounded text-text-primary bg-surface-base"
-                  />
-                  <span className="font-medium text-text-primary">Total: {formatCurrency(total)}</span>
+                <div className="mt-2 flex flex-wrap gap-4 items-center text-sm">
+                  <span className="text-text-secondary">Subtotal: ₹{subtotalRupees.toFixed(2)}</span>
+                  <label className="flex items-center gap-1">
+                    Shipping (₹)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="0"
+                      value={form.shipping || ''}
+                      onChange={(e) => setForm((f) => ({ ...f, shipping: Math.max(0, parseFloat(e.target.value) || 0) }))}
+                      className="w-24 px-2 py-1 border border-border-default rounded text-text-primary bg-surface-base"
+                    />
+                  </label>
+                  <span className="font-medium text-text-primary">Total: ₹{totalRupees.toFixed(2)}</span>
                 </div>
               </div>
               {editingId && (

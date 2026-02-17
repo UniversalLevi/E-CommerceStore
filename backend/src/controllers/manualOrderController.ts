@@ -16,17 +16,20 @@ function getAllowedProductIds(userStores: { productId: mongoose.Types.ObjectId }
 
 async function validateItemsBelongToUser(
   userId: mongoose.Types.ObjectId,
-  items: { productId: string; title: string; quantity: number; price: number }[]
+  items: { productId?: string | null; title: string; quantity: number; price: number }[]
 ): Promise<void> {
+  const itemsWithProduct = items.filter((i) => i.productId && i.productId.toString().trim());
+  if (itemsWithProduct.length === 0) return;
   const user = await User.findById(userId).lean();
   if (!user) throw createError('User not found', 404);
   const allowedIds = getAllowedProductIds((user as any).stores || []);
-  for (const item of items) {
-    if (!allowedIds.has(item.productId)) {
-      throw createError(`Product ${item.productId} is not in your product list`, 400);
+  for (const item of itemsWithProduct) {
+    const pid = item.productId!.toString().trim();
+    if (!allowedIds.has(pid)) {
+      throw createError(`Product ${pid} is not in your product list`, 400);
     }
-    const product = await Product.findById(item.productId).lean();
-    if (!product) throw createError(`Product ${item.productId} not found`, 400);
+    const product = await Product.findById(pid).lean();
+    if (!product) throw createError(`Product ${pid} not found`, 400);
   }
 }
 
@@ -99,7 +102,9 @@ export const create = async (req: AuthRequest, res: Response, next: NextFunction
     }
 
     const normalizedItems: IManualOrderItem[] = items.map((i: any) => ({
-      productId: new mongoose.Types.ObjectId(i.productId),
+      productId: i.productId && mongoose.Types.ObjectId.isValid(i.productId)
+        ? new mongoose.Types.ObjectId(i.productId)
+        : null,
       title: String(i.title || '').trim(),
       quantity: Math.max(1, parseInt(String(i.quantity), 10) || 1),
       price: Math.max(0, Math.round(Number(i.price) || 0)),
@@ -197,7 +202,9 @@ export const update = async (req: AuthRequest, res: Response, next: NextFunction
     }
     if (Array.isArray(items) && items.length > 0) {
       const normalizedItems: IManualOrderItem[] = items.map((i: any) => ({
-        productId: new mongoose.Types.ObjectId(i.productId),
+        productId: i.productId && mongoose.Types.ObjectId.isValid(i.productId)
+          ? new mongoose.Types.ObjectId(i.productId)
+          : null,
         title: String(i.title || '').trim(),
         quantity: Math.max(1, parseInt(String(i.quantity), 10) || 1),
         price: Math.max(0, Math.round(Number(i.price) || 0)),

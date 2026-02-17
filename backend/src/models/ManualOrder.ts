@@ -18,7 +18,7 @@ export interface IManualOrderShippingAddress {
 }
 
 export interface IManualOrderItem {
-  productId: mongoose.Types.ObjectId;
+  productId?: mongoose.Types.ObjectId | null;
   title: string;
   quantity: number;
   price: number; // in paise (snapshot at order time)
@@ -74,7 +74,7 @@ const shippingAddressSchema = new Schema<IManualOrderShippingAddress>(
 
 const orderItemSchema = new Schema<IManualOrderItem>(
   {
-    productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+    productId: { type: Schema.Types.ObjectId, ref: 'Product', required: false, default: null },
     title: { type: String, required: true, trim: true },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true, min: 0 },
