@@ -15,6 +15,7 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config/env';
 import { Product } from '../models/Product';
+import { Niche } from '../models/Niche'; // register so Product.populate('niche') works
 
 const OUT_DIR = path.join(process.cwd(), 'exports');
 
