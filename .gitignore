@@ -66,3 +66,7 @@ backend/uploads/**
 
 # Export outputs (subscriptions CSV/JSON)
 backend/exports/
+
+#docs
+C:\Users\deepa\Desktop\Extra's\ZenguardProjects\Shopify_E-CommerceStore\docs
+docs/*

@@ -7,7 +7,7 @@ function isValidImageUrlOrPath(value: string): boolean {
   if (!s) return false;
   if (s.startsWith('http://') || s.startsWith('https://')) return true;
   if (s.startsWith('/')) return true;
-  if (s.includes('/') && IMAGE_EXT.test(s)) return true;
+  if (s.includes('/')) return true;   // e.g. uploads/foo or uploads/photo
   if (IMAGE_EXT.test(s)) return true;
   return false;
 }

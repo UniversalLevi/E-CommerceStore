@@ -12,6 +12,7 @@
     "seed:templates": "ts-node src/scripts/seedTemplates.ts",
     "migrate:niches": "ts-node src/scripts/assignNichesToProducts.ts",
     "migrate:analytics": "ts-node src/scripts/migrateProductAnalytics.ts",
+    "fix:product-images": "ts-node src/scripts/fixProductImages.ts",
     "create-admin": "ts-node src/scripts/createAdmin.ts",
     "generate-key": "ts-node src/scripts/generateEncryptionKey.ts",
     "migrate-env": "ts-node src/scripts/migrateEnvCredentials.ts",

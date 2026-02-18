@@ -25,14 +25,15 @@ const IMAGE_EXT = /\.(jpe?g|png|gif|webp)(\?|$)/i;
 
 /**
  * True if the value looks like an image URL or file path, not a label (e.g. "Upload 1").
+ * Permissive: any http(s) URL, path starting with /, or string containing / or a known image extension.
  */
 export function isValidImageUrlOrPath(value: string): boolean {
   const s = value.trim();
   if (!s) return false;
   if (s.startsWith('http://') || s.startsWith('https://')) return true;
-  if (s.startsWith('/')) return true;
-  if (s.includes('/') && IMAGE_EXT.test(s)) return true;
-  if (IMAGE_EXT.test(s)) return true; // e.g. "image-123.jpg"
+  if (s.startsWith('/')) return true; // e.g. /uploads/foo.jpg or /uploads/photo
+  if (s.includes('/')) return true;   // e.g. uploads/foo.jpg
+  if (IMAGE_EXT.test(s)) return true; // e.g. image-123.jpg
   return false;
 }
 
@@ -59,12 +60,18 @@ export function toAbsoluteImageUrl(url: string): string {
     return trimmed;
   }
 
-  if (!base) return trimmed.startsWith('http') ? trimmed : '';
+  // When BACKEND_URL is not set, pass through so relative paths (e.g. /uploads/foo.jpg)
+  // still work with same-origin; otherwise we would return '' and break valid images.
+  if (!base) return trimmed;
   return `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
 }
 
+/** Placeholder path (used by fixProductImages script when a product has no valid images). */
+export const PLACEHOLDER_PRODUCT_IMAGE_PATH = '/uploads/placeholder-product.png';
+
 /**
  * Convert an array of image URLs to absolute. Invalid or label-like entries are omitted.
+ * Returns only real URLs from the DB; empty array when none valid (UI shows placeholder).
  * Safe to pass undefined or non-arrays.
  */
 export function toAbsoluteImageUrls(images: string[] | undefined | null): string[] {
