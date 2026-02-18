@@ -7,3 +7,6 @@ dist/
 # Uploads folder
 public/uploads/
 
+# Script output (image manifest, etc.)
+exports/
+
