@@ -27,7 +27,11 @@ export function getImageUrl(url: string | undefined | null): string {
 
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     const lower = trimmed.toLowerCase();
-    if (apiBase && (lower.includes('localhost') || lower.includes('127.0.0.1'))) {
+    const isLegacyHost =
+      lower.includes('localhost') ||
+      lower.includes('127.0.0.1') ||
+      lower.includes('eazydropshipping.com');
+    if (apiBase && isLegacyHost) {
       try {
         const u = new URL(trimmed);
         const pathPart = u.pathname + (u.search || '') + (u.hash || '');

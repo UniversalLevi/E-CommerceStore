@@ -53,7 +53,11 @@ export function toAbsoluteImageUrl(url: string): string {
 
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     const lower = trimmed.toLowerCase();
-    if (base && (lower.includes('localhost') || lower.includes('127.0.0.1'))) {
+    const isLegacyHost =
+      lower.includes('localhost') ||
+      lower.includes('127.0.0.1') ||
+      lower.includes('eazydropshipping.com');
+    if (base && isLegacyHost) {
       const pathPart = getPathFromUrl(trimmed);
       return `${base}${pathPart.startsWith('/') ? pathPart : '/' + pathPart}`;
     }
