@@ -15,7 +15,6 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config/env';
 import { Product } from '../models/Product';
-import { Niche } from '../models/Niche'; // register so Product.populate('niche') works
 
 const OUT_DIR = path.join(process.cwd(), 'exports');
 
@@ -77,9 +76,17 @@ async function run() {
     await mongoose.connect(config.mongoUri);
     console.log('Connected.\n');
 
-    const products = await Product.find({})
-      .populate('niche', 'name slug')
-      .lean();
+    const products = await Product.find({}).lean();
+    const nicheIdStrs = [...new Set(products.map((p: any) => p.niche?.toString()).filter(Boolean))];
+    const nicheMap = new Map<string, { name: string; slug: string }>();
+    if (nicheIdStrs.length > 0 && mongoose.connection.db) {
+      const nicheIds = nicheIdStrs.map((id) => new mongoose.Types.ObjectId(id));
+      const niches = await mongoose.connection.db.collection('niches').find({ _id: { $in: nicheIds } }).project({ name: 1, slug: 1 }).toArray();
+      for (const n of niches) {
+        const id = (n._id as mongoose.Types.ObjectId).toString();
+        nicheMap.set(id, { name: (n.name as string) || '', slug: (n.slug as string) || '' });
+      }
+    }
 
     const entries: ImageEntry[] = [];
     const seen = new Set<string>();
@@ -87,10 +94,10 @@ async function run() {
     for (const p of products) {
       const raw = (p as any).images;
       const arr = Array.isArray(raw) ? raw : [];
-      const niche = (p as any).niche;
-      const nicheId = niche?._id?.toString() ?? '';
-      const nicheName = (niche?.name ?? '') || 'no-niche';
-      const nicheSlug = (niche?.slug ?? '') || 'no-niche';
+      const nicheId = (p as any).niche?.toString() ?? '';
+      const nicheInfo = nicheMap.get(nicheId) ?? { name: '', slug: '' };
+      const nicheName = nicheInfo.name || 'no-niche';
+      const nicheSlug = nicheInfo.slug || 'no-niche';
       const productId = (p as any)._id?.toString() ?? '';
       const productTitle = (p as any).title ?? '';
 
