@@ -87,6 +87,7 @@ import affiliateRoutes from './routes/affiliateRoutes';
 import adminAffiliateRoutes from './routes/adminAffiliateRoutes';
 import storePlanRoutes from './routes/storePlanRoutes';
 import manualOrderRoutes from './routes/manualOrderRoutes';
+import pluginRoutes from './routes/pluginRoutes';
 import { authenticateToken, requireAdmin } from './middleware/auth';
 
 // Routes
@@ -140,6 +141,8 @@ app.use('/api/store-dashboard/razorpay', storeRazorpayWebhookRoutes);
 // Affiliate routes
 app.use('/api/affiliates', affiliateRoutes);
 app.use('/api/admin/affiliates', adminAffiliateRoutes);
+// Plugin routes
+app.use('/api', pluginRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

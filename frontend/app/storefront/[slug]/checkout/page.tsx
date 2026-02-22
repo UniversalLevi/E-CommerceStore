@@ -8,6 +8,9 @@ import { notify } from '@/lib/toast';
 import { useCartStore } from '@/store/useCartStore';
 import { Loader2, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import CouponInput from '@/components/storefront/CouponInput';
+import GiftCardInput from '@/components/storefront/GiftCardInput';
+import FreeGiftBanner from '@/components/storefront/FreeGiftBanner';
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -34,8 +37,13 @@ export default function CheckoutPage() {
       phone: '',
     },
     shipping: 0,
-    paymentMethod: 'razorpay' as 'razorpay' | 'cod',
+    paymentMethod: 'razorpay' as 'razorpay' | 'cod' | 'partial_cod',
   });
+  const [couponCode, setCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [giftCardBalance, setGiftCardBalance] = useState(0);
+  const [pluginConfigs, setPluginConfigs] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (slug) {
@@ -46,9 +54,15 @@ export default function CheckoutPage() {
 
   const fetchStore = async () => {
     try {
-      const response = await api.getStorefrontInfo(slug);
+      const [response, pluginsRes] = await Promise.all([
+        api.getStorefrontInfo(slug),
+        api.getStorefrontPlugins(slug).catch(() => ({ success: false, data: {} })),
+      ]);
       if (response.success) {
         setStore(response.data);
+      }
+      if (pluginsRes.success && pluginsRes.data) {
+        setPluginConfigs(pluginsRes.data);
       }
     } catch (error: any) {
       console.error('Error fetching store:', error);
@@ -84,13 +98,14 @@ export default function CheckoutPage() {
         throw new Error('No valid items in cart');
       }
 
-      // Create order
       const orderResponse = await api.createStorefrontOrder(slug, {
         customer: formData.customer,
         shippingAddress: formData.shippingAddress,
         items: orderItems,
         shipping: formData.shipping,
         paymentMethod: formData.paymentMethod,
+        couponCode: couponCode || undefined,
+        giftCardCode: giftCardCode || undefined,
       });
 
       if (!orderResponse.success || !orderResponse.data) {
@@ -99,7 +114,6 @@ export default function CheckoutPage() {
 
       const order = orderResponse.data;
 
-      // For COD orders, skip payment flow and redirect to order confirmation
       if (formData.paymentMethod === 'cod') {
         clearCart();
         notify.success('Order placed successfully! Payment will be collected on delivery.');
@@ -345,44 +359,83 @@ export default function CheckoutPage() {
                   <span>Shipping</span>
                   <span>{formatPrice(formData.shipping, store?.currency || 'INR')}</span>
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-green-500">
+                    <span>Coupon Discount</span>
+                    <span>-{formatPrice(couponDiscount, store?.currency || 'INR')}</span>
+                  </div>
+                )}
+                {giftCardBalance > 0 && (
+                  <div className="flex justify-between text-pink-500">
+                    <span>Gift Card</span>
+                    <span>-{formatPrice(Math.min(giftCardBalance, cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0) + formData.shipping - couponDiscount), store?.currency || 'INR')}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold text-text-primary pt-2 border-t border-border-default">
                   <span>Total</span>
-                  <span>{formatPrice(cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0) + formData.shipping, store?.currency || 'INR')}</span>
+                  <span>{formatPrice(Math.max(0, cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0) + formData.shipping - couponDiscount - Math.min(giftCardBalance, cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0) + formData.shipping - couponDiscount)), store?.currency || 'INR')}</span>
                 </div>
               </div>
-              
+
+              {/* Coupon & Gift Card */}
+              <div className="mt-4 space-y-3">
+                <CouponInput
+                  slug={slug}
+                  orderSubtotal={cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)}
+                  onApply={(code, discount) => { setCouponCode(code); setCouponDiscount(discount); }}
+                  onRemove={() => { setCouponCode(''); setCouponDiscount(0); }}
+                  appliedCode={couponCode}
+                  appliedDiscount={couponDiscount}
+                  formatPrice={(p) => formatPrice(p, store?.currency || 'INR')}
+                />
+                <GiftCardInput
+                  slug={slug}
+                  onApply={(code, balance) => { setGiftCardCode(code); setGiftCardBalance(balance); }}
+                  onRemove={() => { setGiftCardCode(''); setGiftCardBalance(0); }}
+                  appliedCode={giftCardCode}
+                  appliedAmount={giftCardBalance}
+                  formatPrice={(p) => formatPrice(p, store?.currency || 'INR')}
+                />
+              </div>
+
+              {/* Free Gift Banner */}
+              <div className="mt-3">
+                <FreeGiftBanner
+                  slug={slug}
+                  orderSubtotal={cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0)}
+                  currency={store?.currency || 'INR'}
+                />
+              </div>
+
               {/* Payment Method Selection */}
               <div className="mt-6 pt-4 border-t border-border-default">
                 <h3 className="text-sm font-semibold text-text-primary mb-3">Payment Method</h3>
                 <div className="space-y-3">
                   <label className="flex items-center p-3 border border-border-default rounded-lg cursor-pointer hover:bg-surface-base transition-colors">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="razorpay"
-                      checked={formData.paymentMethod === 'razorpay'}
-                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as 'razorpay' | 'cod' })}
-                      className="mr-3"
-                    />
+                    <input type="radio" name="paymentMethod" value="razorpay" checked={formData.paymentMethod === 'razorpay'} onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })} className="mr-3" />
                     <div className="flex-1">
                       <span className="text-text-primary font-medium">Online Payment</span>
                       <p className="text-xs text-text-secondary">Pay securely with Razorpay</p>
                     </div>
                   </label>
                   <label className="flex items-center p-3 border border-border-default rounded-lg cursor-pointer hover:bg-surface-base transition-colors">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="cod"
-                      checked={formData.paymentMethod === 'cod'}
-                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as 'razorpay' | 'cod' })}
-                      className="mr-3"
-                    />
+                    <input type="radio" name="paymentMethod" value="cod" checked={formData.paymentMethod === 'cod'} onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })} className="mr-3" />
                     <div className="flex-1">
                       <span className="text-text-primary font-medium">Cash on Delivery (COD)</span>
                       <p className="text-xs text-text-secondary">Pay when you receive your order</p>
                     </div>
                   </label>
+                  {pluginConfigs['partial-cod']?.enabled && (
+                    <label className="flex items-center p-3 border border-border-default rounded-lg cursor-pointer hover:bg-surface-base transition-colors">
+                      <input type="radio" name="paymentMethod" value="partial_cod" checked={formData.paymentMethod === 'partial_cod'} onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })} className="mr-3" />
+                      <div className="flex-1">
+                        <span className="text-text-primary font-medium">Partial COD</span>
+                        <p className="text-xs text-text-secondary">
+                          Pay {pluginConfigs['partial-cod'].type === 'percentage' ? `${pluginConfigs['partial-cod'].value}%` : formatPrice(pluginConfigs['partial-cod'].value, store?.currency || 'INR')} online, rest on delivery
+                        </p>
+                      </div>
+                    </label>
+                  )}
                 </div>
               </div>
 
@@ -399,7 +452,7 @@ export default function CheckoutPage() {
                 ) : (
                   <>
                     <ShoppingCart className="h-5 w-5" />
-                    {formData.paymentMethod === 'cod' ? 'Place COD Order' : 'Complete Order'}
+                    {formData.paymentMethod === 'cod' ? 'Place COD Order' : formData.paymentMethod === 'partial_cod' ? 'Pay & Place Order' : 'Complete Order'}
                   </>
                 )}
               </button>

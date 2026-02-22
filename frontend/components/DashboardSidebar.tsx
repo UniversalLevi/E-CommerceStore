@@ -25,6 +25,7 @@ import {
   Plus,
   Info,
   FileText,
+  Puzzle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -69,6 +70,7 @@ const eazyStoresInternalNavItems: NavItem[] = [
   { href: '/dashboard/store/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/store/information', label: 'Store Information', icon: Info },
   { href: '/dashboard/store/payment', label: 'Payment Settings', icon: CreditCard },
+  { href: '/dashboard/store/plugins', label: 'Plugins', icon: Puzzle },
   { href: '/dashboard/store/theme', label: 'Theme & Appearance', icon: Palette },
   { href: '/dashboard/store/notifications', label: 'Email Notifications', icon: Bell },
   { href: '/dashboard/stores/billing', label: 'Billing', icon: CreditCard },

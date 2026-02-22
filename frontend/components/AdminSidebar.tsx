@@ -29,6 +29,7 @@ import {
   Palette,
   MessageCircle,
   TrendingUp,
+  Puzzle,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -50,6 +51,7 @@ const navItems: NavItem[] = [
   { href: '/admin/stores', label: 'Stores', icon: Store },
   { href: '/admin/internal-stores', label: 'Internal Stores', icon: Store },
   { href: '/admin/templates', label: 'Templates', icon: Palette },
+  { href: '/admin/plugins', label: 'Plugins', icon: Puzzle },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { href: '/admin/zen-orders', label: 'ZEN Orders', icon: Zap },
   { href: '/admin/wallets', label: 'Wallets', icon: Wallet },

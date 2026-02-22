@@ -11,6 +11,9 @@ import Link from 'next/link';
 import { useStoreTheme } from '@/contexts/StoreThemeContext';
 import { useCart } from '@/contexts/CartContext';
 import { loadTheme } from '@/themes/themeLoader';
+import ShareButtons from '@/components/storefront/ShareButtons';
+import CountdownTimer from '@/components/storefront/CountdownTimer';
+import BoughtTogether from '@/components/storefront/BoughtTogether';
 
 export default function StorefrontProductPage() {
   const params = useParams();
@@ -277,8 +280,23 @@ export default function StorefrontProductPage() {
                 Buy Now
               </button>
             </div>
+
+            {product.countdownEnd && new Date(product.countdownEnd) > new Date() && (
+              <div className="mt-4">
+                <CountdownTimer endDate={product.countdownEnd} label={product.countdownLabel || 'Offer ends in'} />
+              </div>
+            )}
+
+            <div className="mt-4">
+              <ShareButtons
+                url={typeof window !== 'undefined' ? window.location.href : ''}
+                title={product.title}
+              />
+            </div>
           </div>
         </div>
+
+        <BoughtTogether slug={slug} productId={productId} currentProduct={product} currency={store?.currency} />
       </div>
       <Footer storeSlug={slug} storeName={store.name} />
     </div>

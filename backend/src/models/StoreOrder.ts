@@ -33,20 +33,28 @@ export interface IOrderNote {
 
 export interface IStoreOrder extends Document {
   storeId: mongoose.Types.ObjectId;
-  orderId: string; // Unique, auto-generated (e.g., 'ORD-20250101-001')
+  orderId: string;
   customer: ICustomer;
   shippingAddress: IShippingAddress;
-  items: IOrderItem[]; // Snapshot of products at order time
+  items: IOrderItem[];
   subtotal: number; // in paise
   shipping: number; // in paise
-  total: number; // in paise
+  discountAmount: number; // in paise
+  couponCode?: string;
+  giftCardAmount: number; // in paise
+  giftCardCode?: string;
+  freeGiftItems: IOrderItem[];
+  total: number; // in paise (after discounts)
   currency: string;
-  paymentMethod: 'razorpay' | 'cod'; // Payment method selected at checkout
+  paymentMethod: 'razorpay' | 'cod' | 'partial_cod';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
-  codPaidAt?: Date; // When COD payment was received
-  codPaidBy?: mongoose.Types.ObjectId; // Admin/user who marked COD as paid
+  codPaidAt?: Date;
+  codPaidBy?: mongoose.Types.ObjectId;
+  partialCodPrepaidAmount?: number; // in paise
+  partialCodCodAmount?: number; // in paise
+  partialCodPrepaidStatus?: 'pending' | 'paid' | 'failed';
   fulfillmentStatus: 'pending' | 'fulfilled' | 'cancelled' | 'shipped';
   notes: IOrderNote[];
   metadata: Record<string, any>;
@@ -224,9 +232,31 @@ const storeOrderSchema = new Schema<IStoreOrder>(
       default: 'INR',
       uppercase: true,
     },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    couponCode: {
+      type: String,
+      default: undefined,
+    },
+    giftCardAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    giftCardCode: {
+      type: String,
+      default: undefined,
+    },
+    freeGiftItems: {
+      type: [orderItemSchema],
+      default: [],
+    },
     paymentMethod: {
       type: String,
-      enum: ['razorpay', 'cod'],
+      enum: ['razorpay', 'cod', 'partial_cod'],
       default: 'razorpay',
       index: true,
     },
@@ -250,6 +280,21 @@ const storeOrderSchema = new Schema<IStoreOrder>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       default: null,
+    },
+    partialCodPrepaidAmount: {
+      type: Number,
+      default: undefined,
+      min: 0,
+    },
+    partialCodCodAmount: {
+      type: Number,
+      default: undefined,
+      min: 0,
+    },
+    partialCodPrepaidStatus: {
+      type: String,
+      enum: ['pending', 'paid', 'failed'],
+      default: undefined,
     },
     fulfillmentStatus: {
       type: String,

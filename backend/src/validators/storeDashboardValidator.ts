@@ -99,7 +99,9 @@ export const createOrderSchema = Joi.object({
       'any.required': 'Items are required',
     }),
   shipping: Joi.number().min(0).default(0),
-  paymentMethod: Joi.string().valid('razorpay', 'cod').default('razorpay'),
+  paymentMethod: Joi.string().valid('razorpay', 'cod', 'partial_cod').default('razorpay'),
+  couponCode: Joi.string().trim().optional().allow('', null),
+  giftCardCode: Joi.string().trim().optional().allow('', null),
 });
 
 export const updateFulfillmentSchema = Joi.object({

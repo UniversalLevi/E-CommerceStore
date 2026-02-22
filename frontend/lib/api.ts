@@ -1188,6 +1188,107 @@ class ApiClient {
     }>(`/api/storefront/${slug}/orders/${orderId}/verify`, data);
   }
 
+  // ========== PLUGIN API ==========
+
+  async getPlugins() {
+    return this.get<{ success: boolean; data: any[] }>('/api/plugins');
+  }
+
+  async togglePlugin(slug: string) {
+    return this.put<{ success: boolean; data: any }>(`/api/admin/plugins/${slug}/toggle`);
+  }
+
+  async getStorePlugins(storeId: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/store-dashboard/stores/${storeId}/plugins`);
+  }
+
+  async updatePluginConfig(storeId: string, pluginSlug: string, config: any) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/plugins/${pluginSlug}/config`, { config });
+  }
+
+  async getStorefrontPlugins(slug: string) {
+    return this.get<{ success: boolean; data: Record<string, any> }>(`/api/storefront/${slug}/plugins`);
+  }
+
+  // Coupons (store dashboard)
+  async createCoupon(storeId: string, data: any) {
+    return this.post<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/coupons`, data);
+  }
+  async listCoupons(storeId: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/store-dashboard/stores/${storeId}/coupons`);
+  }
+  async updateCoupon(storeId: string, couponId: string, data: any) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/coupons/${couponId}`, data);
+  }
+  async deleteCoupon(storeId: string, couponId: string) {
+    return this.delete<{ success: boolean }>(`/api/store-dashboard/stores/${storeId}/coupons/${couponId}`);
+  }
+  async validateCoupon(slug: string, code: string, orderSubtotal: number) {
+    return this.post<{ success: boolean; data: any }>(`/api/storefront/${slug}/coupons/validate`, { code, orderSubtotal });
+  }
+
+  // Gift Cards (store dashboard)
+  async createGiftCard(storeId: string, data: any) {
+    return this.post<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/gift-cards`, data);
+  }
+  async listGiftCards(storeId: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/store-dashboard/stores/${storeId}/gift-cards`);
+  }
+  async deleteGiftCard(storeId: string, giftCardId: string) {
+    return this.delete<{ success: boolean }>(`/api/store-dashboard/stores/${storeId}/gift-cards/${giftCardId}`);
+  }
+  async purchaseGiftCard(slug: string, data: any) {
+    return this.post<{ success: boolean; data: any }>(`/api/storefront/${slug}/gift-cards/purchase`, data);
+  }
+  async checkGiftCardBalance(slug: string, code: string) {
+    return this.post<{ success: boolean; data: any }>(`/api/storefront/${slug}/gift-cards/check-balance`, { code });
+  }
+
+  // Free Gift Rules
+  async createFreeGiftRule(storeId: string, data: any) {
+    return this.post<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/free-gift-rules`, data);
+  }
+  async listFreeGiftRules(storeId: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/store-dashboard/stores/${storeId}/free-gift-rules`);
+  }
+  async updateFreeGiftRule(storeId: string, ruleId: string, data: any) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/free-gift-rules/${ruleId}`, data);
+  }
+  async deleteFreeGiftRule(storeId: string, ruleId: string) {
+    return this.delete<{ success: boolean }>(`/api/store-dashboard/stores/${storeId}/free-gift-rules/${ruleId}`);
+  }
+  async getEligibleFreeGifts(slug: string, orderValue: number) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/storefront/${slug}/free-gifts?orderValue=${orderValue}`);
+  }
+
+  // Bundles
+  async createBundle(storeId: string, data: any) {
+    return this.post<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/bundles`, data);
+  }
+  async listBundles(storeId: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/store-dashboard/stores/${storeId}/bundles`);
+  }
+  async updateBundle(storeId: string, bundleId: string, data: any) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/bundles/${bundleId}`, data);
+  }
+  async deleteBundle(storeId: string, bundleId: string) {
+    return this.delete<{ success: boolean }>(`/api/store-dashboard/stores/${storeId}/bundles/${bundleId}`);
+  }
+  async getStorefrontBundles(slug: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/storefront/${slug}/bundles`);
+  }
+  async getBoughtTogether(slug: string, productId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/storefront/${slug}/products/${productId}/bought-together`);
+  }
+
+  // Email Subscribers
+  async listSubscribers(storeId: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/store-dashboard/stores/${storeId}/subscribers`);
+  }
+  async subscribeEmail(slug: string, email: string, name?: string) {
+    return this.post<{ success: boolean }>(`/api/storefront/${slug}/subscribers`, { email, name });
+  }
+
   // Admin internal store management
   async getAdminInternalStores(params?: {
     status?: string;

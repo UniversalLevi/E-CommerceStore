@@ -9,21 +9,24 @@ export interface IVariant {
 export interface IStoreProduct extends Document {
   storeId: mongoose.Types.ObjectId;
   title: string;
-  description?: string; // Rich text support
+  description?: string;
   basePrice: number; // in paise
   status: 'draft' | 'active';
-  images: string[]; // Max 5 URLs
-  variantDimension?: string; // Single dimension name (e.g., 'Size', 'Color')
-  variants: IVariant[]; // Variant values with inventory
+  images: string[];
+  variantDimension?: string;
+  variants: IVariant[];
   inventoryTracking: boolean;
-  // Import metadata
-  importedFrom?: mongoose.Types.ObjectId; // Reference to Product (catalog)
+  importedFrom?: mongoose.Types.ObjectId;
   importedAt?: Date;
   metadata?: {
     nicheId?: mongoose.Types.ObjectId;
     tags?: string[];
     supplierLink?: string;
   };
+  countdownEnd?: Date;
+  countdownLabel?: string;
+  boughtTogetherIds: mongoose.Types.ObjectId[];
+  boughtTogetherDiscount: number; // percentage discount when bought together
   createdAt: Date;
   updatedAt: Date;
 }
@@ -121,6 +124,26 @@ const storeProductSchema = new Schema<IStoreProduct>(
         type: String,
         trim: true,
       },
+    },
+    countdownEnd: {
+      type: Date,
+      default: undefined,
+    },
+    countdownLabel: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
+    boughtTogetherIds: {
+      type: [Schema.Types.ObjectId],
+      ref: 'StoreProduct',
+      default: [],
+    },
+    boughtTogetherDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
     },
   },
   {

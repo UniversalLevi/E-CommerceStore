@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import CartSidebar from '@/components/storefront/CartSidebar';
+import AnnouncementBar from '@/components/storefront/AnnouncementBar';
+import EmailPopup from '@/components/storefront/EmailPopup';
 import { StoreThemeProvider } from '@/contexts/StoreThemeContext';
 import { CartProvider, useCart } from '@/contexts/CartContext';
 import { api } from '@/lib/api';
@@ -18,6 +20,7 @@ function StorefrontLayoutContent({
   const slug = params.slug as string;
   const [store, setStore] = useState<any>(null);
   const [storeTheme, setStoreTheme] = useState<StoreTheme | null>(null);
+  const [pluginConfigs, setPluginConfigs] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const { setStoreSlug } = useCartStore();
   const { isOpen: cartOpen, closeCart } = useCart();
@@ -29,7 +32,6 @@ function StorefrontLayoutContent({
     }
   }, [slug, setStoreSlug]);
 
-  // Refresh theme when store changes (e.g., after theme update)
   useEffect(() => {
     if (store?.settings?.theme) {
       const theme = store.settings.theme;
@@ -42,28 +44,25 @@ function StorefrontLayoutContent({
   const fetchStoreData = async () => {
     try {
       setLoading(true);
-      const storeResponse = await api.getStorefrontInfo(slug);
+      const [storeResponse, pluginsResponse] = await Promise.all([
+        api.getStorefrontInfo(slug),
+        api.getStorefrontPlugins(slug).catch(() => ({ success: false, data: {} })),
+      ]);
       if (storeResponse.success && storeResponse.data) {
         setStore(storeResponse.data);
-        // Get theme from store settings, default to modern if not set
         const theme = storeResponse.data.settings?.theme;
         if (theme && theme.name) {
           setStoreTheme(theme);
         } else {
-          // Default to modern theme if no theme is set
-          setStoreTheme({
-            name: 'modern',
-            customizations: {},
-          });
+          setStoreTheme({ name: 'modern', customizations: {} });
         }
+      }
+      if (pluginsResponse.success && pluginsResponse.data) {
+        setPluginConfigs(pluginsResponse.data);
       }
     } catch (error) {
       console.error('Error fetching store data:', error);
-      // Set default theme even on error
-      setStoreTheme({
-        name: 'modern',
-        customizations: {},
-      });
+      setStoreTheme({ name: 'modern', customizations: {} });
     } finally {
       setLoading(false);
     }
@@ -77,8 +76,14 @@ function StorefrontLayoutContent({
     );
   }
 
+  const announcementConfig = pluginConfigs['announcement-bar'];
+  const popupConfig = pluginConfigs['email-popup'];
+
   return (
     <StoreThemeProvider storeTheme={storeTheme} isLoading={loading}>
+      {announcementConfig?.announcements?.length > 0 && (
+        <AnnouncementBar announcements={announcementConfig.announcements} speed={announcementConfig.speed} />
+      )}
       {children}
       <CartSidebar
         isOpen={cartOpen}
@@ -86,6 +91,7 @@ function StorefrontLayoutContent({
         storeSlug={slug}
         currency={store?.currency || 'INR'}
       />
+      {popupConfig && <EmailPopup slug={slug} config={popupConfig} />}
     </StoreThemeProvider>
   );
 }

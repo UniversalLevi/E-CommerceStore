@@ -5,6 +5,9 @@ import { StoreProduct } from '../models/StoreProduct';
 import { StoreOrder } from '../models/StoreOrder';
 import { RazorpayAccount } from '../models/RazorpayAccount';
 import { User } from '../models/User';
+import { Coupon } from '../models/Coupon';
+import { GiftCard } from '../models/GiftCard';
+import { FreeGiftRule } from '../models/FreeGiftRule';
 import { storefrontService } from '../services/StorefrontService';
 import { razorpayConnectService } from '../services/RazorpayConnectService';
 import { razorpayService } from '../services/RazorpayService';
@@ -208,16 +211,101 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       });
     }
 
-    // Convert shipping to paise if needed (assume it's already in paise, but handle if it's in currency units)
+    // Convert shipping to paise if needed
     let shipping = value.shipping || 0;
-    // If shipping is less than 100, assume it's in currency units and convert to paise
     if (shipping > 0 && shipping < 100) {
       shipping = Math.round(shipping * 100);
     }
-    const total = subtotal + shipping;
 
-    // Create order (orderId will be auto-generated)
+    // ── Coupon discount ──
+    let discountAmount = 0;
+    let couponCode: string | undefined;
+    if (value.couponCode) {
+      const coupon = await Coupon.findOne({
+        storeId: store._id,
+        code: value.couponCode.toUpperCase(),
+        isActive: true,
+      });
+      if (coupon) {
+        const notExpired = !coupon.expiresAt || coupon.expiresAt > new Date();
+        const withinLimit = coupon.usageLimit === 0 || coupon.usedCount < coupon.usageLimit;
+        const meetsMin = coupon.minOrderValue === 0 || subtotal >= coupon.minOrderValue;
+        if (notExpired && withinLimit && meetsMin) {
+          if (coupon.type === 'percentage') {
+            discountAmount = Math.round((subtotal * coupon.value) / 100);
+            if (coupon.maxDiscount > 0) discountAmount = Math.min(discountAmount, coupon.maxDiscount);
+          } else {
+            discountAmount = Math.min(coupon.value, subtotal);
+          }
+          couponCode = coupon.code;
+          coupon.usedCount += 1;
+          await coupon.save();
+        }
+      }
+    }
+
+    // ── Gift card redemption ──
+    let giftCardAmount = 0;
+    let giftCardCode: string | undefined;
+    if (value.giftCardCode) {
+      const gc = await GiftCard.findOne({
+        storeId: store._id,
+        code: value.giftCardCode.toUpperCase(),
+        isActive: true,
+      });
+      if (gc && gc.currentBalance > 0 && (!gc.expiresAt || gc.expiresAt > new Date())) {
+        const remaining = subtotal + shipping - discountAmount;
+        giftCardAmount = Math.min(gc.currentBalance, remaining);
+        gc.currentBalance -= giftCardAmount;
+        if (gc.currentBalance === 0) gc.isActive = false;
+        await gc.save();
+        giftCardCode = gc.code;
+      }
+    }
+
+    // ── Free gift items ──
+    const freeGiftItems: any[] = [];
+    const freeGiftRules = await FreeGiftRule.find({
+      storeId: store._id,
+      isActive: true,
+      minOrderValue: { $lte: subtotal },
+    }).sort({ minOrderValue: -1 });
+
+    for (const rule of freeGiftRules) {
+      if (rule.maxClaims > 0 && rule.claimedCount >= rule.maxClaims) continue;
+      const giftProd = await StoreProduct.findById(rule.giftProductId);
+      if (giftProd) {
+        freeGiftItems.push({
+          productId: giftProd._id,
+          title: giftProd.title,
+          quantity: 1,
+          price: 0,
+        });
+        rule.claimedCount += 1;
+        await rule.save();
+      }
+      break; // only best matching rule
+    }
+
+    const total = subtotal + shipping - discountAmount - giftCardAmount;
+
+    // ── Partial COD split ──
     const paymentMethod = value.paymentMethod || 'razorpay';
+    let partialCodPrepaidAmount: number | undefined;
+    let partialCodCodAmount: number | undefined;
+    if (paymentMethod === 'partial_cod') {
+      const pcSettings = store.settings?.partialCod;
+      if (!pcSettings?.enabled) {
+        throw createError('Partial COD is not enabled for this store', 400);
+      }
+      if (pcSettings.type === 'fixed') {
+        partialCodPrepaidAmount = Math.min(pcSettings.value, total);
+      } else {
+        partialCodPrepaidAmount = Math.round((total * pcSettings.value) / 100);
+      }
+      partialCodCodAmount = total - partialCodPrepaidAmount;
+    }
+
     const order = new StoreOrder({
       storeId: store._id,
       customer: value.customer,
@@ -225,11 +313,21 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       items: orderItems,
       subtotal,
       shipping,
-      total,
+      discountAmount,
+      couponCode,
+      giftCardAmount,
+      giftCardCode,
+      freeGiftItems,
+      total: Math.max(total, 0),
       currency: store.currency,
-      paymentMethod: paymentMethod,
-      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'pending', // COD orders start as pending, will be marked paid on delivery
+      paymentMethod,
+      paymentStatus: 'pending',
       fulfillmentStatus: 'pending',
+      ...(paymentMethod === 'partial_cod' && {
+        partialCodPrepaidAmount,
+        partialCodCodAmount,
+        partialCodPrepaidStatus: 'pending',
+      }),
     });
 
     try {
@@ -257,8 +355,6 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       }
     }
 
-    // For COD orders, send confirmation email immediately (payment will be marked later)
-    // For Razorpay orders, emails will be sent after payment verification
     if (paymentMethod === 'cod') {
       try {
         const emailSettings = store.settings?.emailNotifications || {};
@@ -330,16 +426,18 @@ export const createPaymentOrder = async (req: Request, res: Response, next: Next
       throw createError('Order payment already processed', 400);
     }
 
-    // COD orders don't need Razorpay payment flow
     if (order.paymentMethod === 'cod') {
       throw createError('This is a COD order. Payment will be collected on delivery.', 400);
     }
 
-    // Check if test mode is enabled
+    // For partial COD, charge only the prepaid portion
+    const chargeAmount = order.paymentMethod === 'partial_cod'
+      ? (order.partialCodPrepaidAmount || order.total)
+      : order.total;
+
     const testMode = store.settings?.testMode === true;
 
     if (testMode) {
-      // Test mode: Skip Razorpay, return test payment data
       order.razorpayOrderId = `test_order_${order.orderId}`;
       await order.save();
 
@@ -347,31 +445,28 @@ export const createPaymentOrder = async (req: Request, res: Response, next: Next
         success: true,
         data: {
           razorpayOrderId: order.razorpayOrderId,
-          amount: order.total,
+          amount: chargeAmount,
           currency: order.currency,
-          keyId: 'test_key', // Test key for test mode
+          keyId: 'test_key',
           testMode: true,
+          isPartialCod: order.paymentMethod === 'partial_cod',
+          codAmount: order.partialCodCodAmount || 0,
         },
       });
       return;
     }
 
-    // Production mode: Require Razorpay account
     const razorpayAccount = await RazorpayAccount.findOne({ storeId: store._id });
     if (!razorpayAccount || razorpayAccount.status !== 'active') {
       throw createError('Payment account is not connected. Please connect your Razorpay account in store settings to accept payments, or enable test mode for testing.', 400);
     }
 
-    // Create Razorpay order
-    // Note: For MVP, we'll use regular Razorpay orders
-    // For production with Connect, use razorpayConnectService.createOrderForSeller
     const razorpayOrder = await razorpayService.createOrder(
-      order.total,
+      chargeAmount,
       order.currency,
       order.orderId
     );
 
-    // Update order with Razorpay order ID
     order.razorpayOrderId = razorpayOrder.id;
     await order.save();
 
@@ -379,10 +474,12 @@ export const createPaymentOrder = async (req: Request, res: Response, next: Next
       success: true,
       data: {
         razorpayOrderId: razorpayOrder.id,
-        amount: order.total,
+        amount: chargeAmount,
         currency: order.currency,
         keyId: razorpayService.getKeyId(),
         testMode: false,
+        isPartialCod: order.paymentMethod === 'partial_cod',
+        codAmount: order.partialCodCodAmount || 0,
       },
     });
   } catch (error: any) {
@@ -425,9 +522,13 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
     const testMode = store.settings?.testMode === true;
 
       if (testMode) {
-      // Test mode: Auto-approve payment
       if (order.razorpayOrderId && order.razorpayOrderId.startsWith('test_order_')) {
-        order.paymentStatus = 'paid';
+        if (order.paymentMethod === 'partial_cod') {
+          order.partialCodPrepaidStatus = 'paid';
+          order.paymentStatus = 'pending'; // COD portion still pending
+        } else {
+          order.paymentStatus = 'paid';
+        }
         order.razorpayPaymentId = `test_payment_${razorpay_payment_id || Date.now()}`;
         await order.save();
 
@@ -509,8 +610,12 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
       throw createError('Order ID mismatch', 400);
     }
 
-    // Update order payment status
-    order.paymentStatus = 'paid';
+    if (order.paymentMethod === 'partial_cod') {
+      order.partialCodPrepaidStatus = 'paid';
+      order.paymentStatus = 'pending'; // COD portion still pending
+    } else {
+      order.paymentStatus = 'paid';
+    }
     order.razorpayPaymentId = razorpay_payment_id;
     await order.save();
 
