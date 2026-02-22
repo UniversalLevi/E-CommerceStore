@@ -5,109 +5,89 @@ import fs from 'fs';
 import { createError } from '../middleware/errorHandler';
 import { config } from '../config/env';
 
-// Extend Request type to include file
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
 
-// Configure storage
-const storage = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
+// ─── Image storage ──────────────────────────────────────────────────
+const imageStorage = multer.diskStorage({
+  destination: (_req: Request, _file: Express.Multer.File, cb) => {
+    const dir = path.join(process.cwd(), 'public', 'uploads', 'images');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
   },
-  filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `image-${uniqueSuffix}${ext}`);
+  filename: (_req: Request, file: Express.Multer.File, cb) => {
+    const suffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `image-${suffix}${path.extname(file.originalname)}`);
   },
 });
 
-// File filter
-const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-  // Accept only images
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed'));
-  }
+const imageFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+  if (file.mimetype.startsWith('image/')) cb(null, true);
+  else cb(new Error('Only image files are allowed'));
 };
 
-// Configure multer
-export const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
+export const upload = multer({ storage: imageStorage, fileFilter: imageFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+
+// ─── Video storage ──────────────────────────────────────────────────
+const videoStorage = multer.diskStorage({
+  destination: (_req: Request, _file: Express.Multer.File, cb) => {
+    const dir = path.join(process.cwd(), 'public', 'uploads', 'videos');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req: Request, file: Express.Multer.File, cb) => {
+    const suffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `video-${suffix}${path.extname(file.originalname)}`);
   },
 });
 
-export const uploadImage = async (
-  req: MulterRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    if (!req.file) {
-      throw createError('No image file provided', 400);
-    }
+const videoFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+  if (file.mimetype.startsWith('video/')) cb(null, true);
+  else cb(new Error('Only video files are allowed'));
+};
 
-    // Generate public URL - files are served from backend
-    // Priority: 1. BACKEND_URL env var, 2. Detect from request headers, 3. Fallback
-    
-    let baseUrl: string;
-    
-    if (process.env.BACKEND_URL) {
-      // Use explicit backend URL from environment
-      baseUrl = process.env.BACKEND_URL;
+export const videoUpload = multer({ storage: videoStorage, fileFilter: videoFilter, limits: { fileSize: 100 * 1024 * 1024 } });
+
+// ─── Resolve base URL ───────────────────────────────────────────────
+function resolveBaseUrl(req: Request): string {
+  let baseUrl: string;
+  if (process.env.BACKEND_URL) {
+    baseUrl = process.env.BACKEND_URL;
+  } else {
+    const forwardedProto = req.get('X-Forwarded-Proto');
+    const host = req.get('host') || req.get('X-Forwarded-Host') || 'localhost:5000';
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+    let protocol: string;
+    if (isLocalhost) {
+      protocol = 'http';
     } else {
-      // Detect protocol from headers (handles reverse proxies)
-      // Check X-Forwarded-Proto first (common in production with reverse proxy)
-      const forwardedProto = req.get('X-Forwarded-Proto');
-      const host = req.get('host') || req.get('X-Forwarded-Host') || 'localhost:5000';
-
-      const isLocalhost =
-        host.includes('localhost') || host.includes('127.0.0.1');
-
-      let protocol: string;
-
-      if (isLocalhost) {
-        // For localhost/127.0.0.1 always use HTTP to avoid SSL errors in dev
-        protocol = 'http';
-      } else {
-        const isHttps =
-          forwardedProto === 'https' ||
-          (forwardedProto === undefined && req.protocol === 'https') ||
-          (process.env.NODE_ENV === 'production' && forwardedProto !== 'http');
-
-        protocol = isHttps ? 'https' : (req.protocol || 'http');
-      }
-
-      baseUrl = `${protocol}://${host}`;
+      const isHttps = forwardedProto === 'https' || (forwardedProto === undefined && req.protocol === 'https') || (process.env.NODE_ENV === 'production' && forwardedProto !== 'http');
+      protocol = isHttps ? 'https' : (req.protocol || 'http');
     }
-
-    // If BACKEND_URL was set to an https://localhost URL, force it back to http for dev
-    if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
-      baseUrl = baseUrl.replace(/^https:\/\//i, 'http://');
-    }
-    
-    // Ensure baseUrl doesn't end with a slash
-    baseUrl = baseUrl.replace(/\/$/, '');
-    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
-
-    res.json({
-      success: true,
-      url: fileUrl,
-      filename: req.file.filename,
-    });
-  } catch (error: any) {
-    next(error);
+    baseUrl = `${protocol}://${host}`;
   }
+  if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+    baseUrl = baseUrl.replace(/^https:\/\//i, 'http://');
+  }
+  return baseUrl.replace(/\/$/, '');
+}
+
+// ─── Upload handlers ────────────────────────────────────────────────
+export const uploadImage = async (req: MulterRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) throw createError('No image file provided', 400);
+    const baseUrl = resolveBaseUrl(req);
+    const fileUrl = `${baseUrl}/uploads/images/${req.file.filename}`;
+    res.json({ success: true, url: fileUrl, filename: req.file.filename });
+  } catch (error: any) { next(error); }
+};
+
+export const uploadVideo = async (req: MulterRequest, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) throw createError('No video file provided', 400);
+    const baseUrl = resolveBaseUrl(req);
+    const fileUrl = `${baseUrl}/uploads/videos/${req.file.filename}`;
+    res.json({ success: true, url: fileUrl, filename: req.file.filename });
+  } catch (error: any) { next(error); }
 };

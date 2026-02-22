@@ -497,60 +497,41 @@ const AVAILABLE_THEMES: ThemeConfig[] = [
 ];
 
 /**
- * Get all available themes (built-in themes + active templates from database)
+ * Get all available themes (built-in themes + active templates).
+ * Presets are merged on the frontend from frontend/themes/presets.ts.
  */
-export async function getAvailableThemes(): Promise<ThemeConfig[]> {
+export async function getAvailableThemes(): Promise<(ThemeConfig & { isPreset?: boolean; presetId?: string; baseTheme?: string; previewGradient?: [string, string] })[]> {
   try {
-    // Get built-in themes (including the new 5 e-commerce themes)
-    const builtInThemes: ThemeConfig[] = AVAILABLE_THEMES.filter(theme => {
-      // Include new e-commerce themes and modern internal store themes
-      // Exclude legacy/deprecated themes
-      const excludedThemes = ['minimal', 'dark-theme', 'fashion-luxury', 'techy', 'black-premium', '3d-theme', 'white', 'r765r786ry8r'];
-      return !excludedThemes.includes(theme.name);
-    });
+    const excludedThemes = ['minimal', 'dark-theme', 'fashion-luxury', 'techy', 'black-premium', '3d-theme', 'white', 'r765r786ry8r'];
+    const builtInThemes = AVAILABLE_THEMES.filter(theme => !excludedThemes.includes(theme.name));
 
     // Get templates from database
-    const { Template } = await import('../models/Template');
-    const templates = await Template.find({ 
-      isActive: true, 
-      isDeleted: false 
-    })
-    .select('name slug description previewImage category')
-    .sort({ appliedCount: -1, createdAt: -1 })
-    .lean();
-    
-    const templateThemes: ThemeConfig[] = templates.map((template) => {
-      return {
+    let templateThemes: ThemeConfig[] = [];
+    try {
+      const { Template } = await import('../models/Template');
+      const templates = await Template.find({ isActive: true, isDeleted: false })
+        .select('name slug description previewImage category')
+        .sort({ appliedCount: -1, createdAt: -1 })
+        .lean();
+      templateThemes = templates.map((template) => ({
         name: `template-${template.slug}`,
         displayName: template.name,
         description: template.description,
         category: template.category as any,
         previewImage: template.previewImage,
-        defaultColors: {
-          primary: '#000000',
-          secondary: '#ffffff',
-          background: '#ffffff',
-          text: '#1a1a1a',
-          accent: '#4a90d9',
-        },
-        defaultTypography: {
-          fontFamily: 'system-ui, sans-serif',
-          headingFont: 'system-ui, sans-serif',
-          fontSize: '16px',
-        },
+        defaultColors: { primary: '#000000', secondary: '#ffffff', background: '#ffffff', text: '#1a1a1a', accent: '#4a90d9' },
+        defaultTypography: { fontFamily: 'system-ui, sans-serif', headingFont: 'system-ui, sans-serif', fontSize: '16px' },
         customizableProperties: ['colors', 'typography', 'logo'],
-      };
-    });
-    
-    // Return built-in themes first, then templates
+      }));
+    } catch {
+      // Templates unavailable, skip
+    }
+
     return [...builtInThemes, ...templateThemes];
   } catch (error) {
     console.error('Error loading themes:', error);
-    // Fallback to built-in themes if templates fail
-    return AVAILABLE_THEMES.filter(theme => {
-      const excludedThemes = ['minimal', 'dark-theme', 'fashion-luxury', 'techy', 'black-premium', '3d-theme', 'white', 'r765r786ry8r'];
-      return !excludedThemes.includes(theme.name);
-    });
+    const excludedThemes = ['minimal', 'dark-theme', 'fashion-luxury', 'techy', 'black-premium', '3d-theme', 'white', 'r765r786ry8r'];
+    return AVAILABLE_THEMES.filter(theme => !excludedThemes.includes(theme.name));
   }
 }
 

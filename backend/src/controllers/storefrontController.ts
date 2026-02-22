@@ -20,6 +20,7 @@ import {
   sendPaymentStatusEmail,
 } from '../services/StoreEmailService';
 import { createStoreOrderCommission } from '../services/commissionService';
+import { createNotification } from '../utils/notifications';
 import mongoose from 'mongoose';
 
 /**
@@ -377,6 +378,24 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       } catch (emailError) {
         console.error('Error sending COD order emails:', emailError);
       }
+
+      // Push notification + in-app notification for store owner on COD order
+      try {
+        const owner = await User.findById(store.owner);
+        if (owner) {
+          await createNotification({
+            userId: owner._id as mongoose.Types.ObjectId,
+            type: 'new_order',
+            title: 'New Order Received!',
+            message: `Order ${order.orderId} from ${order.customer.name} - ${(order.total / 100).toFixed(2)} ${order.currency} (COD)`,
+            link: '/dashboard/store/orders',
+            sendPush: true,
+            playSound: true,
+          });
+        }
+      } catch (notifError) {
+        console.error('Error sending order push notification:', notifError);
+      }
     }
 
     res.status(201).json({
@@ -385,7 +404,6 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
     });
   } catch (error: any) {
     console.error('Error creating storefront order:', error);
-    // Log more details for debugging
     if (error.message) {
       console.error('Error message:', error.message);
     }
@@ -670,6 +688,27 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
       }
     } catch (emailError) {
       console.error('Error sending order emails:', emailError);
+    }
+
+    // Push notification for store owner on successful payment
+    try {
+      const storeForNotif = await Store.findById(order.storeId);
+      if (storeForNotif) {
+        const owner = await User.findById(storeForNotif.owner);
+        if (owner) {
+          await createNotification({
+            userId: owner._id as mongoose.Types.ObjectId,
+            type: 'order_paid',
+            title: 'Payment Received!',
+            message: `Payment confirmed for order ${order.orderId} - ${(order.total / 100).toFixed(2)} ${order.currency}`,
+            link: '/dashboard/store/orders',
+            sendPush: true,
+            playSound: true,
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error('Error sending payment push notification:', notifError);
     }
 
     res.status(200).json({

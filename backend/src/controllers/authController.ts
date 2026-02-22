@@ -206,10 +206,10 @@ export const login = async (
       throw createError('Either email or mobile number is required', 400);
     }
 
-    // Find user by email or mobile - ensure we get the password field
-    const user = email 
-      ? await User.findOne({ email })
-      : await User.findOne({ mobile });
+    // Find user by email or mobile (normalize to match how registration stores them)
+    const user = email
+      ? await User.findOne({ email: (email as string).trim().toLowerCase() })
+      : await User.findOne({ mobile: (mobile as string).trim() });
 
     if (!user) {
       console.log('Login failed: User not found:', email || mobile);

@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import ProductImage from '@/components/ProductImage';
 import { useCartStore } from '@/store/useCartStore';
 import { notify } from '@/lib/toast';
-import { Loader2, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { Loader2, ShoppingCart, ArrowLeft, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useStoreTheme } from '@/contexts/StoreThemeContext';
 import { useCart } from '@/contexts/CartContext';
@@ -14,6 +14,68 @@ import { loadTheme } from '@/themes/themeLoader';
 import ShareButtons from '@/components/storefront/ShareButtons';
 import CountdownTimer from '@/components/storefront/CountdownTimer';
 import BoughtTogether from '@/components/storefront/BoughtTogether';
+
+function MediaGallery({ product, colors }: { product: any; colors: any }) {
+  const images: string[] = product.images || [];
+  const videos: string[] = product.videos || [];
+  const allMedia = [...images.map((url: string) => ({ type: 'image' as const, url })), ...videos.map((url: string) => ({ type: 'video' as const, url }))];
+  const [active, setActive] = useState(0);
+
+  const goPrev = () => setActive((p) => (p > 0 ? p - 1 : allMedia.length - 1));
+  const goNext = () => setActive((p) => (p < allMedia.length - 1 ? p + 1 : 0));
+
+  if (allMedia.length === 0) {
+    return (
+      <div className="w-full h-96 rounded-xl flex items-center justify-center" style={{ backgroundColor: colors.secondary, border: `2px solid ${colors.primary}20` }}>
+        <span style={{ color: colors.text + '80' }}>No media</span>
+      </div>
+    );
+  }
+
+  const current = allMedia[active];
+
+  return (
+    <div>
+      <div className="relative rounded-xl overflow-hidden" style={{ border: `2px solid ${colors.primary}20` }}>
+        {current.type === 'image' ? (
+          <ProductImage src={current.url} alt={product.title} className="w-full aspect-square object-cover" />
+        ) : (
+          <video src={current.url} controls className="w-full aspect-square object-contain bg-black" />
+        )}
+        {allMedia.length > 1 && (
+          <>
+            <button onClick={goPrev} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button onClick={goNext} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors">
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </>
+        )}
+      </div>
+      {allMedia.length > 1 && (
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+          {allMedia.map((m, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActive(idx)}
+              className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all"
+              style={{ borderColor: idx === active ? colors.accent : 'transparent', opacity: idx === active ? 1 : 0.6 }}
+            >
+              {m.type === 'image' ? (
+                <img src={m.url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-black flex items-center justify-center">
+                  <Play className="h-4 w-4 text-white" />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function StorefrontProductPage() {
   const params = useParams();
@@ -183,26 +245,8 @@ export default function StorefrontProductPage() {
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Images */}
-          <div>
-            {product.images && product.images.length > 0 ? (
-              <ProductImage
-                src={product.images[0]}
-                alt={product.title}
-                className="w-full rounded-xl"
-                style={{ border: `2px solid ${colors.primary}20` }}
-              />
-            ) : (
-              <div
-                className="w-full h-96 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: colors.secondary, border: `2px solid ${colors.primary}20` }}
-              >
-                <span style={{ color: colors.text + '80' }}>No image</span>
-              </div>
-            )}
-          </div>
+          <MediaGallery product={product} colors={colors} />
 
-          {/* Product Details */}
           <div>
             <h1 className="text-4xl font-bold mb-4" style={{ color: colors.text }}>{product.title}</h1>
             <p className="text-4xl font-bold mb-8" style={{ color: colors.accent }}>
@@ -225,11 +269,7 @@ export default function StorefrontProductPage() {
                   value={selectedVariant}
                   onChange={(e) => setSelectedVariant(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border"
-                  style={{
-                    backgroundColor: colors.secondary,
-                    borderColor: colors.primary + '30',
-                    color: colors.text,
-                  }}
+                  style={{ backgroundColor: colors.secondary, borderColor: colors.primary + '30', color: colors.text }}
                 >
                   {product.variants.map((variant: any) => (
                     <option key={variant.name} value={variant.name}>
@@ -251,11 +291,7 @@ export default function StorefrontProductPage() {
                 value={quantity}
                 onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
                 className="w-24 px-4 py-3 rounded-lg border"
-                style={{
-                  backgroundColor: colors.secondary,
-                  borderColor: colors.primary + '30',
-                  color: colors.text,
-                }}
+                style={{ backgroundColor: colors.secondary, borderColor: colors.primary + '30', color: colors.text }}
               />
             </div>
 
@@ -263,11 +299,7 @@ export default function StorefrontProductPage() {
               <button
                 onClick={() => handleAddToCart(true)}
                 className="flex-1 px-6 py-4 rounded-lg font-medium transition-all hover:opacity-90 flex items-center justify-center gap-2 border-2 cursor-pointer"
-                style={{
-                  borderColor: colors.accent,
-                  color: colors.accent,
-                  backgroundColor: 'transparent',
-                }}
+                style={{ borderColor: colors.accent, color: colors.accent, backgroundColor: 'transparent' }}
               >
                 <ShoppingCart className="h-5 w-5" />
                 Add to Cart

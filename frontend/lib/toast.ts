@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 export const notify = {
   success: (msg: string) => toast.success(msg, { duration: 4000 }),
   error: (msg: string) => toast.error(msg, { duration: 4000 }),
+  info: (msg: string) => toast(msg, { icon: 'ℹ️', duration: 4000 }),
   warning: (msg: string) => toast(msg, { icon: '⚠️', duration: 4000 }),
   loading: (msg: string) => toast.loading(msg),
   promise: <T,>(

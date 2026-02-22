@@ -1,13 +1,19 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export type NotificationType =
+  | 'store_connection' | 'product_added' | 'store_test' | 'system_update'
+  | 'mentorship_application' | 'admin_sent' | 'withdrawal_status' | 'template_applied'
+  | 'new_order' | 'order_paid' | 'order_shipped' | 'order_cancelled' | 'low_stock' | 'new_subscriber';
+
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId;
-  type: 'store_connection' | 'product_added' | 'store_test' | 'system_update' | 'mentorship_application' | 'admin_sent' | 'withdrawal_status' | 'template_applied';
+  type: NotificationType;
   title: string;
   message: string;
   read: boolean;
   link?: string;
   metadata?: Record<string, any>;
+  playSound?: boolean;
   createdAt: Date;
   readAt?: Date;
 }
@@ -22,7 +28,11 @@ const notificationSchema = new Schema<INotification>(
     },
     type: {
       type: String,
-      enum: ['store_connection', 'product_added', 'store_test', 'system_update', 'mentorship_application', 'admin_sent', 'withdrawal_status', 'template_applied'],
+      enum: [
+        'store_connection', 'product_added', 'store_test', 'system_update',
+        'mentorship_application', 'admin_sent', 'withdrawal_status', 'template_applied',
+        'new_order', 'order_paid', 'order_shipped', 'order_cancelled', 'low_stock', 'new_subscriber',
+      ],
       required: true,
       index: true,
     },
@@ -45,6 +55,10 @@ const notificationSchema = new Schema<INotification>(
     metadata: {
       type: Schema.Types.Mixed,
       default: {},
+    },
+    playSound: {
+      type: Boolean,
+      default: false,
     },
   },
   {

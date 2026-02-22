@@ -13,6 +13,7 @@ export interface IStoreProduct extends Document {
   basePrice: number; // in paise
   status: 'draft' | 'active';
   images: string[];
+  videos: string[];
   variantDimension?: string;
   variants: IVariant[];
   inventoryTracking: boolean;
@@ -26,7 +27,7 @@ export interface IStoreProduct extends Document {
   countdownEnd?: Date;
   countdownLabel?: string;
   boughtTogetherIds: mongoose.Types.ObjectId[];
-  boughtTogetherDiscount: number; // percentage discount when bought together
+  boughtTogetherDiscount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -82,12 +83,11 @@ const storeProductSchema = new Schema<IStoreProduct>(
     },
     images: {
       type: [String],
-      validate: {
-        validator: function (v: string[]) {
-          return v.length <= 5;
-        },
-        message: 'Maximum 5 images allowed per product',
-      },
+      default: [],
+    },
+    videos: {
+      type: [String],
+      default: [],
     },
     variantDimension: {
       type: String,

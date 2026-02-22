@@ -1,18 +1,18 @@
-import { Notification } from '../models/Notification';
+import { Notification, NotificationType } from '../models/Notification';
+import { sendPushNotification } from '../services/PushNotificationService';
 import mongoose from 'mongoose';
 
 export interface CreateNotificationParams {
   userId: mongoose.Types.ObjectId | string;
-  type: 'store_connection' | 'product_added' | 'store_test' | 'system_update' | 'mentorship_application' | 'admin_sent' | 'withdrawal_status' | 'template_applied';
+  type: NotificationType;
   title: string;
   message: string;
   link?: string;
   metadata?: Record<string, any>;
+  sendPush?: boolean;
+  playSound?: boolean;
 }
 
-/**
- * Create a notification for a user
- */
 export async function createNotification(params: CreateNotificationParams): Promise<void> {
   try {
     await Notification.create({
@@ -22,11 +22,19 @@ export async function createNotification(params: CreateNotificationParams): Prom
       message: params.message,
       link: params.link,
       metadata: params.metadata,
+      playSound: params.playSound ?? false,
       read: false,
     });
+
+    if (params.sendPush) {
+      await sendPushNotification(params.userId, {
+        title: params.title,
+        body: params.message,
+        url: params.link,
+        tag: params.type,
+      });
+    }
   } catch (error) {
-    // Log error but don't throw - notifications are non-critical
     console.error('Failed to create notification:', error);
   }
 }
-

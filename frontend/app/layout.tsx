@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from '@/components/Toaster'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
+import PushNotificationRegistrar from '@/components/PushNotificationRegistrar'
 
 const inter = Inter({ subsets: ['latin'] })
 const playfairDisplay = Playfair_Display({ 
@@ -37,6 +38,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <Toaster />
+            <PushNotificationRegistrar />
           </AuthProvider>
         </AppErrorBoundary>
       </body>

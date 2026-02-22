@@ -36,12 +36,8 @@ export const createProductSchema = Joi.object({
   description: Joi.string().trim().optional().allow(''),
   basePrice: Joi.number().required().min(0),
   status: Joi.string().valid('draft', 'active').default('draft'),
-  images: Joi.array()
-    .items(Joi.string().uri())
-    .max(5)
-    .messages({
-      'array.max': 'Maximum 5 images allowed per product',
-    }),
+  images: Joi.array().items(Joi.string().uri()).optional(),
+  videos: Joi.array().items(Joi.string().uri()).optional(),
   variantDimension: Joi.string().trim().max(50).optional().allow(''),
   variants: Joi.array()
     .items(

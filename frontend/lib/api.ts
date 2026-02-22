@@ -1325,6 +1325,34 @@ class ApiClient {
       `/api/admin/internal-stores/${storeId}/activate`
     );
   }
+
+  // ========== MEDIA UPLOAD ==========
+
+  async uploadImage(file: File) {
+    const formData = new FormData();
+    formData.append('image', file);
+    return this.post<{ success: boolean; url: string; filename: string }>('/api/upload/image', formData);
+  }
+
+  async uploadVideo(file: File) {
+    const formData = new FormData();
+    formData.append('video', file);
+    return this.post<{ success: boolean; url: string; filename: string }>('/api/upload/video', formData);
+  }
+
+  // ========== PUSH NOTIFICATIONS ==========
+
+  async getVapidKey() {
+    return this.get<{ success: boolean; vapidPublicKey: string }>('/api/notifications/vapid-key');
+  }
+
+  async subscribePush(subscription: any) {
+    return this.post<{ success: boolean }>('/api/notifications/push/subscribe', subscription);
+  }
+
+  async unsubscribePush(endpoint: string) {
+    return this.post<{ success: boolean }>('/api/notifications/push/unsubscribe', { endpoint });
+  }
 }
 
 export const api = new ApiClient();
