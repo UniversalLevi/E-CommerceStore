@@ -106,20 +106,35 @@ export default function FindWinningProductModal({
 
   const handleImport = async (productId: string) => {
     try {
-      // Check subscription status and product credits
+      // Eazy Stores: try getMyStore first (single store per user)
+      const myStoreResponse = await api.getMyStore().catch(() => ({ success: false, data: null }));
+      const myStore = myStoreResponse?.success && myStoreResponse?.data ? myStoreResponse.data : null;
+
+      if (myStore) {
+        // Eazy Store flow: import via store-dashboard API
+        await api.post('/api/analytics/product-import', { productId }).catch(() => {});
+        const response = await api.importProduct(myStore._id, { catalogProductId: productId });
+        if (response?.success) {
+          notify.success('Product added to your store successfully!');
+          onClose();
+        } else {
+          notify.error(response?.message || 'Failed to add product to store.');
+        }
+        return;
+      }
+
+      // Legacy flow: multiple stores from /api/stores
       const [planResponse, storesResponse] = await Promise.all([
         api.getCurrentPlan().catch(() => ({ data: { plan: null, productsAdded: 0, maxProducts: 0 } })),
         api.get<{ success: boolean; data: any[] }>('/api/stores').catch(() => ({ data: [] })),
       ]);
 
-      const planData = planResponse.data || {};
-      const userStores = storesResponse.data || [];
+      const planData = planResponse?.data || {};
+      const userStores = storesResponse?.data ?? (Array.isArray(storesResponse) ? storesResponse : []);
 
-      // Check if user has active plan and credits
       const hasActivePlan = planData.plan && planData.plan !== 'free';
-      // maxProducts = null means unlimited, so always has credits
       const maxProducts = planData.maxProducts;
-      const hasCredits = hasActivePlan && (maxProducts === null || planData.productsAdded < maxProducts);
+      const hasCredits = hasActivePlan && (maxProducts == null || (planData.productsAdded ?? 0) < maxProducts);
 
       if (!hasActivePlan) {
         notify.error('Please subscribe to a plan to add products to your store');
@@ -135,23 +150,22 @@ export default function FindWinningProductModal({
         return;
       }
 
-      if (userStores.length === 0) {
-        notify.error('Please connect a Shopify store first');
-        router.push('/dashboard/stores/connect');
+      if (!Array.isArray(userStores) || userStores.length === 0) {
+        notify.error('Please create or connect a store first');
+        router.push('/dashboard/store');
         onClose();
         return;
       }
 
-      // Track import
-      await api.post('/api/analytics/product-import', { productId });
+      await api.post('/api/analytics/product-import', { productId }).catch(() => {});
 
-      // Open store selection modal
       setStores(userStores);
       setSelectedProductId(productId);
       setShowStoreModal(true);
     } catch (error: any) {
       console.error('Failed to import product:', error);
-      notify.error('Failed to import product. Please try again.');
+      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to import product. Please try again.';
+      notify.error(msg);
     }
   };
 
@@ -228,19 +242,20 @@ export default function FindWinningProductModal({
                   <div className="bg-red-900 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6">
                     <p className="font-semibold mb-2">Unable to find product</p>
                     <p className="text-sm">{error}</p>
-                    {error.includes('niche') && (
+                    {(error.includes('niche') || error.toLowerCase().includes('onboarding')) && (
                       <button
+                        type="button"
                         onClick={() => {
                           onClose();
                           if (onShowOnboarding) {
                             onShowOnboarding();
                           } else {
-                            router.push('/dashboard');
+                            router.push('/dashboard?showOnboarding=1');
                           }
                         }}
                         className="text-sm underline mt-2 inline-block text-primary-500 hover:text-primary-400"
                       >
-                        Complete onboarding →
+                        Complete or update onboarding →
                       </button>
                     )}
                   </div>

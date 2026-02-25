@@ -1,18 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import OnboardingModal from '@/components/OnboardingModal';
 import SubscriptionStatus from '@/components/SubscriptionStatus';
 import IconBadge from '@/components/IconBadge';
-import { Link2, ShoppingBag, Store, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Link2, ShoppingBag, Store, BarChart3, CheckCircle2, RefreshCw } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading, logout, isAuthenticated, refreshUser } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [stores, setStores] = useState<any[]>([]);
   const [internalStore, setInternalStore] = useState<any | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -29,6 +30,13 @@ export default function DashboardPage() {
       fetchStores();
     }
   }, [isAuthenticated, user]);
+
+  // Open onboarding when coming from Find Winning Product (or direct link)
+  useEffect(() => {
+    if (searchParams.get('showOnboarding') === '1' && user) {
+      setShowOnboarding(true);
+    }
+  }, [searchParams, user]);
 
   const fetchStores = async () => {
     try {
@@ -87,15 +95,23 @@ export default function DashboardPage() {
           {/* Onboarding Status */}
           {user.onboarding ? (
             <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl p-4 md:p-6 mb-4 md:mb-6 border border-green-500/30">
-              <div className="flex items-start gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                 <div className="flex-1">
                   <h3 className="text-lg md:text-xl font-bold text-text-primary mb-2">
                     Onboarding Completed
                   </h3>
-                  <p className="text-sm md:text-base text-text-secondary">
+                  <p className="text-sm md:text-base text-text-secondary mb-4">
                     You have already completed the onboarding process. Your preferences have been saved.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowOnboarding(true)}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Update preferences / Redo onboarding
+                  </button>
                 </div>
               </div>
             </div>

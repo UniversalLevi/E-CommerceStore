@@ -370,8 +370,9 @@ export default function NicheProductsPage() {
         {/* Floating Action Button - Find Winning Product */}
         {isAuthenticated && (
           <button
+            type="button"
             onClick={() => setShowFindProduct(true)}
-            className="fixed bottom-8 right-8 bg-primary-500 hover:bg-primary-600 text-black p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-50 flex items-center gap-2 font-semibold"
+            className="fixed bottom-8 right-8 bg-primary-500 hover:bg-primary-600 text-black p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-[100] flex items-center gap-2 font-semibold cursor-pointer"
             aria-label="Find Winning Product"
           >
             <IconBadge icon={Target} label="Find winning product" size="sm" variant="neutral" className="bg-black/10 border-white/30" />

@@ -217,8 +217,9 @@ export default function ProductsPage() {
       {/* Floating Action Button - Find Winning Product */}
       {isAuthenticated && (
         <button
+          type="button"
           onClick={() => setShowFindProduct(true)}
-          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white p-3 md:p-4 rounded-full shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all z-50 flex items-center gap-2 font-semibold min-h-[44px] min-w-[44px]"
+          className="fixed bottom-4 right-4 md:bottom-8 md:right-8 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white p-3 md:p-4 rounded-full shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all z-[100] flex items-center gap-2 font-semibold min-h-[44px] min-w-[44px] cursor-pointer"
           aria-label="Find Winning Product"
         >
           <IconBadge icon={Target} label="Find winning product" size="sm" variant="primary" className="bg-white/10 border-white/30" />
