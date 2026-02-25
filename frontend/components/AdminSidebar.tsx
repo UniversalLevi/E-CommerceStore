@@ -30,6 +30,7 @@ import {
   MessageCircle,
   TrendingUp,
   Puzzle,
+  Calculator,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -72,6 +73,7 @@ const navItems: NavItem[] = [
   { href: '/admin/contacts', label: 'Contacts', icon: MessageSquare },
   { href: '/admin/notifications/send', label: 'Send Notification', icon: Send },
   { href: '/admin/audit', label: 'Audit Logs', icon: ClipboardList },
+  { href: '/admin/profit-calculator', label: 'Profit Margin Calculator', icon: Calculator },
 ];
 
 export default function AdminSidebar({ isOpen = true, onClose }: AdminSidebarProps) {

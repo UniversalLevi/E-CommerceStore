@@ -26,6 +26,7 @@ import {
   Info,
   FileText,
   Puzzle,
+  Calculator,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -49,6 +50,7 @@ const platformNavItems: NavItem[] = [
   { href: '/dashboard/ad-builder/instagram', label: 'Ad Builder', icon: Megaphone },
   { href: '/dashboard/video-mutator', label: 'Video Mutator', icon: Video },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
+  { href: '/dashboard/profit-calculator', label: 'Profit Margin Calculator', icon: Calculator },
   { href: '/dashboard/services', label: 'Connect with Experts', icon: Users },
   { href: '/dashboard/activity', label: 'Activity', icon: Activity },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
