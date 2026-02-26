@@ -379,7 +379,7 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
         console.error('Error sending COD order emails:', emailError);
       }
 
-      // Push notification + in-app notification for store owner on COD order
+      // Push notification + in-app notification for store owner on COD order (once per order)
       try {
         const owner = await User.findById(store.owner);
         if (owner) {
@@ -389,6 +389,7 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
             title: 'New Order Received!',
             message: `Order ${order.orderId} from ${order.customer.name} - ${(order.total / 100).toFixed(2)} ${order.currency} (COD)`,
             link: '/dashboard/store/orders',
+            metadata: { orderId: order.orderId },
             sendPush: true,
             playSound: true,
           });
@@ -690,7 +691,7 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
       console.error('Error sending order emails:', emailError);
     }
 
-    // Push notification for store owner on successful payment
+    // Push notification for store owner on successful payment (once per order)
     try {
       const storeForNotif = await Store.findById(order.storeId);
       if (storeForNotif) {
@@ -702,6 +703,7 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
             title: 'Payment Received!',
             message: `Payment confirmed for order ${order.orderId} - ${(order.total / 100).toFixed(2)} ${order.currency}`,
             link: '/dashboard/store/orders',
+            metadata: { orderId: order.orderId },
             sendPush: true,
             playSound: true,
           });

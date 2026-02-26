@@ -26,6 +26,7 @@ export default function NotificationBell() {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const prevUnreadRef = useRef(0);
+  const announcedIdsRef = useRef<Set<string>>(new Set());
   const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
 
   useEffect(() => {
@@ -66,17 +67,23 @@ export default function NotificationBell() {
       const newNotifs = response.data || [];
       const newCount = response.unreadCount || 0;
 
-      // Detect new incoming notifications and play sound / show toast
-      if (newCount > prevUnreadRef.current && prevUnreadRef.current >= 0) {
-        const latestNotif = newNotifs[0];
-        if (latestNotif) {
-          if (isSoundEnabled()) {
-            playOrderSound();
-          }
-          if (['new_order', 'order_paid'].includes(latestNotif.type)) {
-            setToast({ title: latestNotif.title, message: latestNotif.message });
-          }
+      // Only play sound / show toast once per notification (by id)
+      const orderTypes = ['new_order', 'order_paid'];
+      for (const notif of newNotifs) {
+        if (!orderTypes.includes(notif.type)) continue;
+        if (announcedIdsRef.current.has(notif._id)) continue;
+        announcedIdsRef.current.add(notif._id);
+        if (isSoundEnabled()) {
+          playOrderSound();
         }
+        setToast({ title: notif.title, message: notif.message });
+        break; // Only announce the newest one per poll
+      }
+
+      // Prune old IDs so the set doesn't grow forever (keep last 100)
+      if (announcedIdsRef.current.size > 100) {
+        const ids = Array.from(announcedIdsRef.current);
+        announcedIdsRef.current = new Set(ids.slice(-50));
       }
 
       prevUnreadRef.current = newCount;
