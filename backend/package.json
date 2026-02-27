@@ -24,6 +24,7 @@
     "reset-user-for-testing": "ts-node src/scripts/resetUserForTesting.ts",
     "generate:themes": "ts-node scripts/generate-niche-templates.ts",
     "generate:themes:force": "OVERWRITE_EXISTING=true ts-node scripts/generate-niche-templates.ts",
+    "test:whatsapp-webhook": "ts-node scripts/test-whatsapp-webhook.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

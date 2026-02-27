@@ -166,6 +166,9 @@ const startServer = async () => {
       console.log(`🚀 Server running on http://localhost:${config.port}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 CORS handled by Apache proxy`);
+      if (config.whatsapp?.enabled) {
+        console.log(`📱 WhatsApp webhook: POST/GET ${config.nodeEnv === 'development' ? 'http://localhost:' + config.port : 'https://YOUR_PUBLIC_DOMAIN'}/api/whatsapp/webhook (Meta must call a public URL)`);
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);

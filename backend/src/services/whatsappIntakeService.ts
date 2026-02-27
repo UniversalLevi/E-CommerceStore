@@ -416,20 +416,34 @@ export function validateMessagePayload(message: WhatsAppMessage): {
 }
 
 /**
- * Extract messages from webhook payload
+ * Extract messages from webhook payload.
+ * Defensive: never throws; returns [] if payload is missing or invalid.
  */
-export function extractMessages(payload: WhatsAppWebhookPayload): WhatsAppMessage[] {
+export function extractMessages(payload: WhatsAppWebhookPayload | null | undefined): WhatsAppMessage[] {
   const messages: WhatsAppMessage[] = [];
+
+  if (!payload || typeof payload !== 'object') {
+    return messages;
+  }
 
   if (payload.object !== 'whatsapp_business_account') {
     return messages;
   }
 
-  for (const entry of payload.entry) {
-    for (const change of entry.changes) {
-      if (change.field === 'messages' && change.value.messages) {
-        messages.push(...change.value.messages);
-      }
+  const entryList = payload.entry;
+  if (!Array.isArray(entryList)) {
+    return messages;
+  }
+
+  for (const entry of entryList) {
+    const changes = entry?.changes;
+    if (!Array.isArray(changes)) continue;
+
+    for (const change of changes) {
+      if (change?.field !== 'messages') continue;
+      const value = change?.value;
+      if (!value || !Array.isArray(value.messages)) continue;
+      messages.push(...value.messages);
     }
   }
 

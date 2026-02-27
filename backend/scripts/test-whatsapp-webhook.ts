@@ -2,8 +2,8 @@ import axios from 'axios';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+// Load environment variables (backend/.env when run from backend/scripts)
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const WEBHOOK_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 const WEBHOOK_ENDPOINT = `${WEBHOOK_URL}/api/whatsapp/webhook`;

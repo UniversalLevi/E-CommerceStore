@@ -65,11 +65,12 @@ export const verifyWebhook = async (
     const challenge = req.query['hub.challenge'];
 
     if (mode === 'subscribe' && token === config.whatsapp.verifyToken) {
+      const challengeStr = challenge != null ? String(challenge) : '';
       console.log('[WhatsApp Webhook] Verification successful');
-      return res.status(200).send(challenge);
+      return res.status(200).send(challengeStr);
     }
 
-    console.warn('[WhatsApp Webhook] Verification failed - invalid token');
+    console.warn('[WhatsApp Webhook] Verification failed - mode or token mismatch');
     res.status(403).json({ error: 'Verification failed' });
   } catch (error) {
     next(error);
@@ -86,19 +87,32 @@ export const handleWebhook = async (
   next: NextFunction
 ) => {
   try {
-    if (!isWhatsAppEnabled()) {
-      // Acknowledge but don't process
-      return res.sendStatus(200);
-    }
-
-    const payload = req.body as WhatsAppWebhookPayload;
-    
-    // Always respond 200 quickly to Meta
+    // Always respond 200 quickly to Meta so they don't retry
     res.sendStatus(200);
 
-    // Process messages asynchronously
+    if (!isWhatsAppEnabled()) {
+      console.log('[WhatsApp Webhook] POST received but feature disabled (ENABLE_WHATSAPP_BULK_ADD).');
+      return;
+    }
+
+    const payload = req.body as WhatsAppWebhookPayload | undefined;
+    if (!payload || typeof payload !== 'object') {
+      console.warn('[WhatsApp Webhook] POST received with missing or invalid body.');
+      return;
+    }
+
     const messages = extractMessages(payload);
-    
+    const entryCount = Array.isArray(payload.entry) ? payload.entry.length : 0;
+    console.log(`[WhatsApp Webhook] POST received object=${payload.object} entryCount=${entryCount} messagesExtracted=${messages.length}`);
+
+    if (messages.length === 0) {
+      // Normal: status updates, read receipts, or other non-message events
+      if (payload.object === 'whatsapp_business_account' && entryCount > 0) {
+        console.log('[WhatsApp Webhook] No message events in this payload (e.g. status/read).');
+      }
+      return;
+    }
+
     for (const message of messages) {
       try {
         await processMessage(message);
@@ -108,7 +122,6 @@ export const handleWebhook = async (
     }
   } catch (error: any) {
     console.error('[WhatsApp Webhook] Error:', error.message);
-    // Still return 200 to prevent Meta from retrying
     if (!res.headersSent) {
       res.sendStatus(200);
     }
