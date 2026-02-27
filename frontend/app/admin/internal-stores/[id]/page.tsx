@@ -36,6 +36,7 @@ export default function AdminInternalStoreDetailPage() {
   const [store, setStore] = useState<InternalStore | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [storefrontUrl, setStorefrontUrl] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -50,6 +51,12 @@ export default function AdminInternalStoreDetailPage() {
       fetchStore();
     }
   }, [isAuthenticated, user, storeId]);
+
+  useEffect(() => {
+    if (store?.slug && typeof window !== 'undefined') {
+      setStorefrontUrl(`${window.location.origin}/storefront/${store.slug}`);
+    }
+  }, [store?.slug]);
 
   const fetchStore = async () => {
     try {
@@ -146,7 +153,9 @@ export default function AdminInternalStoreDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-text-primary mb-2">{store.name}</h1>
-              <p className="text-text-secondary">{store.slug}.eazyds.com</p>
+              <p className="text-text-secondary">
+                {storefrontUrl || `${store.slug}.eazyds.com`}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               {getStatusBadge(store.status)}
@@ -259,7 +268,7 @@ export default function AdminInternalStoreDetailPage() {
             <div>
               <p className="text-sm text-text-secondary mb-1">Store URL</p>
               <a
-                href={`https://${store.slug}.eazyds.com`}
+                href={storefrontUrl || `https://${store.slug}.eazyds.com`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary-500 hover:underline"

@@ -1326,6 +1326,39 @@ class ApiClient {
     );
   }
 
+  async getAdminInternalStoreOrders(storeId: string, params?: { page?: number; limit?: number; status?: string }) {
+    const sp = new URLSearchParams();
+    if (params?.page != null) sp.set('page', String(params.page));
+    if (params?.limit != null) sp.set('limit', String(params.limit));
+    if (params?.status) sp.set('status', params.status);
+    const q = sp.toString();
+    return this.get<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/api/admin/internal-stores/${storeId}/orders${q ? `?${q}` : ''}`
+    );
+  }
+
+  async getAdminInternalStoreProducts(storeId: string, params?: { page?: number; limit?: number; status?: string }) {
+    const sp = new URLSearchParams();
+    if (params?.page != null) sp.set('page', String(params.page));
+    if (params?.limit != null) sp.set('limit', String(params.limit));
+    if (params?.status) sp.set('status', params.status);
+    const q = sp.toString();
+    return this.get<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/api/admin/internal-stores/${storeId}/products${q ? `?${q}` : ''}`
+    );
+  }
+
+  async getAdminInternalStoreLogs(storeId: string, params?: { page?: number; limit?: number; action?: string }) {
+    const sp = new URLSearchParams();
+    if (params?.page != null) sp.set('page', String(params.page));
+    if (params?.limit != null) sp.set('limit', String(params.limit));
+    if (params?.action) sp.set('action', params.action);
+    const q = sp.toString();
+    return this.get<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; pages: number } }>(
+      `/api/admin/internal-stores/${storeId}/logs${q ? `?${q}` : ''}`
+    );
+  }
+
   // ========== MEDIA UPLOAD ==========
 
   async uploadImage(file: File) {

@@ -17,15 +17,15 @@ import {
 
 interface StoreInfo {
   _id: string;
-  storeName: string;
-  shopDomain: string;
+  name: string;
+  slug: string;
   status: string;
 }
 
 interface GeneratedOrder {
-  id: number;
-  name: string;
-  totalPrice: string;
+  id: string;
+  orderId: string;
+  totalPrice: number;
   currency: string;
   createdAt: string;
 }
@@ -58,26 +58,28 @@ export default function AdminAutoOrdersPage() {
     }
   }, [authLoading, isAuthenticated, user, router]);
 
-  // Load active stores
+  // Load active EazyDS (internal) stores
   useEffect(() => {
     const loadStores = async () => {
       try {
         const response = await api.get<{
           success: boolean;
+          count?: number;
           data: StoreInfo[];
         }>('/api/stores?status=active');
 
-        const activeStores = (response.data || []).filter(
-          (s) => s.status === 'active'
+        const rawStores = response?.data ?? [];
+        const activeStores = (Array.isArray(rawStores) ? rawStores : []).filter(
+          (s: StoreInfo) => s.status === 'active'
         );
         setStores(activeStores);
-        if (activeStores.length > 0) {
+        if (activeStores.length > 0 && !selectedStoreId) {
           setSelectedStoreId(activeStores[0]._id);
         }
       } catch (error: any) {
-        console.error('Failed to load stores', error);
+        console.error('Failed to load EazyDS stores', error);
         notify.error(
-          error?.response?.data?.error || 'Failed to load connected stores'
+          error?.response?.data?.error || 'Failed to load EazyDS stores'
         );
       }
     };
@@ -115,6 +117,7 @@ export default function AdminAutoOrdersPage() {
         success: boolean;
         message: string;
         data: {
+          store?: { id: string; name: string; slug: string };
           summary: { requested: number; created: number };
           orders: GeneratedOrder[];
         };
@@ -125,16 +128,16 @@ export default function AdminAutoOrdersPage() {
         backfillDays,
         markPaid,
         markFulfilled,
-        currency: 'USD',
+        currency: 'INR',
       });
 
-      notify.success(response.message || 'Orders placed successfully');
-      setGeneratedOrders(response.data.orders || []);
+      notify.success(response.message || 'Test orders created successfully');
+      setGeneratedOrders(response.data?.orders || []);
     } catch (error: any) {
       console.error('Failed to run auto place order automation', error);
       notify.error(
         error?.response?.data?.error ||
-          'Failed to run auto place order automation. Please check store credentials and try again.'
+          'Failed to run auto place order automation. Ensure the EazyDS store has products and try again.'
       );
     } finally {
       setSubmitting(false);
@@ -163,11 +166,10 @@ export default function AdminAutoOrdersPage() {
             </h1>
             <p className="mt-2 text-text-secondary max-w-2xl">
               Automatically place realistic{' '}
-              <span className="font-semibold">test</span> orders for any
-              connected Shopify store to simulate sales and validate your
-              dashboards. Orders are created in{' '}
-              <span className="font-semibold">test mode</span> and do not affect
-              real payments.
+              <span className="font-semibold">test</span> orders for any{' '}
+              <span className="font-semibold">EazyDS store</span> to simulate
+              sales and validate your dashboards. Orders are created in the
+              internal store and do not affect real payments.
             </p>
           </div>
         </div>
@@ -193,11 +195,11 @@ export default function AdminAutoOrdersPage() {
                   className="w-full px-3 py-2.5 bg-surface-elevated border border-border-default rounded-lg text-sm text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   {stores.length === 0 && (
-                    <option value="">No active stores connected</option>
+                    <option value="">No active EazyDS stores</option>
                   )}
                   {stores.map((store) => (
                     <option key={store._id} value={store._id}>
-                      {store.storeName} ({store.shopDomain})
+                      {store.name} ({store.slug})
                     </option>
                   ))}
                 </select>
@@ -227,7 +229,7 @@ export default function AdminAutoOrdersPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-text-secondary flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
-                    Min total (USD)
+                    Min total (₹)
                   </label>
                   <input
                     type="number"
@@ -239,7 +241,7 @@ export default function AdminAutoOrdersPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-text-secondary">
-                    Max total (USD)
+                    Max total (₹)
                   </label>
                   <input
                     type="number"
@@ -316,11 +318,10 @@ export default function AdminAutoOrdersPage() {
               </button>
 
               <p className="text-[11px] text-text-muted leading-relaxed">
-                This tool uses Shopify&apos;s Orders API with{' '}
-                <span className="font-semibold">test=true</span> orders only.
-                Use it for analytics demos, dashboard stress-testing, and QA.
-                It is not intended for manipulating real store performance
-                metrics.
+                This tool creates test orders in your{' '}
+                <span className="font-semibold">EazyDS store</span> only. Use it
+                for analytics demos, dashboard stress-testing, and QA. It does
+                not process real payments.
               </p>
             </form>
           </div>
@@ -359,17 +360,17 @@ export default function AdminAutoOrdersPage() {
                     >
                       <div>
                         <p className="text-sm font-medium text-text-primary">
-                          {order.name}
+                          {order.orderId || `Order #${order.id}`}
                         </p>
                         <p className="text-xs text-text-muted">
                           {new Date(order.createdAt).toLocaleString()}
                         </p>
                       </div>
                       <div className="text-sm font-semibold text-emerald-400">
-                        {new Intl.NumberFormat('en-US', {
+                        {new Intl.NumberFormat('en-IN', {
                           style: 'currency',
-                          currency: order.currency || 'USD',
-                        }).format(parseFloat(order.totalPrice || '0'))}
+                          currency: order.currency || 'INR',
+                        }).format(typeof order.totalPrice === 'number' ? order.totalPrice : parseFloat(String(order.totalPrice || '0')))}
                       </div>
                     </div>
                   ))}

@@ -1,4 +1,5 @@
 import { Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { Store } from '../models/Store';
 import { StoreProduct } from '../models/StoreProduct';
@@ -244,7 +245,7 @@ export const getStoreProducts = async (req: AuthRequest, res: Response, next: Ne
     const { status, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page as string, 10) - 1) * parseInt(limit as string, 10);
 
-    const query: any = { storeId };
+    const query: any = { storeId: new mongoose.Types.ObjectId(storeId) };
     if (status) {
       query.status = status;
     }
@@ -279,7 +280,7 @@ export const getStoreOrders = async (req: AuthRequest, res: Response, next: Next
     const { status, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page as string, 10) - 1) * parseInt(limit as string, 10);
 
-    const query: any = { storeId };
+    const query: any = { storeId: new mongoose.Types.ObjectId(storeId) };
     if (status) {
       query.status = status;
     }
