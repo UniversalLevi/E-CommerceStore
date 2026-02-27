@@ -76,45 +76,44 @@ export default function WhatsAppDraftsPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
+    if (user?.role !== 'admin') return;
     fetchDrafts();
     fetchStats();
-  }, [statusFilter, needsReviewFilter, pagination.page]);
+  }, [user?.role, statusFilter, needsReviewFilter, pagination.page]);
 
   const fetchStats = async () => {
     try {
-      const response = await api.get<{ success: boolean; data: DraftStats }>(
-        '/api/whatsapp/drafts/stats'
-      );
-      setStats(response.data);
+      const response = await api.getWhatsAppDraftStats();
+      const data = response?.data;
+      if (data && typeof data === 'object') {
+        setStats(data);
+      }
     } catch (err: any) {
-      console.error('Error fetching stats:', err);
+      console.error('Error fetching WhatsApp draft stats:', err);
     }
   };
 
   const fetchDrafts = async () => {
     try {
       setLoadingDrafts(true);
-      const params = new URLSearchParams();
-      params.append('page', pagination.page.toString());
-      params.append('limit', '20');
-      
-      if (statusFilter) {
-        params.append('status', statusFilter);
-      }
-      if (needsReviewFilter) {
-        params.append('needs_review', 'true');
-      }
+      const response = await api.getWhatsAppDrafts({
+        page: pagination.page,
+        limit: 20,
+        status: statusFilter || undefined,
+        needs_review: needsReviewFilter || undefined,
+      });
 
-      const response = await api.get<{
-        success: boolean;
-        data: WhatsAppDraft[];
-        pagination: Pagination;
-      }>(`/api/whatsapp/drafts?${params.toString()}`);
-
-      setDrafts(response.data);
-      setPagination(response.pagination);
+      const data = response?.data;
+      setDrafts(Array.isArray(data) ? data : []);
+      const pag = response?.pagination;
+      setPagination(
+        pag && typeof pag === 'object' && typeof pag.page === 'number'
+          ? { page: pag.page, limit: pag.limit ?? 20, total: pag.total ?? 0, pages: pag.pages ?? 0 }
+          : { ...pagination, total: 0, pages: 0 }
+      );
     } catch (err: any) {
-      notify.error('Failed to load drafts');
+      notify.error(err?.response?.data?.error || err?.response?.data?.message || 'Failed to load drafts');
+      setDrafts([]);
     } finally {
       setLoadingDrafts(false);
     }
@@ -124,12 +123,12 @@ export default function WhatsAppDraftsPage() {
     if (!confirm('Are you sure you want to reject this draft?')) return;
 
     try {
-      await api.delete(`/api/whatsapp/drafts/${id}`);
+      await api.deleteWhatsAppDraft(id);
       notify.success('Draft rejected');
       fetchDrafts();
       fetchStats();
     } catch (err: any) {
-      notify.error('Failed to reject draft');
+      notify.error(err?.response?.data?.message || 'Failed to reject draft');
     }
   };
 
@@ -143,13 +142,7 @@ export default function WhatsAppDraftsPage() {
 
     try {
       setBulkLoading(true);
-      const response = await api.post<{
-        success: boolean;
-        message: string;
-        data: { id: string; success: boolean; error?: string }[];
-      }>('/api/whatsapp/drafts/bulk-approve', {
-        ids: Array.from(selectedDrafts),
-      });
+      const response = await api.bulkApproveWhatsAppDrafts(Array.from(selectedDrafts));
 
       const successCount = response.data.filter(r => r.success).length;
       const failCount = response.data.filter(r => !r.success).length;

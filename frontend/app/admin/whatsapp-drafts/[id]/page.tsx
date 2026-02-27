@@ -108,26 +108,30 @@ export default function WhatsAppDraftDetailPage() {
   const fetchDraft = async () => {
     try {
       setLoadingDraft(true);
-      const response = await api.get<{
-        success: boolean;
-        data: WhatsAppDraft;
-        niches: Niche[];
-      }>(`/api/whatsapp/drafts/${draftId}`);
+      const response = await api.getWhatsAppDraft(draftId);
 
-      setDraft(response.data);
-      setNiches(response.niches);
+      const data = response?.data;
+      const nichesList = Array.isArray(response?.niches) ? response.niches : [];
+      if (!data) {
+        notify.error('Draft not found');
+        router.push('/admin/whatsapp-drafts');
+        return;
+      }
 
-      // Initialize form with draft data
+      setDraft(data);
+      setNiches(nichesList);
+
+      const nicheId = (data.detected_niche as any)?._id ?? data.detected_niche ?? '';
       setFormData({
-        ai_name: response.data.ai_name || response.data.original_name,
-        ai_description: response.data.ai_description || '',
-        cost_price: response.data.cost_price,
-        profit_margin: response.data.profit_margin,
-        shipping_fee: response.data.shipping_fee,
-        detected_niche: response.data.detected_niche?._id || '',
+        ai_name: data.ai_name || data.original_name || '',
+        ai_description: data.ai_description || '',
+        cost_price: data.cost_price ?? 0,
+        profit_margin: data.profit_margin ?? 0,
+        shipping_fee: data.shipping_fee ?? 80,
+        detected_niche: nicheId,
       });
     } catch (err: any) {
-      notify.error('Failed to load draft');
+      notify.error(err?.response?.data?.message || err?.response?.data?.error || 'Failed to load draft');
       router.push('/admin/whatsapp-drafts');
     } finally {
       setLoadingDraft(false);
@@ -141,43 +145,39 @@ export default function WhatsAppDraftDetailPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await api.put(`/api/whatsapp/drafts/${draftId}`, formData);
+      await api.updateWhatsAppDraft(draftId, formData);
       notify.success('Draft saved successfully');
       fetchDraft();
     } catch (err: any) {
-      notify.error(err.message || 'Failed to save draft');
+      notify.error(err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to save draft');
     } finally {
       setSaving(false);
     }
   };
 
   const handleApprove = async () => {
-    // Refresh draft data first to ensure we have latest niche
     if (!formData.detected_niche) {
-      // Try to refresh the draft in case enrichment just completed
       await fetchDraft();
-      
-      if (!formData.detected_niche && !draft?.detected_niche) {
-        notify.error('Please select a niche before approving. If enrichment is still running, please wait and refresh the page.');
+      const currentNiche = (draft?.detected_niche as any)?._id ?? draft?.detected_niche ?? formData.detected_niche;
+      if (!currentNiche) {
+        notify.error('Please select a niche before approving. If enrichment is still running, wait and refresh the page.');
         return;
       }
-      
-      // Update formData with refreshed draft niche
-      if (draft?.detected_niche) {
-        setFormData(prev => ({ ...prev, detected_niche: (draft.detected_niche as any)._id }));
-      }
+      setFormData((prev) => ({ ...prev, detected_niche: currentNiche }));
     }
 
     if (!confirm('Approve this draft and create a product?')) return;
 
     try {
       setApproving(true);
-      await api.post(`/api/whatsapp/drafts/${draftId}/approve`);
+      // Save current form (including niche) so the backend has latest data when approving
+      await api.updateWhatsAppDraft(draftId, formData);
+      await api.approveWhatsAppDraft(draftId);
       notify.success('Product created successfully!');
       router.push('/admin/whatsapp-drafts');
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.message || 'Failed to approve draft';
-      if (errorMsg.includes('niche')) {
+      const errorMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to approve draft';
+      if (errorMsg.toLowerCase().includes('niche')) {
         notify.error('Please select a niche before approving. You can select one from the dropdown above.');
       } else {
         notify.error(errorMsg);
@@ -191,11 +191,11 @@ export default function WhatsAppDraftDetailPage() {
     if (!confirm('Reject this draft? This action cannot be undone.')) return;
 
     try {
-      await api.delete(`/api/whatsapp/drafts/${draftId}`);
+      await api.deleteWhatsAppDraft(draftId);
       notify.success('Draft rejected');
       router.push('/admin/whatsapp-drafts');
     } catch (err: any) {
-      notify.error(err.message || 'Failed to reject draft');
+      notify.error(err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to reject draft');
     }
   };
 

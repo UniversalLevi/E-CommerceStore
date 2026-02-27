@@ -1340,6 +1340,42 @@ class ApiClient {
     return this.post<{ success: boolean; url: string; filename: string }>('/api/upload/video', formData);
   }
 
+  // ========== WHATSAPP DRAFTS (Admin) ==========
+
+  async getWhatsAppDraftStats() {
+    return this.get<{ success: boolean; data: { incoming: number; enriched: number; approved: number; rejected: number; total: number; pending_review: number; recent?: any[] } }>('/api/whatsapp/drafts/stats');
+  }
+
+  async getWhatsAppDrafts(params?: { page?: number; limit?: number; status?: string; needs_review?: boolean }) {
+    const sp = new URLSearchParams();
+    if (params?.page != null) sp.set('page', String(params.page));
+    if (params?.limit != null) sp.set('limit', String(params.limit));
+    if (params?.status) sp.set('status', params.status);
+    if (params?.needs_review === true) sp.set('needs_review', 'true');
+    const q = sp.toString();
+    return this.get<{ success: boolean; data: any[]; pagination: { page: number; limit: number; total: number; pages: number } }>(`/api/whatsapp/drafts${q ? `?${q}` : ''}`);
+  }
+
+  async getWhatsAppDraft(id: string) {
+    return this.get<{ success: boolean; data: any; niches: any[] }>(`/api/whatsapp/drafts/${id}`);
+  }
+
+  async updateWhatsAppDraft(id: string, data: any) {
+    return this.put<{ success: boolean; data: any }>(`/api/whatsapp/drafts/${id}`, data);
+  }
+
+  async approveWhatsAppDraft(id: string) {
+    return this.post<{ success: boolean; message: string; data: any }>(`/api/whatsapp/drafts/${id}/approve`);
+  }
+
+  async deleteWhatsAppDraft(id: string) {
+    return this.delete<{ success: boolean; message: string }>(`/api/whatsapp/drafts/${id}`);
+  }
+
+  async bulkApproveWhatsAppDrafts(ids: string[]) {
+    return this.post<{ success: boolean; message: string; data: { id: string; success: boolean; error?: string }[] }>('/api/whatsapp/drafts/bulk-approve', { ids });
+  }
+
   // ========== PUSH NOTIFICATIONS ==========
 
   async getVapidKey() {
