@@ -60,13 +60,15 @@ export default function WhatsAppDraftDetailPage() {
   const [saving, setSaving] = useState(false);
   const [approving, setApproving] = useState(false);
 
-  // Form state
+  const FIXED_DELIVERY = 80;
+
+  // Form state (delivery fixed at ₹80)
   const [formData, setFormData] = useState({
     ai_name: '',
     ai_description: '',
     cost_price: 0,
     profit_margin: 0,
-    shipping_fee: 80,
+    shipping_fee: FIXED_DELIVERY,
     detected_niche: '',
   });
 
@@ -123,15 +125,14 @@ export default function WhatsAppDraftDetailPage() {
 
       const nicheId = (data.detected_niche as any)?._id ?? data.detected_niche ?? '';
       const cost = data.cost_price ?? 0;
-      const shipping = data.shipping_fee ?? 80;
       const selling = cost <= 0 ? 0 : cost < 400 ? cost * 2 : cost * 1.5;
-      const profit = selling - cost - shipping;
+      const profit = selling - cost - FIXED_DELIVERY;
       setFormData({
         ai_name: data.ai_name || data.original_name || '',
         ai_description: data.ai_description || '',
         cost_price: cost,
         profit_margin: data.profit_margin ?? profit,
-        shipping_fee: shipping,
+        shipping_fee: FIXED_DELIVERY,
         detected_niche: nicheId,
       });
     } catch (err: any) {
@@ -151,19 +152,14 @@ export default function WhatsAppDraftDetailPage() {
   };
 
   const computedSellingPrice = getSellingPrice(formData.cost_price);
-  const computedProfit = getProfitFromPricing(formData.cost_price, formData.shipping_fee);
+  const computedProfit = getProfitFromPricing(formData.cost_price, FIXED_DELIVERY);
   const computedMarginPercent =
     computedSellingPrice > 0 ? (computedProfit / computedSellingPrice) * 100 : 0;
 
-  // Sync profit_margin when cost_price or shipping_fee changes so save sends correct value
+  // Sync profit_margin when cost_price changes (delivery fixed at ₹80)
   const handleCostPriceChange = (value: number) => {
-    const next = { ...formData, cost_price: value };
-    next.profit_margin = getProfitFromPricing(next.cost_price, next.shipping_fee);
-    setFormData(next);
-  };
-  const handleShippingFeeChange = (value: number) => {
-    const next = { ...formData, shipping_fee: value };
-    next.profit_margin = getProfitFromPricing(next.cost_price, next.shipping_fee);
+    const next = { ...formData, cost_price: value, shipping_fee: FIXED_DELIVERY };
+    next.profit_margin = getProfitFromPricing(next.cost_price, FIXED_DELIVERY);
     setFormData(next);
   };
 
@@ -390,7 +386,7 @@ export default function WhatsAppDraftDetailPage() {
               Pricing (INR)
             </h3>
             <p className="text-xs text-text-muted mb-3">
-              Selling price = 2× cost if cost &lt; ₹400, else 1.5× cost. Profit and margin update automatically.
+              Delivery ₹80 (fixed). Selling price = 2× cost if cost &lt; ₹400, else 1.5× cost. Profit and margin update automatically.
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -405,15 +401,10 @@ export default function WhatsAppDraftDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Shipping Fee</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={formData.shipping_fee}
-                  onChange={(e) => handleShippingFeeChange(parseFloat(e.target.value) || 0)}
-                  disabled={isReadOnly}
-                  className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:opacity-50"
-                />
+                <label className="block text-xs text-text-muted mb-1">Delivery</label>
+                <div className="px-3 py-2 bg-surface-elevated border border-border-default text-text-muted rounded-lg">
+                  ₹{FIXED_DELIVERY} (fixed)
+                </div>
               </div>
               <div>
                 <label className="block text-xs text-text-muted mb-1">Selling Price (auto)</label>

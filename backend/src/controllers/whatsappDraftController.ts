@@ -164,10 +164,11 @@ export const updateDraft = async (
       }
     }
 
-    // Recalculate pricing from wholesale (cost) + shipping using markup rules
+    // Recalculate pricing: delivery fixed at ₹80; selling = 2× or 1.5× wholesale, profit = selling - cost - 80
+    const FIXED_SHIPPING = 80;
     const costPrice = updateData.cost_price ?? draft.cost_price;
-    const shippingFee = updateData.shipping_fee ?? draft.shipping_fee;
-    const { sellingPrice, profitAmount } = getWhatsAppDraftPricing(costPrice, shippingFee);
+    updateData.shipping_fee = FIXED_SHIPPING;
+    const { sellingPrice, profitAmount } = getWhatsAppDraftPricing(costPrice, FIXED_SHIPPING);
     updateData.profit_margin = profitAmount;
     updateData.final_price = sellingPrice;
 
