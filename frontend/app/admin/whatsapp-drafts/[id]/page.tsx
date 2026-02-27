@@ -122,12 +122,16 @@ export default function WhatsAppDraftDetailPage() {
       setNiches(nichesList);
 
       const nicheId = (data.detected_niche as any)?._id ?? data.detected_niche ?? '';
+      const cost = data.cost_price ?? 0;
+      const shipping = data.shipping_fee ?? 80;
+      const selling = cost <= 0 ? 0 : cost < 400 ? cost * 2 : cost * 1.5;
+      const profit = selling - cost - shipping;
       setFormData({
         ai_name: data.ai_name || data.original_name || '',
         ai_description: data.ai_description || '',
-        cost_price: data.cost_price ?? 0,
-        profit_margin: data.profit_margin ?? 0,
-        shipping_fee: data.shipping_fee ?? 80,
+        cost_price: cost,
+        profit_margin: data.profit_margin ?? profit,
+        shipping_fee: shipping,
         detected_niche: nicheId,
       });
     } catch (err: any) {
@@ -138,8 +142,29 @@ export default function WhatsAppDraftDetailPage() {
     }
   };
 
-  const calculateFinalPrice = () => {
-    return formData.cost_price + formData.profit_margin + formData.shipping_fee;
+  // Pricing rule: selling = wholesale×2 if wholesale < 400, else wholesale×1.5; profit = selling - cost - shipping
+  const getSellingPrice = (wholesale: number) =>
+    wholesale <= 0 ? 0 : wholesale < 400 ? wholesale * 2 : wholesale * 1.5;
+  const getProfitFromPricing = (wholesale: number, shipping: number) => {
+    const selling = getSellingPrice(wholesale);
+    return selling - wholesale - shipping;
+  };
+
+  const computedSellingPrice = getSellingPrice(formData.cost_price);
+  const computedProfit = getProfitFromPricing(formData.cost_price, formData.shipping_fee);
+  const computedMarginPercent =
+    computedSellingPrice > 0 ? (computedProfit / computedSellingPrice) * 100 : 0;
+
+  // Sync profit_margin when cost_price or shipping_fee changes so save sends correct value
+  const handleCostPriceChange = (value: number) => {
+    const next = { ...formData, cost_price: value };
+    next.profit_margin = getProfitFromPricing(next.cost_price, next.shipping_fee);
+    setFormData(next);
+  };
+  const handleShippingFeeChange = (value: number) => {
+    const next = { ...formData, shipping_fee: value };
+    next.profit_margin = getProfitFromPricing(next.cost_price, next.shipping_fee);
+    setFormData(next);
   };
 
   const handleSave = async () => {
@@ -358,29 +383,23 @@ export default function WhatsAppDraftDetailPage() {
             </div>
           </div>
 
-          {/* Pricing */}
+          {/* Pricing: wholesale = cost price; selling price auto from markup (2× if <400, 1.5× else) */}
           <div className="bg-surface-raised border border-border-default rounded-xl p-4">
             <h3 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
               <DollarSign className="w-5 h-5" />
               Pricing (INR)
             </h3>
+            <p className="text-xs text-text-muted mb-3">
+              Selling price = 2× cost if cost &lt; ₹400, else 1.5× cost. Profit and margin update automatically.
+            </p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-text-muted mb-1">Cost Price</label>
+                <label className="block text-xs text-text-muted mb-1">Cost Price (Wholesale)</label>
                 <input
                   type="number"
+                  min={0}
                   value={formData.cost_price}
-                  onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
-                  disabled={isReadOnly}
-                  className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:opacity-50"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-text-muted mb-1">Profit Margin</label>
-                <input
-                  type="number"
-                  value={formData.profit_margin}
-                  onChange={(e) => setFormData({ ...formData, profit_margin: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => handleCostPriceChange(parseFloat(e.target.value) || 0)}
                   disabled={isReadOnly}
                   className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:opacity-50"
                 />
@@ -389,16 +408,29 @@ export default function WhatsAppDraftDetailPage() {
                 <label className="block text-xs text-text-muted mb-1">Shipping Fee</label>
                 <input
                   type="number"
+                  min={0}
                   value={formData.shipping_fee}
-                  onChange={(e) => setFormData({ ...formData, shipping_fee: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => handleShippingFeeChange(parseFloat(e.target.value) || 0)}
                   disabled={isReadOnly}
                   className="w-full px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:opacity-50"
                 />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">Final Price</label>
+                <label className="block text-xs text-text-muted mb-1">Selling Price (auto)</label>
+                <div className="px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg">
+                  ₹{computedSellingPrice.toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-text-muted mb-1">Profit (₹)</label>
+                <div className="px-3 py-2 bg-surface-elevated border border-border-default text-text-primary rounded-lg">
+                  ₹{computedProfit.toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-text-muted mb-1">Profit margin %</label>
                 <div className="px-3 py-2 bg-green-900/30 border border-green-500/30 text-green-400 font-semibold rounded-lg">
-                  ₹{calculateFinalPrice()}
+                  {computedMarginPercent.toFixed(2)}%
                 </div>
               </div>
             </div>

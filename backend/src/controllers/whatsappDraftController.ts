@@ -4,6 +4,7 @@ import { createError } from '../middleware/errorHandler';
 import { WhatsAppProductDraft, IWhatsAppProductDraft, DraftStatus } from '../models/WhatsAppProductDraft';
 import { Product } from '../models/Product';
 import { Niche } from '../models/Niche';
+import { getWhatsAppDraftPricing } from '../services/whatsappIntakeService';
 import mongoose from 'mongoose';
 
 /**
@@ -163,11 +164,12 @@ export const updateDraft = async (
       }
     }
 
-    // Recalculate final price if pricing fields changed
+    // Recalculate pricing from wholesale (cost) + shipping using markup rules
     const costPrice = updateData.cost_price ?? draft.cost_price;
-    const profitMargin = updateData.profit_margin ?? draft.profit_margin;
     const shippingFee = updateData.shipping_fee ?? draft.shipping_fee;
-    updateData.final_price = costPrice + profitMargin + shippingFee;
+    const { sellingPrice, profitAmount } = getWhatsAppDraftPricing(costPrice, shippingFee);
+    updateData.profit_margin = profitAmount;
+    updateData.final_price = sellingPrice;
 
     const updatedDraft = await WhatsAppProductDraft.findByIdAndUpdate(
       id,

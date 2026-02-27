@@ -451,14 +451,41 @@ export function extractMessages(payload: WhatsAppWebhookPayload | null | undefin
 }
 
 /**
- * Generate a random profit margin between 400-500 INR
+ * Get selling price from wholesale using dynamic markup rules:
+ * - Wholesale < 400: selling = wholesale × 2
+ * - Wholesale >= 400: selling = wholesale × 1.5
+ */
+export function getSellingPriceFromWholesale(wholesale: number): number {
+  if (wholesale <= 0) return 0;
+  if (wholesale < 400) return wholesale * 2;
+  return wholesale * 1.5;
+}
+
+/**
+ * Compute WhatsApp draft pricing from wholesale (cost) and shipping.
+ * Total cost = wholesale + shipping (advertising/misc = 0 in WhatsApp flow).
+ * Profit = selling price - total cost.
+ * Profit margin stored is the profit amount (INR); margin % = (profit / selling price) × 100.
+ */
+export function getWhatsAppDraftPricing(
+  wholesalePrice: number,
+  shippingFee: number = 80
+): { sellingPrice: number; profitAmount: number; totalCost: number } {
+  const sellingPrice = getSellingPriceFromWholesale(wholesalePrice);
+  const totalCost = wholesalePrice + shippingFee;
+  const profitAmount = sellingPrice - totalCost;
+  return { sellingPrice, profitAmount, totalCost };
+}
+
+/**
+ * @deprecated Use getWhatsAppDraftPricing for new logic. Kept for any legacy callers.
  */
 export function generateProfitMargin(): number {
   return Math.floor(Math.random() * 101) + 400; // 400-500
 }
 
 /**
- * Calculate final price from components
+ * @deprecated Use getSellingPriceFromWholesale + getWhatsAppDraftPricing. Kept for legacy.
  */
 export function calculateFinalPrice(costPrice: number, profitMargin: number, shippingFee: number = 80): number {
   return costPrice + profitMargin + shippingFee;

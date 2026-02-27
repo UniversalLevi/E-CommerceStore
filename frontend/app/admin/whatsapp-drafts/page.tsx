@@ -434,7 +434,7 @@ export default function WhatsAppDraftsPage() {
                       <div className="text-sm">
                         <div className="text-text-primary font-medium">₹{draft.final_price}</div>
                         <div className="text-xs text-text-muted">
-                          Cost: ₹{draft.cost_price} + ₹{draft.profit_margin} + ₹{draft.shipping_fee}
+                          cost ₹{draft.cost_price} · profit ₹{draft.profit_margin} · ship ₹{draft.shipping_fee}
                         </div>
                       </div>
                     </td>

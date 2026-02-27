@@ -11,8 +11,7 @@ import {
   validateMessagePayload,
   parseProductText,
   downloadWhatsAppMedia,
-  generateProfitMargin,
-  calculateFinalPrice,
+  getWhatsAppDraftPricing,
   WhatsAppWebhookPayload,
   WhatsAppMessage,
   ParsedProductData,
@@ -285,10 +284,9 @@ async function createProductDraft(
   }
 
   try {
-    // Calculate pricing
-    const profitMargin = generateProfitMargin();
+    // Calculate pricing: selling price from wholesale (2× if < 400, 1.5× otherwise), profit = selling - cost - shipping
     const shippingFee = 80;
-    const finalPrice = calculateFinalPrice(costPrice, profitMargin, shippingFee);
+    const { sellingPrice, profitAmount } = getWhatsAppDraftPricing(costPrice, shippingFee);
 
     // Create initial draft
     const draft = new WhatsAppProductDraft({
@@ -296,9 +294,9 @@ async function createProductDraft(
       original_image_url: originalImageUrl,
       original_name: productName,
       cost_price: costPrice,
-      profit_margin: profitMargin,
+      profit_margin: profitAmount,
       shipping_fee: shippingFee,
-      final_price: finalPrice,
+      final_price: sellingPrice,
       status: 'incoming',
       needs_review: false,
     });
