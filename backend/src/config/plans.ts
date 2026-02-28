@@ -108,3 +108,8 @@ export const PLATFORM_PLAN_CODES: PlanCode[] = (Object.keys(plans) as PlanCode[]
   (code) => isPlatformPlan(code)
 );
 
+// Single source of truth for store plan codes (used in store subscription checks)
+export const STORE_PLAN_CODES: PlanCode[] = (Object.keys(plans) as PlanCode[]).filter(
+  (code) => isStorePlan(code)
+);
+

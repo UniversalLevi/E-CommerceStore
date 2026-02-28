@@ -3,7 +3,7 @@ import { AuthRequest } from './auth';
 import { IUser } from '../models/User';
 import { getSubscriptionStatus, isStorePlan } from '../models/User';
 import { Subscription, isStoreSubscription } from '../models/Subscription';
-import { plans, PlanCode, isStorePlan as isStorePlanCode, PLATFORM_PLAN_CODES } from '../config/plans';
+import { plans, PlanCode, isStorePlan as isStorePlanCode, PLATFORM_PLAN_CODES, STORE_PLAN_CODES } from '../config/plans';
 
 /**
  * Check if user has an active paid subscription (including trial)
@@ -210,7 +210,7 @@ export async function hasStoreSubscription(user: IUser): Promise<boolean> {
   // Check Subscription model for active store subscription
   const storeSubscription = await Subscription.findOne({
     userId: (user as any)._id,
-    planCode: { $in: ['stores_basic_free', 'stores_grow', 'stores_advanced'] },
+    planCode: { $in: STORE_PLAN_CODES },
     status: { $in: ['active', 'manually_granted'] },
   }).lean();
   

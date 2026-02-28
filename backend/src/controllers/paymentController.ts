@@ -8,7 +8,7 @@ import { Wallet } from '../models/Wallet';
 import { WalletTransaction } from '../models/WalletTransaction';
 import { Order } from '../models/Order';
 import { razorpayService } from '../services/RazorpayService';
-import { plans, isValidPlanCode, PlanCode, TOKEN_CHARGE_AMOUNT, isStorePlan } from '../config/plans';
+import { plans, isValidPlanCode, PlanCode, TOKEN_CHARGE_AMOUNT, isStorePlan, PLATFORM_PLAN_CODES, STORE_PLAN_CODES } from '../config/plans';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
@@ -609,18 +609,30 @@ export const handleWebhook = async (
         return;
       }
 
-      // Find payment record by orderId
-      const paymentRecord = await Payment.findOne({ orderId: order.id });
+      // Find payment record: by orderId first, then by subscription id (Razorpay may send subscription id as order for subscription charges)
+      let paymentRecord = await Payment.findOne({ orderId: order.id });
+      if (!paymentRecord && (payment as any).subscription_id) {
+        const subId = (payment as any).subscription_id;
+        paymentRecord = await Payment.findOne({
+          $or: [
+            { orderId: subId },
+            { 'metadata.subscriptionId': subId },
+            { 'metadata.mainSubscriptionId': subId },
+          ],
+          status: 'created',
+        });
+      }
       if (!paymentRecord) {
-        console.error('Payment record not found for order:', order.id);
+        console.error('Payment record not found for order:', order.id, 'subscription_id:', (payment as any).subscription_id);
         res.status(200).json({ success: true }); // Return 200 to Razorpay even if error
         return;
       }
 
-      // Amount Validation
+      // Amount validation: use payment amount when it differs from order (e.g. subscription addon charge)
       const plan = plans[paymentRecord.planCode];
-      if (order.amount !== plan.price) {
-        console.error('Amount mismatch in webhook:', order.amount, 'expected:', plan.price);
+      const paidAmount = (payment as any).amount ?? order.amount;
+      if (paidAmount !== plan.price) {
+        console.error('Amount mismatch in webhook:', { orderAmount: order.amount, paymentAmount: (payment as any).amount, expected: plan.price });
         res.status(200).json({ success: true }); // Return 200 to Razorpay
         return;
       }
@@ -1042,22 +1054,34 @@ export const getCurrentPlan = async (
       throw createError('User not found', 404);
     }
 
-    // Check for active subscription
+    // Check for active platform subscription only (exclude store plans for this endpoint)
     const subscription = await Subscription.findOne({
       userId: (req.user as any)._id,
-      status: { $in: ['active', 'manually_granted'] },
+      planCode: { $in: PLATFORM_PLAN_CODES },
+      status: { $in: ['active', 'manually_granted', 'trialing'] },
     }).sort({ createdAt: -1 });
 
+    // Derive status from subscription when present (covers trialing and DB-backed active)
     let status = getSubscriptionStatus(user);
+    if (subscription) {
+      if (subscription.status === 'trialing' && subscription.trialEndsAt && subscription.trialEndsAt > new Date()) {
+        status = 'active';
+      } else if ((subscription.status === 'active' || subscription.status === 'manually_granted') && (!subscription.endDate || subscription.endDate > new Date())) {
+        status = 'active';
+      } else if (subscription.endDate && subscription.endDate <= new Date()) {
+        status = 'expired';
+      }
+    }
 
-    const maxProducts = user.plan ? plans[user.plan as PlanCode]?.maxProducts ?? null : null;
+    const effectivePlan = user.plan || (subscription?.planCode as PlanCode) || null;
+    const maxProducts = effectivePlan ? plans[effectivePlan]?.maxProducts ?? null : null;
     const productsRemaining = maxProducts === null ? null : Math.max(0, maxProducts - user.productsAdded);
 
     res.status(200).json({
       success: true,
       data: {
-        plan: user.plan,
-        planExpiresAt: user.planExpiresAt,
+        plan: effectivePlan,
+        planExpiresAt: user.planExpiresAt || subscription?.endDate || null,
         isLifetime: user.isLifetime,
         status,
         maxProducts,
@@ -1118,10 +1142,10 @@ export const getCurrentStorePlan = async (
       throw createError('Authentication required', 401);
     }
 
-    // Check for active store subscription
+    // Check for active store subscription (use STORE_PLAN_CODES for single source of truth)
     const storeSubscription = await Subscription.findOne({
       userId: (req.user as any)._id,
-      planCode: { $in: ['stores_basic_free', 'stores_grow', 'stores_advanced'] },
+      planCode: { $in: STORE_PLAN_CODES },
       status: { $in: ['active', 'manually_granted'] },
     }).sort({ createdAt: -1 });
 
