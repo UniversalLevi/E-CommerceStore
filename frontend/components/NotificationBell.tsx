@@ -7,6 +7,31 @@ import { api } from '@/lib/api';
 import { playOrderSound, isSoundEnabled } from '@/lib/notificationSound';
 import NotificationDropdown from './NotificationDropdown';
 
+const ANNOUNCED_STORAGE_KEY = 'eazyds_announced_notif_ids';
+const MAX_ANNOUNCED_STORED = 200;
+
+function loadAnnouncedIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem(ANNOUNCED_STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? new Set(arr.slice(-MAX_ANNOUNCED_STORED)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveAnnouncedIds(ids: Set<string>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const arr = Array.from(ids).slice(-MAX_ANNOUNCED_STORED);
+    localStorage.setItem(ANNOUNCED_STORAGE_KEY, JSON.stringify(arr));
+  } catch {
+    // ignore
+  }
+}
+
 interface Notification {
   _id: string;
   type: string;
@@ -28,11 +53,19 @@ export default function NotificationBell() {
   const prevUnreadRef = useRef(0);
   const announcedIdsRef = useRef<Set<string>>(new Set());
   const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (isAuthenticated && !hydratedRef.current) {
+      announcedIdsRef.current = loadAnnouncedIds();
+      hydratedRef.current = true;
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 15000);
+      const interval = setInterval(fetchNotifications, 3000);
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
@@ -63,34 +96,46 @@ export default function NotificationBell() {
         success: boolean;
         data: Notification[];
         unreadCount: number;
-      }>('/api/notifications?limit=10&read=false');
-      const newNotifs = response.data || [];
-      const newCount = response.unreadCount || 0;
+      }>('/api/notifications?limit=20');
+      const list = response?.data;
+      const newNotifs = Array.isArray(list) ? list : [];
+      const newCount = typeof response?.unreadCount === 'number' ? response.unreadCount : 0;
 
-      // Only play sound / show toast once per notification (by id)
       const orderTypes = ['new_order', 'order_paid'];
+      const shouldPlaySound = (n: Notification) =>
+        (orderTypes.includes(n.type) || n.playSound === true) && isSoundEnabled();
+
+      const toAnnounce: Notification[] = [];
       for (const notif of newNotifs) {
-        if (!orderTypes.includes(notif.type)) continue;
+        if (!orderTypes.includes(notif.type) && !notif.playSound) continue;
         if (announcedIdsRef.current.has(notif._id)) continue;
         announcedIdsRef.current.add(notif._id);
+        toAnnounce.push(notif);
+      }
+      if (toAnnounce.length > 0) {
+        const latest = toAnnounce[0];
+        setToast({ title: latest.title, message: latest.message });
         if (isSoundEnabled()) {
-          playOrderSound();
+          toAnnounce.forEach((notif, i) => {
+            if (!shouldPlaySound(notif)) return;
+            setTimeout(() => playOrderSound(), i * 300);
+          });
         }
-        setToast({ title: notif.title, message: notif.message });
-        break; // Only announce the newest one per poll
       }
 
-      // Prune old IDs so the set doesn't grow forever (keep last 100)
-      if (announcedIdsRef.current.size > 100) {
+      if (announcedIdsRef.current.size > MAX_ANNOUNCED_STORED) {
         const ids = Array.from(announcedIdsRef.current);
-        announcedIdsRef.current = new Set(ids.slice(-50));
+        announcedIdsRef.current = new Set(ids.slice(-MAX_ANNOUNCED_STORED));
+        saveAnnouncedIds(announcedIdsRef.current);
+      } else if (toAnnounce.length > 0) {
+        saveAnnouncedIds(announcedIdsRef.current);
       }
 
       prevUnreadRef.current = newCount;
       setNotifications(newNotifs);
       setUnreadCount(newCount);
-    } catch {
-      // Silent fail
+    } catch (err) {
+      console.error('Notifications fetch failed:', err);
     }
   };
 

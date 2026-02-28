@@ -5,7 +5,33 @@ import { StoreOrder } from '../models/StoreOrder';
 import { StoreProduct } from '../models/StoreProduct';
 import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
+import { createNotification } from '../utils/notifications';
 import mongoose from 'mongoose';
+
+// Realistic Indian names and addresses for auto-generated orders
+const INDIAN_FIRST_NAMES = [
+  'Rajesh', 'Priya', 'Amit', 'Sneha', 'Vikram', 'Kavita', 'Suresh', 'Anita', 'Rahul', 'Pooja',
+  'Arun', 'Deepa', 'Kiran', 'Meera', 'Sanjay', 'Lakshmi', 'Manoj', 'Divya', 'Ramesh', 'Kavitha',
+  'Venkat', 'Shweta', 'Gopal', 'Neha', 'Srinivas', 'Anjali', 'Ravi', 'Sunita', 'Kumar', 'Preeti',
+  'Vijay', 'Rekha', 'Naveen', 'Swati', 'Praveen', 'Madhuri', 'Ashok', 'Pallavi', 'Harish', 'Sonal',
+  'Anil', 'Ritu', 'Mahesh', 'Shilpa', 'Satish', 'Nisha', 'Chandra', 'Vandana', 'Raghav', 'Kiran',
+];
+const INDIAN_LAST_NAMES = [
+  'Sharma', 'Patel', 'Singh', 'Kumar', 'Reddy', 'Nair', 'Iyer', 'Gupta', 'Joshi', 'Desai',
+  'Rao', 'Menon', 'Pillai', 'Mehta', 'Shah', 'Verma', 'Narayanan', 'Kulkarni', 'Bhat', 'Mishra',
+];
+const INDIAN_CITIES = [
+  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow',
+  'Surat', 'Nagpur', 'Indore', 'Thane', 'Bhopal', 'Visakhapatnam', 'Patna', 'Vadodara', 'Ludhiana', 'Agra',
+];
+const INDIAN_STATES = [
+  'Maharashtra', 'Delhi', 'Karnataka', 'Telangana', 'Tamil Nadu', 'West Bengal', 'Gujarat', 'Rajasthan', 'Uttar Pradesh',
+  'Madhya Pradesh', 'Bihar', 'Andhra Pradesh', 'Kerala', 'Punjab', 'Haryana',
+];
+const INDIAN_STREETS = [
+  'MG Road', 'Brigade Road', 'Linking Road', 'Park Street', 'Anna Nagar', 'Sector 18', 'Jubilee Hills', 'Koramangala',
+  'Banjara Hills', 'Salt Lake', 'Gomti Nagar', 'HSR Layout', 'Indiranagar', 'Whitefield', 'Andheri West',
+];
 
 interface GenerateFakeOrdersBody {
   count?: number;
@@ -29,11 +55,42 @@ function getRandomNumber(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 function getRandomDateWithinDays(backfillDays: number): Date {
   const now = new Date();
   const past = new Date(now.getTime() - backfillDays * 24 * 60 * 60 * 1000);
   const timestamp = getRandomNumber(past.getTime(), now.getTime());
   return new Date(timestamp);
+}
+
+function getRandomIndianCustomer(index: number) {
+  const firstName = pick(INDIAN_FIRST_NAMES);
+  const lastName = pick(INDIAN_LAST_NAMES);
+  const name = `${firstName} ${lastName}`;
+  const city = pick(INDIAN_CITIES);
+  const state = pick(INDIAN_STATES);
+  const street = pick(INDIAN_STREETS);
+  const building = Math.floor(getRandomNumber(1, 999));
+  const phone = `+91${Math.floor(9000000000 + Math.random() * 1000000000)}`;
+  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index}@gmail.com`;
+  return {
+    name,
+    email,
+    phone,
+    shippingAddress: {
+      name,
+      address1: `${building} ${street}`,
+      address2: `${city}, ${state}`,
+      city,
+      state,
+      zip: `${Math.floor(400000 + Math.random() * 200000)}`,
+      country: 'India',
+      phone,
+    },
+  };
 }
 
 /**
@@ -114,7 +171,8 @@ export const generateFakeOrders = async (
       const totalInPaise = subtotal + shipping;
 
       const createdAt = getRandomDateWithinDays(backfillDays);
-      
+      const customer = getRandomIndianCustomer(i);
+
       // Pick a random product
       const randomProduct = products[Math.floor(Math.random() * products.length)];
       const quantity = Math.floor(getRandomNumber(1, 5));
@@ -122,20 +180,11 @@ export const generateFakeOrders = async (
       const order = await StoreOrder.create({
         storeId: store._id,
         customer: {
-          name: `Test Customer ${i + 1}`,
-          email: `fake+${Date.now()}-${i}@example.com`,
-          phone: `+91${Math.floor(Math.random() * 10000000000)}`,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
         },
-        shippingAddress: {
-          name: `Test Customer ${i + 1}`,
-          address1: `${Math.floor(Math.random() * 100)} Test Street`,
-          address2: 'Test Area',
-          city: 'Test City',
-          state: 'Test State',
-          zip: `${Math.floor(Math.random() * 100000)}`,
-          country: 'India',
-          phone: `+91${Math.floor(Math.random() * 10000000000)}`,
-        },
+        shippingAddress: customer.shippingAddress,
         items: [{
           productId: randomProduct._id,
           title: randomProduct.title,
@@ -161,6 +210,22 @@ export const generateFakeOrders = async (
         currency: order.currency,
         createdAt: order.createdAt,
       });
+
+      // In-app + push notification for store owner (same as real new order)
+      try {
+        await createNotification({
+          userId: store.owner as mongoose.Types.ObjectId,
+          type: 'new_order',
+          title: 'New Order Received!',
+          message: `Order ${order.orderId} from ${customer.name} - ₹${(order.total / 100).toFixed(2)} ${order.currency}`,
+          link: '/dashboard/store/orders',
+          metadata: { orderId: order.orderId },
+          sendPush: true,
+          playSound: true,
+        });
+      } catch (notifErr) {
+        console.error('[Auto-orders] Failed to send notification for order:', order.orderId, notifErr);
+      }
     }
 
     // Audit log
@@ -184,7 +249,7 @@ export const generateFakeOrders = async (
 
     res.status(201).json({
       success: true,
-      message: `Successfully generated ${generatedOrders.length} fake test orders`,
+      message: `Successfully generated ${generatedOrders.length} orders`,
       data: {
         store: {
           id: (store._id as mongoose.Types.ObjectId).toString(),
