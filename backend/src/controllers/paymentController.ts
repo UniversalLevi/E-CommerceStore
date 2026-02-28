@@ -8,7 +8,7 @@ import { Wallet } from '../models/Wallet';
 import { WalletTransaction } from '../models/WalletTransaction';
 import { Order } from '../models/Order';
 import { razorpayService } from '../services/RazorpayService';
-import { plans, isValidPlanCode, PlanCode, TOKEN_CHARGE_AMOUNT, isStorePlan, PLATFORM_PLAN_CODES, STORE_PLAN_CODES } from '../config/plans';
+import { plans, getPlan, isValidPlanCode, PlanCode, TOKEN_CHARGE_AMOUNT, isStorePlan, PLATFORM_PLAN_CODES, STORE_PLAN_CODES } from '../config/plans';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
@@ -1073,8 +1073,9 @@ export const getCurrentPlan = async (
       }
     }
 
-    const effectivePlan = user.plan || (subscription?.planCode as PlanCode) || null;
-    const maxProducts = effectivePlan ? plans[effectivePlan]?.maxProducts ?? null : null;
+    const effectivePlan = user.plan || subscription?.planCode || null;
+    const planConfig = effectivePlan ? getPlan(effectivePlan) : null;
+    const maxProducts = planConfig?.maxProducts ?? null;
     const productsRemaining = maxProducts === null ? null : Math.max(0, maxProducts - user.productsAdded);
 
     res.status(200).json({
