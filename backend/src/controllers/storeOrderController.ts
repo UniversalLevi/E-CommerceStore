@@ -22,9 +22,11 @@ export const listOrders = async (req: AuthRequest, res: Response, next: NextFunc
     const store = (req as any).store;
     const storeId = store._id;
 
-    const { paymentStatus, fulfillmentStatus, paymentMethod, page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page as string, 10) - 1) * parseInt(limit as string, 10);
+    const requestedLimit = Math.min(1000, Math.max(1, parseInt((req.query.limit as string) || '500', 10)));
+    const page = Math.max(1, parseInt((req.query.page as string) || '1', 10));
+    const skip = (page - 1) * requestedLimit;
 
+    const { paymentStatus, fulfillmentStatus, paymentMethod } = req.query;
     const query: any = { storeId };
     if (paymentStatus) {
       query.paymentStatus = paymentStatus;
@@ -39,7 +41,7 @@ export const listOrders = async (req: AuthRequest, res: Response, next: NextFunc
     const orders = await StoreOrder.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit as string, 10))
+      .limit(requestedLimit)
       .lean();
 
     const total = await StoreOrder.countDocuments(query);
@@ -49,10 +51,10 @@ export const listOrders = async (req: AuthRequest, res: Response, next: NextFunc
       data: {
         orders,
         pagination: {
-          page: parseInt(page as string, 10),
-          limit: parseInt(limit as string, 10),
+          page,
+          limit: requestedLimit,
           total,
-          pages: Math.ceil(total / parseInt(limit as string, 10)),
+          pages: Math.ceil(total / requestedLimit),
         },
       },
     });
@@ -231,14 +233,16 @@ export const searchOrders = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const store = (req as any).store;
     const storeId = store._id;
-    const { q, page = 1, limit = 20 } = req.query;
+    const requestedLimit = Math.min(1000, Math.max(1, parseInt((req.query.limit as string) || '500', 10)));
+    const page = Math.max(1, parseInt((req.query.page as string) || '1', 10));
+    const { q } = req.query;
 
     if (!q || typeof q !== 'string' || q.trim().length === 0) {
       throw createError('Search query is required', 400);
     }
 
     const searchQuery = q.trim();
-    const skip = (parseInt(page as string, 10) - 1) * parseInt(limit as string, 10);
+    const skip = (page - 1) * requestedLimit;
 
     // Search by orderId, customer name, or customer email
     const query: any = {
@@ -253,7 +257,7 @@ export const searchOrders = async (req: AuthRequest, res: Response, next: NextFu
     const orders = await StoreOrder.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit as string, 10))
+      .limit(requestedLimit)
       .lean();
 
     const total = await StoreOrder.countDocuments(query);
@@ -263,10 +267,10 @@ export const searchOrders = async (req: AuthRequest, res: Response, next: NextFu
       data: {
         orders,
         pagination: {
-          page: parseInt(page as string, 10),
-          limit: parseInt(limit as string, 10),
+          page,
+          limit: requestedLimit,
           total,
-          pages: Math.ceil(total / parseInt(limit as string, 10)),
+          pages: Math.ceil(total / requestedLimit),
         },
       },
     });

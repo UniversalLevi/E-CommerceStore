@@ -27,18 +27,19 @@ export default function StoreOrdersPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      if (store) {
+        if (store) {
         let ordersResponse;
         if (searchQuery.trim()) {
-          ordersResponse = await api.searchStoreOrders(store._id, searchQuery.trim());
+          ordersResponse = await api.searchStoreOrders(store._id, searchQuery.trim(), { limit: 500 });
         } else {
           ordersResponse = await api.getStoreOrders(store._id, {
             paymentStatus: paymentFilter === 'all' ? undefined : paymentFilter,
             fulfillmentStatus: fulfillmentFilter === 'all' ? undefined : fulfillmentFilter,
+            limit: 500,
           });
         }
         if (ordersResponse.success) {
-          setOrders(ordersResponse.data.orders || []);
+          setOrders(ordersResponse.data?.orders || []);
         }
       }
     } catch (error: any) {
