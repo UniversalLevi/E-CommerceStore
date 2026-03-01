@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { Store } from '../models/Store';
@@ -7,6 +8,13 @@ import { AuditLog } from '../models/AuditLog';
 import { createError } from '../middleware/errorHandler';
 import { createNotification } from '../utils/notifications';
 import mongoose from 'mongoose';
+
+/** Generate a unique orderId for fake orders to avoid E11000 duplicate key with pre-save hook under concurrency. */
+function generateUniqueFakeOrderId(): string {
+  const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  const unique = crypto.randomBytes(4).toString('hex');
+  return `ORD-${dateStr}-${unique}`;
+}
 
 // Realistic Indian names and addresses for auto-generated orders
 const INDIAN_FIRST_NAMES = [
@@ -198,6 +206,7 @@ export const generateFakeOrders = async (
 
       const order = await StoreOrder.create({
         storeId: store._id,
+        orderId: generateUniqueFakeOrderId(),
         customer: {
           name: customer.name,
           email: customer.email,
