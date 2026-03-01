@@ -52,9 +52,11 @@ export default function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const prevUnreadRef = useRef(0);
   const announcedIdsRef = useRef<Set<string>>(new Set());
-  const [toasts, setToasts] = useState<{ id: string; title: string; message: string }[]>([]);
+  type ToastItem = { id: string; title: string; message: string };
+  const [visibleToasts, setVisibleToasts] = useState<ToastItem[]>([]);
+  const [toastQueue, setToastQueue] = useState<ToastItem[]>([]);
   const hydratedRef = useRef(false);
-  const MAX_STACKED_TOASTS = 5;
+  const MAX_VISIBLE = 5;
   const TOAST_AUTO_DISMISS_MS = 5500;
 
   useEffect(() => {
@@ -84,7 +86,25 @@ export default function NotificationBell() {
     }
   }, [showDropdown]);
 
-  // Auto-remove toasts by id after TOAST_AUTO_DISMISS_MS (each new toast gets its own timer in fetchNotifications)
+  // Refill visible toasts from queue when there's space (max 5 on screen).
+  // Stagger auto-dismiss so they leave one-by-one and the next from queue appears in the freed slot.
+  useEffect(() => {
+    if (visibleToasts.length >= MAX_VISIBLE || toastQueue.length === 0) return;
+    const space = MAX_VISIBLE - visibleToasts.length;
+    const toAdd = toastQueue.slice(0, Math.min(space, toastQueue.length));
+    if (toAdd.length === 0) return;
+
+    setVisibleToasts((prev) => [...prev, ...toAdd]);
+    setToastQueue((prev) => prev.slice(toAdd.length));
+
+    const STAGGER_MS = 600;
+    toAdd.forEach((t, i) => {
+      if (isSoundEnabled()) setTimeout(() => playOrderSound(), i * 400);
+      setTimeout(() => {
+        setVisibleToasts((prev) => prev.filter((x) => x.id !== t.id));
+      }, TOAST_AUTO_DISMISS_MS + i * STAGGER_MS);
+    });
+  }, [visibleToasts.length, toastQueue.length]);
 
   const fetchNotifications = async () => {
     try {
@@ -98,9 +118,6 @@ export default function NotificationBell() {
       const newCount = typeof response?.unreadCount === 'number' ? response.unreadCount : 0;
 
       const orderTypes = ['new_order', 'order_paid'];
-      const shouldPlaySound = (n: Notification) =>
-        (orderTypes.includes(n.type) || n.playSound === true) && isSoundEnabled();
-
       const toAnnounce: Notification[] = [];
       for (const notif of newNotifs) {
         if (!orderTypes.includes(notif.type) && !notif.playSound) continue;
@@ -109,20 +126,8 @@ export default function NotificationBell() {
         toAnnounce.push(notif);
       }
       if (toAnnounce.length > 0) {
-        const newToasts = toAnnounce.map((n) => ({ id: n._id, title: n.title, message: n.message }));
-        setToasts((prev) => {
-          const next = [...prev, ...newToasts];
-          return next.slice(-MAX_STACKED_TOASTS);
-        });
-        newToasts.forEach((t) => {
-          setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== t.id)), TOAST_AUTO_DISMISS_MS);
-        });
-        if (isSoundEnabled()) {
-          toAnnounce.forEach((notif, i) => {
-            if (!shouldPlaySound(notif)) return;
-            setTimeout(() => playOrderSound(), i * 600);
-          });
-        }
+        const newToasts: ToastItem[] = toAnnounce.map((n) => ({ id: n._id, title: n.title, message: n.message }));
+        setToastQueue((prev) => [...prev, ...newToasts]);
       }
 
       if (announcedIdsRef.current.size > MAX_ANNOUNCED_STORED) {
@@ -165,10 +170,10 @@ export default function NotificationBell() {
 
   return (
     <>
-      {/* Stacked notification toasts – live feel */}
-      {toasts.length > 0 && (
+      {/* Visible toasts (max 5); queue drains one-by-one as these dismiss */}
+      {(visibleToasts.length > 0 || toastQueue.length > 0) && (
         <div className="fixed top-4 right-4 z-[100] flex flex-col gap-3 max-w-[380px]">
-          {toasts.map((t, idx) => (
+          {visibleToasts.map((t, idx) => (
             <div
               key={t.id}
               className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] backdrop-blur-xl shadow-2xl transition-all duration-200 hover:border-violet-500/30 animate-[slideInRight_0.35s_ease-out_both]"
@@ -206,7 +211,7 @@ export default function NotificationBell() {
                   <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-[var(--text-secondary)]">{t.message}</p>
                 </div>
                 <button
-                  onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+                  onClick={() => setVisibleToasts((prev) => prev.filter((x) => x.id !== t.id))}
                   className="absolute top-3 right-3 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-violet-300 hover:bg-violet-500/15 transition-colors text-lg leading-none"
                   aria-label="Dismiss"
                 >
@@ -222,6 +227,11 @@ export default function NotificationBell() {
               </div>
             </div>
           ))}
+          {toastQueue.length > 0 && (
+            <p className="text-[11px] text-[var(--text-tertiary)] px-1 py-0.5 animate-pulse">
+              {toastQueue.length} more notification{toastQueue.length !== 1 ? 's' : ''} coming…
+            </p>
+          )}
         </div>
       )}
 
