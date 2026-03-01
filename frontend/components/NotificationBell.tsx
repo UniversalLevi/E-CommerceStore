@@ -165,17 +165,26 @@ export default function NotificationBell() {
 
   return (
     <>
-      {/* Stacked notification toasts – theme-oriented with colors */}
+      {/* Stacked notification toasts – live feel */}
       {toasts.length > 0 && (
-        <div className="fixed top-4 right-4 z-[100] flex flex-col gap-3 max-w-[380px] animate-in slide-in-from-top-4 fade-in duration-300">
-          {toasts.map((t) => (
+        <div className="fixed top-4 right-4 z-[100] flex flex-col gap-3 max-w-[380px]">
+          {toasts.map((t, idx) => (
             <div
               key={t.id}
-              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] backdrop-blur-xl shadow-2xl transition-all duration-200 hover:border-violet-500/30"
+              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] backdrop-blur-xl shadow-2xl transition-all duration-200 hover:border-violet-500/30 animate-[slideInRight_0.35s_ease-out_both]"
               style={{
                 boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.08), inset 0 1px 0 rgba(255,255,255,0.03)',
+                animationDelay: `${idx * 50}ms`,
               }}
             >
+              {/* Live indicator */}
+              <div className="absolute top-3 right-12 flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2 py-0.5 border border-emerald-500/30">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-[toast-live-pulse_1.5s_ease-in-out_infinite]" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Live</span>
+              </div>
               {/* Gradient accent stripe */}
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-violet-500 via-purple-500 to-blue-500" />
               {/* Subtle theme gradient overlay */}
@@ -183,14 +192,14 @@ export default function NotificationBell() {
                 className="absolute inset-0 rounded-2xl pointer-events-none opacity-[0.07]"
                 style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.4) 0%, transparent 50%, rgba(59,130,246,0.2) 100%)' }}
               />
-              <div className="relative flex gap-3 pl-4 pr-3 py-3.5">
+              <div className="relative flex gap-3 pl-4 pr-3 pt-3.5 pb-4">
                 {/* Icon pill – theme gradient */}
                 <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
                 </div>
-                <div className="min-w-0 flex-1 pt-0.5">
+                <div className="min-w-0 flex-1 pt-0.5 pr-16">
                   <p className="font-semibold text-[15px] tracking-tight bg-gradient-to-r from-violet-300 via-purple-300 to-blue-300 bg-clip-text text-transparent">
                     {t.title}
                   </p>
@@ -198,11 +207,18 @@ export default function NotificationBell() {
                 </div>
                 <button
                   onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
-                  className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-violet-300 hover:bg-violet-500/15 transition-colors text-lg leading-none"
+                  className="absolute top-3 right-3 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-violet-300 hover:bg-violet-500/15 transition-colors text-lg leading-none"
                   aria-label="Dismiss"
                 >
                   &times;
                 </button>
+              </div>
+              {/* Countdown bar – live "time left" */}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/5">
+                <div
+                  className="h-full w-full origin-left rounded-b-2xl bg-gradient-to-r from-emerald-500 to-violet-500"
+                  style={{ animation: 'toast-live-shrink 5.5s linear forwards' }}
+                />
               </div>
             </div>
           ))}
