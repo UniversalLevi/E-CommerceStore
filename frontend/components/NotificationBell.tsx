@@ -52,8 +52,10 @@ export default function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const prevUnreadRef = useRef(0);
   const announcedIdsRef = useRef<Set<string>>(new Set());
-  const [toast, setToast] = useState<{ title: string; message: string } | null>(null);
+  const [toasts, setToasts] = useState<{ id: string; title: string; message: string }[]>([]);
   const hydratedRef = useRef(false);
+  const MAX_STACKED_TOASTS = 5;
+  const TOAST_AUTO_DISMISS_MS = 5500;
 
   useEffect(() => {
     if (isAuthenticated && !hydratedRef.current) {
@@ -82,13 +84,7 @@ export default function NotificationBell() {
     }
   }, [showDropdown]);
 
-  // Auto-hide toast after 5s
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(null), 5000);
-      return () => clearTimeout(t);
-    }
-  }, [toast]);
+  // Auto-remove toasts by id after TOAST_AUTO_DISMISS_MS (each new toast gets its own timer in fetchNotifications)
 
   const fetchNotifications = async () => {
     try {
@@ -113,12 +109,18 @@ export default function NotificationBell() {
         toAnnounce.push(notif);
       }
       if (toAnnounce.length > 0) {
-        const latest = toAnnounce[0];
-        setToast({ title: latest.title, message: latest.message });
+        const newToasts = toAnnounce.map((n) => ({ id: n._id, title: n.title, message: n.message }));
+        setToasts((prev) => {
+          const next = [...prev, ...newToasts];
+          return next.slice(-MAX_STACKED_TOASTS);
+        });
+        newToasts.forEach((t) => {
+          setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== t.id)), TOAST_AUTO_DISMISS_MS);
+        });
         if (isSoundEnabled()) {
           toAnnounce.forEach((notif, i) => {
             if (!shouldPlaySound(notif)) return;
-            setTimeout(() => playOrderSound(), i * 300);
+            setTimeout(() => playOrderSound(), i * 600);
           });
         }
       }
@@ -163,18 +165,47 @@ export default function NotificationBell() {
 
   return (
     <>
-      {/* New order toast */}
-      {toast && (
-        <div className="fixed top-4 right-4 z-[100] animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg max-w-sm">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="font-semibold text-sm">{toast.title}</p>
-                <p className="text-xs opacity-90 mt-0.5">{toast.message}</p>
+      {/* Stacked notification toasts – theme-oriented with colors */}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 right-4 z-[100] flex flex-col gap-3 max-w-[380px] animate-in slide-in-from-top-4 fade-in duration-300">
+          {toasts.map((t) => (
+            <div
+              key={t.id}
+              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d12] backdrop-blur-xl shadow-2xl transition-all duration-200 hover:border-violet-500/30"
+              style={{
+                boxShadow: '0 24px 48px -12px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.08), inset 0 1px 0 rgba(255,255,255,0.03)',
+              }}
+            >
+              {/* Gradient accent stripe */}
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-violet-500 via-purple-500 to-blue-500" />
+              {/* Subtle theme gradient overlay */}
+              <div
+                className="absolute inset-0 rounded-2xl pointer-events-none opacity-[0.07]"
+                style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.4) 0%, transparent 50%, rgba(59,130,246,0.2) 100%)' }}
+              />
+              <div className="relative flex gap-3 pl-4 pr-3 py-3.5">
+                {/* Icon pill – theme gradient */}
+                <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1 pt-0.5">
+                  <p className="font-semibold text-[15px] tracking-tight bg-gradient-to-r from-violet-300 via-purple-300 to-blue-300 bg-clip-text text-transparent">
+                    {t.title}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-[var(--text-secondary)]">{t.message}</p>
+                </div>
+                <button
+                  onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+                  className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-violet-300 hover:bg-violet-500/15 transition-colors text-lg leading-none"
+                  aria-label="Dismiss"
+                >
+                  &times;
+                </button>
               </div>
-              <button onClick={() => setToast(null)} className="text-white/70 hover:text-white ml-2 text-lg leading-none">&times;</button>
             </div>
-          </div>
+          ))}
         </div>
       )}
 

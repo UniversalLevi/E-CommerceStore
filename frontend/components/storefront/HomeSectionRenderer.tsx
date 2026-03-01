@@ -6,6 +6,7 @@ import { HomeSectionConfig } from '@/themes/base/types';
 import { loadTheme } from '@/themes/themeLoader';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import { Package } from 'lucide-react';
 
 interface HomeSectionRendererProps {
@@ -27,6 +28,7 @@ export default function HomeSectionRenderer({
 
   if (section.type === 'hero') {
     const imageUrl = (section.props.imageUrl as string) || '';
+    const videoUrl = (section.props.videoUrl as string) || '';
     const heading = (section.props.heading as string) || `Welcome to ${storeName}`;
     const subheading = (section.props.subheading as string) || '';
     const ctaText = (section.props.ctaText as string) || 'Shop Now';
@@ -36,7 +38,20 @@ export default function HomeSectionRenderer({
         className="relative overflow-hidden py-16 md:py-24"
         style={{ backgroundColor: colors.background }}
       >
-        {imageUrl && (
+        {videoUrl && (
+          <div className="absolute inset-0 z-0">
+            <video
+              src={videoUrl}
+              className="w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+            <div className="absolute inset-0" style={{ backgroundColor: colors.background, opacity: 0.6 }} />
+          </div>
+        )}
+        {!videoUrl && imageUrl && (
           <div className="absolute inset-0 z-0">
             <img
               src={imageUrl}
@@ -102,12 +117,14 @@ export default function HomeSectionRenderer({
   }
 
   if (section.type === 'featured_products') {
+    const productIds = Array.isArray(section.props.productIds) ? (section.props.productIds as string[]).filter(Boolean) : [];
     return (
       <FeaturedProductsSection
         storeSlug={storeSlug}
         currency={currency}
         title={(section.props.title as string) || 'Featured Products'}
         limit={Number(section.props.limit) || 8}
+        productIds={productIds.length > 0 ? productIds : undefined}
         themeName={themeName}
       />
     );
@@ -121,12 +138,14 @@ function FeaturedProductsSection({
   currency,
   title,
   limit,
+  productIds,
   themeName,
 }: {
   storeSlug: string;
   currency: string;
   title: string;
   limit: number;
+  productIds?: string[];
   themeName: string;
 }) {
   const { colors } = useStoreTheme();
@@ -138,13 +157,22 @@ function FeaturedProductsSection({
   }, [themeName]);
 
   useEffect(() => {
-    api
-      .getStorefrontProducts(storeSlug, { sort: 'newest', limit })
-      .then((r) => {
-        if (r.success && r.data?.products) setProducts(r.data.products.slice(0, limit));
-      })
-      .catch(() => setProducts([]));
-  }, [storeSlug, limit]);
+    if (productIds?.length) {
+      api
+        .getStorefrontProducts(storeSlug, { productIds })
+        .then((r) => {
+          if (r.success && r.data?.products) setProducts(r.data.products);
+        })
+        .catch(() => setProducts([]));
+    } else {
+      api
+        .getStorefrontProducts(storeSlug, { sort: 'newest', limit })
+        .then((r) => {
+          if (r.success && r.data?.products) setProducts(r.data.products.slice(0, limit));
+        })
+        .catch(() => setProducts([]));
+    }
+  }, [storeSlug, limit, productIds]);
 
   const validProducts = products.filter((p): p is NonNullable<typeof p> => p != null && p._id);
   if (validProducts.length === 0) return null;
@@ -156,8 +184,9 @@ function FeaturedProductsSection({
           {title}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {validProducts.map((product) =>
-            ThemeProductCard ? (
+          {validProducts.map((product) => {
+            if (!product?._id) return null;
+            return ThemeProductCard ? (
               <ThemeProductCard
                 key={product._id}
                 product={product}
@@ -166,8 +195,8 @@ function FeaturedProductsSection({
               />
             ) : (
               <ProductCardFallback key={product._id} product={product} storeSlug={storeSlug} currency={currency} colors={colors} />
-            )
-          )}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -185,23 +214,27 @@ function ProductCardFallback({
   currency: string;
   colors: Record<string, string>;
 }) {
-  const price = product.variants?.[0]?.price ?? product.price ?? 0;
+  const price = product.basePrice ?? product.variants?.[0]?.price ?? product.price ?? 0;
   const displayPrice = (price / 100).toLocaleString('en-IN', { style: 'currency', currency });
+  const title = product.title ?? product.name ?? '';
+  const imgSrc = typeof product.images?.[0] === 'string'
+    ? getImageUrl(product.images[0])
+    : (product.images?.[0] as any)?.url ?? '';
   return (
     <Link
       href={`/storefront/${storeSlug}/products/${product._id}`}
       className="block rounded-lg border overflow-hidden transition hover:shadow-lg"
       style={{ borderColor: colors.primary + '30', backgroundColor: colors.secondary }}
     >
-      {product.images?.[0]?.url ? (
-        <img src={product.images[0].url} alt={product.name} className="w-full aspect-square object-cover" />
+      {imgSrc ? (
+        <img src={imgSrc} alt={title} className="w-full aspect-square object-cover" />
       ) : (
         <div className="w-full aspect-square flex items-center justify-center" style={{ backgroundColor: colors.primary + '15' }}>
           <Package className="h-12 w-12" style={{ color: colors.text, opacity: 0.5 }} />
         </div>
       )}
       <div className="p-4">
-        <h3 className="font-semibold truncate" style={{ color: colors.text }}>{product.name}</h3>
+        <h3 className="font-semibold truncate" style={{ color: colors.text }}>{title}</h3>
         <p className="text-sm font-medium mt-1" style={{ color: colors.primary }}>{displayPrice}</p>
       </div>
     </Link>

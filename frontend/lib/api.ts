@@ -1149,7 +1149,7 @@ class ApiClient {
     return this.get<{ success: boolean; data: any }>(`/api/storefront/${slug}`);
   }
 
-  async getStorefrontProducts(slug: string, params?: { page?: number; limit?: number; search?: string; minPrice?: number; maxPrice?: number; variantDimension?: string; tags?: string | string[]; sort?: string }) {
+  async getStorefrontProducts(slug: string, params?: { page?: number; limit?: number; search?: string; minPrice?: number; maxPrice?: number; variantDimension?: string; tags?: string | string[]; sort?: string; productIds?: string[] }) {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', String(params.page));
     if (params?.limit) searchParams.set('limit', String(params.limit));
@@ -1159,6 +1159,7 @@ class ApiClient {
     if (params?.variantDimension) searchParams.set('variantDimension', params.variantDimension);
     if (params?.tags) searchParams.set('tags', Array.isArray(params.tags) ? params.tags.join(',') : params.tags);
     if (params?.sort) searchParams.set('sort', params.sort);
+    if (params?.productIds?.length) searchParams.set('productIds', params.productIds.join(','));
     const query = searchParams.toString();
     const url = query ? `/api/storefront/${slug}/products?${query}` : `/api/storefront/${slug}/products`;
     return this.get<{ success: boolean; data: { products: any[]; pagination: any } }>(url);

@@ -55,7 +55,7 @@ export interface HomeSectionConfig {
   id: string;
   type: HomeSectionType;
   order: number;
-  props: Record<string, string | number>;
+  props: Record<string, string | number | string[]>;
 }
 
 export interface ThemeContextValue {

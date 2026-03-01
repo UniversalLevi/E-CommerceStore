@@ -54,12 +54,20 @@ export const listStorefrontProducts = async (
     const { slug } = req.params;
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 20;
-    const { search, minPrice, maxPrice, variantDimension, sort, tags } = req.query;
+    const { search, minPrice, maxPrice, variantDimension, sort, tags, productIds: productIdsParam } = req.query;
 
     // Get store (payment connection not required for viewing products)
     const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'active' });
     if (!store) {
       throw createError('Store not found or not active', 404);
+    }
+
+    // Parse productIds: comma-separated or array
+    let productIds: string[] | undefined;
+    if (productIdsParam) {
+      productIds = Array.isArray(productIdsParam)
+        ? (productIdsParam as string[]).map((s) => String(s).trim()).filter(Boolean)
+        : (productIdsParam as string).split(',').map((s) => s.trim()).filter(Boolean);
     }
 
     // Parse price filters (convert from currency units to paise if needed)
@@ -87,6 +95,7 @@ export const listStorefrontProducts = async (
       variantDimension: variantDimension as string,
       tags: tagsFilter,
       sort: sort as 'price_asc' | 'price_desc' | 'newest' | 'oldest',
+      productIds,
     });
 
     const productsWithAbsoluteImages = (result.products || []).map((p: any) => ({

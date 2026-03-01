@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { Store } from '../models/Store';
+import { StorePluginConfig } from '../models/StorePluginConfig';
 import { createError } from '../middleware/errorHandler';
 import { createStoreSchema, updateStoreSchema } from '../validators/storeDashboardValidator';
 import { StoreProduct } from '../models/StoreProduct';
@@ -538,6 +539,23 @@ export const updateStoreTheme = async (req: AuthRequest, res: Response, next: Ne
     } catch (saveError: any) {
       console.error('Error saving theme to store:', saveError);
       throw createError(`Failed to save theme: ${saveError.message}`, 500);
+    }
+
+    // When applying a prebuilt theme, reset custom page-builder layout so storefront uses the theme's default layout
+    try {
+      const pageBuilderConfig = await StorePluginConfig.findOne({
+        storeId: store._id,
+        pluginSlug: 'page-builder',
+      });
+      if (pageBuilderConfig?.config && typeof pageBuilderConfig.config === 'object') {
+        const config = { ...pageBuilderConfig.config, homeSections: [] };
+        pageBuilderConfig.config = config;
+        pageBuilderConfig.markModified('config');
+        await pageBuilderConfig.save();
+      }
+    } catch (pluginErr: any) {
+      console.error('Error clearing page-builder homeSections on theme apply:', pluginErr);
+      // Non-fatal: theme was saved; storefront will still work with prebuilt layout if homeSections stay
     }
 
     // Log theme update

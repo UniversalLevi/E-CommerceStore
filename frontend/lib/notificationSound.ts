@@ -52,33 +52,32 @@ export function playOrderSound(): void {
 
 function playChime(ctx: AudioContext): void {
   try {
-
     const now = ctx.currentTime;
     const dest = ctx.destination;
 
-    // First tone
+    // First tone (slower, longer duration)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = 'sine';
     osc1.frequency.setValueAtTime(880, now);
     gain1.gain.setValueAtTime(0.35, now);
-    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
     osc1.connect(gain1);
     gain1.connect(dest);
     osc1.start(now);
-    osc1.stop(now + 0.35);
+    osc1.stop(now + 0.5);
 
-    // Second tone
+    // Second tone (slower gap and longer duration)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(1318.5, now + 0.18);
-    gain2.gain.setValueAtTime(0.25, now + 0.18);
-    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+    osc2.frequency.setValueAtTime(1318.5, now + 0.25);
+    gain2.gain.setValueAtTime(0.25, now + 0.25);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
     osc2.connect(gain2);
     gain2.connect(dest);
-    osc2.start(now + 0.18);
-    osc2.stop(now + 0.55);
+    osc2.start(now + 0.25);
+    osc2.stop(now + 0.7);
   } catch {
     // fail silently
   }

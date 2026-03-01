@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Store } from '../models/Store';
 import { StoreProduct } from '../models/StoreProduct';
 import { StoreOrder } from '../models/StoreOrder';
@@ -78,15 +79,38 @@ class StorefrontService {
       variantDimension?: string;
       tags?: string[] | string;
       sort?: 'price_asc' | 'price_desc' | 'newest' | 'oldest';
+      productIds?: string[];
     }
   ) {
-    const skip = (page - 1) * limit;
-
-    // Build query
     const query: any = {
       storeId,
       status: 'active',
     };
+
+    // When productIds provided, fetch only those (order preserved, max 50)
+    if (options?.productIds && Array.isArray(options.productIds) && options.productIds.length > 0) {
+      const ids = options.productIds.slice(0, 50).filter(Boolean);
+      if (ids.length === 0) {
+        return { products: [], pagination: { page: 1, limit: 0, total: 0, pages: 0 } };
+      }
+      const objectIds = ids.map((id) => {
+        try {
+          return new mongoose.Types.ObjectId(id);
+        } catch {
+          return null;
+        }
+      }).filter(Boolean) as mongoose.Types.ObjectId[];
+      const products = await StoreProduct.find({ ...query, _id: { $in: objectIds } }).lean();
+      const orderMap = new Map(objectIds.map((id, i) => [id.toString(), i]));
+      const sorted = products
+        .sort((a, b) => (orderMap.get((a._id as any).toString()) ?? 99) - (orderMap.get((b._id as any).toString()) ?? 99));
+      return {
+        products: sorted,
+        pagination: { page: 1, limit: sorted.length, total: sorted.length, pages: 1 },
+      };
+    }
+
+    const skip = (page - 1) * limit;
 
     // Search filter
     if (options?.search && options.search.trim()) {

@@ -12,12 +12,14 @@ interface ProductCardProps {
     basePrice: number;
     images?: string[];
     slug: string;
-  };
+  } | null;
   storeSlug: string;
   currency: string;
 }
 
-export default function ProductCard({ product, storeSlug, currency }: ProductCardProps) {
+export default function ProductCard(props: ProductCardProps | null) {
+  if (!props?.product) return null;
+  const { product, storeSlug, currency } = props;
   const { colors } = useStoreTheme();
 
   const formatPrice = (price: number) => {

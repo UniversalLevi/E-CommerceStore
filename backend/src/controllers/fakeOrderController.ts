@@ -15,10 +15,13 @@ const INDIAN_FIRST_NAMES = [
   'Venkat', 'Shweta', 'Gopal', 'Neha', 'Srinivas', 'Anjali', 'Ravi', 'Sunita', 'Kumar', 'Preeti',
   'Vijay', 'Rekha', 'Naveen', 'Swati', 'Praveen', 'Madhuri', 'Ashok', 'Pallavi', 'Harish', 'Sonal',
   'Anil', 'Ritu', 'Mahesh', 'Shilpa', 'Satish', 'Nisha', 'Chandra', 'Vandana', 'Raghav', 'Kiran',
+  'Aditya', 'Ishita', 'Rohan', 'Tanvi', 'Karan', 'Aisha', 'Varun', 'Nikita', 'Akash', 'Pooja',
+  'Rahul', 'Simran', 'Vivek', 'Riya', 'Kunal', 'Aarti', 'Rohit', 'Shreya', 'Arjun', 'Ishita',
 ];
 const INDIAN_LAST_NAMES = [
   'Sharma', 'Patel', 'Singh', 'Kumar', 'Reddy', 'Nair', 'Iyer', 'Gupta', 'Joshi', 'Desai',
   'Rao', 'Menon', 'Pillai', 'Mehta', 'Shah', 'Verma', 'Narayanan', 'Kulkarni', 'Bhat', 'Mishra',
+  'Chopra', 'Kapoor', 'Malhotra', 'Sethi', 'Khanna', 'Bansal', 'Agarwal', 'Saxena', 'Tandon', 'Dubey',
 ];
 const INDIAN_CITIES = [
   'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow',
@@ -66,7 +69,21 @@ function getRandomDateWithinDays(backfillDays: number): Date {
   return new Date(timestamp);
 }
 
-function getRandomIndianCustomer(index: number) {
+const EMAIL_DOMAINS = [
+  'gmail.com', 'yahoo.in', 'outlook.com', 'hotmail.com', 'rediffmail.com',
+  'icloud.com', 'live.com', 'ymail.com', 'protonmail.com',
+];
+const EMAIL_PATTERNS = [
+  (f: string, l: string) => `${f.toLowerCase()}.${l.toLowerCase()}@`,
+  (f: string, l: string) => `${f.toLowerCase()}${l.toLowerCase()}@`,
+  (f: string, l: string) => `${f.toLowerCase()}_${l.toLowerCase()}@`,
+  (f: string, l: string) => `${f.charAt(0).toLowerCase()}${l.toLowerCase()}@`,
+  (f: string, l: string) => `${f.toLowerCase()}.${l.toLowerCase()}${Math.floor(10 + Math.random() * 90)}@`,
+  (f: string, l: string) => `${f.toLowerCase()}${l.toLowerCase()}${Math.floor(100 + Math.random() * 900)}@`,
+  (f: string, l: string) => `${f.toLowerCase()}.${l.charAt(0).toLowerCase()}${Math.floor(1990 + Math.random() * 30)}@`,
+];
+
+function getRandomIndianCustomer(_index: number) {
   const firstName = pick(INDIAN_FIRST_NAMES);
   const lastName = pick(INDIAN_LAST_NAMES);
   const name = `${firstName} ${lastName}`;
@@ -75,7 +92,9 @@ function getRandomIndianCustomer(index: number) {
   const street = pick(INDIAN_STREETS);
   const building = Math.floor(getRandomNumber(1, 999));
   const phone = `+91${Math.floor(9000000000 + Math.random() * 1000000000)}`;
-  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index}@gmail.com`;
+  const pattern = pick(EMAIL_PATTERNS);
+  const domain = pick(EMAIL_DOMAINS);
+  const email = pattern(firstName, lastName) + domain;
   return {
     name,
     email,
@@ -126,9 +145,9 @@ export const generateFakeOrders = async (
       throw createError('Store ID is required', 400);
     }
 
-    // Basic validation & sane limits
-    if (count <= 0 || count > 500) {
-      throw createError('Count must be between 1 and 500', 400);
+    // Basic validation (no upper limit)
+    if (count <= 0) {
+      throw createError('Count must be at least 1', 400);
     }
 
     if (minTotal <= 0 || maxTotal <= 0 || maxTotal < minTotal) {
