@@ -3,17 +3,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Package, Loader2 } from 'lucide-react';
+import { Package, Loader2, X } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useStoreTheme } from '@/contexts/StoreThemeContext';
 import { useCartStore } from '@/store/useCartStore';
 import { useCart } from '@/contexts/CartContext';
 import { loadTheme } from '@/themes/themeLoader';
+import HomeSectionRenderer from '@/components/storefront/HomeSectionRenderer';
 
 export default function StorefrontPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const { theme, colors } = useStoreTheme();
+  const { theme, colors, homeSections = [] } = useStoreTheme();
   const { getTotalItems } = useCartStore();
   const [store, setStore] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -24,6 +25,9 @@ export default function StorefrontPage() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState('');
+  const [filterOptions, setFilterOptions] = useState<{ tags: string[]; variantDimensions: string[] }>({ tags: [], variantDimensions: [] });
   const { openCart } = useCart();
   const [ThemeComponents, setThemeComponents] = useState<any>(null);
 
@@ -47,21 +51,31 @@ export default function StorefrontPage() {
 
   useEffect(() => {
     if (slug) {
+      api.getStorefrontFilterOptions(slug).then((r) => {
+        if (r.success && r.data) setFilterOptions(r.data);
+      }).catch(() => {});
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
       fetchData();
     }
-  }, [slug, debouncedSearch, minPrice, maxPrice, sortBy]);
+  }, [slug, debouncedSearch, minPrice, maxPrice, sortBy, selectedTags, selectedVariant]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const [storeResponse, productsResponse] = await Promise.all([
         api.getStorefrontInfo(slug),
         api.getStorefrontProducts(slug, {
           search: debouncedSearch || undefined,
           minPrice: minPrice ? parseFloat(minPrice) * 100 : undefined,
           maxPrice: maxPrice ? parseFloat(maxPrice) * 100 : undefined,
+          tags: selectedTags.length > 0 ? selectedTags : undefined,
+          variantDimension: selectedVariant || undefined,
           sort: sortBy,
         }),
       ]);
@@ -80,6 +94,19 @@ export default function StorefrontPage() {
       setLoading(false);
     }
   };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  };
+
+  const clearFilters = () => {
+    setMinPrice('');
+    setMaxPrice('');
+    setSelectedTags([]);
+    setSelectedVariant('');
+  };
+
+  const hasActiveFilters = selectedTags.length > 0 || selectedVariant || minPrice || maxPrice;
 
   const formatPrice = (price: number, currency: string = 'INR') => {
     const currencySymbols: Record<string, string> = {
@@ -114,7 +141,16 @@ export default function StorefrontPage() {
     );
   }
 
-  if (!ThemeComponents || !ThemeComponents.Header || !ThemeComponents.Footer || !ThemeComponents.ProductCard || !ThemeComponents.Hero) {
+  const hasSectionLayout = Array.isArray(homeSections) && homeSections.length > 0;
+  const needsThemeHero = !hasSectionLayout;
+  if (!ThemeComponents || !ThemeComponents.Header || !ThemeComponents.Footer) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors?.background || '#ffffff' }}>
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: colors?.accent || '#4a90d9' }} />
+      </div>
+    );
+  }
+  if (needsThemeHero && (!ThemeComponents.ProductCard || !ThemeComponents.Hero)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors?.background || '#ffffff' }}>
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: colors?.accent || '#4a90d9' }} />
@@ -123,31 +159,44 @@ export default function StorefrontPage() {
   }
 
   const { Header, Footer, ProductCard, Hero } = ThemeComponents;
-
   const themeName = theme?.name || 'modern';
   const themeClass = `${themeName}-theme`;
+  const sortedSections = hasSectionLayout ? [...homeSections].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : [];
 
   return (
     <div className={`min-h-screen flex flex-col ${themeClass}`} style={{ backgroundColor: colors?.background || '#ffffff', position: 'relative', zIndex: 1 }}>
-      {/* Header */}
       <Header
         storeSlug={slug}
         storeName={store.name}
         onCartClick={openCart}
       />
 
-      {/* Hero Section */}
-      <Hero
-        storeSlug={slug}
-        storeName={store.name}
-        heading={`Welcome to ${store.name}`}
-        subheading="Discover amazing products"
-        ctaText="Shop Now"
-        ctaLink={`/storefront/${slug}`}
-      />
+      {hasSectionLayout ? (
+        <main className="flex-1 relative z-10">
+          {sortedSections.map((section) => (
+            <HomeSectionRenderer
+              key={section.id}
+              section={section}
+              storeSlug={slug}
+              storeName={store.name}
+              themeName={themeName}
+              currency={store.currency || 'INR'}
+            />
+          ))}
+        </main>
+      ) : (
+        <>
+          <Hero
+            storeSlug={slug}
+            storeName={store.name}
+            heading={`Welcome to ${store.name}`}
+            subheading="Discover amazing products"
+            ctaText="Shop Now"
+            ctaLink={`/storefront/${slug}`}
+          />
 
-      {/* Main Content */}
-      <main className="flex-1 relative z-10" style={{ maxWidth: 'var(--theme-container-width, 1280px)', margin: '0 auto', width: '100%', padding: '2rem 1rem' }}>
+          {/* Main Content */}
+          <main className="flex-1 relative z-10" style={{ maxWidth: 'var(--theme-container-width, 1280px)', margin: '0 auto', width: '100%', padding: '2rem 1rem' }}>
         {/* Search and Filters */}
         <div className="mb-8 space-y-4 relative z-10">
           <div className="flex gap-4">
@@ -179,10 +228,26 @@ export default function StorefrontPage() {
           </div>
 
           {showFilters && (
-            <div className="rounded-lg border p-6 space-y-4 relative z-10" style={{ 
-              backgroundColor: themeName === 'dark-shade' ? 'rgba(26, 26, 26, 0.6)' : themeName === 'cosmic-space' ? 'rgba(30, 27, 75, 0.6)' : colors.secondary, 
-              borderColor: themeName === 'dark-shade' ? 'rgba(255, 255, 255, 0.12)' : themeName === 'cosmic-space' ? 'rgba(167, 139, 250, 0.4)' : colors.primary + '30' 
+            <div className="rounded-lg border p-6 space-y-4 relative z-10" style={{
+              backgroundColor: themeName === 'dark-shade' ? 'rgba(26, 26, 26, 0.6)' : themeName === 'cosmic-space' ? 'rgba(30, 27, 75, 0.6)' : colors.secondary,
+              borderColor: themeName === 'dark-shade' ? 'rgba(255, 255, 255, 0.12)' : themeName === 'cosmic-space' ? 'rgba(167, 139, 250, 0.4)' : colors.primary + '30'
             }}>
+              {hasActiveFilters && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm" style={{ color: colors.text }}>Active:</span>
+                  {selectedTags.map((t) => (
+                    <span key={t} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm" style={{ backgroundColor: colors.accent + '30', color: colors.text }}>
+                      {t} <button type="button" onClick={() => toggleTag(t)} aria-label={`Remove ${t}`}><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                  {selectedVariant && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm" style={{ backgroundColor: colors.accent + '30', color: colors.text }}>
+                      {selectedVariant} <button type="button" onClick={() => setSelectedVariant('')} aria-label="Clear variant"><X className="h-3 w-3" /></button>
+                    </span>
+                  )}
+                  <button type="button" onClick={clearFilters} className="text-sm underline" style={{ color: colors.accent }}>Clear all</button>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2 relative z-10" style={{ color: colors.text }}>Min Price</label>
@@ -233,31 +298,78 @@ export default function StorefrontPage() {
                   </select>
                 </div>
               </div>
+              {(filterOptions.tags.length > 0 || filterOptions.variantDimensions.length > 0) && (
+                <div className="space-y-3 pt-2 border-t" style={{ borderColor: colors.primary + '20' }}>
+                  {filterOptions.tags.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Tags</label>
+                      <div className="flex flex-wrap gap-2">
+                        {filterOptions.tags.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => toggleTag(tag)}
+                            className="px-3 py-1.5 rounded-full text-sm transition-all"
+                            style={{
+                              backgroundColor: selectedTags.includes(tag) ? colors.accent : colors.secondary,
+                              color: selectedTags.includes(tag) ? '#fff' : colors.text,
+                              border: `1px solid ${selectedTags.includes(tag) ? colors.accent : colors.primary + '30'}`,
+                            }}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {filterOptions.variantDimensions.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: colors.text }}>Variant</label>
+                      <select
+                        value={selectedVariant}
+                        onChange={(e) => setSelectedVariant(e.target.value)}
+                        className="w-full max-w-xs px-4 py-2 rounded-lg border"
+                        style={{
+                          backgroundColor: themeName === 'dark-shade' ? 'rgba(26, 26, 26, 0.8)' : themeName === 'cosmic-space' ? 'rgba(30, 27, 75, 0.7)' : colors.background,
+                          borderColor: colors.primary + '30',
+                          color: colors.text,
+                        }}
+                      >
+                        <option value="">All</option>
+                        {filterOptions.variantDimensions.map((v) => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Products Grid */}
-        {products.length === 0 ? (
-          <div className="text-center py-16 relative z-10">
-            <Package className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text, opacity: 0.6 }} />
-            <p style={{ color: colors.text, opacity: 0.8 }}>No products found</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative z-10">
-            {products.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                storeSlug={slug}
-                currency={store.currency}
-              />
-            ))}
-          </div>
-        )}
-      </main>
+            {/* Products Grid */}
+            {products.length === 0 ? (
+              <div className="text-center py-16 relative z-10">
+                <Package className="h-16 w-16 mx-auto mb-4" style={{ color: colors.text, opacity: 0.6 }} />
+                <p style={{ color: colors.text, opacity: 0.8 }}>No products found</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 relative z-10">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product._id}
+                    product={product}
+                    storeSlug={slug}
+                    currency={store.currency}
+                  />
+                ))}
+              </div>
+            )}
+          </main>
+        </>
+      )}
 
-      {/* Footer */}
       <Footer storeSlug={slug} storeName={store.name} />
 
       {/* Floating Cart Button */}

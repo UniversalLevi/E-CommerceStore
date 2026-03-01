@@ -44,11 +44,11 @@ class StorefrontService {
         throw new Error('Store is not active');
       }
 
-      // Ensure theme is always present (default to minimal if not set)
+      // Ensure theme is always present (default to modern; must match storefront layout fallback)
       const settings = store.settings || {};
       if (!settings.theme || !settings.theme.name) {
         settings.theme = {
-          name: 'minimal',
+          name: 'modern',
           customizations: {},
         };
       }
@@ -76,6 +76,7 @@ class StorefrontService {
       minPrice?: number;
       maxPrice?: number;
       variantDimension?: string;
+      tags?: string[] | string;
       sort?: 'price_asc' | 'price_desc' | 'newest' | 'oldest';
     }
   ) {
@@ -110,6 +111,16 @@ class StorefrontService {
     // Variant dimension filter
     if (options?.variantDimension) {
       query.variantDimension = options.variantDimension;
+    }
+
+    // Tags filter (metadata.tags: match any of the provided tags)
+    if (options?.tags && (Array.isArray(options.tags) ? options.tags.length > 0 : String(options.tags).trim())) {
+      const tagList = Array.isArray(options.tags)
+        ? options.tags.map((t) => String(t).trim()).filter(Boolean)
+        : (options.tags as string).split(',').map((t) => t.trim()).filter(Boolean);
+      if (tagList.length > 0) {
+        query['metadata.tags'] = { $in: tagList };
+      }
     }
 
     // Sort options
@@ -147,6 +158,33 @@ class StorefrontService {
         total,
         pages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  /**
+   * Get available filter options (tags, variant dimensions) for store products
+   */
+  async getProductFilterOptions(storeId: string): Promise<{ tags: string[]; variantDimensions: string[] }> {
+    const products = await StoreProduct.find({ storeId, status: 'active' })
+      .select('metadata.tags variantDimension')
+      .lean();
+
+    const tagSet = new Set<string>();
+    const variantSet = new Set<string>();
+    for (const p of products) {
+      const tags = (p as any).metadata?.tags;
+      if (Array.isArray(tags)) {
+        tags.forEach((t: string) => {
+          const v = String(t).trim();
+          if (v) tagSet.add(v);
+        });
+      }
+      const vd = (p as any).variantDimension;
+      if (vd && String(vd).trim()) variantSet.add(String(vd).trim());
+    }
+    return {
+      tags: Array.from(tagSet).sort(),
+      variantDimensions: Array.from(variantSet).sort(),
     };
   }
 

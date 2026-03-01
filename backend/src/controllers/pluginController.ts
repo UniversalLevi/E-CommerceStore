@@ -6,10 +6,29 @@ import { GiftCard } from '../models/GiftCard';
 import { FreeGiftRule } from '../models/FreeGiftRule';
 import { ProductBundle } from '../models/ProductBundle';
 import { EmailSubscriber } from '../models/EmailSubscriber';
+import { ProductReview } from '../models/ProductReview';
+import { StorePage } from '../models/StorePage';
+import { StoreOrder } from '../models/StoreOrder';
 import { Store } from '../models/Store';
 import { StoreProduct } from '../models/StoreProduct';
 import { createError } from '../middleware/errorHandler';
+import { getStoreChatReply } from '../services/storefrontChatService';
+import { PLUGIN_DEFINITIONS } from '../config/plugins';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
+
+let pluginsSynced = false;
+async function ensurePluginsSynced() {
+  if (pluginsSynced) return;
+  try {
+    for (const p of PLUGIN_DEFINITIONS) {
+      await Plugin.findOneAndUpdate({ slug: p.slug }, p, { upsert: true, new: true });
+    }
+    pluginsSynced = true;
+  } catch {
+    // ignore
+  }
+}
 
 // ─── Plugin Registry ────────────────────────────────────────────────
 
@@ -34,6 +53,7 @@ export const togglePlugin = async (req: Request, res: Response, next: NextFuncti
 
 export const getStorePlugins = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    await ensurePluginsSynced();
     const storeId = req.params.id;
     const activePlugins = await Plugin.find({ isActive: true });
     const configs = await StorePluginConfig.find({ storeId });
@@ -76,9 +96,11 @@ export const getStorefrontPlugins = async (req: Request, res: Response, next: Ne
       isConfigured: true,
     });
 
+    const configMap = new Map(configs.map(c => [c.pluginSlug, c]));
     const result: Record<string, any> = {};
-    for (const c of configs) {
-      result[c.pluginSlug] = c.config;
+    for (const p of activePlugins) {
+      const stored = configMap.get(p.slug);
+      result[p.slug] = stored?.config ?? { enabled: true };
     }
 
     // Also include partial COD settings from store
@@ -441,5 +463,260 @@ export const exportSubscribers = async (req: Request, res: Response, next: NextF
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=subscribers.csv');
     res.send(csv);
+  } catch (err) { next(err); }
+};
+
+// ─── Product Reviews (storefront + dashboard) ───────────────────────
+
+export const createReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slug, productId } = req.params;
+    const { authorName, authorEmail, rating, title, body } = req.body;
+
+    const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'active' });
+    if (!store) throw createError('Store not found', 404);
+
+    const product = await StoreProduct.findOne({ _id: productId, storeId: store._id, status: 'active' });
+    if (!product) throw createError('Product not found', 404);
+
+    const reviewsPluginActive = await Plugin.findOne({ slug: 'product-reviews', isActive: true });
+    if (!reviewsPluginActive) throw createError('Reviews are not enabled for this store', 400);
+    const pluginConfig = await StorePluginConfig.findOne({ storeId: store._id, pluginSlug: 'product-reviews' });
+    const config = pluginConfig?.config ?? {};
+    if (config.enabled === false) throw createError('Reviews are not enabled for this store', 400);
+
+    if (!authorName || !authorEmail || rating == null) throw createError('authorName, authorEmail, and rating are required', 400);
+    const r = Math.floor(Number(rating));
+    if (r < 1 || r > 5) throw createError('Rating must be between 1 and 5', 400);
+
+    const moderate = config.moderate !== false;
+    const status = moderate ? 'pending' : 'approved';
+
+    let verifiedPurchase = false;
+    const emailLower = String(authorEmail).trim().toLowerCase();
+    const hasOrder = await StoreOrder.findOne({
+      storeId: store._id,
+      'customer.email': emailLower,
+      paymentStatus: 'paid',
+      'items.productId': new mongoose.Types.ObjectId(productId),
+    });
+    if (hasOrder) verifiedPurchase = true;
+
+    const review = await ProductReview.create({
+      storeId: store._id,
+      productId: new mongoose.Types.ObjectId(productId),
+      authorName: String(authorName).trim(),
+      authorEmail: emailLower,
+      rating: r,
+      title: title ? String(title).trim() : undefined,
+      body: body ? String(body).trim() : undefined,
+      status,
+      verifiedPurchase,
+    });
+
+    res.status(201).json({ success: true, data: { _id: review._id, status: review.status } });
+  } catch (err) { next(err); }
+};
+
+export const listProductReviews = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slug, productId } = req.params;
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string, 10) || 10));
+
+    const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'active' });
+    if (!store) throw createError('Store not found', 404);
+
+    const product = await StoreProduct.findOne({ _id: productId, storeId: store._id });
+    if (!product) throw createError('Product not found', 404);
+
+    const pluginConfig = await StorePluginConfig.findOne({ storeId: store._id, pluginSlug: 'product-reviews' });
+    const minRating = pluginConfig?.config?.minRatingToDisplay;
+    const query: any = { storeId: store._id, productId: new mongoose.Types.ObjectId(productId), status: 'approved' };
+    if (minRating != null && minRating > 0) query.rating = { $gte: minRating };
+
+    const total = await ProductReview.countDocuments(query);
+    const reviews = await ProductReview.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .select('authorName rating title body verifiedPurchase createdAt')
+      .lean();
+
+    const agg = await ProductReview.aggregate([
+      { $match: { storeId: store._id, productId: new mongoose.Types.ObjectId(productId), status: 'approved' } },
+      { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
+    ]);
+    const stats = agg[0] ? { averageRating: Math.round(agg[0].avg * 10) / 10, totalCount: agg[0].count } : { averageRating: 0, totalCount: 0 };
+
+    res.json({
+      success: true,
+      data: {
+        reviews,
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+        stats,
+      },
+    });
+  } catch (err) { next(err); }
+};
+
+export const listStoreReviews = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const storeId = req.params.id;
+    const status = req.query.status as string | undefined;
+    const productId = req.query.productId as string | undefined;
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 20));
+
+    const query: any = { storeId };
+    if (status) query.status = status;
+    if (productId) query.productId = productId;
+
+    const total = await ProductReview.countDocuments(query);
+    const reviews = await ProductReview.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('productId', 'title')
+      .lean();
+
+    res.json({ success: true, data: { reviews, pagination: { page, limit, total, pages: Math.ceil(total / limit) } } });
+  } catch (err) { next(err); }
+};
+
+export const updateReviewStatus = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: storeId, reviewId } = req.params;
+    const { status } = req.body;
+    if (!['pending', 'approved', 'rejected'].includes(status)) throw createError('Invalid status', 400);
+
+    const review = await ProductReview.findOne({ _id: reviewId, storeId });
+    if (!review) throw createError('Review not found', 404);
+    review.status = status;
+    await review.save();
+    res.json({ success: true, data: review });
+  } catch (err) { next(err); }
+};
+
+export const deleteReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: storeId, reviewId } = req.params;
+    const review = await ProductReview.findOneAndDelete({ _id: reviewId, storeId });
+    if (!review) throw createError('Review not found', 404);
+    res.json({ success: true, message: 'Deleted' });
+  } catch (err) { next(err); }
+};
+
+// ─── AI Chatbot (storefront) ────────────────────────────────────────
+
+export const storefrontChat = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slug } = req.params;
+    const { message, conversationId } = req.body || {};
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      throw createError('Message is required', 400);
+    }
+    const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'active' });
+    if (!store) throw createError('Store not found', 404);
+    const result = await getStoreChatReply((store._id as any).toString(), slug, message.trim(), conversationId);
+    if (result.error) throw createError(result.error, 400);
+    res.json({ success: true, data: { reply: result.reply } });
+  } catch (err) { next(err); }
+};
+
+// ─── Custom Pages (Page Builder plugin) ─────────────────────────────
+
+export const listStorePages = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const storeId = req.params.id;
+    const pages = await StorePage.find({ storeId }).sort({ sortOrder: 1, createdAt: 1 }).lean();
+    res.json({ success: true, data: pages });
+  } catch (err) { next(err); }
+};
+
+export const createStorePage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const storeId = req.params.id;
+    const { slug, title, body, isPublished, sortOrder } = req.body || {};
+    if (!title || !slug) throw createError('slug and title are required', 400);
+    const normalizedSlug = String(slug).trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '');
+    if (!normalizedSlug) throw createError('Invalid slug', 400);
+    const existing = await StorePage.findOne({ storeId, slug: normalizedSlug });
+    if (existing) throw createError('A page with this slug already exists', 400);
+    const page = await StorePage.create({
+      storeId,
+      slug: normalizedSlug,
+      title: String(title).trim(),
+      body: body ? String(body) : '',
+      isPublished: !!isPublished,
+      sortOrder: typeof sortOrder === 'number' ? sortOrder : 0,
+    });
+    res.status(201).json({ success: true, data: page });
+  } catch (err) { next(err); }
+};
+
+export const getStorePage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: storeId, pageId } = req.params;
+    const page = await StorePage.findOne({ _id: pageId, storeId }).lean();
+    if (!page) throw createError('Page not found', 404);
+    res.json({ success: true, data: page });
+  } catch (err) { next(err); }
+};
+
+export const updateStorePage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: storeId, pageId } = req.params;
+    const { slug, title, body, isPublished, sortOrder } = req.body || {};
+    const page = await StorePage.findOne({ _id: pageId, storeId });
+    if (!page) throw createError('Page not found', 404);
+    if (slug != null) {
+      const normalizedSlug = String(slug).trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '');
+      if (normalizedSlug) {
+        const existing = await StorePage.findOne({ storeId, slug: normalizedSlug, _id: { $ne: pageId } });
+        if (existing) throw createError('A page with this slug already exists', 400);
+        page.slug = normalizedSlug;
+      }
+    }
+    if (title != null) page.title = String(title).trim();
+    if (body != null) page.body = String(body);
+    if (typeof isPublished === 'boolean') page.isPublished = isPublished;
+    if (typeof sortOrder === 'number') page.sortOrder = sortOrder;
+    await page.save();
+    res.json({ success: true, data: page });
+  } catch (err) { next(err); }
+};
+
+export const deleteStorePage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id: storeId, pageId } = req.params;
+    const page = await StorePage.findOneAndDelete({ _id: pageId, storeId });
+    if (!page) throw createError('Page not found', 404);
+    res.json({ success: true, message: 'Deleted' });
+  } catch (err) { next(err); }
+};
+
+export const listStorefrontPages = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slug } = req.params;
+    const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'active' });
+    if (!store) throw createError('Store not found', 404);
+    const pageBuilderActive = await Plugin.findOne({ slug: 'page-builder', isActive: true });
+    if (!pageBuilderActive) throw createError('Custom pages are not enabled', 404);
+    const pages = await StorePage.find({ storeId: store._id, isPublished: true }).sort({ sortOrder: 1, createdAt: 1 }).select('slug title').lean();
+    res.json({ success: true, data: pages });
+  } catch (err) { next(err); }
+};
+
+export const getStorefrontPage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slug: storeSlug, pageSlug } = req.params;
+    const store = await Store.findOne({ slug: storeSlug.toLowerCase(), status: 'active' });
+    if (!store) throw createError('Store not found', 404);
+    const pageBuilderActive = await Plugin.findOne({ slug: 'page-builder', isActive: true });
+    if (!pageBuilderActive) throw createError('Custom pages are not enabled', 404);
+    const page = await StorePage.findOne({ storeId: store._id, slug: pageSlug.toLowerCase(), isPublished: true }).lean();
+    if (!page) throw createError('Page not found', 404);
+    res.json({ success: true, data: page });
   } catch (err) { next(err); }
 };

@@ -6,6 +6,7 @@ import { useCartStore } from '@/store/useCartStore';
 import CartSidebar from '@/components/storefront/CartSidebar';
 import AnnouncementBar from '@/components/storefront/AnnouncementBar';
 import EmailPopup from '@/components/storefront/EmailPopup';
+import AIChatWidget from '@/components/storefront/AIChatWidget';
 import { StoreThemeProvider } from '@/contexts/StoreThemeContext';
 import { CartProvider, useCart } from '@/contexts/CartContext';
 import { api } from '@/lib/api';
@@ -21,6 +22,7 @@ function StorefrontLayoutContent({
   const [store, setStore] = useState<any>(null);
   const [storeTheme, setStoreTheme] = useState<StoreTheme | null>(null);
   const [pluginConfigs, setPluginConfigs] = useState<Record<string, any>>({});
+  const [customPages, setCustomPages] = useState<{ slug: string; title: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const { setStoreSlug } = useCartStore();
   const { isOpen: cartOpen, closeCart } = useCart();
@@ -40,6 +42,19 @@ function StorefrontLayoutContent({
       }
     }
   }, [store]);
+
+  useEffect(() => {
+    if (!slug || !pluginConfigs['page-builder'] || pluginConfigs['page-builder'].enabled === false) {
+      setCustomPages([]);
+      return;
+    }
+    api.getStorefrontPages(slug)
+      .then((r) => {
+        if (r.success && Array.isArray(r.data)) setCustomPages(r.data);
+        else setCustomPages([]);
+      })
+      .catch(() => setCustomPages([]));
+  }, [slug, pluginConfigs['page-builder']]);
 
   const fetchStoreData = async () => {
     try {
@@ -78,9 +93,12 @@ function StorefrontLayoutContent({
 
   const announcementConfig = pluginConfigs['announcement-bar'];
   const popupConfig = pluginConfigs['email-popup'];
+  const chatConfig = pluginConfigs['ai-chatbot'];
+
+  const homeSections = Array.isArray(pluginConfigs['page-builder']?.homeSections) ? pluginConfigs['page-builder'].homeSections : [];
 
   return (
-    <StoreThemeProvider storeTheme={storeTheme} isLoading={loading}>
+    <StoreThemeProvider storeTheme={storeTheme} isLoading={loading} customPages={customPages} homeSections={homeSections}>
       {announcementConfig?.announcements?.length > 0 && (
         <AnnouncementBar announcements={announcementConfig.announcements} speed={announcementConfig.speed} />
       )}
@@ -92,6 +110,7 @@ function StorefrontLayoutContent({
         currency={store?.currency || 'INR'}
       />
       {popupConfig && <EmailPopup slug={slug} config={popupConfig} />}
+      {chatConfig && chatConfig.enabled !== false && <AIChatWidget slug={slug} config={chatConfig} />}
     </StoreThemeProvider>
   );
 }

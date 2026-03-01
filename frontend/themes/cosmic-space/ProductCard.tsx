@@ -16,7 +16,9 @@ interface ProductCardProps {
   currency: string;
 }
 
-export default function ProductCard({ product, storeSlug, currency }: ProductCardProps) {
+export default function ProductCard(props: ProductCardProps) {
+  const { product, storeSlug, currency } = props ?? {};
+  if (!product || !storeSlug) return null;
   const { colors } = useStoreTheme();
 
   const formatPrice = (price: number) => {

@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useStore } from '@/contexts/StoreContext';
-import { Loader2, Ticket, Gift, Package, Share2, Link, Megaphone, Layers, Mail, Timer, Wallet, Settings } from 'lucide-react';
+import { Loader2, Ticket, Gift, Package, Share2, Link, Megaphone, Layers, Mail, Timer, Wallet, Settings, Filter, Star, TrendingUp, MessageCircle, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const iconMap: Record<string, any> = {
-  Ticket, Gift, Package, Share2, Link, Megaphone, Layers, Mail, Timer, Wallet,
+  Ticket, Gift, Package, Share2, Link, Megaphone, Layers, Mail, Timer, Wallet, Filter, Star, TrendingUp, MessageCircle, FileText, Settings,
 };
 
 const pluginPages: Record<string, string> = {
@@ -21,6 +21,11 @@ const pluginPages: Record<string, string> = {
   'email-popup': '/dashboard/store/plugins/popups',
   'countdown-timer': '/dashboard/store/plugins/countdown',
   'partial-cod': '/dashboard/store/plugins/partial-cod',
+  'product-filters': '/dashboard/store/plugins/product-filters',
+  'product-reviews': '/dashboard/store/plugins/reviews',
+  'upsell-conversion': '/dashboard/store/plugins/upsell',
+  'ai-chatbot': '/dashboard/store/plugins/ai-chatbot',
+  'page-builder': '/dashboard/store/plugins/page-builder',
 };
 
 export default function PluginDashboardPage() {

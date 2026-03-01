@@ -108,6 +108,13 @@ class ApiClient {
     });
   }
 
+  async patch<T>(url: string, data?: any) {
+    return this.retryRequest(async () => {
+      const response = await this.client.patch<T>(this.buildPath(url), data);
+      return response.data;
+    });
+  }
+
   // Subscription / billing methods (SaaS subscription for the app)
   async getPlans() {
     return this.get<{ success: boolean; data: { plans: any[] } }>('/api/payments/plans');
@@ -1142,7 +1149,7 @@ class ApiClient {
     return this.get<{ success: boolean; data: any }>(`/api/storefront/${slug}`);
   }
 
-  async getStorefrontProducts(slug: string, params?: { page?: number; limit?: number; search?: string; minPrice?: number; maxPrice?: number; variantDimension?: string; sort?: string }) {
+  async getStorefrontProducts(slug: string, params?: { page?: number; limit?: number; search?: string; minPrice?: number; maxPrice?: number; variantDimension?: string; tags?: string | string[]; sort?: string }) {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.set('page', String(params.page));
     if (params?.limit) searchParams.set('limit', String(params.limit));
@@ -1150,10 +1157,19 @@ class ApiClient {
     if (params?.minPrice) searchParams.set('minPrice', String(params.minPrice));
     if (params?.maxPrice) searchParams.set('maxPrice', String(params.maxPrice));
     if (params?.variantDimension) searchParams.set('variantDimension', params.variantDimension);
+    if (params?.tags) searchParams.set('tags', Array.isArray(params.tags) ? params.tags.join(',') : params.tags);
     if (params?.sort) searchParams.set('sort', params.sort);
     const query = searchParams.toString();
     const url = query ? `/api/storefront/${slug}/products?${query}` : `/api/storefront/${slug}/products`;
     return this.get<{ success: boolean; data: { products: any[]; pagination: any } }>(url);
+  }
+
+  async getStorefrontFilterOptions(slug: string) {
+    return this.get<{ success: boolean; data: { tags: string[]; variantDimensions: string[] } }>(`/api/storefront/${slug}/products/filter-options`);
+  }
+
+  async storefrontChat(slug: string, message: string, conversationId?: string) {
+    return this.post<{ success: boolean; data: { reply: string } }>(`/api/storefront/${slug}/chat`, { message, conversationId });
   }
 
   async getStorefrontProduct(slug: string, productId: string) {
@@ -1204,6 +1220,28 @@ class ApiClient {
 
   async updatePluginConfig(storeId: string, pluginSlug: string, config: any) {
     return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/plugins/${pluginSlug}/config`, { config });
+  }
+
+  async getStorePages(storeId: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/store-dashboard/stores/${storeId}/pages`);
+  }
+  async createStorePage(storeId: string, data: { slug: string; title: string; body?: string; isPublished?: boolean; sortOrder?: number }) {
+    return this.post<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/pages`, data);
+  }
+  async getStorePage(storeId: string, pageId: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/pages/${pageId}`);
+  }
+  async updateStorePage(storeId: string, pageId: string, data: { slug?: string; title?: string; body?: string; isPublished?: boolean; sortOrder?: number }) {
+    return this.put<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/pages/${pageId}`, data);
+  }
+  async deleteStorePage(storeId: string, pageId: string) {
+    return this.delete<{ success: boolean }>(`/api/store-dashboard/stores/${storeId}/pages/${pageId}`);
+  }
+  async getStorefrontPages(slug: string) {
+    return this.get<{ success: boolean; data: any[] }>(`/api/storefront/${slug}/pages`);
+  }
+  async getStorefrontPage(slug: string, pageSlug: string) {
+    return this.get<{ success: boolean; data: any }>(`/api/storefront/${slug}/pages/${pageSlug}`);
   }
 
   async getStorefrontPlugins(slug: string) {
@@ -1279,6 +1317,38 @@ class ApiClient {
   }
   async getBoughtTogether(slug: string, productId: string) {
     return this.get<{ success: boolean; data: any }>(`/api/storefront/${slug}/products/${productId}/bought-together`);
+  }
+
+  async getProductReviews(slug: string, productId: string, params?: { page?: number; limit?: number }) {
+    const sp = new URLSearchParams();
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+    const q = sp.toString();
+    return this.get<{ success: boolean; data: { reviews: any[]; pagination: any; stats: { averageRating: number; totalCount: number } } }>(
+      `/api/storefront/${slug}/products/${productId}/reviews${q ? `?${q}` : ''}`
+    );
+  }
+
+  async createProductReview(slug: string, productId: string, data: { authorName: string; authorEmail: string; rating: number; title?: string; body?: string }) {
+    return this.post<{ success: boolean; data: { _id: string; status: string } }>(`/api/storefront/${slug}/products/${productId}/reviews`, data);
+  }
+
+  async getStoreReviews(storeId: string, params?: { status?: string; productId?: string; page?: number; limit?: number }) {
+    const sp = new URLSearchParams();
+    if (params?.status) sp.set('status', params.status);
+    if (params?.productId) sp.set('productId', params.productId);
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+    const q = sp.toString();
+    return this.get<{ success: boolean; data: { reviews: any[]; pagination: any } }>(`/api/store-dashboard/stores/${storeId}/reviews${q ? `?${q}` : ''}`);
+  }
+
+  async updateReviewStatus(storeId: string, reviewId: string, status: 'pending' | 'approved' | 'rejected') {
+    return this.patch<{ success: boolean; data: any }>(`/api/store-dashboard/stores/${storeId}/reviews/${reviewId}`, { status });
+  }
+
+  async deleteReview(storeId: string, reviewId: string) {
+    return this.delete<{ success: boolean }>(`/api/store-dashboard/stores/${storeId}/reviews/${reviewId}`);
   }
 
   // Email Subscribers

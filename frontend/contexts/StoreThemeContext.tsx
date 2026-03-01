@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ThemeContextValue, StoreTheme, ThemeConfig, ThemeColors, ThemeTypography, ThemeLayout } from '@/themes/base/types';
+import { ThemeContextValue, StoreTheme, ThemeConfig, ThemeColors, ThemeTypography, ThemeLayout, CustomPageLink, HomeSectionConfig } from '@/themes/base/types';
 import { getThemeConfig } from '@/themes/base/ThemeConfig';
 
 interface StoreThemeContextType extends ThemeContextValue {
@@ -22,9 +22,11 @@ interface StoreThemeProviderProps {
   children: ReactNode;
   storeTheme: StoreTheme | null;
   isLoading?: boolean;
+  customPages?: CustomPageLink[];
+  homeSections?: HomeSectionConfig[];
 }
 
-export function StoreThemeProvider({ children, storeTheme, isLoading = false }: StoreThemeProviderProps) {
+export function StoreThemeProvider({ children, storeTheme, isLoading = false, customPages = [], homeSections = [] }: StoreThemeProviderProps) {
   // Default to minimal theme if no theme is provided
   const defaultTheme: StoreTheme = {
     name: 'minimal',
@@ -93,6 +95,8 @@ export function StoreThemeProvider({ children, storeTheme, isLoading = false }: 
     layout,
     logo,
     isLoading,
+    customPages: customPages || [],
+    homeSections: homeSections || [],
     setTheme: handleSetTheme,
   };
 

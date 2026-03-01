@@ -10,7 +10,7 @@ interface FooterProps {
 }
 
 export default function Footer({ storeSlug, storeName }: FooterProps) {
-  const { colors } = useStoreTheme();
+  const { colors, customPages = [] } = useStoreTheme();
 
   return (
     <footer
@@ -89,6 +89,17 @@ export default function Footer({ storeSlug, storeName }: FooterProps) {
                   About Us
                 </Link>
               </li>
+              {customPages.length > 0 && customPages.map((p) => (
+                <li key={p.slug}>
+                  <Link
+                    href={`/storefront/${storeSlug}/pages/${p.slug}`}
+                    className="text-xs minimalist-hover"
+                    style={{ color: colors.text + '80' }}
+                  >
+                    {p.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

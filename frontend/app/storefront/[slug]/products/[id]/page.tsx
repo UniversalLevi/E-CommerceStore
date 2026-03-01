@@ -14,6 +14,7 @@ import { loadTheme } from '@/themes/themeLoader';
 import ShareButtons from '@/components/storefront/ShareButtons';
 import CountdownTimer from '@/components/storefront/CountdownTimer';
 import BoughtTogether from '@/components/storefront/BoughtTogether';
+import ProductReviews from '@/components/storefront/ProductReviews';
 
 function MediaGallery({ product, colors }: { product: any; colors: any }) {
   const images: string[] = product.images || [];
@@ -90,6 +91,8 @@ export default function StorefrontProductPage() {
   const { theme, colors } = useStoreTheme();
   const { openCart } = useCart();
   const [ThemeComponents, setThemeComponents] = useState<any>(null);
+  const [reviewsEnabled, setReviewsEnabled] = useState(false);
+  const [upsellEnabled, setUpsellEnabled] = useState(true);
 
   // Load theme components
   useEffect(() => {
@@ -104,6 +107,19 @@ export default function StorefrontProductPage() {
       fetchData();
     }
   }, [slug, productId]);
+
+  useEffect(() => {
+    if (slug) {
+      api.getStorefrontPlugins(slug).then((r) => {
+        if (r.success && r.data) {
+          const pr = r.data['product-reviews'];
+          setReviewsEnabled(pr != null && pr.enabled !== false);
+          const upsellConfig = r.data['upsell-conversion'];
+          setUpsellEnabled(upsellConfig == null || upsellConfig.enabled !== false);
+        }
+      }).catch(() => {});
+    }
+  }, [slug]);
 
   const fetchData = async () => {
     try {
@@ -207,7 +223,7 @@ export default function StorefrontProductPage() {
 
   const { Header, Footer, ProductDetail } = ThemeComponents;
 
-  // If theme has ProductDetail component, use it
+  // If theme has ProductDetail component, use it (still show BoughtTogether + Reviews below)
   if (ProductDetail) {
     return (
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: colors.background }}>
@@ -221,6 +237,17 @@ export default function StorefrontProductPage() {
           storeSlug={slug}
           currency={store.currency}
         />
+        <div style={{ maxWidth: 'var(--theme-container-width, 1280px)', margin: '0 auto', width: '100%', padding: '0 1rem 2rem' }}>
+          {upsellEnabled && <BoughtTogether slug={slug} productId={productId} currentProduct={product} currency={store?.currency} />}
+          {reviewsEnabled && (
+            <ProductReviews
+              storeSlug={slug}
+              productId={productId}
+              colors={colors}
+              themeName={theme?.name}
+            />
+          )}
+        </div>
         <Footer storeSlug={slug} storeName={store.name} />
       </div>
     );
@@ -328,7 +355,16 @@ export default function StorefrontProductPage() {
           </div>
         </div>
 
-        <BoughtTogether slug={slug} productId={productId} currentProduct={product} currency={store?.currency} />
+        {upsellEnabled && <BoughtTogether slug={slug} productId={productId} currentProduct={product} currency={store?.currency} />}
+
+        {reviewsEnabled && (
+          <ProductReviews
+            storeSlug={slug}
+            productId={productId}
+            colors={colors}
+            themeName={theme?.name}
+          />
+        )}
       </div>
       <Footer storeSlug={slug} storeName={store.name} />
     </div>

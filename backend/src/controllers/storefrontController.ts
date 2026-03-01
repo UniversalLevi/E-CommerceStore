@@ -54,7 +54,7 @@ export const listStorefrontProducts = async (
     const { slug } = req.params;
     const page = parseInt(req.query.page as string, 10) || 1;
     const limit = parseInt(req.query.limit as string, 10) || 20;
-    const { search, minPrice, maxPrice, variantDimension, sort } = req.query;
+    const { search, minPrice, maxPrice, variantDimension, sort, tags } = req.query;
 
     // Get store (payment connection not required for viewing products)
     const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'active' });
@@ -74,11 +74,18 @@ export const listStorefrontProducts = async (
       maxPricePaise = max > 100 ? max : Math.round(max * 100); // Assume if > 100, already in paise
     }
 
+    // Parse tags: comma-separated string or array
+    let tagsFilter: string[] | string | undefined;
+    if (tags) {
+      tagsFilter = Array.isArray(tags) ? (tags as string[]) : (tags as string);
+    }
+
     const result = await storefrontService.getActiveProducts((store._id as any).toString(), page, limit, {
       search: search as string,
       minPrice: minPricePaise,
       maxPrice: maxPricePaise,
       variantDimension: variantDimension as string,
+      tags: tagsFilter,
       sort: sort as 'price_asc' | 'price_desc' | 'newest' | 'oldest',
     });
 
@@ -94,6 +101,24 @@ export const listStorefrontProducts = async (
         products: productsWithAbsoluteImages,
       },
     });
+  } catch (error: any) {
+    next(error);
+  }
+};
+
+/**
+ * Get product filter options (tags, variant dimensions) for storefront
+ * GET /api/storefront/:slug/products/filter-options
+ */
+export const getStorefrontFilterOptions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { slug } = req.params;
+    const store = await Store.findOne({ slug: slug.toLowerCase(), status: 'active' });
+    if (!store) {
+      throw createError('Store not found or not active', 404);
+    }
+    const options = await storefrontService.getProductFilterOptions((store._id as any).toString());
+    res.status(200).json({ success: true, data: options });
   } catch (error: any) {
     next(error);
   }
@@ -344,6 +369,25 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
       }
     }
 
+    // Notify store owner for every new order (in-app + sound); COD path sends again below with same dedupe
+    try {
+      const owner = await User.findById(store.owner);
+      if (owner) {
+        await createNotification({
+          userId: owner._id as mongoose.Types.ObjectId,
+          type: 'new_order',
+          title: 'New Order Received!',
+          message: `Order ${order.orderId} from ${order.customer.name} - ${(order.total / 100).toFixed(2)} ${order.currency}${paymentMethod === 'cod' ? ' (COD)' : ''}`,
+          link: '/dashboard/store/orders',
+          metadata: { orderId: order.orderId },
+          sendPush: true,
+          playSound: true,
+        });
+      }
+    } catch (notifErr) {
+      console.error('Error sending new order notification:', notifErr);
+    }
+
     // Update inventory if tracking is enabled
     for (const item of value.items) {
       const product = await StoreProduct.findById(item.productId);
@@ -377,25 +421,6 @@ export const createStorefrontOrder = async (req: Request, res: Response, next: N
         }
       } catch (emailError) {
         console.error('Error sending COD order emails:', emailError);
-      }
-
-      // Push notification + in-app notification for store owner on COD order (once per order)
-      try {
-        const owner = await User.findById(store.owner);
-        if (owner) {
-          await createNotification({
-            userId: owner._id as mongoose.Types.ObjectId,
-            type: 'new_order',
-            title: 'New Order Received!',
-            message: `Order ${order.orderId} from ${order.customer.name} - ${(order.total / 100).toFixed(2)} ${order.currency} (COD)`,
-            link: '/dashboard/store/orders',
-            metadata: { orderId: order.orderId },
-            sendPush: true,
-            playSound: true,
-          });
-        }
-      } catch (notifError) {
-        console.error('Error sending order push notification:', notifError);
       }
     }
 
@@ -599,6 +624,25 @@ export const verifyPayment = async (req: Request, res: Response, next: NextFunct
           }
         } catch (emailError) {
           console.error('Error sending payment email:', emailError);
+        }
+
+        // In-app + push notification for store owner (test mode path)
+        try {
+          const owner = await User.findById(store.owner);
+          if (owner) {
+            await createNotification({
+              userId: owner._id as mongoose.Types.ObjectId,
+              type: 'order_paid',
+              title: 'Payment Received!',
+              message: `Payment confirmed for order ${order.orderId} - ${(order.total / 100).toFixed(2)} ${order.currency}`,
+              link: '/dashboard/store/orders',
+              metadata: { orderId: order.orderId },
+              sendPush: true,
+              playSound: true,
+            });
+          }
+        } catch (notifError) {
+          console.error('Error sending test order notification:', notifError);
         }
 
         res.status(200).json({

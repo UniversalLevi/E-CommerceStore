@@ -9,7 +9,7 @@ interface FooterProps {
 }
 
 export default function Footer({ storeSlug, storeName }: FooterProps) {
-  const { colors, typography } = useStoreTheme();
+  const { colors, typography, customPages = [] } = useStoreTheme();
 
   return (
     <footer
@@ -88,6 +88,17 @@ export default function Footer({ storeSlug, storeName }: FooterProps) {
                   About Us
                 </Link>
               </li>
+              {customPages.length > 0 && customPages.map((p) => (
+                <li key={p.slug}>
+                  <Link
+                    href={`/storefront/${storeSlug}/pages/${p.slug}`}
+                    className="text-sm hover:opacity-80 transition-opacity"
+                    style={{ color: colors.text + 'CC' }}
+                  >
+                    {p.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

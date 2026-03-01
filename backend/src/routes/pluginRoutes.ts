@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 import { requireStoreOwner } from '../middleware/storeMiddleware';
 import { requireStoreSubscription } from '../middleware/subscription';
+import { storefrontChatRateLimit } from '../middleware/rateLimit';
 import * as pc from '../controllers/pluginController';
 
 const router = express.Router();
@@ -53,6 +54,25 @@ router.post('/storefront/:slug/gift-cards/check-balance', pc.checkGiftCardBalanc
 router.get('/storefront/:slug/free-gifts', pc.getEligibleFreeGifts);
 router.get('/storefront/:slug/bundles', pc.listStorefrontBundles);
 router.get('/storefront/:slug/products/:productId/bought-together', pc.getBoughtTogether);
+router.get('/storefront/:slug/products/:productId/reviews', pc.listProductReviews);
+router.post('/storefront/:slug/products/:productId/reviews', pc.createReview);
+router.post('/storefront/:slug/chat', storefrontChatRateLimit, pc.storefrontChat);
 router.post('/storefront/:slug/subscribers', pc.subscribeEmail);
+
+// Reviews (dashboard)
+router.get('/store-dashboard/stores/:id/reviews', ...storeAuth, pc.listStoreReviews);
+router.patch('/store-dashboard/stores/:id/reviews/:reviewId', ...storeAuth, pc.updateReviewStatus);
+router.delete('/store-dashboard/stores/:id/reviews/:reviewId', ...storeAuth, pc.deleteReview);
+
+// Custom Pages (dashboard)
+router.get('/store-dashboard/stores/:id/pages', ...storeAuth, pc.listStorePages);
+router.post('/store-dashboard/stores/:id/pages', ...storeAuth, pc.createStorePage);
+router.get('/store-dashboard/stores/:id/pages/:pageId', ...storeAuth, pc.getStorePage);
+router.put('/store-dashboard/stores/:id/pages/:pageId', ...storeAuth, pc.updateStorePage);
+router.delete('/store-dashboard/stores/:id/pages/:pageId', ...storeAuth, pc.deleteStorePage);
+
+// Custom Pages (storefront)
+router.get('/storefront/:slug/pages', pc.listStorefrontPages);
+router.get('/storefront/:slug/pages/:pageSlug', pc.getStorefrontPage);
 
 export default router;

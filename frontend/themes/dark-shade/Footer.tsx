@@ -10,7 +10,7 @@ interface FooterProps {
 }
 
 export default function Footer({ storeSlug, storeName }: FooterProps) {
-  const { colors, typography } = useStoreTheme();
+  const { colors, typography, customPages = [] } = useStoreTheme();
 
   return (
     <footer
@@ -82,14 +82,25 @@ export default function Footer({ storeSlug, storeName }: FooterProps) {
                 </a>
               </li>
               <li>
-                <a
-                  href={`https://${storeSlug}.eazyds.com/about`}
+                <Link
+                  href={`/storefront/${storeSlug}/about`}
                   className="text-sm hover:opacity-100 transition-all duration-300 hover:translate-x-1"
                   style={{ color: colors.text, opacity: 0.8 }}
                 >
                   About Us
-                </a>
+                </Link>
               </li>
+              {customPages.length > 0 && customPages.map((p) => (
+                <li key={p.slug}>
+                  <Link
+                    href={`/storefront/${storeSlug}/pages/${p.slug}`}
+                    className="text-sm hover:opacity-100 transition-all duration-300 hover:translate-x-1"
+                    style={{ color: colors.text, opacity: 0.8 }}
+                  >
+                    {p.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

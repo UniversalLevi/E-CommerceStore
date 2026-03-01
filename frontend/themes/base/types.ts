@@ -44,6 +44,20 @@ export interface StoreTheme {
   customizations: ThemeCustomization;
 }
 
+export interface CustomPageLink {
+  slug: string;
+  title: string;
+}
+
+export type HomeSectionType = 'hero' | 'featured_products' | 'custom_html' | 'text';
+
+export interface HomeSectionConfig {
+  id: string;
+  type: HomeSectionType;
+  order: number;
+  props: Record<string, string | number>;
+}
+
 export interface ThemeContextValue {
   theme: StoreTheme | null;
   themeConfig: ThemeConfig | null;
@@ -52,4 +66,6 @@ export interface ThemeContextValue {
   layout: ThemeLayout;
   logo?: string;
   isLoading: boolean;
+  customPages?: CustomPageLink[];
+  homeSections?: HomeSectionConfig[];
 }
