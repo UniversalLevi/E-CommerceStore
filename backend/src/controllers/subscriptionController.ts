@@ -341,12 +341,9 @@ export const grantSubscription = async (
         ? new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000)
         : null;
     }
-
-    // Cancel any existing active subscription
-    await Subscription.updateMany(
-      { userId, status: 'active' },
-      { status: 'cancelled' }
-    );
+    // NOTE: Do NOT cancel other active subscriptions here.
+    // Manual grants should be additive – multiple plans (platform + store) can coexist
+    // until they are explicitly revoked via the revoke endpoint.
 
     // Create new subscription
     const subscription = await Subscription.create({
