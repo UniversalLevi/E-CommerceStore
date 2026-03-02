@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { User, IUser } from '../models/User';
 import { Subscription } from '../models/Subscription';
-import { plans, PlanCode } from '../config/plans';
+import { plans, PlanCode, PLATFORM_PLAN_CODES } from '../config/plans';
 import { config } from '../config/env';
 import { createError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
@@ -322,12 +322,16 @@ export const getMe = async (
       throw createError('User not found', 404);
     }
 
-    // Sync subscription status from Subscription model to User model
-    // This ensures manually_granted subscriptions are recognized
+    // Sync PLATFORM subscription status from Subscription model to User model.
+    // IMPORTANT: Only platform plans (not store plans) should affect user.plan,
+    // otherwise a store plan like stores_basic_free would override the EazyDS plan.
     const activeSubscription = await Subscription.findOne({
       userId: (req.user as any)._id,
       status: { $in: ['active', 'trialing', 'manually_granted'] },
-    }).sort({ createdAt: -1 }).lean();
+      planCode: { $in: PLATFORM_PLAN_CODES },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
     let user = req.user;
     let needsUpdate = false;
