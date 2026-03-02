@@ -463,9 +463,10 @@ export function getSellingPriceFromWholesale(wholesale: number): number {
 
 /**
  * Compute WhatsApp draft pricing from wholesale (cost) and shipping.
- * Total cost = wholesale + shipping (advertising/misc = 0 in WhatsApp flow).
- * Profit = selling price - total cost.
- * Profit margin stored is the profit amount (INR); margin % = (profit / selling price) × 100.
+ * Total cost = wholesale + shipping (for internal reference).
+ * Profit here is **product-only profit** (selling - wholesale), so delivery is excluded
+ * from the profit calculation and can be added on top (e.g. 600 + 80 delivery).
+ * Profit margin stored is the profit amount in INR; margin % = (profit / selling price) × 100.
  */
 export function getWhatsAppDraftPricing(
   wholesalePrice: number,
@@ -473,7 +474,7 @@ export function getWhatsAppDraftPricing(
 ): { sellingPrice: number; profitAmount: number; totalCost: number } {
   const sellingPrice = getSellingPriceFromWholesale(wholesalePrice);
   const totalCost = wholesalePrice + shippingFee;
-  const profitAmount = sellingPrice - totalCost;
+  const profitAmount = sellingPrice - wholesalePrice;
   return { sellingPrice, profitAmount, totalCost };
 }
 

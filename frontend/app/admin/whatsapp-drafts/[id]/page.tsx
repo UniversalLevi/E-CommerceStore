@@ -126,7 +126,8 @@ export default function WhatsAppDraftDetailPage() {
       const nicheId = (data.detected_niche as any)?._id ?? data.detected_niche ?? '';
       const cost = data.cost_price ?? 0;
       const selling = cost <= 0 ? 0 : cost < 400 ? cost * 2 : cost * 1.5;
-      const profit = selling - cost - FIXED_DELIVERY;
+      // Profit is product-only profit; delivery is added on top (e.g. 600 + 80 delivery)
+      const profit = selling - cost;
       setFormData({
         ai_name: data.ai_name || data.original_name || '',
         ai_description: data.ai_description || '',
@@ -143,23 +144,23 @@ export default function WhatsAppDraftDetailPage() {
     }
   };
 
-  // Pricing rule: selling = wholesale×2 if wholesale < 400, else wholesale×1.5; profit = selling - cost - shipping
+  // Pricing rule: selling = wholesale×2 if wholesale < 400, else wholesale×1.5; profit = selling - cost (delivery added on top)
   const getSellingPrice = (wholesale: number) =>
     wholesale <= 0 ? 0 : wholesale < 400 ? wholesale * 2 : wholesale * 1.5;
-  const getProfitFromPricing = (wholesale: number, shipping: number) => {
+  const getProfitFromPricing = (wholesale: number) => {
     const selling = getSellingPrice(wholesale);
-    return selling - wholesale - shipping;
+    return selling - wholesale;
   };
 
   const computedSellingPrice = getSellingPrice(formData.cost_price);
-  const computedProfit = getProfitFromPricing(formData.cost_price, FIXED_DELIVERY);
+  const computedProfit = getProfitFromPricing(formData.cost_price);
   const computedMarginPercent =
     computedSellingPrice > 0 ? (computedProfit / computedSellingPrice) * 100 : 0;
 
-  // Sync profit_margin when cost_price changes (delivery fixed at ₹80)
+  // Sync profit_margin when cost_price changes (delivery fixed at ₹80, excluded from profit)
   const handleCostPriceChange = (value: number) => {
     const next = { ...formData, cost_price: value, shipping_fee: FIXED_DELIVERY };
-    next.profit_margin = getProfitFromPricing(next.cost_price, FIXED_DELIVERY);
+    next.profit_margin = getProfitFromPricing(next.cost_price);
     setFormData(next);
   };
 
