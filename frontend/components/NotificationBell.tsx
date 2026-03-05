@@ -120,12 +120,27 @@ export default function NotificationBell() {
       const orderTypes = ['new_order', 'order_paid'];
       const toAnnounce: Notification[] = [];
       for (const notif of newNotifs) {
+        // Skip already-read notifications for toast logic so they never re-announce
+        if (notif.read) continue;
         if (!orderTypes.includes(notif.type) && !notif.playSound) continue;
         if (announcedIdsRef.current.has(notif._id)) continue;
         announcedIdsRef.current.add(notif._id);
         toAnnounce.push(notif);
       }
       if (toAnnounce.length > 0) {
+        // Mark announced notifications as read in the backend so they won't reappear on future sessions/devices
+        try {
+          await Promise.all(
+            toAnnounce.map((n) =>
+              api.put(`/api/notifications/${n._id}/read`).catch(() => {
+                // ignore individual failures; they'll just appear again once
+              })
+            )
+          );
+        } catch {
+          // ignore batch failure
+        }
+
         const newToasts: ToastItem[] = toAnnounce.map((n) => ({ id: n._id, title: n.title, message: n.message }));
         setToastQueue((prev) => [...prev, ...newToasts]);
       }
