@@ -9,6 +9,19 @@ import { generateProductRationale, generateProductDescription } from '../service
 import { WinningProductSchema, WriteDescriptionSchema } from '../validators/aiValidator';
 import mongoose from 'mongoose';
 
+function pickRandomTop<T>(items: T[], poolSize: number, count: number): T[] {
+  if (!items.length || count <= 0) {
+    return [];
+  }
+  const effectivePoolSize = Math.min(poolSize, items.length);
+  const pool = items.slice(0, effectivePoolSize);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(count, pool.length));
+}
+
 /**
  * Find Winning Product
  * POST /api/ai/find-winning-product
@@ -76,14 +89,16 @@ export const findWinningProduct = async (
         throw createError('No products available', 404);
       }
 
-      // Return top products across all niches with explanation
+      // Return high-scoring products across all niches with some randomness
       const scored = allProducts.map((product) => {
         const result = ProductScoringService.scoreProduct(product as any, userPref, product.niche as any);
         return { product, ...result };
       });
 
       scored.sort((a, b) => b.score - a.score);
-      const topProducts = scored.slice(0, parsed.mode === 'top3' ? 3 : 1);
+      const topCount = parsed.mode === 'top3' ? 3 : 1;
+      const crossNichePoolSize = parsed.mode === 'top3' ? 10 : 5;
+      const topProducts = pickRandomTop(scored, crossNichePoolSize, topCount);
 
       const recommendations = await Promise.all(
         topProducts.map(async ({ product, score, confidence, breakdown }) => {
@@ -133,9 +148,10 @@ export const findWinningProduct = async (
     // Sort by score (descending)
     scored.sort((a, b) => b.score - a.score);
 
-    // Get top products
+    // Get high-scoring products with some randomness so the user doesn't always see the exact same items
     const topCount = parsed.mode === 'top3' ? 3 : 1;
-    const topProducts = scored.slice(0, topCount);
+    const poolSize = parsed.mode === 'top3' ? 15 : 7;
+    const topProducts = pickRandomTop(scored, poolSize, topCount);
 
     // Generate rationales
     const recommendations = await Promise.all(
